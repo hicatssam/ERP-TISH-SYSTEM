@@ -294,9 +294,19 @@ Route::prefix('locations/{location}')
         )->name('showroom-daily-reports.update');
 
         Route::post(
-            'showroom-daily-reports/{showroomDailyReport}/close',
-            [ShowroomDailyReportController::class, 'close']
-        )->name('showroom-daily-reports.close');
+            'showroom-daily-reports/{showroomDailyReport}/submit',
+            [ShowroomDailyReportController::class, 'submit']
+        )->name('showroom-daily-reports.submit');
+
+        Route::post(
+            'showroom-daily-reports/{showroomDailyReport}/approve',
+            [ShowroomDailyReportController::class, 'approve']
+        )->name('showroom-daily-reports.approve');
+
+        Route::post(
+            'showroom-daily-reports/{showroomDailyReport}/return',
+            [ShowroomDailyReportController::class, 'returnForCorrection']
+        )->name('showroom-daily-reports.return');
 
         Route::post(
             'showroom-daily-reports/{showroomDailyReport}/reopen',
