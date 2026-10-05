@@ -896,7 +896,7 @@ class ShowroomDailyReportController extends Controller
     {
         abort_unless(
             $request->user()->isAdmin()
-            || $request->user()->hasRole('Accountant')
+            || $request->user()->can('showroom_daily_reports.view')
             || $request->user()->canAny([
                 'inventory.view',
                 'inventory.count',
@@ -927,9 +927,9 @@ class ShowroomDailyReportController extends Controller
     private function canManage(Request $request): bool
     {
         return $request->user()->isAdmin()
-            || $request->user()->hasRole('Branch Manager')
+            || $request->user()->can('showroom_daily_reports.manage_branch')
             || (
-                ! $request->user()->hasRole('Accountant')
+                ! $request->user()->can('showroom_daily_reports.review')
                 && $request->user()->can('inventory.count')
             );
     }
@@ -937,6 +937,6 @@ class ShowroomDailyReportController extends Controller
     private function canReview(Request $request): bool
     {
         return $request->user()->isAdmin()
-            || $request->user()->hasRole('Accountant');
+            || $request->user()->can('showroom_daily_reports.review');
     }
 }
