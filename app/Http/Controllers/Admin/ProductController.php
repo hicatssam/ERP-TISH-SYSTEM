@@ -66,10 +66,40 @@ class ProductController extends Controller
 
         $products = $query->orderBy('name')->paginate(25)->withQueryString();
         $categories = Category::query()->active()->orderBy('sort_order')->get();
-        $brands = $this->modules->isEnabled('brands') ? Brand::query()->active()->orderBy('sort_order')->get() : collect();
+        $brands = $this->modules->isEnabled('brands')
+            ? Brand::query()->active()->orderBy('sort_order')->get()
+            : collect();
         $variantsEnabled = $this->modules->isEnabled('product_variants');
 
-        return view('admin.products.index', compact('products', 'categories', 'brands', 'variantsEnabled'));
+        /*
+         * Product creation lives in a modal on the products index.
+         * Keep list/filter data separate from creation form data so the
+         * existing catalog listing behaviour is not changed.
+         */
+        [
+            $createCategories,
+            $locations,
+            $managedLocation,
+            $canManageLocations,
+        ] = $this->formLocationData($user);
+
+        $units = Unit::query()
+            ->active()
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+
+        return view('admin.products.index', compact(
+            'products',
+            'categories',
+            'createCategories',
+            'brands',
+            'variantsEnabled',
+            'locations',
+            'managedLocation',
+            'canManageLocations',
+            'units'
+        ));
     }
 
     public function create(Request $request)
@@ -123,7 +153,7 @@ class ProductController extends Controller
             $user->id,
         );
 
-        return redirect()->route('products.show', $product)->with(
+        return redirect()->route('products.index')->with(
             'success',
             "تم إنشاء المنتج بنجاح. SKU: {$product->sku} — الباركود: {$product->barcode}"
         );
