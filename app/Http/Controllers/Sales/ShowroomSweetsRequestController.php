@@ -418,7 +418,7 @@ class ShowroomSweetsRequestController extends Controller
                                 ],
 
                             'status' =>
-                                ShowroomSweetsRequestStatus::Pending,
+                                ShowroomSweetsRequestStatus::InProgress,
 
                             'needed_by' =>
                                 $validated[
@@ -527,7 +527,7 @@ class ShowroomSweetsRequestController extends Controller
             )
             ->with(
                 'success',
-                'تم إنشاء طلب الحلويات ووضعه قيد المراجعة.'
+                'تم إنشاء طلب الحلويات واعتماده تلقائيًا من النظام.'
             );
     }
 
@@ -1389,7 +1389,11 @@ class ShowroomSweetsRequestController extends Controller
         User $user,
         ShowroomSweetsRequest $request
     ): bool {
-        if ($request->status->workflowValue() !== 'pending') {
+        if (! in_array(
+            $request->status->workflowValue(),
+            ['pending', 'in_progress'],
+            true
+        )) {
             return false;
         }
 
