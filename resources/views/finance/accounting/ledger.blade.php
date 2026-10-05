@@ -9,6 +9,15 @@
         <p class="page-subheading">حركات البيع والتحصيل والاسترداد والمصروفات المرحّلة، مع مصدر كل حركة وتاريخها.</p>
     </div>
     <div class="page-header-actions">
+        <a
+            class="btn btn-primary btn-sm"
+            href="{{ route('accounting.ledger.pdf', array_filter([
+                'date_from' => $from,
+                'date_to' => $to,
+                'location_id' => $locationId,
+                'entry_type' => $entryType,
+            ], fn ($value) => $value !== null && $value !== '')) }}"
+        >تحميل PDF</a>
         @can('financial.dashboard.view')
             <a class="btn btn-outline btn-sm" href="{{ route('financial.dashboard') }}">لوحة المالية</a>
         @endcan
