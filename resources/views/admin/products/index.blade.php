@@ -192,10 +192,10 @@
                 <p>أدخل بيانات المنتج واربطه بالفروع أو المصنع، وسيتم إنشاء SKU والباركود تلقائيًا.</p>
             </div>
 
-            <a href="#" class="product-create-close" id="closeProductCreateModalButton" aria-label="إغلاق">×</a>
+            <button type="button" class="product-create-close" id="closeProductCreateModalButton" aria-label="إغلاق">×</button>
         </div>
 
-        <form action="{{ route('products.store') }}" method="POST" enctype="multipart/form-data">
+        <form action="{{ route('products.store') }}" method="POST" enctype="multipart/form-data" class="product-create-form">
             @csrf
 
             <div class="product-create-body">
@@ -212,7 +212,7 @@
             </div>
 
             <div class="product-create-footer">
-                <a href="#" class="btn btn-ghost">إلغاء</a>
+                <button type="button" class="btn btn-ghost" id="cancelProductCreateModalButton">إلغاء</button>
                 <button type="submit" class="btn btn-gold">حفظ المنتج</button>
             </div>
         </form>
@@ -236,6 +236,7 @@
     visibility:hidden;
     pointer-events:none;
     transition:.18s ease;
+    overscroll-behavior:contain;
 }
 .product-create-modal.is-open,
 .product-create-modal:target{
@@ -244,10 +245,11 @@
     pointer-events:auto;
 }
 .product-create-dialog{
-    width:min(1080px,96vw);
-    max-height:92vh;
-    display:flex;
-    flex-direction:column;
+    width:min(1120px,96vw);
+    height:min(88vh,900px);
+    max-height:88vh;
+    display:grid;
+    grid-template-rows:auto minmax(0,1fr);
     background:var(--card-bg,#fff);
     border:1px solid var(--border);
     border-radius:18px;
@@ -287,36 +289,81 @@
     font-size:.75rem;
 }
 .product-create-close{
-    width:36px;
-    height:36px;
-    flex:0 0 36px;
+    width:40px;
+    height:40px;
+    flex:0 0 40px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
     border:1px solid var(--border);
     border-radius:50%;
     background:var(--surface,#fff);
     color:var(--text-muted);
-    font-size:1.4rem;
+    font-size:1.5rem;
+    line-height:1;
     cursor:pointer;
-    text-decoration:none;
+}
+.product-create-form{
+    min-height:0;
+    display:grid;
+    grid-template-rows:minmax(0,1fr) auto;
 }
 .product-create-body{
     min-height:0;
     overflow-y:auto;
-    padding:1.2rem 1.3rem;
+    overflow-x:hidden;
+    padding:1.2rem 1.3rem 2rem;
+    overscroll-behavior:contain;
+    scrollbar-gutter:stable;
+    scrollbar-width:thin;
+}
+.product-create-body::-webkit-scrollbar{
+    width:10px;
+}
+.product-create-body::-webkit-scrollbar-track{
+    background:transparent;
+}
+.product-create-body::-webkit-scrollbar-thumb{
+    background:rgba(100,116,139,.45);
+    border-radius:999px;
+    border:2px solid transparent;
+    background-clip:padding-box;
 }
 .product-create-footer{
-    flex:0 0 auto;
     display:flex;
     justify-content:flex-end;
     gap:.65rem;
     padding:1rem 1.3rem;
     border-top:1px solid var(--border);
     background:var(--off-white);
+    position:sticky;
+    bottom:0;
+    z-index:2;
 }
 @media(max-width:720px){
-    .product-create-modal{padding:.5rem}
-    .product-create-dialog{width:100%;max-height:96vh}
-    .product-create-footer{flex-direction:column-reverse}
-    .product-create-footer .btn{width:100%}
+    .product-create-modal{
+        padding:.35rem;
+        align-items:stretch;
+    }
+    .product-create-dialog{
+        width:100%;
+        height:calc(100dvh - .7rem);
+        max-height:calc(100dvh - .7rem);
+        border-radius:14px;
+    }
+    .product-create-header{
+        padding:1rem;
+    }
+    .product-create-body{
+        padding:1rem 1rem 1.5rem;
+    }
+    .product-create-footer{
+        flex-direction:column-reverse;
+        padding:.85rem 1rem;
+    }
+    .product-create-footer .btn{
+        width:100%;
+    }
 }
 </style>
 @endpush
@@ -341,6 +388,9 @@ function openProductCreateModal() {
     modal.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
 
+    const body = modal.querySelector('.product-create-body');
+    if (body) body.scrollTop = 0;
+
     const firstInput = modal.querySelector('input[name="name"]');
     if (firstInput) setTimeout(() => firstInput.focus(), 80);
 }
@@ -362,6 +412,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const modal = document.getElementById('productCreateModal');
     const openButton = document.getElementById('openProductCreateModalButton');
     const closeButton = document.getElementById('closeProductCreateModalButton');
+    const cancelButton = document.getElementById('cancelProductCreateModalButton');
 
     if (openButton) {
         openButton.addEventListener('click', function() {
@@ -370,8 +421,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (closeButton) {
-        closeButton.addEventListener('click', function(event) {
-            event.preventDefault();
+        closeButton.addEventListener('click', function() {
+            closeProductCreateModal();
+        });
+    }
+
+    if (cancelButton) {
+        cancelButton.addEventListener('click', function() {
             closeProductCreateModal();
         });
     }
