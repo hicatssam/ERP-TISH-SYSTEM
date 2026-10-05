@@ -120,7 +120,7 @@ class SpecialCakeAutoApprovalAndProductionReportTest extends TestCase
     }
 
     #[Test]
-    public function new_special_cake_waits_for_manual_review_when_auto_approval_is_disabled(): void
+    public function new_special_cake_is_auto_approved_even_if_legacy_setting_is_disabled(): void
     {
         SystemSetting::set(
             'special_cake_auto_approval',
@@ -144,7 +144,7 @@ class SpecialCakeAutoApprovalAndProductionReportTest extends TestCase
         $order->refresh();
 
         $this->assertSame(
-            CakeOrderStatus::Pending,
+            CakeOrderStatus::InProgress,
             $order->status
         );
 
@@ -153,7 +153,7 @@ class SpecialCakeAutoApprovalAndProductionReportTest extends TestCase
             [
                 'special_cake_order_id' => $order->id,
                 'from_status' => 'draft',
-                'to_status' => 'pending',
+                'to_status' => 'in_progress',
                 'changed_by' => $this->user->id,
             ]
         );
