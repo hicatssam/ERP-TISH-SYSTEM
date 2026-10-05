@@ -5,6 +5,15 @@
 <div class="page-actions">
     <div class="page-actions-title">طلبات كيك المعرض</div>
     <div class="action-btns">
+        @can('showroom_cake_daily_reports.view')
+            <a
+                href="{{ route('showroom-cake-daily-reports.index') }}"
+                class="btn btn-outline"
+            >
+                تقرير قسم الكيك
+            </a>
+        @endcan
+
         @can('reports.view')
             <a
                 href="{{ route('reports.show', 'cake-production') }}"
