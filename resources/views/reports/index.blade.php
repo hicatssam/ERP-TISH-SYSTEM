@@ -16,6 +16,67 @@
     </div>
 </div>
 
+@if(
+    auth()->user()->isAdmin()
+    || auth()->user()->can('showroom_daily_reports.view')
+    || auth()->user()->can('showroom_cake_daily_reports.view')
+)
+    <div style="margin-bottom:1.5rem">
+        <div style="font-size:.72rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);margin-bottom:.75rem;padding-bottom:.5rem;border-bottom:1px solid var(--border)">
+            تقارير المعارض اليومية
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.75rem">
+            @if(auth()->user()->isAdmin() || auth()->user()->can('showroom_daily_reports.view'))
+                <a
+                    href="{{ route('showroom-daily-reports.index') }}"
+                    class="stat-card stat-blue"
+                    style="text-decoration:none;cursor:pointer;transition:all .18s"
+                >
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 3h16v18H4z"/>
+                            <path d="M8 7h8M8 11h8M8 15h5"/>
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <div style="font-size:.88rem;font-weight:700;color:var(--text);line-height:1.3">
+                            تقرير المعرض اليومي
+                        </div>
+                        <div style="font-size:.7rem;color:var(--text-muted);margin-top:.15rem">
+                            حلويات المعرض والجرد اليومي
+                        </div>
+                    </div>
+                </a>
+            @endif
+
+            @if(auth()->user()->isAdmin() || auth()->user()->can('showroom_cake_daily_reports.view'))
+                <a
+                    href="{{ route('showroom-cake-daily-reports.index') }}"
+                    class="stat-card stat-gold"
+                    style="text-decoration:none;cursor:pointer;transition:all .18s"
+                >
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 10h16v10H4z"/>
+                            <path d="M6 10c0-3 2.5-5 6-5s6 2 6 5"/>
+                            <path d="M8 15h8"/>
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <div style="font-size:.88rem;font-weight:700;color:var(--text);line-height:1.3">
+                            تقرير قسم الكيك
+                        </div>
+                        <div style="font-size:.7rem;color:var(--text-muted);margin-top:.15rem">
+                            خاص بطلبات كيك الفروع فقط
+                        </div>
+                    </div>
+                </a>
+            @endif
+        </div>
+    </div>
+@endif
+
 @php
 $categories = [
     'المبيعات' => [
