@@ -18,6 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 use Mpdf\Mpdf;
@@ -572,6 +573,15 @@ class IncomingBankTransferController extends Controller
 
         $proof = $request->file('payment_proof');
 
+        $approvalStatus =
+            IncomingTransferStatus::from(
+                $validated['approval_status']
+            );
+
+        $isConfirmed =
+            $approvalStatus ===
+            IncomingTransferStatus::Confirmed;
+
         $transfer = IncomingBankTransfer::query()->create([
             'location_id' => $validated['location_id'],
             'payment_method_id' =>
@@ -587,19 +597,11 @@ class IncomingBankTransferController extends Controller
                         (string) $validated['sender_phone']
                     )
                     : null,
-            'sender_account_number' =>
-                filled(
-                    $validated['sender_account_number']
-                        ?? null
-                )
-                    ? trim(
-                        (string) $validated[
-                            'sender_account_number'
-                        ]
-                    )
-                    : null,
+            'sender_account_number' => null,
             'reference_number' =>
-                trim($validated['reference_number']),
+                'IBT-' . Str::upper(
+                    Str::random(12)
+                ),
             'amount' =>
                 round((float) $validated['amount'], 2),
             'currency_code' =>
@@ -609,8 +611,7 @@ class IncomingBankTransferController extends Controller
                         ?? 'ILS'
                     )
                 ),
-            'status' =>
-                IncomingTransferStatus::PendingVerification,
+            'status' => $approvalStatus,
             'payment_proof' => $proof
                 ? $proof->store(
                     'incoming-transfer-proofs',
@@ -626,12 +627,19 @@ class IncomingBankTransferController extends Controller
             'received_at' =>
                 $validated['received_at'] ?? now(),
             'created_by' => $request->user()->id,
+            'verified_by' => $isConfirmed
+                ? $request->user()->id
+                : null,
+            'verified_at' => $isConfirmed
+                ? now()
+                : null,
         ]);
 
         ActivityLogger::log(
             userId: $request->user()->id,
-            action:
-                'incoming_bank_transfer.recorded',
+            action: $isConfirmed
+                ? 'incoming_bank_transfer.recorded_and_verified'
+                : 'incoming_bank_transfer.recorded',
             module: 'payments',
             recordType: 'incoming_bank_transfers',
             recordId: $transfer->id,
@@ -652,7 +660,9 @@ class IncomingBankTransferController extends Controller
 
         return back()->with(
             'success',
-            'تم تسجيل الحوالة الواردة وهي بانتظار التحقق.'
+            $isConfirmed
+                ? 'تم تسجيل الحوالة واعتمادها مباشرة.'
+                : 'تم تسجيل الحوالة وهي بانتظار التحقق.'
         );
     }
 
