@@ -547,6 +547,9 @@ Route::post(
             ->middleware('can:payments.verify')
             ->name('incoming-bank-transfers.verify');
 
+        Route::delete('incoming-bank-transfers/{incomingBankTransfer}', [IncomingBankTransferController::class, 'destroy'])
+            ->name('incoming-bank-transfers.destroy');
+
         Route::get('payments/{payment}/proof', [PaymentController::class, 'proof'])
             ->name('payments.proof');
 
