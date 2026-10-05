@@ -3,7 +3,11 @@
 @section('page-title', 'القيد ' . $journal->number)
 @section('content')
 <div class="page-header"><div><h1 class="page-heading">القيد {{ $journal->number }}</h1><p class="page-subheading">{{ $journal->location?->name }} · {{ $journal->entry_date?->format('Y-m-d') }} · {{ $journal->period?->name }} · {{ $journal->currency_code }}</p></div>
-    <div><a href="{{ route('accounting.books.journals') }}" class="btn btn-outline">القيود</a> <button type="button" class="btn btn-outline" onclick="window.print()">طباعة</button></div></div>
+    <div>
+        <a href="{{ route('accounting.books.journals') }}" class="btn btn-outline">القيود</a>
+        <a href="{{ route('accounting.books.journals.pdf', $journal) }}" class="btn btn-primary">تحميل PDF</a>
+        <button type="button" class="btn btn-outline" onclick="window.print()">طباعة</button>
+    </div></div>
 <div class="card" style="margin-bottom:1rem"><div class="card-header"><span class="card-title">{{ $journal->description }}</span></div><div class="card-body">
     <p>النوع: {{ ['manual' => 'تسوية يدوية', 'receipt' => 'سند قبض', 'payment' => 'سند صرف', 'reversal' => 'قيد عكسي'][$journal->kind] ?? $journal->kind }} · سجله {{ $journal->creator?->display_name ?? '—' }} في {{ $journal->posted_at?->format('Y-m-d H:i') }}</p>
     @if($journal->original)<p>عكس القيد <a href="{{ route('accounting.books.journals.show', $journal->original) }}">{{ $journal->original->number }}</a></p>@endif
