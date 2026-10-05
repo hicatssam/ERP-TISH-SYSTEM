@@ -150,6 +150,75 @@
     grid-template-columns:repeat(2,minmax(0,1fr));
     gap:.65rem;
 }
+
+.menu-banner-modal {
+    position:fixed;
+    inset:0;
+    z-index:99999;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:1rem;
+    background:rgba(15,23,42,.62);
+    backdrop-filter:blur(3px);
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+    transition:.18s ease;
+}
+.menu-banner-modal.is-open {
+    opacity:1;
+    visibility:visible;
+    pointer-events:auto;
+}
+.menu-banner-modal-dialog {
+    width:min(980px,96vw);
+    max-height:90vh;
+    display:grid;
+    grid-template-rows:auto minmax(0,1fr);
+    background:var(--card-bg,#fff);
+    border:1px solid var(--border);
+    border-radius:18px;
+    box-shadow:0 24px 70px rgba(0,0,0,.28);
+    overflow:hidden;
+}
+.menu-banner-modal-header {
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:1rem;
+    padding:1rem 1.2rem;
+    border-bottom:1px solid var(--border);
+}
+.menu-banner-modal-header h3 {
+    margin:0;
+    font-size:1.05rem;
+    font-weight:900;
+}
+.menu-banner-modal-header p {
+    margin:.3rem 0 0;
+    color:var(--text-muted);
+    font-size:.75rem;
+}
+.menu-banner-modal-close {
+    width:40px;
+    height:40px;
+    flex:0 0 40px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    border:1px solid var(--border);
+    border-radius:50%;
+    background:var(--surface,#fff);
+    color:var(--text-muted);
+    font-size:1.5rem;
+    cursor:pointer;
+}
+.menu-banner-modal-body {
+    min-height:0;
+    overflow-y:auto;
+    padding:1rem 1.2rem 1.25rem;
+}
 @media(max-width:760px) {
     .menu-banner-page { gap:.75rem; }
     .menu-banner-card .card-header { padding:.9rem; }
@@ -204,10 +273,32 @@
         padding-top:.25rem;
     }
 
+    .menu-banner-actions {
+        display:grid;
+        grid-template-columns:1fr;
+        gap:.5rem;
+    }
+
     .menu-banner-actions .btn {
         width:100%;
         min-height:46px;
         box-shadow:0 8px 22px rgba(15,23,42,.12);
+    }
+
+    .menu-banner-modal {
+        padding:.35rem;
+        align-items:stretch;
+    }
+
+    .menu-banner-modal-dialog {
+        width:100%;
+        max-height:calc(100dvh - .7rem);
+        height:calc(100dvh - .7rem);
+        border-radius:14px;
+    }
+
+    .menu-banner-modal-body {
+        padding:.8rem;
     }
 
     .menu-banner-list {
@@ -283,7 +374,14 @@
                 <p>إدارة الصور الترويجية التي تظهر أعلى منيو العملاء.</p>
             </div>
 
-            @if($locations->count() > 1)
+            <div style="display:flex;align-items:flex-end;gap:.75rem;flex-wrap:wrap">
+                @can('restaurant_menu.manage')
+                    <button type="button" class="btn btn-gold" id="openMenuBannerCreate">
+                        + إضافة بانر
+                    </button>
+                @endcan
+
+                @if($locations->count() > 1)
                 <form method="GET" action="{{ route('restaurant.menu.banners.index') }}" class="menu-banner-location">
                     <label class="form-label" for="banner-location">الفرع</label>
                     <select
@@ -302,11 +400,22 @@
                         @endforeach
                     </select>
                 </form>
-            @endif
+                @endif
+            </div>
         </div>
 
         @can('restaurant_menu.manage')
-            <div class="card-body">
+            <div id="menuBannerCreateModal" class="menu-banner-modal" aria-hidden="true">
+                <div class="menu-banner-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="menuBannerCreateTitle">
+                    <div class="menu-banner-modal-header">
+                        <div>
+                            <h3 id="menuBannerCreateTitle">إضافة بانر جديد</h3>
+                            <p>أضف الصورة والمحتوى وحدد وقت الظهور.</p>
+                        </div>
+                        <button type="button" class="menu-banner-modal-close" id="closeMenuBannerCreate" aria-label="إغلاق">×</button>
+                    </div>
+
+                    <div class="menu-banner-modal-body">
                 <form
                     method="POST"
                     action="{{ route('restaurant.menu.banners.store') }}"
@@ -378,9 +487,12 @@
                     </section>
 
                     <div class="menu-banner-actions">
+                        <button type="button" class="btn btn-ghost" id="cancelMenuBannerCreate">إلغاء</button>
                         <button class="btn btn-gold" type="submit">إضافة البانر</button>
                     </div>
                 </form>
+                    </div>
+                </div>
             </div>
         @endcan
     </div>
@@ -523,4 +635,48 @@
         @endforelse
     </div>
 </div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modal = document.getElementById('menuBannerCreateModal');
+    const openButton = document.getElementById('openMenuBannerCreate');
+    const closeButton = document.getElementById('closeMenuBannerCreate');
+    const cancelButton = document.getElementById('cancelMenuBannerCreate');
+
+    if (!modal) return;
+
+    function openModal() {
+        modal.classList.add('is-open');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+        modal.classList.remove('is-open');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+    }
+
+    openButton?.addEventListener('click', openModal);
+    closeButton?.addEventListener('click', closeModal);
+    cancelButton?.addEventListener('click', closeModal);
+
+    modal.addEventListener('click', function (event) {
+        if (event.target === modal) closeModal();
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && modal.classList.contains('is-open')) {
+            closeModal();
+        }
+    });
+
+    @if($errors->any())
+        openModal();
+    @endif
+});
+</script>
+@endpush
+
 @endsection
