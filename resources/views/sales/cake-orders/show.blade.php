@@ -319,6 +319,12 @@
     :record="$cakeOrder"
 />
 
+<x-branch-delivery-card
+    :source="$cakeOrder"
+    :shipment="$cakeOrder->branchShipment?->loadMissing(['driver.employee','receivingInvoice'])"
+    source-type="special-cake"
+/>
+
 
 {{-- =========================================================
      البيانات الأساسية
