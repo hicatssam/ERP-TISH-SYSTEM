@@ -99,6 +99,11 @@ class SpecialCakeOrder extends Model
         return $this->hasOne(Invoice::class, 'order_id')->where('order_type', 'special_cake_order');
     }
 
+    public function branchShipment(): \Illuminate\Database\Eloquent\Relations\MorphOne
+    {
+        return $this->morphOne(BranchShipment::class, 'source');
+    }
+
     public function isInTerminalState(): bool
     {
         if ($this->status instanceof CakeOrderStatus) {
