@@ -4,12 +4,28 @@
 @section('page-title', 'تقرير المعرض اليومي')
 
 @section('content')
+@php
+    $statusLabels = [
+        'draft' => 'مسودة لدى الفرع',
+        'submitted' => 'بانتظار تدقيق المحاسب العام',
+        'approved' => 'معتمد',
+        'closed' => 'معتمد',
+    ];
+
+    $statusClasses = [
+        'draft' => 'badge-warning',
+        'submitted' => 'badge-warning',
+        'approved' => 'badge-active',
+        'closed' => 'badge-active',
+    ];
+@endphp
+
 <div class="page-header">
     <div>
         <h1 class="page-heading">تقرير المعرض اليومي</h1>
         <p class="page-subheading">
-            رصيد سابق + وارد اليوم − المبيعات − التالف − المرتجع = الرصيد النظري،
-            ثم يتم إدخال المتبقي الفعلي ليُرحّل لليوم التالي.
+            الاستلام والمبيعات تُقرأ تلقائيًا من النظام، ومسؤول الفرع يدخل فقط جرد آخر النهار وما يلزم من ملاحظات.
+            بعد الإرسال يتولى المحاسب العام التدقيق والاعتماد.
         </p>
     </div>
 
@@ -95,15 +111,14 @@
 
             @if($prior)
                 <p>
-                    آخر تقرير مسجل:
+                    آخر تقرير:
                     <strong>{{ $prior->business_date->format('Y-m-d') }}</strong>
-                    — حالته:
-                    <strong>{{ $prior->status === 'closed' ? 'مقفل' : 'مسودة' }}</strong>
+                    —
+                    <strong>{{ $statusLabels[$prior->status] ?? $prior->status }}</strong>
                 </p>
             @else
                 <p>
-                    هذا أول تقرير للفرع؛ ستدخل رصيد البداية يدويًا مرة واحدة،
-                    وبعد ذلك يترحل المتبقي تلقائيًا من اليوم السابق.
+                    هذا أول تقرير للفرع. رصيد البداية سيُقرأ من سجل المخزون في النظام.
                 </p>
             @endif
 
@@ -122,8 +137,10 @@
     </div>
 @else
     @php
-        $isClosed = $report->status === 'closed';
-        $openingLocked = (bool) $prior;
+        $isDraft = $report->status === 'draft';
+        $isSubmitted = $report->status === 'submitted';
+        $isApproved = in_array($report->status, ['approved', 'closed'], true);
+
         $totals = [
             'opening' => $report->items->sum(fn($i) => (float) $i->opening_kg),
             'trays' => $report->items->sum(fn($i) => (float) $i->received_trays),
@@ -131,6 +148,7 @@
             'sales' => $report->items->sum(fn($i) => (float) $i->sales_kg),
             'damaged' => $report->items->sum(fn($i) => (float) $i->damaged_kg),
             'returned' => $report->items->sum(fn($i) => (float) $i->returned_kg),
+            'other' => $report->items->sum(fn($i) => (float) $i->other_net_kg),
             'expected' => $report->items->sum(fn($i) => (float) $i->expected_closing_kg),
             'actual' => $report->items->sum(fn($i) => (float) ($i->actual_closing_kg ?? 0)),
             'variance' => $report->items->sum(fn($i) => (float) ($i->variance_kg ?? 0)),
@@ -143,29 +161,90 @@
             <span>{{ $report->business_date->format('Y-m-d') }}</span>
         </div>
 
-        <span class="badge {{ $isClosed ? 'badge-active' : 'badge-warning' }}">
-            {{ $isClosed ? 'مقفل' : 'مسودة' }}
+        <span class="badge {{ $statusClasses[$report->status] ?? 'badge-secondary' }}">
+            {{ $statusLabels[$report->status] ?? $report->status }}
         </span>
 
-        @if($isClosed && $report->closedBy)
+        @if($report->submittedBy)
             <small>
-                أغلقه {{ $report->closedBy->display_name }}
-                · {{ $report->closed_at?->format('Y-m-d H:i') }}
+                أرسله:
+                {{ $report->submittedBy->display_name }}
+                @if($report->submitted_at)
+                    · {{ $report->submitted_at->format('Y-m-d H:i') }}
+                @endif
+            </small>
+        @endif
+
+        @if($report->reviewedBy)
+            <small>
+                راجعه:
+                {{ $report->reviewedBy->display_name }}
+                @if($report->reviewed_at)
+                    · {{ $report->reviewed_at->format('Y-m-d H:i') }}
+                @endif
             </small>
         @endif
     </div>
 
+    @if($report->review_notes)
+        <div class="alert alert-info" style="margin-bottom:1rem">
+            <strong>ملاحظة المحاسب العام:</strong>
+            {{ $report->review_notes }}
+        </div>
+    @endif
+
     <div class="stats-grid showroom-summary-grid">
-        <div class="stat-card"><div class="stat-info"><div class="stat-value">{{ number_format($totals['opening'], 3) }}</div><div class="stat-label">الرصيد السابق / كجم</div></div></div>
-        <div class="stat-card"><div class="stat-info"><div class="stat-value">{{ number_format($totals['received'], 3) }}</div><div class="stat-label">وارد اليوم / كجم</div></div></div>
-        <div class="stat-card"><div class="stat-info"><div class="stat-value">{{ number_format($totals['sales'], 3) }}</div><div class="stat-label">مبيعات اليوم / كجم</div></div></div>
-        <div class="stat-card"><div class="stat-info"><div class="stat-value">{{ number_format($totals['actual'], 3) }}</div><div class="stat-label">المتبقي الفعلي / كجم</div></div></div>
+        <div class="stat-card"><div class="stat-info"><div class="stat-value">{{ number_format($totals['opening'], 3) }}</div><div class="stat-label">رصيد بداية اليوم / كجم</div></div></div>
+        <div class="stat-card"><div class="stat-info"><div class="stat-value">{{ number_format($totals['received'], 3) }}</div><div class="stat-label">الاستلام من الفواتير / كجم</div></div></div>
+        <div class="stat-card"><div class="stat-info"><div class="stat-value">{{ number_format($totals['sales'], 3) }}</div><div class="stat-label">المبيعات من النظام / كجم</div></div></div>
+        <div class="stat-card"><div class="stat-info"><div class="stat-value">{{ number_format($totals['actual'], 3) }}</div><div class="stat-label">جرد آخر النهار / كجم</div></div></div>
+    </div>
+
+    <div class="card receiving-card">
+        <div class="card-header">
+            <div>
+                <div class="card-title">فواتير الاستلام المرتبطة بهذا اليوم</div>
+                <small class="text-muted">
+                    الوارد بالكيلو لا يُكتب مرة ثانية هنا؛ يتم أخذه من استلامات المخزون الموجودة أصلًا.
+                </small>
+            </div>
+        </div>
+
+        <div class="card-body">
+            @forelse($receivingInvoices as $invoice)
+                <div class="receiving-invoice-row">
+                    <div>
+                        <strong dir="ltr">{{ $invoice->invoice_number }}</strong>
+                        <small>
+                            من {{ $invoice->sendingLocation?->name ?? '—' }}
+                            · استلمها {{ $invoice->receivedBy?->display_name ?? '—' }}
+                            · {{ $invoice->issued_at?->format('H:i') ?? '—' }}
+                        </small>
+                    </div>
+
+                    <div class="receiving-invoice-qty">
+                        {{ number_format((float) $invoice->total_items_received, 3) }}
+                    </div>
+
+                    <a
+                        href="{{ route('stock-receiving-invoices.show', $invoice) }}"
+                        class="btn btn-outline btn-xs"
+                        target="_blank"
+                    >
+                        فاتورة الاستلام
+                    </a>
+                </div>
+            @empty
+                <div class="empty-state-sm">
+                    لا توجد فاتورة استلام مسجلة لهذا الفرع في هذا اليوم.
+                </div>
+            @endforelse
+        </div>
     </div>
 
     <form
         method="POST"
         action="{{ route('showroom-daily-reports.update', $report) }}"
-        id="showroomDailyReportForm"
     >
         @csrf
         @method('PUT')
@@ -175,7 +254,7 @@
                 <div>
                     <div class="card-title">كشف تفصيلي للحلويات</div>
                     <small class="text-muted">
-                        المتبقي الفعلي هو الذي يترحل كرصد سابق لليوم التالي.
+                        الأعمدة الرمادية محسوبة تلقائيًا من المخزون. مسؤول الفرع يدخل فقط وارد السدر إن لزم، والمتبقي الفعلي آخر اليوم، والملاحظة.
                     </small>
                 </div>
             </div>
@@ -192,20 +271,19 @@
                             <th>مبيعات / كجم</th>
                             <th>تالف / كجم</th>
                             <th>مرتجع / كجم</th>
-                            <th>رصيد نظري / كجم</th>
-                            <th>المتبقي الفعلي / كجم</th>
-                            <th>الفرق / كجم</th>
+                            <th>حركات أخرى صافي</th>
+                            <th>رصيد النظام</th>
+                            <th>المتبقي الفعلي آخر النهار</th>
+                            <th>الفرق</th>
                             <th>ملاحظة</th>
                         </tr>
                     </thead>
 
                     <tbody>
                         @forelse($report->items as $item)
-                            <tr
-                                class="showroom-item-row"
-                                data-row-id="{{ $item->id }}"
-                            >
+                            <tr>
                                 <td>{{ $loop->iteration }}</td>
+
                                 <td class="showroom-product-name">
                                     <strong>{{ $item->product_name }}</strong>
                                     @if($item->product?->sku)
@@ -213,49 +291,31 @@
                                     @endif
                                 </td>
 
+                                <td class="auto-cell">{{ number_format((float) $item->opening_kg, 3) }}</td>
+
                                 <td>
                                     <input
                                         type="number"
-                                        step="0.001"
+                                        step="0.01"
                                         min="0"
-                                        name="items[{{ $item->id }}][opening_kg]"
-                                        value="{{ old("items.{$item->id}.opening_kg", $item->opening_kg) }}"
-                                        class="showroom-num opening"
-                                        @disabled($isClosed || $openingLocked)
+                                        name="items[{{ $item->id }}][received_trays]"
+                                        value="{{ old("items.{$item->id}.received_trays", $item->received_trays) }}"
+                                        class="showroom-num"
+                                        @disabled(!$isDraft || !$canManage)
                                     >
-                                    @if($openingLocked)
-                                        <input
-                                            type="hidden"
-                                            name="items[{{ $item->id }}][opening_kg]"
-                                            value="{{ $item->opening_kg }}"
-                                        >
-                                    @endif
                                 </td>
 
-                                @foreach([
-                                    'received_trays' => ['0.01', 'trays'],
-                                    'received_kg' => ['0.001', 'received'],
-                                    'sales_kg' => ['0.001', 'sales'],
-                                    'damaged_kg' => ['0.001', 'damaged'],
-                                    'returned_kg' => ['0.001', 'returned'],
-                                ] as $field => [$step, $class])
-                                    <td>
-                                        <input
-                                            type="number"
-                                            step="{{ $step }}"
-                                            min="0"
-                                            name="items[{{ $item->id }}][{{ $field }}]"
-                                            value="{{ old("items.{$item->id}.{$field}", $item->{$field}) }}"
-                                            class="showroom-num {{ $class }}"
-                                            @disabled($isClosed || !$canManage)
-                                        >
-                                    </td>
-                                @endforeach
+                                <td class="auto-cell">{{ number_format((float) $item->received_kg, 3) }}</td>
+                                <td class="auto-cell">{{ number_format((float) $item->sales_kg, 3) }}</td>
+                                <td class="auto-cell">{{ number_format((float) $item->damaged_kg, 3) }}</td>
+                                <td class="auto-cell">{{ number_format((float) $item->returned_kg, 3) }}</td>
 
-                                <td>
-                                    <strong class="expected">
-                                        {{ number_format((float) $item->expected_closing_kg, 3) }}
-                                    </strong>
+                                <td class="auto-cell {{ abs((float) $item->other_net_kg) > 0.0005 ? 'has-variance' : '' }}">
+                                    {{ number_format((float) $item->other_net_kg, 3) }}
+                                </td>
+
+                                <td class="auto-cell">
+                                    <strong>{{ number_format((float) $item->expected_closing_kg, 3) }}</strong>
                                 </td>
 
                                 <td>
@@ -265,14 +325,14 @@
                                         min="0"
                                         name="items[{{ $item->id }}][actual_closing_kg]"
                                         value="{{ old("items.{$item->id}.actual_closing_kg", $item->actual_closing_kg) }}"
-                                        class="showroom-num actual"
+                                        class="showroom-num"
                                         placeholder="الجرد الفعلي"
-                                        @disabled($isClosed || !$canManage)
+                                        @disabled(!$isDraft || !$canManage)
                                     >
                                 </td>
 
                                 <td>
-                                    <strong class="variance {{ (float) ($item->variance_kg ?? 0) != 0 ? 'has-variance' : '' }}">
+                                    <strong class="{{ abs((float) ($item->variance_kg ?? 0)) > 0.0005 ? 'has-variance' : '' }}">
                                         {{ $item->variance_kg === null ? '—' : number_format((float) $item->variance_kg, 3) }}
                                     </strong>
                                 </td>
@@ -284,13 +344,13 @@
                                         name="items[{{ $item->id }}][note]"
                                         value="{{ old("items.{$item->id}.note", $item->note) }}"
                                         class="showroom-note"
-                                        @disabled($isClosed || !$canManage)
+                                        @disabled(!$isDraft || !$canManage)
                                     >
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="12">
+                                <td colspan="13">
                                     <div class="empty-state-sm">
                                         لا توجد منتجات مفعلة لهذا الفرع.
                                     </div>
@@ -302,15 +362,16 @@
                     <tfoot>
                         <tr>
                             <th colspan="2">الإجمالي</th>
-                            <th id="totalOpening">{{ number_format($totals['opening'], 3) }}</th>
-                            <th id="totalTrays">{{ number_format($totals['trays'], 2) }}</th>
-                            <th id="totalReceived">{{ number_format($totals['received'], 3) }}</th>
-                            <th id="totalSales">{{ number_format($totals['sales'], 3) }}</th>
-                            <th id="totalDamaged">{{ number_format($totals['damaged'], 3) }}</th>
-                            <th id="totalReturned">{{ number_format($totals['returned'], 3) }}</th>
-                            <th id="totalExpected">{{ number_format($totals['expected'], 3) }}</th>
-                            <th id="totalActual">{{ number_format($totals['actual'], 3) }}</th>
-                            <th id="totalVariance">{{ number_format($totals['variance'], 3) }}</th>
+                            <th>{{ number_format($totals['opening'], 3) }}</th>
+                            <th>{{ number_format($totals['trays'], 2) }}</th>
+                            <th>{{ number_format($totals['received'], 3) }}</th>
+                            <th>{{ number_format($totals['sales'], 3) }}</th>
+                            <th>{{ number_format($totals['damaged'], 3) }}</th>
+                            <th>{{ number_format($totals['returned'], 3) }}</th>
+                            <th>{{ number_format($totals['other'], 3) }}</th>
+                            <th>{{ number_format($totals['expected'], 3) }}</th>
+                            <th>{{ number_format($totals['actual'], 3) }}</th>
+                            <th>{{ number_format($totals['variance'], 3) }}</th>
                             <th></th>
                         </tr>
                     </tfoot>
@@ -319,44 +380,110 @@
 
             <div class="card-body">
                 <div class="form-group">
-                    <label class="form-label">ملاحظات التقرير</label>
+                    <label class="form-label">ملاحظات الفرع</label>
                     <textarea
                         name="notes"
                         class="form-input"
                         rows="3"
                         maxlength="2000"
-                        @disabled($isClosed || !$canManage)
+                        @disabled(!$isDraft || !$canManage)
                     >{{ old('notes', $report->notes) }}</textarea>
                 </div>
             </div>
 
-            @if(!$isClosed && $canManage)
+            @if($isDraft && $canManage)
                 <div class="card-footer showroom-actions">
-                    <button type="submit" class="btn btn-gold">
-                        حفظ التقرير
+                    <button type="submit" class="btn btn-outline">
+                        حفظ الجرد
                     </button>
                 </div>
             @endif
         </div>
     </form>
 
-    <div class="showroom-close-panel">
-        @if(!$isClosed && $canClose)
+    @if($isDraft && $canSubmit)
+        <div class="showroom-workflow-card branch-submit-card">
+            <div>
+                <strong>الخطوة الأخيرة للفرع</strong>
+                <span>
+                    بعد إدخال المتبقي الفعلي لكل صنف، أرسل التقرير للمحاسب العام.
+                </span>
+            </div>
+
             <form
                 method="POST"
-                action="{{ route('showroom-daily-reports.close', $report) }}"
-                onsubmit="return confirm('بعد الإقفال سيصبح المتبقي الفعلي رصيد بداية اليوم التالي. متابعة؟')"
+                action="{{ route('showroom-daily-reports.submit', $report) }}"
+                onsubmit="return confirm('إرسال التقرير للمحاسب العام؟ بعد الإرسال لن يستطيع الفرع تعديله إلا إذا أعاده المحاسب للتصحيح.')"
             >
                 @csrf
-                <button type="submit" class="btn btn-success">
-                    إقفال اليوم وترحيل الرصيد
+                <button type="submit" class="btn btn-gold">
+                    إرسال للمحاسب العام
                 </button>
             </form>
-        @elseif($isClosed && $canReopen)
+        </div>
+    @endif
+
+    @if($isSubmitted && $canReview)
+        <div class="showroom-workflow-card accounting-review-card">
+            <div class="accounting-review-head">
+                <div>
+                    <strong>تدقيق المحاسب العام</strong>
+                    <span>
+                        راجع فواتير الاستلام، رصيد النظام، الجرد الفعلي والفروقات قبل الاعتماد.
+                    </span>
+                </div>
+            </div>
+
+            <div class="accounting-review-actions">
+                <form
+                    method="POST"
+                    action="{{ route('showroom-daily-reports.approve', $report) }}"
+                    class="review-form"
+                    onsubmit="return confirm('اعتماد التقرير وترحيل المتبقي لليوم التالي؟')"
+                >
+                    @csrf
+                    <textarea
+                        name="review_notes"
+                        class="form-input"
+                        rows="2"
+                        maxlength="2000"
+                        placeholder="ملاحظة المحاسب — اختيارية عند الاعتماد"
+                    ></textarea>
+
+                    <button type="submit" class="btn btn-success">
+                        اعتماد التقرير
+                    </button>
+                </form>
+
+                <form
+                    method="POST"
+                    action="{{ route('showroom-daily-reports.return', $report) }}"
+                    class="review-form"
+                >
+                    @csrf
+                    <textarea
+                        name="review_notes"
+                        class="form-input"
+                        rows="2"
+                        maxlength="2000"
+                        required
+                        placeholder="سبب الإرجاع للفرع للتصحيح"
+                    ></textarea>
+
+                    <button type="submit" class="btn btn-danger">
+                        إرجاع للفرع
+                    </button>
+                </form>
+            </div>
+        </div>
+    @endif
+
+    @if($isApproved && $canReopen)
+        <div class="showroom-close-panel">
             <form
                 method="POST"
                 action="{{ route('showroom-daily-reports.reopen', $report) }}"
-                onsubmit="return confirm('إعادة فتح التقرير للتعديل؟')"
+                onsubmit="return confirm('إعادة فتح التقرير للفرع؟')"
             >
                 @csrf
                 <button
@@ -365,11 +492,11 @@
                     @disabled($hasLater)
                     title="{{ $hasLater ? 'يوجد تقرير يوم لاحق يعتمد على هذا الرصيد' : '' }}"
                 >
-                    إعادة فتح التقرير
+                    إعادة فتح للتصحيح
                 </button>
             </form>
-        @endif
-    </div>
+        </div>
+    @endif
 @endif
 @endsection
 
@@ -382,108 +509,34 @@
 .showroom-status-bar > div{display:grid;gap:.15rem;margin-inline-end:auto}
 .showroom-status-bar small{color:var(--text-muted)}
 .showroom-summary-grid{grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:1rem}
+.receiving-card{margin-bottom:1rem}
+.receiving-invoice-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:.8rem;align-items:center;padding:.7rem 0;border-bottom:1px solid var(--border)}
+.receiving-invoice-row:last-child{border-bottom:0}
+.receiving-invoice-row > div:first-child{display:grid;gap:.18rem}
+.receiving-invoice-row small{color:var(--text-muted);font-size:.7rem}
+.receiving-invoice-qty{font-weight:900}
 .showroom-report-card{overflow:hidden}
-.showroom-report-table{min-width:1500px}
+.showroom-report-table{min-width:1700px}
 .showroom-report-table th,.showroom-report-table td{text-align:center;vertical-align:middle;padding:.45rem}
 .showroom-product-name{min-width:170px;text-align:right!important}
 .showroom-product-name small{display:block;color:var(--text-muted);font-size:.62rem}
+.auto-cell{background:var(--off-white);color:var(--text-muted)}
 .showroom-num,.showroom-note{width:100%;min-width:88px;padding:.42rem .45rem;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font:inherit;text-align:center}
 .showroom-note{min-width:140px;text-align:right}
 .showroom-num:disabled,.showroom-note:disabled{background:var(--off-white);color:var(--text-muted)}
-.expected{color:#0b6fcb}
-.variance.has-variance{color:#b42318}
+.has-variance{color:#b42318!important;font-weight:900}
 .showroom-actions{display:flex;justify-content:flex-end}
+.showroom-workflow-card{display:flex;justify-content:space-between;gap:1rem;align-items:center;margin-top:1rem;padding:1rem;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
+.showroom-workflow-card > div:first-child{display:grid;gap:.2rem}
+.showroom-workflow-card span{color:var(--text-muted);font-size:.72rem}
+.accounting-review-card{display:block}
+.accounting-review-actions{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem}
+.review-form{display:grid;gap:.65rem}
 .showroom-close-panel{display:flex;justify-content:flex-end;margin-top:1rem}
 @media(max-width:900px){
-    .showroom-filter-grid,.showroom-summary-grid{grid-template-columns:1fr}
+    .showroom-filter-grid,.showroom-summary-grid,.accounting-review-actions{grid-template-columns:1fr}
+    .showroom-workflow-card{align-items:stretch;flex-direction:column}
+    .receiving-invoice-row{grid-template-columns:1fr}
 }
 </style>
-@endpush
-
-@push('scripts')
-<script>
-function showroomNumber(input) {
-    const value = parseFloat(input?.value || '0');
-    return Number.isFinite(value) ? value : 0;
-}
-
-function recalculateShowroomReport() {
-    let totals = {
-        opening: 0,
-        trays: 0,
-        received: 0,
-        sales: 0,
-        damaged: 0,
-        returned: 0,
-        expected: 0,
-        actual: 0,
-        variance: 0,
-    };
-
-    document.querySelectorAll('.showroom-item-row').forEach((row) => {
-        const opening = showroomNumber(row.querySelector('.opening'));
-        const trays = showroomNumber(row.querySelector('.trays'));
-        const received = showroomNumber(row.querySelector('.received'));
-        const sales = showroomNumber(row.querySelector('.sales'));
-        const damaged = showroomNumber(row.querySelector('.damaged'));
-        const returned = showroomNumber(row.querySelector('.returned'));
-        const actualInput = row.querySelector('.actual');
-
-        const expected = Math.max(
-            0,
-            opening + received - sales - damaged - returned
-        );
-
-        const hasActual = actualInput && actualInput.value !== '';
-        const actual = hasActual ? showroomNumber(actualInput) : 0;
-        const variance = hasActual ? actual - expected : null;
-
-        row.querySelector('.expected').textContent = expected.toFixed(3);
-
-        const varianceEl = row.querySelector('.variance');
-        varianceEl.textContent = variance === null ? '—' : variance.toFixed(3);
-        varianceEl.classList.toggle(
-            'has-variance',
-            variance !== null && Math.abs(variance) > 0.0005
-        );
-
-        totals.opening += opening;
-        totals.trays += trays;
-        totals.received += received;
-        totals.sales += sales;
-        totals.damaged += damaged;
-        totals.returned += returned;
-        totals.expected += expected;
-        totals.actual += actual;
-        totals.variance += variance ?? 0;
-    });
-
-    const fields = {
-        totalOpening: [totals.opening, 3],
-        totalTrays: [totals.trays, 2],
-        totalReceived: [totals.received, 3],
-        totalSales: [totals.sales, 3],
-        totalDamaged: [totals.damaged, 3],
-        totalReturned: [totals.returned, 3],
-        totalExpected: [totals.expected, 3],
-        totalActual: [totals.actual, 3],
-        totalVariance: [totals.variance, 3],
-    };
-
-    Object.entries(fields).forEach(([id, [value, digits]]) => {
-        const element = document.getElementById(id);
-        if (element) element.textContent = value.toFixed(digits);
-    });
-}
-
-document.addEventListener('DOMContentLoaded', function () {
-    document
-        .querySelectorAll('.showroom-item-row input')
-        .forEach((input) => {
-            input.addEventListener('input', recalculateShowroomReport);
-        });
-
-    recalculateShowroomReport();
-});
-</script>
 @endpush
