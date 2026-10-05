@@ -37,7 +37,12 @@ class ProductController extends Controller
     {
         $user = $request->user();
         $query = Product::query()
-            ->with(['category', 'brand', 'unitDefinition'])
+            ->with([
+                'category',
+                'brand',
+                'unitDefinition',
+                'locationProducts.location',
+            ])
             ->withCount('variants');
 
         if (! $this->isSystemAdmin($user)) {
@@ -325,13 +330,17 @@ class ProductController extends Controller
             $locations = $this->activeProductLocations();
         } else {
             $managedLocation = $this->managedBranch($user);
-            $categories->whereHas('products', fn (Builder $products) => $products->whereHas(
-                'locationProducts',
-                fn (Builder $locationProducts) => $this->constrainLocationProducts($locationProducts, (int) $managedLocation->id)
-            ));
+            // Categories are global catalog definitions. A branch with create
+            // permission must be able to use an active category even when it
+            // does not already contain a product for that branch.
         }
 
-        return [$categories->orderBy('sort_order')->get(), $locations, $managedLocation, $canManageLocations];
+        return [
+            $categories->orderBy('sort_order')->get(),
+            $locations,
+            $managedLocation,
+            $canManageLocations,
+        ];
     }
 
     private function constrainLocationProducts(Builder|Relation $locationProducts, int $locationId): Builder|Relation
@@ -467,13 +476,22 @@ class ProductController extends Controller
 
     private function ensureCategoryAvailableToUser(int $categoryId, User $user): void
     {
-        if ($this->isSystemAdmin($user)) return;
-        $location = $this->managedBranch($user);
-        $canUse = Category::query()->whereKey($categoryId)->whereHas('products', fn (Builder $products) => $products->whereHas(
-            'locationProducts',
-            fn (Builder $locationProducts) => $this->constrainLocationProducts($locationProducts, (int) $location->id)
-        ))->exists();
-        abort_unless($canUse, 403, 'لا يمكنك اختيار فئة لا تخص فرعك.');
+        if ($this->isSystemAdmin($user)) {
+            return;
+        }
+
+        $this->managedBranch($user);
+
+        $canUse = Category::query()
+            ->active()
+            ->whereKey($categoryId)
+            ->exists();
+
+        abort_unless(
+            $canUse,
+            403,
+            'الفئة المحددة غير متاحة.'
+        );
     }
 
     private function managedBranch(User $user): Location
