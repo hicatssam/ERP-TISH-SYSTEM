@@ -7,6 +7,34 @@
         <div class="page-actions-title">أسعار الصرف</div>
 
         <div style="display:flex;gap:.6rem;flex-wrap:wrap">
+            @can('system_currencies.manage')
+                @if(\Illuminate\Support\Facades\Route::has('settings.currencies.index'))
+                    <a
+                        class="btn btn-gold"
+                        href="{{ route('settings.currencies.index', ['open' => 'create']) }}"
+                        style="display:inline-flex;align-items:center;gap:.45rem"
+                        title="إضافة عملة جديدة"
+                    >
+                        <svg
+                            viewBox="0 0 24 24"
+                            width="18"
+                            height="18"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                        >
+                            <circle cx="12" cy="12" r="9"></circle>
+                            <path d="M12 7v10"></path>
+                            <path d="M7 12h10"></path>
+                        </svg>
+                        <span>إضافة عملة</span>
+                    </a>
+                @endif
+            @endcan
+
             @can('system_currencies.view')
                 @if(\Illuminate\Support\Facades\Route::has('settings.currencies.index'))
                     <a
