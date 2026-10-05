@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers\Inventory;
 
+use App\Enums\MovementReason;
+use App\Enums\MovementType;
 use App\Http\Controllers\Controller;
+use App\Models\Inventory;
 use App\Models\Location;
 use App\Models\Product;
 use App\Models\ShowroomDailyReport;
 use App\Models\ShowroomDailyReportItem;
+use App\Models\StockMovement;
+use App\Models\StockReceivingInvoice;
 use App\Services\ActivityLogger;
 use App\Services\Finance\AccountingPdfService;
 use Carbon\CarbonImmutable;
@@ -76,12 +81,27 @@ class ShowroomDailyReportController extends Controller
                 'location',
                 'items.product',
                 'creator.employee',
+                'submittedBy.employee',
+                'reviewedBy.employee',
                 'closedBy.employee',
                 'reopenedBy.employee',
             ])
             ->where('location_id', $locationId)
             ->whereDate('business_date', $date)
             ->first();
+
+        if ($report && $report->isDraft()) {
+            $this->syncAutomaticColumns($report);
+            $report->refresh()->load([
+                'location',
+                'items.product',
+                'creator.employee',
+                'submittedBy.employee',
+                'reviewedBy.employee',
+                'closedBy.employee',
+                'reopenedBy.employee',
+            ]);
+        }
 
         $prior = ShowroomDailyReport::query()
             ->where('location_id', $locationId)
@@ -94,6 +114,13 @@ class ShowroomDailyReportController extends Controller
             ->whereDate('business_date', '>', $date)
             ->exists();
 
+        $receivingInvoices = StockReceivingInvoice::query()
+            ->with(['receivedBy.employee', 'sendingLocation'])
+            ->where('receiving_location_id', $locationId)
+            ->whereDate('issued_at', $date)
+            ->orderBy('issued_at')
+            ->get();
+
         return view('inventory.showroom-daily-reports.index', [
             'locations' => $locations,
             'locationId' => $locationId,
@@ -101,9 +128,11 @@ class ShowroomDailyReportController extends Controller
             'report' => $report,
             'prior' => $prior,
             'hasLater' => $hasLater,
+            'receivingInvoices' => $receivingInvoices,
             'canManage' => $this->canManage($request),
-            'canClose' => $this->canClose($request),
-            'canReopen' => $this->canReopen($request),
+            'canSubmit' => $this->canManage($request),
+            'canReview' => $this->canReview($request),
+            'canReopen' => $this->canReview($request),
         ]);
     }
 
@@ -152,7 +181,7 @@ class ShowroomDailyReportController extends Controller
 
                 if (! $prior->isClosed()) {
                     throw ValidationException::withMessages([
-                        'date' => 'يجب إقفال تقرير اليوم السابق أولًا قبل إنشاء تقرير جديد.',
+                        'date' => 'يجب أن يعتمد المحاسب العام تقرير اليوم السابق قبل إنشاء تقرير يوم جديد.',
                     ]);
                 }
             }
@@ -172,11 +201,6 @@ class ShowroomDailyReportController extends Controller
                     ->keyBy('product_id')
                 : collect();
 
-            /*
-             * A product with carried stock must never disappear just because
-             * it was disabled for new sales today. Keep every product that had
-             * a prior-day report line so its closing balance can roll forward.
-             */
             if ($priorClosing->isNotEmpty()) {
                 $missingProductIds = $priorClosing
                     ->keys()
@@ -184,12 +208,12 @@ class ShowroomDailyReportController extends Controller
                     ->values();
 
                 if ($missingProductIds->isNotEmpty()) {
-                    $carriedProducts = Product::query()
-                        ->whereIn('id', $missingProductIds)
-                        ->get();
-
                     $products = $products
-                        ->concat($carriedProducts)
+                        ->concat(
+                            Product::query()
+                                ->whereIn('id', $missingProductIds)
+                                ->get()
+                        )
                         ->unique('id')
                         ->values();
                 }
@@ -202,20 +226,26 @@ class ShowroomDailyReportController extends Controller
                         $previousItem->actual_closing_kg
                         ?? $previousItem->expected_closing_kg
                     )
-                    : 0.0;
+                    : $this->systemOpeningBalance(
+                        $locationId,
+                        (int) $product->id,
+                        $date
+                    );
 
                 ShowroomDailyReportItem::query()->create([
                     'report_id' => $report->id,
                     'product_id' => $product->id,
                     'product_name' => $product->name_ar ?: $product->name,
                     'sort_order' => $index + 1,
-                    'opening_kg' => $opening,
-                    'expected_closing_kg' => $opening,
+                    'opening_kg' => max(0, $opening),
+                    'expected_closing_kg' => max(0, $opening),
                 ]);
             }
 
             return $report;
         });
+
+        $this->syncAutomaticColumns($report);
 
         ActivityLogger::log(
             userId: $request->user()->id,
@@ -236,7 +266,10 @@ class ShowroomDailyReportController extends Controller
                 'location_id' => $locationId,
                 'date' => $date,
             ])
-            ->with('success', 'تم إنشاء تقرير المعرض اليومي.');
+            ->with(
+                'success',
+                'تم إنشاء تقرير اليوم وربط الوارد والمبيعات بحركات النظام تلقائيًا.'
+            );
     }
 
     public function update(
@@ -249,69 +282,45 @@ class ShowroomDailyReportController extends Controller
             (int) $showroomDailyReport->location_id
         );
 
-        if ($showroomDailyReport->isClosed()) {
+        if (! $showroomDailyReport->isDraft()) {
             throw ValidationException::withMessages([
-                'report' => 'التقرير مقفل. يجب إعادة فتحه قبل التعديل.',
+                'report' => 'لا يمكن تعديل التقرير بعد إرساله للمحاسبة.',
             ]);
         }
 
         $data = $request->validate([
             'notes' => ['nullable', 'string', 'max:2000'],
             'items' => ['required', 'array'],
-            'items.*.opening_kg' => ['nullable', 'numeric', 'min:0', 'max:999999999.999'],
-            'items.*.received_trays' => ['nullable', 'numeric', 'min:0', 'max:9999999.99'],
-            'items.*.received_kg' => ['nullable', 'numeric', 'min:0', 'max:999999999.999'],
-            'items.*.sales_kg' => ['nullable', 'numeric', 'min:0', 'max:999999999.999'],
-            'items.*.damaged_kg' => ['nullable', 'numeric', 'min:0', 'max:999999999.999'],
-            'items.*.returned_kg' => ['nullable', 'numeric', 'min:0', 'max:999999999.999'],
-            'items.*.actual_closing_kg' => ['nullable', 'numeric', 'min:0', 'max:999999999.999'],
+            'items.*.received_trays' => [
+                'nullable',
+                'numeric',
+                'min:0',
+                'max:9999999.99',
+            ],
+            'items.*.actual_closing_kg' => [
+                'nullable',
+                'numeric',
+                'min:0',
+                'max:999999999.999',
+            ],
             'items.*.note' => ['nullable', 'string', 'max:500'],
         ]);
 
-        $prior = ShowroomDailyReport::query()
-            ->where('location_id', $showroomDailyReport->location_id)
-            ->whereDate('business_date', '<', $showroomDailyReport->business_date)
-            ->latest('business_date')
-            ->first();
+        $this->syncAutomaticColumns($showroomDailyReport);
 
-        DB::transaction(function () use ($showroomDailyReport, $data, $prior): void {
+        DB::transaction(function () use ($showroomDailyReport, $data): void {
             $locked = ShowroomDailyReport::query()
                 ->lockForUpdate()
                 ->findOrFail($showroomDailyReport->id);
 
-            if ($locked->isClosed()) {
+            if (! $locked->isDraft()) {
                 throw ValidationException::withMessages([
-                    'report' => 'تم إقفال التقرير أثناء التعديل.',
+                    'report' => 'تم إرسال التقرير للمحاسبة أثناء التعديل.',
                 ]);
             }
 
             foreach ($locked->items()->get() as $item) {
                 $input = $data['items'][$item->id] ?? [];
-
-                $opening = $prior
-                    ? (float) $item->opening_kg
-                    : (float) ($input['opening_kg'] ?? $item->opening_kg ?? 0);
-
-                $receivedKg = (float) ($input['received_kg'] ?? 0);
-                $salesKg = (float) ($input['sales_kg'] ?? 0);
-                $damagedKg = (float) ($input['damaged_kg'] ?? 0);
-                $returnedKg = (float) ($input['returned_kg'] ?? 0);
-
-                $expected = round(
-                    $opening
-                    + $receivedKg
-                    - $salesKg
-                    - $damagedKg
-                    - $returnedKg,
-                    3
-                );
-
-                if ($expected < -0.0005) {
-                    throw ValidationException::withMessages([
-                        "items.{$item->id}.sales_kg" =>
-                            'لا يمكن أن يصبح الرصيد النظري سالبًا للصنف: ' . $item->product_name,
-                    ]);
-                }
 
                 $actual = array_key_exists('actual_closing_kg', $input)
                     && $input['actual_closing_kg'] !== null
@@ -320,17 +329,16 @@ class ShowroomDailyReportController extends Controller
                         : null;
 
                 $item->update([
-                    'opening_kg' => max(0, $opening),
-                    'received_trays' => (float) ($input['received_trays'] ?? 0),
-                    'received_kg' => $receivedKg,
-                    'sales_kg' => $salesKg,
-                    'damaged_kg' => $damagedKg,
-                    'returned_kg' => $returnedKg,
-                    'expected_closing_kg' => max(0, $expected),
+                    'received_trays' =>
+                        (float) ($input['received_trays'] ?? 0),
                     'actual_closing_kg' => $actual,
                     'variance_kg' => $actual === null
                         ? null
-                        : round($actual - max(0, $expected), 3),
+                        : round(
+                            $actual
+                            - (float) $item->expected_closing_kg,
+                            3
+                        ),
                     'note' => filled($input['note'] ?? null)
                         ? trim((string) $input['note'])
                         : null,
@@ -346,7 +354,7 @@ class ShowroomDailyReportController extends Controller
 
         ActivityLogger::log(
             userId: $request->user()->id,
-            action: 'showroom_daily_report.updated',
+            action: 'showroom_daily_report.branch_updated',
             module: 'inventory',
             recordType: 'showroom_daily_reports',
             recordId: $showroomDailyReport->id,
@@ -354,97 +362,180 @@ class ShowroomDailyReportController extends Controller
             newValues: ['status' => 'draft'],
         );
 
-        return back()->with('success', 'تم حفظ بيانات التقرير اليومي.');
+        return back()->with(
+            'success',
+            'تم حفظ جرد نهاية اليوم. الوارد والمبيعات تبقى مرتبطة بسجلات النظام.'
+        );
     }
 
-    public function close(
+    public function submit(
         Request $request,
         ShowroomDailyReport $showroomDailyReport
     ): RedirectResponse {
-        $this->assertCloseAccess($request);
+        $this->assertManageAccess($request);
         $this->assertLocationAccess(
             $request,
             (int) $showroomDailyReport->location_id
         );
 
-        DB::transaction(function () use ($request, $showroomDailyReport): void {
-            $report = ShowroomDailyReport::query()
-                ->with('items')
-                ->lockForUpdate()
-                ->findOrFail($showroomDailyReport->id);
+        if (! $showroomDailyReport->isDraft()) {
+            throw ValidationException::withMessages([
+                'report' => 'التقرير مرسل للمحاسبة مسبقًا.',
+            ]);
+        }
 
-            if ($report->isClosed()) {
-                return;
-            }
+        $this->syncAutomaticColumns($showroomDailyReport);
 
-            $later = ShowroomDailyReport::query()
-                ->where('location_id', $report->location_id)
-                ->whereDate('business_date', '>', $report->business_date)
-                ->exists();
+        $showroomDailyReport->load('items');
 
-            if ($later) {
+        foreach ($showroomDailyReport->items as $item) {
+            $hasActivity =
+                abs((float) $item->opening_kg) > 0.0005
+                || abs((float) $item->received_kg) > 0.0005
+                || abs((float) $item->sales_kg) > 0.0005
+                || abs((float) $item->damaged_kg) > 0.0005
+                || abs((float) $item->returned_kg) > 0.0005
+                || abs((float) $item->other_net_kg) > 0.0005;
+
+            if ($hasActivity && $item->actual_closing_kg === null) {
                 throw ValidationException::withMessages([
-                    'report' => 'يوجد تقرير ليوم لاحق؛ لا يمكن إقفال هذا اليوم بعد إنشاء يوم لاحق.',
+                    "item_{$item->id}" =>
+                        'أدخل الكمية المتبقية آخر النهار للصنف "'
+                        . $item->product_name
+                        . '" قبل إرسال التقرير.',
                 ]);
             }
+        }
 
-            foreach ($report->items as $item) {
-                $hasActivity =
-                    (float) $item->opening_kg > 0
-                    || (float) $item->received_kg > 0
-                    || (float) $item->received_trays > 0
-                    || (float) $item->sales_kg > 0
-                    || (float) $item->damaged_kg > 0
-                    || (float) $item->returned_kg > 0;
-
-                if ($hasActivity && $item->actual_closing_kg === null) {
-                    throw ValidationException::withMessages([
-                        "item_{$item->id}" =>
-                            'أدخل المتبقي الفعلي للصنف "' . $item->product_name . '" قبل الإقفال.',
-                    ]);
-                }
-
-                if ($item->actual_closing_kg === null) {
-                    $item->update([
-                        'actual_closing_kg' => (float) $item->expected_closing_kg,
-                        'variance_kg' => 0,
-                    ]);
-                }
-            }
-
-            $report->update([
-                'status' => 'closed',
-                'closed_by' => $request->user()->id,
-                'closed_at' => now(),
-            ]);
-        });
+        $showroomDailyReport->update([
+            'status' => 'submitted',
+            'submitted_by' => $request->user()->id,
+            'submitted_at' => now(),
+            'reviewed_by' => null,
+            'reviewed_at' => null,
+        ]);
 
         ActivityLogger::log(
             userId: $request->user()->id,
-            action: 'showroom_daily_report.closed',
+            action: 'showroom_daily_report.submitted',
             module: 'inventory',
             recordType: 'showroom_daily_reports',
             recordId: $showroomDailyReport->id,
             oldValues: ['status' => 'draft'],
-            newValues: ['status' => 'closed'],
+            newValues: ['status' => 'submitted'],
         );
 
         return back()->with(
             'success',
-            'تم إقفال التقرير. المتبقي الفعلي سيصبح رصيد بداية اليوم التالي.'
+            'تم إرسال التقرير للمحاسب العام للمراجعة والاعتماد.'
         );
     }
 
+    public function approve(
+        Request $request,
+        ShowroomDailyReport $showroomDailyReport
+    ): RedirectResponse {
+        $this->assertReviewAccess($request);
+        $this->assertLocationAccess(
+            $request,
+            (int) $showroomDailyReport->location_id
+        );
+
+        $data = $request->validate([
+            'review_notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        if (! $showroomDailyReport->isSubmitted()) {
+            throw ValidationException::withMessages([
+                'report' => 'يمكن اعتماد التقارير المرسلة للمحاسبة فقط.',
+            ]);
+        }
+
+        $showroomDailyReport->update([
+            'status' => 'approved',
+            'reviewed_by' => $request->user()->id,
+            'reviewed_at' => now(),
+            'review_notes' => filled($data['review_notes'] ?? null)
+                ? trim((string) $data['review_notes'])
+                : null,
+            'closed_by' => $request->user()->id,
+            'closed_at' => now(),
+        ]);
+
+        ActivityLogger::log(
+            userId: $request->user()->id,
+            action: 'showroom_daily_report.approved',
+            module: 'inventory',
+            recordType: 'showroom_daily_reports',
+            recordId: $showroomDailyReport->id,
+            oldValues: ['status' => 'submitted'],
+            newValues: ['status' => 'approved'],
+        );
+
+        return back()->with(
+            'success',
+            'تم تدقيق واعتماد تقرير المعرض. أصبح جاهزًا للترحيل لليوم التالي.'
+        );
+    }
+
+    public function returnForCorrection(
+        Request $request,
+        ShowroomDailyReport $showroomDailyReport
+    ): RedirectResponse {
+        $this->assertReviewAccess($request);
+        $this->assertLocationAccess(
+            $request,
+            (int) $showroomDailyReport->location_id
+        );
+
+        $data = $request->validate([
+            'review_notes' => ['required', 'string', 'min:3', 'max:2000'],
+        ]);
+
+        if (! $showroomDailyReport->isSubmitted()) {
+            throw ValidationException::withMessages([
+                'report' => 'يمكن إعادة التقارير المرسلة للمحاسبة فقط.',
+            ]);
+        }
+
+        $showroomDailyReport->update([
+            'status' => 'draft',
+            'reviewed_by' => $request->user()->id,
+            'reviewed_at' => now(),
+            'review_notes' => trim($data['review_notes']),
+            'submitted_by' => null,
+            'submitted_at' => null,
+        ]);
+
+        ActivityLogger::log(
+            userId: $request->user()->id,
+            action: 'showroom_daily_report.returned_for_correction',
+            module: 'inventory',
+            recordType: 'showroom_daily_reports',
+            recordId: $showroomDailyReport->id,
+            oldValues: ['status' => 'submitted'],
+            newValues: [
+                'status' => 'draft',
+                'review_notes' => trim($data['review_notes']),
+            ],
+        );
+
+        return back()->with(
+            'success',
+            'تمت إعادة التقرير للفرع للتصحيح.'
+        );
+    }
+
+    /**
+     * Legacy endpoint retained for existing route compatibility.
+     * Approved reports can only be reopened by accounting/admin when no later
+     * report depends on their carried balance.
+     */
     public function reopen(
         Request $request,
         ShowroomDailyReport $showroomDailyReport
     ): RedirectResponse {
-        abort_unless(
-            $this->canReopen($request),
-            403,
-            'إعادة فتح التقرير متاحة للإدارة والمحاسبين فقط.'
-        );
-
+        $this->assertReviewAccess($request);
         $this->assertLocationAccess(
             $request,
             (int) $showroomDailyReport->location_id
@@ -457,7 +548,7 @@ class ShowroomDailyReportController extends Controller
 
         if ($later) {
             throw ValidationException::withMessages([
-                'report' => 'لا يمكن إعادة فتح هذا اليوم لوجود تقرير يوم لاحق يعتمد على رصيده.',
+                'report' => 'لا يمكن إعادة فتح هذا التقرير لأن يومًا لاحقًا يعتمد على رصيده.',
             ]);
         }
 
@@ -467,19 +558,14 @@ class ShowroomDailyReportController extends Controller
             'reopened_at' => now(),
             'closed_by' => null,
             'closed_at' => null,
+            'reviewed_by' => null,
+            'reviewed_at' => null,
         ]);
 
-        ActivityLogger::log(
-            userId: $request->user()->id,
-            action: 'showroom_daily_report.reopened',
-            module: 'inventory',
-            recordType: 'showroom_daily_reports',
-            recordId: $showroomDailyReport->id,
-            oldValues: ['status' => 'closed'],
-            newValues: ['status' => 'draft'],
+        return back()->with(
+            'success',
+            'تمت إعادة فتح التقرير للفرع.'
         );
-
-        return back()->with('success', 'تمت إعادة فتح التقرير للتعديل.');
     }
 
     public function print(
@@ -496,6 +582,8 @@ class ShowroomDailyReportController extends Controller
             'location',
             'items.product',
             'creator.employee',
+            'submittedBy.employee',
+            'reviewedBy.employee',
             'closedBy.employee',
         ]);
 
@@ -520,6 +608,8 @@ class ShowroomDailyReportController extends Controller
             'location',
             'items.product',
             'creator.employee',
+            'submittedBy.employee',
+            'reviewedBy.employee',
             'closedBy.employee',
         ]);
 
@@ -534,6 +624,199 @@ class ShowroomDailyReportController extends Controller
             'تقرير المعرض اليومي',
             'landscape'
         );
+    }
+
+    private function syncAutomaticColumns(ShowroomDailyReport $report): void
+    {
+        $report->loadMissing('items');
+
+        $date = $report->business_date->toDateString();
+        $start = CarbonImmutable::parse($date)->startOfDay();
+        $end = $start->addDay();
+
+        $movements = StockMovement::query()
+            ->where('location_id', $report->location_id)
+            ->where('created_at', '>=', $start)
+            ->where('created_at', '<', $end)
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get()
+            ->groupBy('product_id');
+
+        $prior = ShowroomDailyReport::query()
+            ->where('location_id', $report->location_id)
+            ->whereDate('business_date', '<', $date)
+            ->latest('business_date')
+            ->first();
+
+        $priorItems = $prior
+            ? ShowroomDailyReportItem::query()
+                ->where('report_id', $prior->id)
+                ->get()
+                ->keyBy('product_id')
+            : collect();
+
+        foreach ($report->items as $item) {
+            $rows = $movements->get($item->product_id, collect());
+
+            $priorItem = $priorItems->get($item->product_id);
+
+            $opening = $priorItem
+                ? (float) (
+                    $priorItem->actual_closing_kg
+                    ?? $priorItem->expected_closing_kg
+                )
+                : (
+                    $rows->isNotEmpty()
+                        ? (float) $rows->first()->balance_before
+                        : $this->systemOpeningBalance(
+                            (int) $report->location_id,
+                            (int) $item->product_id,
+                            $date
+                        )
+                );
+
+            $received = $this->sumReasons(
+                $rows,
+                [
+                    MovementReason::TransferReceipt,
+                    MovementReason::StockRequestReceipt,
+                    MovementReason::StockReceived,
+                ],
+                MovementType::In
+            );
+
+            $sales = $this->sumReasons(
+                $rows,
+                [
+                    MovementReason::Order,
+                    MovementReason::OrderSale,
+                ],
+                MovementType::Out
+            );
+
+            $damaged = $this->sumReasons(
+                $rows,
+                [
+                    MovementReason::Damaged,
+                    MovementReason::Damage,
+                    MovementReason::Waste,
+                    MovementReason::Expired,
+                ],
+                MovementType::Out
+            );
+
+            $returned = $this->sumReasons(
+                $rows,
+                [
+                    MovementReason::PurchaseReturn,
+                    MovementReason::Return,
+                ],
+                MovementType::Out
+            );
+
+            $expected = $rows->isNotEmpty()
+                ? (float) $rows->last()->balance_after
+                : $opening;
+
+            $categorizedExpected =
+                $opening
+                + $received
+                - $sales
+                - $damaged
+                - $returned;
+
+            $otherNet = round(
+                $expected - $categorizedExpected,
+                3
+            );
+
+            $actual = $item->actual_closing_kg === null
+                ? null
+                : (float) $item->actual_closing_kg;
+
+            $item->update([
+                'opening_kg' => round(max(0, $opening), 3),
+                'received_kg' => round($received, 3),
+                'sales_kg' => round($sales, 3),
+                'damaged_kg' => round($damaged, 3),
+                'returned_kg' => round($returned, 3),
+                'other_net_kg' => $otherNet,
+                'expected_closing_kg' => round(max(0, $expected), 3),
+                'variance_kg' => $actual === null
+                    ? null
+                    : round($actual - max(0, $expected), 3),
+            ]);
+        }
+    }
+
+    private function sumReasons(
+        Collection $rows,
+        array $reasons,
+        MovementType $direction
+    ): float {
+        $reasonValues = collect($reasons)
+            ->map(fn (MovementReason $reason) => $reason->value)
+            ->all();
+
+        return (float) $rows
+            ->filter(function (StockMovement $movement) use (
+                $reasonValues,
+                $direction
+            ): bool {
+                $reason = $movement->reason instanceof \BackedEnum
+                    ? $movement->reason->value
+                    : (string) $movement->reason;
+
+                $type = $movement->movement_type instanceof \BackedEnum
+                    ? $movement->movement_type->value
+                    : (string) $movement->movement_type;
+
+                return in_array($reason, $reasonValues, true)
+                    && $type === $direction->value;
+            })
+            ->sum(fn (StockMovement $movement) => (float) $movement->quantity);
+    }
+
+    private function systemOpeningBalance(
+        int $locationId,
+        int $productId,
+        string $date
+    ): float {
+        $start = CarbonImmutable::parse($date)->startOfDay();
+
+        $firstMovement = StockMovement::query()
+            ->where('location_id', $locationId)
+            ->where('product_id', $productId)
+            ->where('created_at', '>=', $start)
+            ->where('created_at', '<', $start->addDay())
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->first();
+
+        if ($firstMovement) {
+            return (float) $firstMovement->balance_before;
+        }
+
+        if ($date === now()->toDateString()) {
+            return (float) (
+                Inventory::query()
+                    ->where('location_id', $locationId)
+                    ->where('product_id', $productId)
+                    ->value('quantity')
+                ?? 0
+            );
+        }
+
+        $lastBefore = StockMovement::query()
+            ->where('location_id', $locationId)
+            ->where('product_id', $productId)
+            ->where('created_at', '<', $start)
+            ->latest('created_at')
+            ->latest('id')
+            ->first();
+
+        return (float) ($lastBefore?->balance_after ?? 0);
     }
 
     private function productsForLocation(int $locationId): Collection
@@ -628,34 +911,30 @@ class ShowroomDailyReportController extends Controller
         abort_unless(
             $this->canManage($request),
             403,
-            'ليس لديك صلاحية تعديل تقرير المعرض اليومي.'
+            'إدخال جرد المعرض اليومي متاح لمسؤول الفرع فقط.'
         );
     }
 
-    private function assertCloseAccess(Request $request): void
+    private function assertReviewAccess(Request $request): void
     {
         abort_unless(
-            $this->canClose($request),
+            $this->canReview($request),
             403,
-            'ليس لديك صلاحية إقفال تقرير المعرض اليومي.'
+            'تدقيق واعتماد التقرير متاح للمحاسب العام والإدارة فقط.'
         );
     }
 
     private function canManage(Request $request): bool
     {
         return $request->user()->isAdmin()
-            || $request->user()->hasRole('Accountant')
-            || $request->user()->can('inventory.count');
+            || $request->user()->hasRole('Branch Manager')
+            || (
+                ! $request->user()->hasRole('Accountant')
+                && $request->user()->can('inventory.count')
+            );
     }
 
-    private function canClose(Request $request): bool
-    {
-        return $request->user()->isAdmin()
-            || $request->user()->hasRole('Accountant')
-            || $request->user()->can('inventory.count');
-    }
-
-    private function canReopen(Request $request): bool
+    private function canReview(Request $request): bool
     {
         return $request->user()->isAdmin()
             || $request->user()->hasRole('Accountant');
