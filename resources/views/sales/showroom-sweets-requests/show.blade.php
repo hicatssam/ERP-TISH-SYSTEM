@@ -1228,6 +1228,15 @@
                 {{ $statusLabel }}
             </span>
 
+            @if($canEditRequest)
+                <a
+                    href="{{ route('showroom-sweets-requests.edit', $showroomSweetsRequest) }}"
+                    class="btn btn-outline btn-sm"
+                >
+                    تعديل الطلب
+                </a>
+            @endif
+
             @if(count($allowedTransitions) > 0)
                 <button
                     type="button"
