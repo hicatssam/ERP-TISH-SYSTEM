@@ -48,10 +48,10 @@
         @endif
         @endcan
         @can('products.create')
-        <button type="button" class="btn btn-gold" onclick="openProductCreateModal()">
+        <a href="#productCreateModal" class="btn btn-gold" id="openProductCreateModalButton">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             إضافة منتج
-        </button>
+        </a>
         @endcan
     </div>
 </div>
@@ -146,7 +146,7 @@
 
 
 @can('products.create')
-<div id="productCreateModal" class="product-create-modal" aria-hidden="true" onclick="closeProductCreateModalFromBackdrop(event)">
+<div id="productCreateModal" class="product-create-modal" aria-hidden="true">
     <div class="product-create-dialog" role="dialog" aria-modal="true" aria-labelledby="productCreateModalTitle">
         <div class="product-create-header">
             <div>
@@ -155,7 +155,7 @@
                 <p>أدخل بيانات المنتج واربطه بالفروع أو المصنع، وسيتم إنشاء SKU والباركود تلقائيًا.</p>
             </div>
 
-            <button type="button" class="product-create-close" onclick="closeProductCreateModal()" aria-label="إغلاق">×</button>
+            <a href="#" class="product-create-close" id="closeProductCreateModalButton" aria-label="إغلاق">×</a>
         </div>
 
         <form action="{{ route('products.store') }}" method="POST" enctype="multipart/form-data">
@@ -175,7 +175,7 @@
             </div>
 
             <div class="product-create-footer">
-                <button type="button" class="btn btn-ghost" onclick="closeProductCreateModal()">إلغاء</button>
+                <a href="#" class="btn btn-ghost">إلغاء</a>
                 <button type="submit" class="btn btn-gold">حفظ المنتج</button>
             </div>
         </form>
@@ -200,7 +200,8 @@
     pointer-events:none;
     transition:.18s ease;
 }
-.product-create-modal.is-open{
+.product-create-modal.is-open,
+.product-create-modal:target{
     opacity:1;
     visibility:visible;
     pointer-events:auto;
@@ -218,7 +219,8 @@
     transform:translateY(16px) scale(.985);
     transition:.18s ease;
 }
-.product-create-modal.is-open .product-create-dialog{
+.product-create-modal.is-open .product-create-dialog,
+.product-create-modal:target .product-create-dialog{
     transform:translateY(0) scale(1);
 }
 .product-create-header{
@@ -257,6 +259,7 @@
     color:var(--text-muted);
     font-size:1.4rem;
     cursor:pointer;
+    text-decoration:none;
 }
 .product-create-body{
     min-height:0;
@@ -312,13 +315,38 @@ function closeProductCreateModal() {
     modal.classList.remove('is-open');
     modal.setAttribute('aria-hidden', 'true');
     document.body.style.overflow = '';
-}
 
-function closeProductCreateModalFromBackdrop(event) {
-    if (event.target.id === 'productCreateModal') {
-        closeProductCreateModal();
+    if (window.location.hash === '#productCreateModal') {
+        history.replaceState(null, '', window.location.pathname + window.location.search);
     }
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('productCreateModal');
+    const openButton = document.getElementById('openProductCreateModalButton');
+    const closeButton = document.getElementById('closeProductCreateModalButton');
+
+    if (openButton) {
+        openButton.addEventListener('click', function() {
+            setTimeout(openProductCreateModal, 0);
+        });
+    }
+
+    if (closeButton) {
+        closeButton.addEventListener('click', function(event) {
+            event.preventDefault();
+            closeProductCreateModal();
+        });
+    }
+
+    if (modal) {
+        modal.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                closeProductCreateModal();
+            }
+        });
+    }
+});
 
 document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
