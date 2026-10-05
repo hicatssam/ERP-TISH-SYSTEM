@@ -23,6 +23,7 @@ use App\Http\Controllers\Sales\SpecialCakeOrderController;
 use App\Http\Controllers\Sales\ShowroomCakeRequestController;
 use App\Http\Controllers\Sales\ShowroomCakeDailyReportController;
 use App\Http\Controllers\Sales\ShowroomSweetsRequestController;
+use App\Http\Controllers\Sales\BranchShipmentController;
 use App\Http\Controllers\Finance\CustomerAccountController;
 use App\Http\Controllers\Finance\PaymentController;
 use App\Http\Controllers\Finance\IncomingBankTransferController;
@@ -524,6 +525,55 @@ Route::post(
         )
             ->name('showroom-cake-requests.destroy')
             ->middleware('can:showroom_cake_requests.delete');
+
+        // ─── Unified Branch Delivery & Receiving ───────────────────────────
+        Route::post(
+            'branch-shipments/source/{sourceType}/{sourceId}',
+            [BranchShipmentController::class, 'create']
+        )
+            ->whereIn('sourceType', ['special-cake', 'showroom-cake', 'showroom-sweets'])
+            ->whereNumber('sourceId')
+            ->name('branch-shipments.create');
+
+        Route::get(
+            'branch-shipments/{branchShipment}',
+            [BranchShipmentController::class, 'show']
+        )->name('branch-shipments.show');
+
+        Route::post(
+            'branch-shipments/{branchShipment}/loaded',
+            [BranchShipmentController::class, 'markLoaded']
+        )->name('branch-shipments.loaded');
+
+        Route::post(
+            'branch-shipments/{branchShipment}/dispatch',
+            [BranchShipmentController::class, 'dispatch']
+        )->name('branch-shipments.dispatch');
+
+        Route::post(
+            'branch-shipments/{branchShipment}/arrive',
+            [BranchShipmentController::class, 'arrive']
+        )->name('branch-shipments.arrive');
+
+        Route::post(
+            'branch-shipments/{branchShipment}/receive',
+            [BranchShipmentController::class, 'receive']
+        )->name('branch-shipments.receive');
+
+        Route::get(
+            'branch-receiving-invoices/{branchReceivingInvoice}',
+            [BranchShipmentController::class, 'invoiceShow']
+        )->name('branch-receiving-invoices.show');
+
+        Route::get(
+            'branch-receiving-invoices/{branchReceivingInvoice}/print',
+            [BranchShipmentController::class, 'invoicePrint']
+        )->name('branch-receiving-invoices.print');
+
+        Route::get(
+            'branch-receiving-invoices/{branchReceivingInvoice}/pdf',
+            [BranchShipmentController::class, 'invoicePdf']
+        )->name('branch-receiving-invoices.pdf');
 
         // ─── Showroom Cake Daily Report ────────────────────────────────────
         Route::get(
