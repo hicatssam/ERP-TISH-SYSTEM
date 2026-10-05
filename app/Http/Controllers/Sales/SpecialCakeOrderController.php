@@ -776,6 +776,7 @@ if (
             'customer', 'originBranch', 'factory', 'creator',
             'attachments', 'comments.user', 'statusHistories.changedBy',
             'receivingIssues', 'invoice', 'payments.paymentMethod', 'payments.receivedBy',
+            'branchShipment.driver.employee', 'branchShipment.receivingInvoice',
         ]);
 
         $allowedTransitions = collect(
