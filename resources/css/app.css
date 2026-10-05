@@ -62,3 +62,425 @@
         transform: scale(3);
     }
 }
+
+/* ════════════════════════════════════════════════════════════════
+   GLOBAL UX / RESPONSIVE HARDENING
+   Central usability layer for desktop, tablet and mobile.
+   Keep page-specific styling intact while preventing overflow,
+   tiny touch targets and inaccessible controls.
+   ════════════════════════════════════════════════════════════════ */
+
+html {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body.dahab-body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.dahab-main,
+.dahab-content,
+.card,
+.card-body,
+.card-header,
+.dashboard-row,
+.filter-row,
+.page-header,
+.page-actions {
+  min-width: 0;
+}
+
+.dahab-content img,
+.card img {
+  max-width: 100%;
+}
+
+.form-input,
+.form-select,
+.form-textarea,
+.form-control,
+input[type="text"],
+input[type="search"],
+input[type="email"],
+input[type="tel"],
+input[type="url"],
+input[type="number"],
+input[type="date"],
+input[type="datetime-local"],
+input[type="password"],
+select,
+textarea {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+input[type="file"] {
+  max-width: 100%;
+}
+
+.table-wrap {
+  position: relative;
+  max-width: 100%;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100,116,139,.45) transparent;
+}
+
+.table-wrap::-webkit-scrollbar {
+  height: 9px;
+}
+
+.table-wrap::-webkit-scrollbar-thumb {
+  background: rgba(100,116,139,.42);
+  border-radius: 999px;
+}
+
+.data-table .actions,
+.unit-actions,
+.request-actions,
+.action-btns {
+  flex-wrap: wrap;
+}
+
+.btn,
+button,
+a.btn,
+summary.btn {
+  touch-action: manipulation;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .btn:hover,
+  .nav-item:hover,
+  .stat-card:hover,
+  .summary-box:hover,
+  .product-card:hover {
+    transform: none !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .dahab-content {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .card-header {
+    flex-wrap: wrap;
+  }
+
+  .filter-row {
+    padding: .9rem;
+  }
+
+  .data-table {
+    min-width: 680px;
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --mobile-page-pad: .75rem;
+  }
+
+  .dahab-sidebar {
+    width: min(86vw, 310px);
+    max-width: 310px;
+  }
+
+  .dahab-content {
+    padding: var(--mobile-page-pad);
+  }
+
+  .dahab-topbar {
+    min-height: 58px;
+  }
+
+  .page-header,
+  .page-actions {
+    margin-bottom: .8rem;
+  }
+
+  .page-header {
+    gap: .55rem;
+  }
+
+  .page-heading {
+    font-size: 1.08rem;
+    line-height: 1.45;
+  }
+
+  .page-subheading {
+    font-size: .76rem;
+    line-height: 1.7;
+  }
+
+  .page-actions-title {
+    font-size: .95rem;
+  }
+
+  .page-header-actions,
+  .action-btns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    gap: .5rem;
+  }
+
+  .page-header-actions > *,
+  .action-btns > * {
+    min-width: 0;
+  }
+
+  .page-header-actions .btn,
+  .action-btns .btn {
+    width: 100%;
+    min-height: 44px;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.45;
+  }
+
+  .card {
+    border-radius: 13px;
+  }
+
+  .card-header {
+    padding: .8rem .9rem;
+    gap: .65rem;
+  }
+
+  .card-body {
+    padding: .9rem;
+  }
+
+  .card-title {
+    font-size: .84rem;
+  }
+
+  .filter-row {
+    padding: .8rem;
+    border-radius: 13px;
+  }
+
+  .filter-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: .65rem;
+  }
+
+  .filter-group {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .filter-group .btn {
+    min-height: 44px;
+  }
+
+  .form-input,
+  .form-select,
+  .form-control,
+  input[type="text"],
+  input[type="search"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="number"],
+  input[type="date"],
+  input[type="datetime-local"],
+  input[type="password"],
+  select,
+  textarea {
+    width: 100%;
+    min-height: 44px;
+    font-size: 16px !important;
+  }
+
+  textarea,
+  .form-textarea {
+    min-height: 92px;
+  }
+
+  input[type="checkbox"],
+  input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+  }
+
+  input[type="file"] {
+    width: 100%;
+    font-size: .82rem;
+  }
+
+  .btn,
+  button.btn,
+  a.btn,
+  summary.btn {
+    min-height: 42px;
+  }
+
+  .btn-sm {
+    min-height: 38px;
+    padding-inline: .7rem;
+  }
+
+  .data-table {
+    min-width: 720px;
+    font-size: .8rem;
+  }
+
+  .data-table th {
+    padding: .65rem .72rem;
+    font-size: .67rem;
+  }
+
+  .data-table td {
+    padding: .65rem .72rem;
+  }
+
+  .data-table .actions {
+    min-width: 150px;
+    gap: .4rem;
+  }
+
+  .data-table .actions .btn {
+    min-height: 36px;
+  }
+
+  .detail-row {
+    flex-direction: column;
+    gap: .25rem;
+    padding: .7rem 0;
+  }
+
+  .detail-label {
+    width: auto;
+    font-size: .7rem;
+  }
+
+  .detail-value {
+    width: 100%;
+    max-width: 100% !important;
+    text-align: start !important;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0,1fr));
+  }
+
+  .stat-card {
+    min-width: 0;
+  }
+
+  .stat-label {
+    white-space: normal;
+    line-height: 1.45;
+  }
+
+  .modal-box,
+  [role="dialog"] {
+    max-width: calc(100vw - 1rem);
+  }
+
+  .empty-state {
+    padding: 2.25rem 1rem;
+  }
+
+  .empty-state-sm {
+    padding: 1.5rem .8rem;
+  }
+
+  .alert {
+    padding: .75rem .85rem;
+    font-size: .8rem;
+    line-height: 1.7;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --mobile-page-pad: .55rem;
+  }
+
+  .dahab-topbar {
+    min-height: 54px;
+    padding-inline: .55rem;
+  }
+
+  .topbar-title {
+    max-width: 38vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .page-header-actions,
+  .action-btns {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: .45rem;
+  }
+
+  .stat-card {
+    padding: .72rem;
+    gap: .5rem;
+  }
+
+  .stat-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .stat-value {
+    font-size: 1.08rem;
+  }
+
+  .card-header,
+  .card-body {
+    padding-inline: .75rem;
+  }
+
+  .filter-row {
+    padding: .7rem;
+  }
+
+  .table-wrap {
+    margin-inline: -.1rem;
+  }
+
+  .data-table {
+    min-width: 680px;
+  }
+
+  .app-pagination {
+    gap: 4px;
+  }
+
+  .app-page-btn {
+    width: 32px;
+    height: 32px;
+    flex-basis: 32px;
+  }
+
+  .toast,
+  .alert-banner {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 360px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dahab-sidebar {
+    width: 92vw;
+  }
+}
