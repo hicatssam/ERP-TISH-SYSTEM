@@ -733,6 +733,11 @@ class ShowroomSweetsRequestController extends Controller
                 $showroomSweetsRequest
             );
 
+        $canEditRequest = $this->canEditRequest(
+            $user,
+            $showroomSweetsRequest
+        );
+
         $canManageReservations =
             $user->isAdmin()
             || (
@@ -753,6 +758,7 @@ class ShowroomSweetsRequestController extends Controller
                 'showroomSweetsRequest',
                 'allowedTransitions',
                 'canCancel',
+                'canEditRequest',
                 'canManageReservations'
             )
         );
