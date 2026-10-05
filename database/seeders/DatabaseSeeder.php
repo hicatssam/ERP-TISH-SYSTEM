@@ -235,6 +235,12 @@ class DatabaseSeeder extends Seeder
     'reports.view',
     'reports.export',
 
+    // Showroom Daily Reports
+    'showroom_daily_reports.view',
+    'showroom_daily_reports.manage_branch',
+    'showroom_daily_reports.review',
+    'showroom_daily_reports.export',
+
     // Settings
     'settings.manage',
 ];
@@ -256,6 +262,9 @@ class DatabaseSeeder extends Seeder
             'invoices.view', 'invoices.create', 'invoices.print', 'invoices.cancel',
             'financial.branch.view', 'financial.dashboard.view', 'financial.periods.view',
             'reports.view', 'reports.export',
+            'showroom_daily_reports.view',
+            'showroom_daily_reports.manage_branch',
+            'showroom_daily_reports.export',
             'employees.manage',
         ]);
 
@@ -289,6 +298,9 @@ class DatabaseSeeder extends Seeder
             'financial.reports.view', 'financial.reports.export',
             'invoices.view', 'invoices.print',
             'reports.view', 'reports.export',
+            'showroom_daily_reports.view',
+            'showroom_daily_reports.review',
+            'showroom_daily_reports.export',
             'payments.verify',
         ]);
 
