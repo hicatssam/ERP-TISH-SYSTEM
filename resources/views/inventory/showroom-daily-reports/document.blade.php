@@ -7,6 +7,7 @@
         'sales' => $items->sum(fn($i) => (float) $i->sales_kg),
         'damaged' => $items->sum(fn($i) => (float) $i->damaged_kg),
         'returned' => $items->sum(fn($i) => (float) $i->returned_kg),
+        'other' => $items->sum(fn($i) => (float) $i->other_net_kg),
         'expected' => $items->sum(fn($i) => (float) $i->expected_closing_kg),
         'actual' => $items->sum(fn($i) => (float) ($i->actual_closing_kg ?? 0)),
         'variance' => $items->sum(fn($i) => (float) ($i->variance_kg ?? 0)),
@@ -23,7 +24,12 @@
 @section('document_subtitle', $report->location->name)
 @section(
     'document_meta',
-    'الحالة: ' . ($report->status === 'closed' ? 'مقفل' : 'مسودة')
+    'الحالة: ' . match ($report->status) {
+        'draft' => 'مسودة لدى الفرع',
+        'submitted' => 'بانتظار تدقيق المحاسب العام',
+        'approved', 'closed' => 'معتمد',
+        default => $report->status,
+    }
 )
 @section('signature_right', 'مسؤول المعرض')
 @section('signature_left', 'اعتماد الإدارة')
@@ -61,7 +67,8 @@
                     <th>مبيعات / كجم</th>
                     <th>تالف / كجم</th>
                     <th>مرتجع / كجم</th>
-                    <th>رصيد نظري</th>
+                    <th>حركات أخرى صافي</th>
+                    <th>رصيد النظام</th>
                     <th>المتبقي الفعلي</th>
                     <th>الفرق</th>
                 </tr>
@@ -77,6 +84,7 @@
                         <td>{{ number_format((float) $item->sales_kg, 3) }}</td>
                         <td>{{ number_format((float) $item->damaged_kg, 3) }}</td>
                         <td>{{ number_format((float) $item->returned_kg, 3) }}</td>
+                        <td>{{ number_format((float) $item->other_net_kg, 3) }}</td>
                         <td>{{ number_format((float) $item->expected_closing_kg, 3) }}</td>
                         <td>{{ $item->actual_closing_kg === null ? '—' : number_format((float) $item->actual_closing_kg, 3) }}</td>
                         <td class="{{ abs((float) ($item->variance_kg ?? 0)) > 0.0005 ? 'variance-bad' : '' }}">
@@ -94,6 +102,7 @@
                     <th>{{ number_format($totals['sales'], 3) }}</th>
                     <th>{{ number_format($totals['damaged'], 3) }}</th>
                     <th>{{ number_format($totals['returned'], 3) }}</th>
+                    <th>{{ number_format($totals['other'], 3) }}</th>
                     <th>{{ number_format($totals['expected'], 3) }}</th>
                     <th>{{ number_format($totals['actual'], 3) }}</th>
                     <th>{{ number_format($totals['variance'], 3) }}</th>
@@ -109,12 +118,25 @@
         </div>
     @endif
 
-    @if($report->status === 'closed')
+    @if($report->submittedBy)
         <div class="print-soft-box" style="margin-top:9px;text-align:right">
-            تم الإقفال بواسطة:
-            {{ $report->closedBy?->display_name ?? '—' }}
+            أرسل التقرير من الفرع:
+            {{ $report->submittedBy?->display_name ?? '—' }}
             ·
-            {{ $report->closed_at?->format('Y-m-d H:i') ?? '—' }}
+            {{ $report->submitted_at?->format('Y-m-d H:i') ?? '—' }}
+        </div>
+    @endif
+
+    @if($report->reviewedBy)
+        <div class="print-soft-box" style="margin-top:9px;text-align:right">
+            تدقيق المحاسب العام:
+            {{ $report->reviewedBy?->display_name ?? '—' }}
+            ·
+            {{ $report->reviewed_at?->format('Y-m-d H:i') ?? '—' }}
+            @if($report->review_notes)
+                <br>
+                ملاحظة: {{ $report->review_notes }}
+            @endif
         </div>
     @endif
 @endsection
