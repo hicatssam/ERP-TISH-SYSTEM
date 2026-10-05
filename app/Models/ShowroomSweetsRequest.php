@@ -144,6 +144,11 @@ class ShowroomSweetsRequest extends Model
         );
     }
 
+    public function branchShipment(): \Illuminate\Database\Eloquent\Relations\MorphOne
+    {
+        return $this->morphOne(BranchShipment::class, 'source');
+    }
+
     /*
     |--------------------------------------------------------------------------
     | هل الانتقال مسموح؟
