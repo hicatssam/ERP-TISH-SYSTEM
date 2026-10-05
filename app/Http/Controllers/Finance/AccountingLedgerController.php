@@ -6,14 +6,36 @@ use App\Enums\LedgerEntryType;
 use App\Http\Controllers\Controller;
 use App\Models\Location;
 use App\Models\SalesLedgerEntry;
+use App\Services\Finance\AccountingPdfService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AccountingLedgerController extends Controller
 {
     public function index(Request $request): View
+    {
+        return view('finance.accounting.ledger', $this->ledgerData($request, true));
+    }
+
+    public function pdf(
+        Request $request,
+        AccountingPdfService $pdf
+    ): StreamedResponse {
+        $payload = $this->ledgerData($request, false);
+
+        return $pdf->download(
+            'finance.accounting.ledger-pdf',
+            $payload,
+            'accounting-ledger-' . $payload['from'] . '-' . $payload['to'] . '.pdf',
+            'سجل الترحيلات المالية',
+            'landscape'
+        );
+    }
+
+    private function ledgerData(Request $request, bool $paginate): array
     {
         $filters = $request->validate([
             'date_from' => ['nullable', 'date_format:Y-m-d'],
@@ -43,18 +65,18 @@ class AccountingLedgerController extends Controller
         $query = SalesLedgerEntry::query()
             ->whereIn('location_id', $locationIds)
             ->where('entry_date', '>=', $from)
-            // DATE casts may persist midnight timestamps on SQLite; a half-open
-            // range includes the full selected day and keeps the date index usable.
             ->where('entry_date', '<', $endExclusive)
             ->when($filters['entry_type'] ?? null, fn ($q, $type) => $q->where('entry_type', $type));
 
-        $employeeTypes = [LedgerEntryType::EmployeePurchase->value, LedgerEntryType::EmployeeCollection->value];
+        $employeeTypes = [
+            LedgerEntryType::EmployeePurchase->value,
+            LedgerEntryType::EmployeeCollection->value,
+        ];
+
         if (! $user->can('accounting.employee_accounts.view')) {
             $query->whereNotIn('entry_type', $employeeTypes);
         }
 
-        // Keep currencies and posting types separate: sales, receipts and expenses
-        // are different measures and cannot be totaled into one account balance.
         $summary = (clone $query)
             ->select('entry_type', 'currency_code')
             ->selectRaw('COUNT(*) AS entries_count, SUM(amount) AS amount_total')
@@ -62,20 +84,38 @@ class AccountingLedgerController extends Controller
             ->orderBy('entry_type')
             ->get();
 
-        return view('finance.accounting.ledger', [
-            'entries' => $query->with(['location', 'period', 'createdBy'])
-                ->orderByDesc('entry_date')->orderByDesc('id')
-                ->paginate(30)->withQueryString(),
+        $types = $user->can('accounting.employee_accounts.view')
+            ? LedgerEntryType::cases()
+            : array_values(array_filter(
+                LedgerEntryType::cases(),
+                fn (LedgerEntryType $type) => ! in_array($type->value, $employeeTypes, true)
+            ));
+
+        $baseEntries = $query
+            ->with(['location', 'period', 'createdBy'])
+            ->orderByDesc('entry_date')
+            ->orderByDesc('id');
+
+        $total = (clone $query)->count();
+        $cap = 5000;
+        $truncated = ! $paginate && $total > $cap;
+
+        $entries = $paginate
+            ? $baseEntries->paginate(30)->withQueryString()
+            : $baseEntries->limit($cap)->get();
+
+        return [
+            'entries' => $entries,
             'summary' => $summary,
-            'types' => $user->can('accounting.employee_accounts.view')
-                ? LedgerEntryType::cases()
-                : array_values(array_filter(LedgerEntryType::cases(),
-                    fn (LedgerEntryType $type) => ! in_array($type->value, $employeeTypes, true))),
+            'types' => $types,
             'locations' => $canViewAll ? Location::query()->orderBy('name')->get() : collect(),
             'locationId' => $locationId,
             'entryType' => $filters['entry_type'] ?? null,
             'from' => $from,
             'to' => $to,
-        ]);
+            'total' => $total,
+            'cap' => $cap,
+            'truncated' => $truncated,
+        ];
     }
 }
