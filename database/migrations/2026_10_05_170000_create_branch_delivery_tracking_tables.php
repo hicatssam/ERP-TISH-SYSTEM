@@ -8,6 +8,18 @@ return new class extends Migration
 {
     public function up(): void
     {
+        /*
+         * MySQL DDL is not transactional. If an earlier run failed while
+         * creating the last table, the first tables may still exist even
+         * though Laravel keeps this migration as Pending.
+         *
+         * These tables belong only to this migration, so clean any partial
+         * first-run remnants before creating the complete structure.
+         */
+        Schema::dropIfExists('branch_receiving_invoice_items');
+        Schema::dropIfExists('branch_receiving_invoices');
+        Schema::dropIfExists('branch_shipments');
+
         Schema::create('branch_shipments', function (Blueprint $table): void {
             $table->id();
             $table->morphs('source');
@@ -57,8 +69,13 @@ return new class extends Migration
 
         Schema::create('branch_receiving_invoice_items', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('branch_receiving_invoice_id')
-                ->constrained('branch_receiving_invoices')
+            $table->unsignedBigInteger('branch_receiving_invoice_id');
+            $table->foreign(
+                'branch_receiving_invoice_id',
+                'bri_items_invoice_fk'
+            )
+                ->references('id')
+                ->on('branch_receiving_invoices')
                 ->cascadeOnDelete();
 
             $table->unsignedBigInteger('source_item_id')->nullable()->index();
