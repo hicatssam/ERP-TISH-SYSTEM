@@ -54,6 +54,11 @@ class ShowroomCakeRequest extends Model
         return $this->hasMany(ShowroomCakeRequestItem::class);
     }
 
+    public function branchShipment(): \Illuminate\Database\Eloquent\Relations\MorphOne
+    {
+        return $this->morphOne(BranchShipment::class, 'source');
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     public function canTransitionTo(ShowroomCakeRequestStatus $newStatus): bool
