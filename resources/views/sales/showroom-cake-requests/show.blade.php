@@ -101,6 +101,12 @@
     :record="$showroomCakeRequest"
 />
 
+<x-branch-delivery-card
+    :source="$showroomCakeRequest"
+    :shipment="$showroomCakeRequest->branchShipment?->loadMissing(['driver.employee','receivingInvoice'])"
+    source-type="showroom-cake"
+/>
+
 
 {{-- =========================================================
      بيانات الطلب
