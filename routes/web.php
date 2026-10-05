@@ -533,6 +533,9 @@ Route::post(
         Route::get('incoming-bank-transfers/export/pdf', [IncomingBankTransferController::class, 'exportPdf'])
             ->name('incoming-bank-transfers.export.pdf');
 
+        Route::get('incoming-bank-transfers/print', [IncomingBankTransferController::class, 'printReport'])
+            ->name('incoming-bank-transfers.print');
+
         Route::post('incoming-bank-transfers', [IncomingBankTransferController::class, 'store'])
             ->middleware('can:payments.record')
             ->name('incoming-bank-transfers.store');
