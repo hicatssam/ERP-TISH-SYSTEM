@@ -241,6 +241,12 @@ class DatabaseSeeder extends Seeder
     'showroom_daily_reports.review',
     'showroom_daily_reports.export',
 
+    // Showroom Cake Daily Reports
+    'showroom_cake_daily_reports.view',
+    'showroom_cake_daily_reports.manage_branch',
+    'showroom_cake_daily_reports.review',
+    'showroom_cake_daily_reports.export',
+
     // Settings
     'settings.manage',
 ];
@@ -265,6 +271,9 @@ class DatabaseSeeder extends Seeder
             'showroom_daily_reports.view',
             'showroom_daily_reports.manage_branch',
             'showroom_daily_reports.export',
+            'showroom_cake_daily_reports.view',
+            'showroom_cake_daily_reports.manage_branch',
+            'showroom_cake_daily_reports.export',
             'employees.manage',
         ]);
 
@@ -301,6 +310,9 @@ class DatabaseSeeder extends Seeder
             'showroom_daily_reports.view',
             'showroom_daily_reports.review',
             'showroom_daily_reports.export',
+            'showroom_cake_daily_reports.view',
+            'showroom_cake_daily_reports.review',
+            'showroom_cake_daily_reports.export',
             'payments.verify',
         ]);
 
