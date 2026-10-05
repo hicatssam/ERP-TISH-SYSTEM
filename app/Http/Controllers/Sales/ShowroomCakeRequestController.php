@@ -379,6 +379,140 @@ class ShowroomCakeRequestController extends Controller
             );
     }
 
+    public function edit(ShowroomCakeRequest $showroomCakeRequest)
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        $this->ensureCanAccess($user, $showroomCakeRequest);
+        abort_unless(
+            $this->canEditRequest($user, $showroomCakeRequest),
+            403,
+            'لا يمكن تعديل الطلب بعد بدء تنفيذه.'
+        );
+
+        $showroomCakeRequest->load('items');
+
+        $canChooseBranch = $user->isAdmin();
+        $branch = $showroomCakeRequest->requestingLocation;
+
+        $branches = $canChooseBranch
+            ? Location::query()->where('type', 'branch')->where('is_active', true)->orderBy('name')->get()
+            : collect([$branch]);
+
+        $factories = Location::query()
+            ->where('type', 'factory')
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        return view(
+            'sales.showroom-cake-requests.edit',
+            compact(
+                'showroomCakeRequest',
+                'branch',
+                'branches',
+                'factories',
+                'canChooseBranch'
+            )
+        );
+    }
+
+    public function update(
+        Request $request,
+        ShowroomCakeRequest $showroomCakeRequest
+    ) {
+        /** @var User $user */
+        $user = Auth::user();
+
+        $this->ensureCanAccess($user, $showroomCakeRequest);
+        abort_unless(
+            $this->canEditRequest($user, $showroomCakeRequest),
+            403,
+            'لا يمكن تعديل الطلب بعد بدء تنفيذه.'
+        );
+
+        $canChooseBranch = $user->isAdmin();
+
+        $validated = $request->validate([
+            'requesting_location_id' => [
+                Rule::requiredIf($canChooseBranch),
+                'nullable',
+                Rule::exists('locations', 'id')->where(
+                    fn ($query) => $query
+                        ->where('type', 'branch')
+                        ->where('is_active', true)
+                        ->whereNull('deleted_at')
+                ),
+            ],
+            'factory_location_id' => [
+                'required',
+                Rule::exists('locations', 'id')->where(
+                    fn ($query) => $query
+                        ->where('type', 'factory')
+                        ->where('is_active', true)
+                        ->whereNull('deleted_at')
+                ),
+            ],
+            'needed_by' => ['nullable', 'date'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.cake_type' => ['required', 'string', 'max:100'],
+            'items.*.cake_size' => ['nullable', 'string', 'max:50'],
+            'items.*.flavor' => ['nullable', 'string', 'max:100'],
+            'items.*.shape' => ['nullable', 'string', 'max:50'],
+            'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'items.*.reserved_quantity' => ['nullable', 'integer', 'min:0'],
+            'items.*.reservation_notes' => ['nullable', 'string', 'max:1000'],
+            'items.*.notes' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        foreach ($validated['items'] as $index => $item) {
+            if ((int) ($item['reserved_quantity'] ?? 0) > (int) $item['quantity']) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    "items.{$index}.reserved_quantity" =>
+                        'الكمية المحجوزة للعملاء لا يمكن أن تتجاوز الكمية المطلوبة.',
+                ]);
+            }
+        }
+
+        $branchId = $canChooseBranch
+            ? (int) $validated['requesting_location_id']
+            : (int) $showroomCakeRequest->requesting_location_id;
+
+        DB::transaction(function () use (
+            $showroomCakeRequest,
+            $validated,
+            $branchId
+        ): void {
+            $showroomCakeRequest->update([
+                'requesting_location_id' => $branchId,
+                'factory_location_id' => (int) $validated['factory_location_id'],
+                'needed_by' => $validated['needed_by'] ?? null,
+                'notes' => $validated['notes'] ?? null,
+            ]);
+
+            $showroomCakeRequest->items()->delete();
+
+            foreach ($validated['items'] as $item) {
+                $showroomCakeRequest->items()->create([
+                    'cake_type' => $item['cake_type'],
+                    'cake_size' => $item['cake_size'] ?? null,
+                    'flavor' => $item['flavor'] ?? null,
+                    'shape' => $item['shape'] ?? null,
+                    'quantity' => $item['quantity'],
+                    'reserved_quantity' => (int) ($item['reserved_quantity'] ?? 0),
+                    'reservation_notes' => $item['reservation_notes'] ?? null,
+                    'notes' => $item['notes'] ?? null,
+                ]);
+            }
+        });
+
+        return redirect()
+            ->route('showroom-cake-requests.show', $showroomCakeRequest)
+            ->with('success', 'تم تحديث طلب كيك الفرع.');
+    }
+
     public function show(
         ShowroomCakeRequest $showroomCakeRequest
     ) {
@@ -805,4 +939,28 @@ class ShowroomCakeRequestController extends Controller
             ->all()
             ?? [];
     }
+    private function canEditRequest(
+        User $user,
+        ShowroomCakeRequest $request
+    ): bool {
+        if ($request->status->workflowValue() !== 'pending') {
+            return false;
+        }
+
+        if ($request->branchShipment()->exists()) {
+            return false;
+        }
+
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        return $user->can('showroom_cake_requests.create')
+            && in_array(
+                (int) $request->requesting_location_id,
+                $this->userLocationIds($user),
+                true
+            );
+    }
+
 }
