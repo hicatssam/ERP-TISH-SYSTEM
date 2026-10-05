@@ -63,8 +63,24 @@
             target="_blank"
             rel="noopener"
             title="طباعة تقرير الحوالات حسب الفلاتر الحالية"
+            style="display:inline-flex;align-items:center;gap:.35rem"
         >
-            🖨️ طباعة
+            <svg
+                viewBox="0 0 24 24"
+                width="15"
+                height="15"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+            >
+                <path d="M6 9V3h12v6"></path>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                <rect x="6" y="14" width="12" height="7"></rect>
+            </svg>
+            <span>طباعة</span>
         </a>
 
         @if(auth()->user()->isAdmin() || auth()->user()->can('payments.record'))
