@@ -151,17 +151,108 @@
     gap:.65rem;
 }
 @media(max-width:760px) {
+    .menu-banner-page { gap:.75rem; }
+    .menu-banner-card .card-header { padding:.9rem; }
+    .menu-banner-card .card-body { padding:.9rem; }
+    .menu-banner-heading { width:100%; }
+    .menu-banner-heading h3 { font-size:1rem; }
+    .menu-banner-heading p { font-size:.74rem; line-height:1.6; }
+
     .menu-banner-grid,
     .menu-banner-grid.three,
     .menu-banner-edit-grid {
         grid-template-columns:1fr;
+        gap:.7rem;
     }
+
+    .menu-banner-section {
+        padding:.8rem;
+        gap:.7rem;
+        border-radius:10px;
+    }
+
     .menu-banner-location {
         min-width:100%;
         width:100%;
     }
+
+    .menu-banner-file {
+        padding:.8rem;
+    }
+
+    .menu-banner-file input[type="file"] {
+        font-size:.78rem;
+        max-width:100%;
+    }
+
+    .menu-banner-form .form-input,
+    .menu-banner-form .form-select {
+        width:100%;
+        min-height:44px;
+        font-size:16px;
+    }
+
+    .menu-banner-switch {
+        padding:.72rem .8rem;
+        align-items:flex-start;
+    }
+
+    .menu-banner-actions {
+        position:sticky;
+        bottom:.5rem;
+        z-index:4;
+        padding-top:.25rem;
+    }
+
     .menu-banner-actions .btn {
         width:100%;
+        min-height:46px;
+        box-shadow:0 8px 22px rgba(15,23,42,.12);
+    }
+
+    .menu-banner-list {
+        grid-template-columns:1fr;
+        gap:.75rem;
+    }
+
+    .menu-banner-image {
+        aspect-ratio:16/7;
+    }
+
+    .menu-banner-meta {
+        gap:.5rem;
+    }
+
+    .menu-banner-footer {
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:.5rem;
+    }
+
+    .menu-banner-footer > form,
+    .menu-banner-footer > details {
+        width:100%;
+        min-width:0 !important;
+    }
+
+    .menu-banner-footer .btn,
+    .menu-banner-footer summary {
+        width:100%;
+    }
+
+    .menu-banner-edit {
+        grid-column:1/-1;
+        padding:.7rem;
+    }
+}
+
+@media(max-width:420px) {
+    .menu-banner-footer {
+        grid-template-columns:1fr;
+    }
+
+    .menu-banner-section-title {
+        font-size:.78rem;
     }
 }
 </style>
