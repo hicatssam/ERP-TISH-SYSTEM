@@ -4,7 +4,11 @@
 @section('content')
 <div class="page-header"><div><h1 class="page-heading">{{ $voucher->type === 'receipt' ? 'سند قبض' : 'سند صرف' }} · {{ $voucher->number }}</h1>
     <p class="page-subheading">{{ $voucher->location?->name }} · {{ $voucher->voucher_date?->format('Y-m-d') }} · {{ ['draft' => 'مسودة', 'posted' => 'مرحّل', 'reversed' => 'معكوس', 'cancelled' => 'ملغى'][$voucher->status] ?? $voucher->status }}</p></div>
-    <div><a href="{{ route('accounting.books.vouchers') }}" class="btn btn-outline">السندات</a> <button type="button" class="btn btn-outline" onclick="window.print()">طباعة</button></div>
+    <div>
+        <a href="{{ route('accounting.books.vouchers') }}" class="btn btn-outline">السندات</a>
+        <a href="{{ route('accounting.books.vouchers.pdf', $voucher) }}" class="btn btn-primary">تحميل PDF</a>
+        <button type="button" class="btn btn-outline" onclick="window.print()">طباعة</button>
+    </div>
 </div>
 <div class="card" style="margin-bottom:1rem"><div class="card-header"><span class="card-title">تفاصيل السند</span></div><div class="card-body">
     <div class="form-grid">
