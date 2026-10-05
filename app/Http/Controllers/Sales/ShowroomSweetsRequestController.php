@@ -737,6 +737,16 @@ class ShowroomSweetsRequestController extends Controller
                 );
         }
 
+        if (
+            $newStatus ===
+            ShowroomSweetsRequestStatus::Completed
+        ) {
+            return back()->with(
+                'error',
+                'إكمال الطلب يتم فقط بعد استلام الفرع وإصدار فاتورة الاستلام.'
+            );
+        }
+
         $permission =
             $this->permissionForTransition(
                 $newStatus
@@ -958,6 +968,13 @@ class ShowroomSweetsRequestController extends Controller
                     $user,
                     $request
                 ): bool {
+
+                    if (
+                        $status ===
+                        ShowroomSweetsRequestStatus::Completed
+                    ) {
+                        return false;
+                    }
 
                     if (
                         $status ===
