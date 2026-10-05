@@ -6,7 +6,6 @@ use App\Enums\CakeOrderStatus;
 use App\Events\SpecialCakeOrderTransitioned;
 use App\Models\CakeOrderStatusHistory;
 use App\Models\SpecialCakeOrder;
-use App\Models\SystemSetting;
 use App\Models\User;
 use App\Services\ActivityLogger;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -90,18 +89,8 @@ class SpecialCakeStatusTransitionService
             ]);
         }
 
-        $autoApproval = (bool) SystemSetting::get(
-            'special_cake_auto_approval',
-            true
-        );
-
-        $toStatus = $autoApproval
-            ? CakeOrderStatus::InProgress->value
-            : CakeOrderStatus::Pending->value;
-
-        $note = $autoApproval
-            ? 'تمت الموافقة تلقائيًا من النظام وبدأ تنفيذ الطلب.'
-            : 'تم إنشاء الطلب ووضعه قيد المراجعة.';
+        $toStatus = CakeOrderStatus::InProgress->value;
+        $note = 'تمت الموافقة تلقائيًا من النظام وبدأ تنفيذ الطلب.';
 
         $this->persistTransition(
             $order,
@@ -109,7 +98,7 @@ class SpecialCakeStatusTransitionService
             $toStatus,
             $user,
             $note,
-            $autoApproval
+            true
         );
     }
 
