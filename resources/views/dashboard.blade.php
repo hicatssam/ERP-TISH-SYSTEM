@@ -441,7 +441,10 @@
     @endif
 
 
-    @if($moduleEnabled('bakery') && $dashboardUser->can('showroom_sweets_requests.create'))
+    @if(
+        $dashboardUser->can('showroom_sweets_requests.create')
+        && $routeExists('showroom-sweets-requests.create')
+    )
 
         <a
             href="{{ route('showroom-sweets-requests.create') }}"
