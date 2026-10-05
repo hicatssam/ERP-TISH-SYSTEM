@@ -378,6 +378,14 @@
                 </table>
             </div>
 
+            <div
+                class="showroom-bottom-scroll"
+                id="showroomBottomScroll"
+                aria-label="شريط تحريك الجدول"
+            >
+                <div class="showroom-bottom-scroll-inner"></div>
+            </div>
+
             <div class="card-body">
                 <div class="form-group">
                     <label class="form-label">ملاحظات الفرع</label>
@@ -423,7 +431,10 @@
         </div>
     @endif
 
-    @can('showroom_cake_daily_reports.view')
+    @if(
+        auth()->user()->isAdmin()
+        || auth()->user()->can('showroom_cake_daily_reports.view')
+    )
         @if(\Illuminate\Support\Facades\Route::has('showroom-cake-daily-reports.index'))
             <div class="showroom-workflow-card" style="margin-top:1rem">
                 <div>
@@ -441,7 +452,7 @@
                 </a>
             </div>
         @endif
-    @endcan
+    @endif
 
     @if($isSubmitted && $canReview)
         <div class="showroom-workflow-card accounting-review-card">
@@ -540,10 +551,11 @@
     display:block;
     width:100%;
     max-width:100%;
-    overflow-x:auto!important;
+    overflow-x:scroll!important;
     overflow-y:hidden;
     -webkit-overflow-scrolling:touch;
     scrollbar-width:auto;
+    scrollbar-gutter:stable;
     padding-bottom:.35rem;
 }
 .showroom-report-card .table-responsive::-webkit-scrollbar{height:12px}
@@ -572,6 +584,28 @@
 .showroom-num:disabled,.showroom-note:disabled{background:var(--off-white);color:var(--text-muted)}
 .has-variance{color:#b42318!important;font-weight:900}
 .showroom-actions{display:flex;justify-content:flex-end}
+.showroom-bottom-scroll{
+    width:100%;
+    overflow-x:scroll;
+    overflow-y:hidden;
+    height:18px;
+    border-top:1px solid var(--border);
+    border-bottom:1px solid var(--border);
+    background:var(--off-white);
+    scrollbar-width:auto;
+    scrollbar-gutter:stable;
+}
+.showroom-bottom-scroll-inner{
+    width:1700px;
+    height:1px;
+}
+.showroom-bottom-scroll::-webkit-scrollbar{height:14px}
+.showroom-bottom-scroll::-webkit-scrollbar-track{background:#e5e7eb}
+.showroom-bottom-scroll::-webkit-scrollbar-thumb{
+    background:#7f8a99;
+    border:2px solid #e5e7eb;
+    border-radius:999px;
+}
 .showroom-workflow-card{display:flex;justify-content:space-between;gap:1rem;align-items:center;margin-top:1rem;padding:1rem;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
 .showroom-workflow-card > div:first-child{display:grid;gap:.2rem}
 .showroom-workflow-card span{color:var(--text-muted);font-size:.72rem}
@@ -585,4 +619,50 @@
     .receiving-invoice-row{grid-template-columns:1fr}
 }
 </style>
+@endpush
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const tableScroller = document.querySelector(
+        '.showroom-report-card .table-responsive'
+    );
+    const bottomScroller = document.getElementById(
+        'showroomBottomScroll'
+    );
+    const inner = bottomScroller
+        ? bottomScroller.querySelector('.showroom-bottom-scroll-inner')
+        : null;
+
+    if (!tableScroller || !bottomScroller || !inner) {
+        return;
+    }
+
+    const syncWidth = function () {
+        inner.style.width = tableScroller.scrollWidth + 'px';
+    };
+
+    let syncingTable = false;
+    let syncingBottom = false;
+
+    tableScroller.addEventListener('scroll', function () {
+        if (syncingBottom) return;
+
+        syncingTable = true;
+        bottomScroller.scrollLeft = tableScroller.scrollLeft;
+        syncingTable = false;
+    });
+
+    bottomScroller.addEventListener('scroll', function () {
+        if (syncingTable) return;
+
+        syncingBottom = true;
+        tableScroller.scrollLeft = bottomScroller.scrollLeft;
+        syncingBottom = false;
+    });
+
+    syncWidth();
+    window.addEventListener('resize', syncWidth);
+});
+</script>
 @endpush
