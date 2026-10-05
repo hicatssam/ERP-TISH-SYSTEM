@@ -592,6 +592,10 @@ Route::post(
             Route::get('financial/dashboard/{location}', [FinancialDashboardController::class, 'branch'])->name('financial.dashboard.branch');
         });
 
+        Route::get('financial/accounting/ledger/pdf', [AccountingLedgerController::class, 'pdf'])
+            ->middleware('can:financial.reports.view')
+            ->name('accounting.ledger.pdf');
+
         Route::get('financial/accounting/ledger', [AccountingLedgerController::class, 'index'])
             ->middleware('can:financial.reports.view')
             ->name('accounting.ledger.index');
@@ -603,6 +607,7 @@ Route::post(
             Route::get('/vouchers/create', [AccountingBooksController::class, 'createVoucher'])->middleware('can:accounting.vouchers.create')->name('vouchers.create');
             Route::post('/vouchers', [AccountingBooksController::class, 'storeVoucher'])->middleware('can:accounting.vouchers.create')->name('vouchers.store');
             Route::get('/vouchers/{voucher}/proof', [AccountingBooksController::class, 'voucherProof'])->middleware('can:accounting.books.view')->name('vouchers.proof');
+            Route::get('/vouchers/{voucher}/pdf', [AccountingBooksController::class, 'voucherPdf'])->middleware('can:accounting.books.view')->name('vouchers.pdf');
             Route::post('/vouchers/{voucher}/post', [AccountingBooksController::class, 'postVoucher'])->middleware('can:accounting.vouchers.post')->name('vouchers.post');
             Route::post('/vouchers/{voucher}/cancel', [AccountingBooksController::class, 'cancelVoucher'])->middleware('can:accounting.vouchers.create')->name('vouchers.cancel');
             Route::post('/vouchers/{voucher}/reverse', [AccountingBooksController::class, 'reverseVoucher'])->middleware('can:accounting.vouchers.reverse')->name('vouchers.reverse');
@@ -611,7 +616,9 @@ Route::post(
             Route::get('/journals/create', [AccountingBooksController::class, 'createJournal'])->middleware('can:accounting.journals.post')->name('journals.create');
             Route::post('/journals', [AccountingBooksController::class, 'storeJournal'])->middleware('can:accounting.journals.post')->name('journals.store');
             Route::post('/journals/{journal}/reverse', [AccountingBooksController::class, 'reverseJournal'])->middleware('can:accounting.journals.post')->name('journals.reverse');
+            Route::get('/journals/{journal}/pdf', [AccountingBooksController::class, 'journalPdf'])->middleware('can:accounting.books.view')->name('journals.pdf');
             Route::get('/journals/{journal}', [AccountingBooksController::class, 'showJournal'])->middleware('can:accounting.books.view')->name('journals.show');
+            Route::get('/statements/pdf', [AccountingBooksController::class, 'statementsPdf'])->middleware('can:accounting.reports.view')->name('statements.pdf');
             Route::get('/statements', [AccountingBooksController::class, 'statements'])->middleware('can:accounting.reports.view')->name('statements');
         });
 
