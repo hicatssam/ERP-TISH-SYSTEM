@@ -81,7 +81,7 @@
                 <th style="width:64px">الصورة</th>
                 <th>الاسم</th>
                 <th>الفئة</th>
-                <th>العلامة</th>
+                @if($brands->isNotEmpty())<th>العلامة</th>@endif
                 @if($variantsEnabled)<th>النوع / المتغيرات</th>@endif
                 <th>SKU</th>
                 <th style="width:170px">الباركود</th>
@@ -108,8 +108,10 @@
                     <strong>{{ $product->name_ar ?? $product->name }}</strong>
                     @if($product->name_ar)<div style="font-size:.75rem;color:var(--text-muted)">{{ $product->name }}</div>@endif
                 </td>
-                <td>{{ $product->category?->name_ar ?? $product->category?->name }}</td>
-                <td>{{ $product->brand?->displayName() ?? '—' }}</td>
+                <td>{{ $product->category?->name_ar ?? $product->category?->name ?? '—' }}</td>
+                @if($brands->isNotEmpty())
+                    <td>{{ $product->brand?->displayName() ?? '—' }}</td>
+                @endif
                 @if($variantsEnabled)<td><span class="badge {{ ($product->product_type?->value ?? 'standard') === 'variant' ? 'badge-active' : 'badge-pending' }}">{{ ($product->product_type?->value ?? 'standard') === 'variant' ? 'متغير' : 'عادي' }}</span>@if($product->variants_count)<div style="font-size:.7rem;color:var(--text-muted);margin-top:.25rem">{{ $product->variants_count }} متغير</div>@endif</td>@endif
                 <td><code>{{ $product->sku }}</code></td>
                 <td>
@@ -156,7 +158,16 @@
                 </td>
             </tr>
         @empty
-            <tr><td colspan="{{ $variantsEnabled ? 12 : 11 }}"><div class="empty-state-sm">لا توجد منتجات مطابقة للفلاتر الحالية.</div></td></tr>
+            @php
+                $emptyColspan = 10
+                    + ($variantsEnabled ? 1 : 0)
+                    + ($brands->isNotEmpty() ? 1 : 0);
+            @endphp
+            <tr>
+                <td colspan="{{ $emptyColspan }}">
+                    <div class="empty-state-sm">لا توجد منتجات مطابقة للفلاتر الحالية.</div>
+                </td>
+            </tr>
         @endforelse
         </tbody>
     </table>
