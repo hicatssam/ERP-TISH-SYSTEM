@@ -557,6 +557,8 @@ class ShowroomSweetsRequestController extends Controller
             'receivedBy.employee',
 
             'items.product.category',
+            'branchShipment.driver.employee',
+            'branchShipment.receivingInvoice',
         ]);
 
         $allowedTransitions =
