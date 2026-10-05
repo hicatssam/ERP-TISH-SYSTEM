@@ -11,7 +11,7 @@
         </p>
     </div>
     <div class="page-header-actions">
-        @if($invoice)
+        @if($invoice?->isConfirmed())
             <a href="{{ route('branch-receiving-invoices.show', $invoice) }}" class="btn btn-outline btn-sm">
                 فاتورة الاستلام
             </a>
