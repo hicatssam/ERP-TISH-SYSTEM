@@ -1501,6 +1501,17 @@
 
                         </a>
 
+                        @can('showroom_sweets_requests.create')
+                            @if($statusValue === 'pending')
+                                <a
+                                    href="{{ route('showroom-sweets-requests.edit', $req) }}"
+                                    class="btn btn-outline btn-sm"
+                                >
+                                    تعديل
+                                </a>
+                            @endif
+                        @endcan
+
 
                         @can('showroom_sweets_requests.delete')
 
