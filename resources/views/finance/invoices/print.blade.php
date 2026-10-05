@@ -79,7 +79,7 @@
         . $invoice->paymentStatusLabel();
 @endphp
 
-@extends('layouts.print')
+@extends(($pdfMode ?? false) ? 'layouts.pdf' : 'layouts.print')
 
 @section('pdf_mode', ($pdfMode ?? false) ? '1' : '0')
 @section('document_title', $invoice->invoiceTypeValue() === 'special_cake' ? 'فاتورة طلب كيك' : 'فاتورة بيع')
