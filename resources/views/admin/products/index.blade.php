@@ -48,10 +48,10 @@
         @endif
         @endcan
         @can('products.create')
-        <a href="{{ route('products.create') }}" class="btn btn-gold">
+        <button type="button" class="btn btn-gold" onclick="openProductCreateModal()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             إضافة منتج
-        </a>
+        </button>
         @endcan
     </div>
 </div>
@@ -145,12 +145,184 @@
     </div>
 
 
+@can('products.create')
+<div id="productCreateModal" class="product-create-modal" aria-hidden="true" onclick="closeProductCreateModalFromBackdrop(event)">
+    <div class="product-create-dialog" role="dialog" aria-modal="true" aria-labelledby="productCreateModalTitle">
+        <div class="product-create-header">
+            <div>
+                <span class="product-create-eyebrow">المنتجات</span>
+                <h3 id="productCreateModalTitle">إضافة منتج جديد</h3>
+                <p>أدخل بيانات المنتج واربطه بالفروع أو المصنع، وسيتم إنشاء SKU والباركود تلقائيًا.</p>
+            </div>
+
+            <button type="button" class="product-create-close" onclick="closeProductCreateModal()" aria-label="إغلاق">×</button>
+        </div>
+
+        <form action="{{ route('products.store') }}" method="POST" enctype="multipart/form-data">
+            @csrf
+
+            <div class="product-create-body">
+                @include('admin.products._form', [
+                    'categories' => $createCategories,
+                    'locations' => $locations,
+                    'managedLocation' => $managedLocation,
+                    'canManageLocations' => $canManageLocations,
+                    'units' => $units,
+                    'brands' => $brands,
+                    'variantsEnabled' => $variantsEnabled,
+                ])
+            </div>
+
+            <div class="product-create-footer">
+                <button type="button" class="btn btn-ghost" onclick="closeProductCreateModal()">إلغاء</button>
+                <button type="submit" class="btn btn-gold">حفظ المنتج</button>
+            </div>
+        </form>
+    </div>
+</div>
+@endcan
+
+@push('styles')
+<style>
+.product-create-modal{
+    position:fixed;
+    inset:0;
+    z-index:99999;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:1rem;
+    background:rgba(15,23,42,.62);
+    backdrop-filter:blur(3px);
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+    transition:.18s ease;
+}
+.product-create-modal.is-open{
+    opacity:1;
+    visibility:visible;
+    pointer-events:auto;
+}
+.product-create-dialog{
+    width:min(1080px,96vw);
+    max-height:92vh;
+    display:flex;
+    flex-direction:column;
+    background:var(--card-bg,#fff);
+    border:1px solid var(--border);
+    border-radius:18px;
+    box-shadow:0 24px 70px rgba(0,0,0,.28);
+    overflow:hidden;
+    transform:translateY(16px) scale(.985);
+    transition:.18s ease;
+}
+.product-create-modal.is-open .product-create-dialog{
+    transform:translateY(0) scale(1);
+}
+.product-create-header{
+    flex:0 0 auto;
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:1rem;
+    padding:1.15rem 1.3rem;
+    border-bottom:1px solid var(--border);
+}
+.product-create-eyebrow{
+    display:block;
+    margin-bottom:.2rem;
+    color:var(--gold);
+    font-size:.68rem;
+    font-weight:900;
+}
+.product-create-header h3{
+    margin:0;
+    font-size:1.1rem;
+    font-weight:900;
+}
+.product-create-header p{
+    margin:.35rem 0 0;
+    color:var(--text-muted);
+    font-size:.75rem;
+}
+.product-create-close{
+    width:36px;
+    height:36px;
+    flex:0 0 36px;
+    border:1px solid var(--border);
+    border-radius:50%;
+    background:var(--surface,#fff);
+    color:var(--text-muted);
+    font-size:1.4rem;
+    cursor:pointer;
+}
+.product-create-body{
+    min-height:0;
+    overflow-y:auto;
+    padding:1.2rem 1.3rem;
+}
+.product-create-footer{
+    flex:0 0 auto;
+    display:flex;
+    justify-content:flex-end;
+    gap:.65rem;
+    padding:1rem 1.3rem;
+    border-top:1px solid var(--border);
+    background:var(--off-white);
+}
+@media(max-width:720px){
+    .product-create-modal{padding:.5rem}
+    .product-create-dialog{width:100%;max-height:96vh}
+    .product-create-footer{flex-direction:column-reverse}
+    .product-create-footer .btn{width:100%}
+}
+</style>
+@endpush
+
 @endsection
 
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.js-ean13-barcode').forEach(renderEan13Barcode);
+
+    @if($errors->any())
+        openProductCreateModal();
+    @endif
+});
+
+function openProductCreateModal() {
+    const modal = document.getElementById('productCreateModal');
+    if (!modal) return;
+
+    modal.classList.add('is-open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+
+    const firstInput = modal.querySelector('input[name="name"]');
+    if (firstInput) setTimeout(() => firstInput.focus(), 80);
+}
+
+function closeProductCreateModal() {
+    const modal = document.getElementById('productCreateModal');
+    if (!modal) return;
+
+    modal.classList.remove('is-open');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+}
+
+function closeProductCreateModalFromBackdrop(event) {
+    if (event.target.id === 'productCreateModal') {
+        closeProductCreateModal();
+    }
+}
+
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeProductCreateModal();
+    }
 });
 
 function renderEan13Barcode(svg) {
