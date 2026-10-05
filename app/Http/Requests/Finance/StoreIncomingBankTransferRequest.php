@@ -54,16 +54,13 @@ class StoreIncomingBankTransferRequest extends FormRequest
                 'nullable',
                 'string',
                 'max:50',
-                'required_without:sender_account_number',
             ],
-            'sender_account_number' => [
-                'nullable',
-                'string',
-                'max:120',
-                'required_without:sender_phone',
-            ],
-            'reference_number' => ['required', 'string', 'max:120'],
             'amount' => ['required', 'numeric', 'min:0.01'],
+            'approval_status' => [
+                'required',
+                'string',
+                'in:confirmed,pending_verification',
+            ],
             'currency_code' => ['nullable', 'string', 'size:3'],
             'received_at' => ['nullable', 'date'],
             'payment_proof' => [
@@ -164,31 +161,16 @@ class StoreIncomingBankTransferRequest extends FormRequest
                 );
             }
 
-            $reference = trim((string) $this->input('reference_number'));
-
-            if (
-                $reference !== ''
-                && IncomingBankTransfer::query()
-                    ->where('location_id', $locationId)
-                    ->where('payment_method_id', $methodId)
-                    ->where('reference_number', $reference)
-                    ->exists()
-            ) {
-                $validator->errors()->add(
-                    'reference_number',
-                    'هذه الحوالة مسجلة مسبقًا بنفس الفرع وطريقة الدفع ورقم المرجع.'
-                );
-            }
         });
     }
 
     public function messages(): array
     {
         return [
-            'sender_phone.required_without' =>
-                'أدخل رقم جوال المحوّل أو رقم حسابه/محفظته.',
-            'sender_account_number.required_without' =>
-                'أدخل رقم حساب/محفظة المحوّل أو رقم جواله.',
+            'approval_status.required' =>
+                'اختر حالة اعتماد الحوالة.',
+            'approval_status.in' =>
+                'حالة اعتماد الحوالة غير صالحة.',
             'payment_proof.mimes' =>
                 'إثبات الحوالة يجب أن يكون صورة أو PDF.',
             'payment_proof.max' =>
