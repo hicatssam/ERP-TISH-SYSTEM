@@ -163,6 +163,7 @@
 
             <div class="product-create-body">
                 @include('admin.products._form', [
+                    'product' => null,
                     'categories' => $createCategories,
                     'locations' => $locations,
                     'managedLocation' => $managedLocation,
