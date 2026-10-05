@@ -99,11 +99,11 @@
         $isApproved = $report->status === 'approved';
 
         $totals = [
-            'opening' => $report->items->sum('opening_qty'),
-            'received' => $report->items->sum('received_qty'),
-            'total' => $report->items->sum('total_qty'),
-            'sold' => $report->items->sum('sold_qty'),
-            'closing' => $report->items->sum(fn($item) => (int)($item->actual_closing_qty ?? 0)),
+            'opening' => $visibleItems->sum('opening_qty'),
+            'received' => $visibleItems->sum('received_qty'),
+            'total' => $visibleItems->sum('total_qty'),
+            'sold' => $visibleItems->sum('sold_qty'),
+            'closing' => $visibleItems->sum(fn($item) => (int)($item->actual_closing_qty ?? 0)),
         ];
     @endphp
 
@@ -185,7 +185,7 @@
                 <div>
                     <div class="card-title">قسم الكيك</div>
                     <small class="text-muted">
-                        السابق والوارد والمجموع محسوبة تلقائيًا. الفرع يدخل فقط المتبقي آخر النهار، والمباع يُحسب تلقائيًا.
+                        يظهر فقط الصنف المطلوب لهذا اليوم أو الصنف الذي لديه متبقي مرحّل من اليوم السابق. الوارد والمجموع محسوبة تلقائيًا، والفرع يدخل فقط المتبقي آخر النهار.
                     </small>
                 </div>
             </div>
@@ -206,7 +206,7 @@
                     </thead>
 
                     <tbody>
-                        @foreach($report->items as $item)
+                        @forelse($visibleItems as $item)
                             <tr>
                                 <td>{{ $loop->iteration }}</td>
                                 <td class="cake-name"><strong>{{ $item->category_name }}</strong></td>
@@ -238,7 +238,13 @@
                                     >
                                 </td>
                             </tr>
-                        @endforeach
+                        @empty
+                            <tr>
+                                <td colspan="8" class="empty-state-sm">
+                                    لا توجد أصناف مطلوبة لهذا اليوم ولا رصيد متبقٍ من اليوم السابق.
+                                </td>
+                            </tr>
+                        @endforelse
                     </tbody>
 
                     <tfoot>
