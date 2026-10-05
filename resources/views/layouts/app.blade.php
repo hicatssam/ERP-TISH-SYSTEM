@@ -2228,6 +2228,26 @@ a.app-page-btn:hover {
 
                     </a>
 
+                    @if(\Illuminate\Support\Facades\Route::has('showroom-daily-reports.index'))
+                        <a
+                            href="{{ route('showroom-daily-reports.index') }}"
+                            class="nav-item {{ request()->routeIs('showroom-daily-reports.*') ? 'active' : '' }}"
+                        >
+                            <svg
+                                class="nav-icon"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                            >
+                                <path d="M4 3h16v18H4z" />
+                                <path d="M8 7h8M8 11h8M8 15h5" />
+                            </svg>
+
+                            <span>تقرير المعرض اليومي</span>
+                        </a>
+                    @endif
+
                     @can('reports.export')
                         <a href="{{ route('report-schedules.index') }}" class="nav-item {{ request()->routeIs('report-schedules.*') ? 'active' : '' }}">
 
