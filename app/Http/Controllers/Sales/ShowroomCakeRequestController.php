@@ -540,6 +540,11 @@ class ShowroomCakeRequestController extends Controller
                 $showroomCakeRequest
             );
 
+        $canEditRequest = $this->canEditRequest(
+            $user,
+            $showroomCakeRequest
+        );
+
         $canManageReservations =
             $user->isAdmin()
             || (
@@ -559,6 +564,7 @@ class ShowroomCakeRequestController extends Controller
             compact(
                 'showroomCakeRequest',
                 'allowedTransitions',
+                'canEditRequest',
                 'canManageReservations'
             )
         );
