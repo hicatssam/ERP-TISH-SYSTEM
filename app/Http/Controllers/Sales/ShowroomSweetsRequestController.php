@@ -531,6 +531,166 @@ class ShowroomSweetsRequestController extends Controller
             );
     }
 
+    public function edit(ShowroomSweetsRequest $showroomSweetsRequest)
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        $this->ensureCanAccess($user, $showroomSweetsRequest);
+        abort_unless(
+            $this->canEditRequest($user, $showroomSweetsRequest),
+            403,
+            'لا يمكن تعديل الطلب بعد بدء تنفيذه.'
+        );
+
+        $showroomSweetsRequest->load('items.product');
+
+        $canChooseBranch = $user->isAdmin();
+        $branch = $showroomSweetsRequest->requestingLocation;
+
+        $branches = $canChooseBranch
+            ? Location::query()->branches()->active()->orderBy('name')->get()
+            : collect([$branch]);
+
+        $factories = Location::query()->factory()->active()->orderBy('name')->get();
+
+        return view(
+            'sales.showroom-sweets-requests.edit',
+            compact(
+                'showroomSweetsRequest',
+                'branch',
+                'branches',
+                'factories',
+                'canChooseBranch'
+            )
+        );
+    }
+
+    public function update(
+        Request $request,
+        ShowroomSweetsRequest $showroomSweetsRequest
+    ) {
+        /** @var User $user */
+        $user = Auth::user();
+
+        $this->ensureCanAccess($user, $showroomSweetsRequest);
+        abort_unless(
+            $this->canEditRequest($user, $showroomSweetsRequest),
+            403,
+            'لا يمكن تعديل الطلب بعد بدء تنفيذه.'
+        );
+
+        $canChooseBranch = $user->isAdmin();
+
+        $validated = $request->validate([
+            'requesting_location_id' => [
+                Rule::requiredIf($canChooseBranch),
+                'nullable',
+                Rule::exists('locations', 'id')->where(
+                    fn ($q) => $q
+                        ->where('type', 'branch')
+                        ->where('is_active', true)
+                        ->whereNull('deleted_at')
+                ),
+            ],
+            'factory_location_id' => [
+                'required',
+                Rule::exists('locations', 'id')->where(
+                    fn ($q) => $q
+                        ->where('type', 'factory')
+                        ->where('is_active', true)
+                        ->whereNull('deleted_at')
+                ),
+            ],
+            'needed_by' => ['nullable', 'date'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.product_id' => [
+                'required',
+                'integer',
+                Rule::exists('products', 'id')->where(
+                    fn ($q) => $q->where('is_active', true)->whereNull('deleted_at')
+                ),
+            ],
+            'items.*.quantity' => ['required', 'numeric', 'min:0.001'],
+            'items.*.reserved_quantity' => ['nullable', 'numeric', 'min:0'],
+            'items.*.reservation_notes' => ['nullable', 'string', 'max:1000'],
+            'items.*.requested_unit' => ['required', 'string', 'max:50'],
+            'items.*.notes' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        foreach ($validated['items'] as $index => $item) {
+            if ((float) ($item['reserved_quantity'] ?? 0) > (float) $item['quantity']) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    "items.{$index}.reserved_quantity" =>
+                        'الكمية المحجوزة للعملاء لا يمكن أن تتجاوز الكمية المطلوبة.',
+                ]);
+            }
+        }
+
+        $productIds = collect($validated['items'])
+            ->pluck('product_id')
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        $products = Product::query()
+            ->active()
+            ->whereIn('id', $productIds)
+            ->whereHas(
+                'category',
+                fn ($q) => $q->whereNotIn('slug', ['cakes', 'drinks', 'gifts'])
+            )
+            ->get()
+            ->keyBy('id');
+
+        if ($products->count() !== $productIds->count()) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'items' => 'يجب اختيار أصناف حلويات فعالة فقط من كتالوج المنتجات.',
+                ]);
+        }
+
+        $branchId = $canChooseBranch
+            ? (int) $validated['requesting_location_id']
+            : (int) $showroomSweetsRequest->requesting_location_id;
+
+        DB::transaction(function () use (
+            $showroomSweetsRequest,
+            $validated,
+            $branchId,
+            $products
+        ): void {
+            $showroomSweetsRequest->update([
+                'requesting_location_id' => $branchId,
+                'factory_location_id' => (int) $validated['factory_location_id'],
+                'needed_by' => $validated['needed_by'] ?? null,
+                'notes' => $validated['notes'] ?? null,
+            ]);
+
+            $showroomSweetsRequest->items()->delete();
+
+            foreach ($validated['items'] as $item) {
+                $product = $products->get((int) $item['product_id']);
+
+                $showroomSweetsRequest->items()->create([
+                    'product_id' => $product->id,
+                    'product_name_snapshot' => $product->name_ar ?: $product->name,
+                    'quantity' => $item['quantity'],
+                    'reserved_quantity' => (float) ($item['reserved_quantity'] ?? 0),
+                    'reservation_notes' => $item['reservation_notes'] ?? null,
+                    'requested_unit' => trim($item['requested_unit']),
+                    'notes' => $item['notes'] ?? null,
+                ]);
+            }
+        });
+
+        return redirect()
+            ->route('showroom-sweets-requests.show', $showroomSweetsRequest)
+            ->with('success', 'تم تحديث طلب حلويات الفرع.');
+    }
+
     public function show(
         ShowroomSweetsRequest
         $showroomSweetsRequest
@@ -1219,4 +1379,28 @@ class ShowroomSweetsRequestController extends Controller
             true
         );
     }
+    private function canEditRequest(
+        User $user,
+        ShowroomSweetsRequest $request
+    ): bool {
+        if ($request->status->workflowValue() !== 'pending') {
+            return false;
+        }
+
+        if ($request->branchShipment()->exists()) {
+            return false;
+        }
+
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        return $user->can('showroom_sweets_requests.create')
+            && in_array(
+                (int) $request->requesting_location_id,
+                $this->userLocationIds($user),
+                true
+            );
+    }
+
 }
