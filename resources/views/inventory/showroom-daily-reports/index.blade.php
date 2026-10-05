@@ -423,6 +423,26 @@
         </div>
     @endif
 
+    @can('showroom_cake_daily_reports.view')
+        @if(\Illuminate\Support\Facades\Route::has('showroom-cake-daily-reports.index'))
+            <div class="showroom-workflow-card" style="margin-top:1rem">
+                <div>
+                    <strong>تقرير قسم الكيك</strong>
+                    <span>
+                        تقرير يومي منفصل خاص بطلبات كيك الفروع فقط.
+                    </span>
+                </div>
+
+                <a
+                    href="{{ route('showroom-cake-daily-reports.index', ['location_id' => $locationId, 'date' => $date]) }}"
+                    class="btn btn-outline"
+                >
+                    فتح تقرير قسم الكيك
+                </a>
+            </div>
+        @endif
+    @endcan
+
     @if($isSubmitted && $canReview)
         <div class="showroom-workflow-card accounting-review-card">
             <div class="accounting-review-head">
