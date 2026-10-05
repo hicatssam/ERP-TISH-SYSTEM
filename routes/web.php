@@ -41,6 +41,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Admin\PaymentMethodController;
 use App\Http\Controllers\Admin\SalesChannelController;
 use App\Http\Controllers\Inventory\StockReceivingInvoiceController;
+use App\Http\Controllers\Inventory\ShowroomDailyReportController;
 use App\Http\Controllers\Procurement\GoodsReceiptController;
 use App\Http\Controllers\Procurement\ExchangeRateController;
 use App\Http\Controllers\Procurement\ProcurementDashboardController;
@@ -275,6 +276,42 @@ Route::prefix('locations/{location}')
                 [StockCountController::class, 'approve']
             )->name('stock-counts.approve');
         });
+
+        // ─── Showroom Daily Report ─────────────────────────────────────────
+        Route::get(
+            'showroom-daily-reports',
+            [ShowroomDailyReportController::class, 'index']
+        )->name('showroom-daily-reports.index');
+
+        Route::post(
+            'showroom-daily-reports',
+            [ShowroomDailyReportController::class, 'create']
+        )->name('showroom-daily-reports.create');
+
+        Route::put(
+            'showroom-daily-reports/{showroomDailyReport}',
+            [ShowroomDailyReportController::class, 'update']
+        )->name('showroom-daily-reports.update');
+
+        Route::post(
+            'showroom-daily-reports/{showroomDailyReport}/close',
+            [ShowroomDailyReportController::class, 'close']
+        )->name('showroom-daily-reports.close');
+
+        Route::post(
+            'showroom-daily-reports/{showroomDailyReport}/reopen',
+            [ShowroomDailyReportController::class, 'reopen']
+        )->name('showroom-daily-reports.reopen');
+
+        Route::get(
+            'showroom-daily-reports/{showroomDailyReport}/print',
+            [ShowroomDailyReportController::class, 'print']
+        )->name('showroom-daily-reports.print');
+
+        Route::get(
+            'showroom-daily-reports/{showroomDailyReport}/pdf',
+            [ShowroomDailyReportController::class, 'pdf']
+        )->name('showroom-daily-reports.pdf');
 
 
         // ─── Stock Requests ────────────────────────────────────────────────
