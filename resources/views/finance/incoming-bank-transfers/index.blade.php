@@ -57,6 +57,16 @@
             تصدير PDF
         </a>
 
+        <a
+            href="{{ route('incoming-bank-transfers.print', request()->except('page')) }}"
+            class="btn btn-outline btn-sm"
+            target="_blank"
+            rel="noopener"
+            title="طباعة تقرير الحوالات حسب الفلاتر الحالية"
+        >
+            🖨️ طباعة
+        </a>
+
         @if(auth()->user()->isAdmin() || auth()->user()->can('payments.record'))
             <button
                 type="button"
