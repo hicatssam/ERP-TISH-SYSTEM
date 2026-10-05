@@ -1,6 +1,9 @@
 @extends('layouts.app')
 @section('title', 'المنتجات')
-@php($currencySymbol = app(\App\Services\PrintThemeService::class)->settings()['currency_symbol'])
+@php
+    $currencySymbol = app(\App\Services\PrintThemeService::class)
+        ->settings()['currency_symbol'];
+@endphp
 
 @push('styles')
 <style>
