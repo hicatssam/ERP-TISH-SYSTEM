@@ -70,6 +70,15 @@
 
     <div class="action-btns">
 
+        @if($canEditRequest)
+            <a
+                href="{{ route('showroom-cake-requests.edit', $showroomCakeRequest) }}"
+                class="btn btn-outline btn-sm"
+            >
+                تعديل الطلب
+            </a>
+        @endif
+
         @if(count($allowedTransitions) > 0)
             <button
                 type="button"
