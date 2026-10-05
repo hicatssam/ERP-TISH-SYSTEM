@@ -192,7 +192,7 @@
                 <p>أدخل بيانات المنتج واربطه بالفروع أو المصنع، وسيتم إنشاء SKU والباركود تلقائيًا.</p>
             </div>
 
-            <button type="button" class="product-create-close" id="closeProductCreateModalButton" aria-label="إغلاق">×</button>
+            <button type="button" class="product-create-close" id="closeProductCreateModalButton" aria-label="إغلاق" onclick="closeProductCreateModal(); return false;">×</button>
         </div>
 
         <form action="{{ route('products.store') }}" method="POST" enctype="multipart/form-data" class="product-create-form">
@@ -212,7 +212,7 @@
             </div>
 
             <div class="product-create-footer">
-                <button type="button" class="btn btn-ghost" id="cancelProductCreateModalButton">إلغاء</button>
+                <button type="button" class="btn btn-ghost" id="cancelProductCreateModalButton" onclick="closeProductCreateModal(); return false;">إلغاء</button>
                 <button type="submit" class="btn btn-gold">حفظ المنتج</button>
             </div>
         </form>
@@ -397,15 +397,27 @@ function openProductCreateModal() {
 
 function closeProductCreateModal() {
     const modal = document.getElementById('productCreateModal');
-    if (!modal) return;
 
-    modal.classList.remove('is-open');
-    modal.setAttribute('aria-hidden', 'true');
+    if (modal) {
+        modal.classList.remove('is-open');
+        modal.setAttribute('aria-hidden', 'true');
+    }
+
     document.body.style.overflow = '';
 
     if (window.location.hash === '#productCreateModal') {
-        history.replaceState(null, '', window.location.pathname + window.location.search);
+        if (window.history && window.history.replaceState) {
+            window.history.replaceState(
+                null,
+                document.title,
+                window.location.pathname + window.location.search
+            );
+        } else {
+            window.location.hash = '';
+        }
     }
+
+    return false;
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -415,8 +427,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const cancelButton = document.getElementById('cancelProductCreateModalButton');
 
     if (openButton) {
-        openButton.addEventListener('click', function() {
-            setTimeout(openProductCreateModal, 0);
+        openButton.addEventListener('click', function(event) {
+            event.preventDefault();
+            openProductCreateModal();
         });
     }
 
