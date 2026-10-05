@@ -56,6 +56,14 @@
     </div>
 </div>
 
+@if(session('success'))
+    <div class="alert alert-success" style="margin-bottom:1rem">{{ session('success') }}</div>
+@endif
+
+@if(session('error'))
+    <div class="alert alert-danger" style="margin-bottom:1rem">{{ session('error') }}</div>
+@endif
+
 <div class="filter-row">
     <form method="GET" action="{{ route('products.index') }}" class="filter-grid" style="width:100%">
         <input type="search" name="q" class="form-input" placeholder="الاسم / SKU / الباركود" value="{{ request('q') }}">
@@ -78,6 +86,7 @@
                 <th>SKU</th>
                 <th style="width:170px">الباركود</th>
                 <th>الوحدة</th>
+                <th>التوفر</th>
                 <th>السعر الأساسي</th>
                 <th>الحالة</th>
                 <th>الإجراءات</th>
@@ -121,7 +130,21 @@
                     @endif
                 </td>
                 <td>{{ $product->unitDefinition?->displayName() ?? $product->unit }}</td>
-                <td>{{ $currencySymbol }}{{ number_format($product->base_selling_price, 2) }}</td>
+                <td>
+                    @if($product->locationProducts->isNotEmpty())
+                        <div style="display:flex;gap:.25rem;flex-wrap:wrap">
+                            @foreach($product->locationProducts->where('is_available', true)->take(3) as $locationProduct)
+                                <span class="badge badge-blue">{{ $locationProduct->location?->name_ar ?? $locationProduct->location?->name ?? '—' }}</span>
+                            @endforeach
+                            @if($product->locationProducts->where('is_available', true)->count() > 3)
+                                <span class="badge">+{{ $product->locationProducts->where('is_available', true)->count() - 3 }}</span>
+                            @endif
+                        </div>
+                    @else
+                        <span style="color:var(--text-muted)">غير مربوط بموقع</span>
+                    @endif
+                </td>
+                <td>{{ $currencySymbol }}{{ number_format((float)$product->base_selling_price, 2) }}</td>
                 <td><span class="badge {{ $product->is_active ? 'badge-active' : 'badge-inactive' }}">{{ $product->is_active ? 'نشط' : 'معطل' }}</span></td>
                 <td>
                     <div class="actions">
@@ -133,7 +156,7 @@
                 </td>
             </tr>
         @empty
-            <tr><td colspan="{{ $variantsEnabled ? 11 : 10 }}"><div class="empty-state-sm">لا توجد منتجات.</div></td></tr>
+            <tr><td colspan="{{ $variantsEnabled ? 12 : 11 }}"><div class="empty-state-sm">لا توجد منتجات مطابقة للفلاتر الحالية.</div></td></tr>
         @endforelse
         </tbody>
     </table>
