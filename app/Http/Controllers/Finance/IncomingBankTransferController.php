@@ -325,8 +325,12 @@ class IncomingBankTransferController extends Controller
         $truncated = false;
         $cap = $total;
 
+        /*
+         * Use the dedicated mPDF-safe report template. The browser print
+         * layout contains CSS rules that mPDF can split into many blank pages.
+         */
         $html = view(
-            'reports.print',
+            'reports.pdf',
             [
                 'type' => 'incoming-bank-transfers',
                 'title' => $title,
@@ -374,6 +378,7 @@ class IncomingBankTransferController extends Controller
         if (
             ! str_starts_with($pdf, '%PDF')
             || strlen($pdf) < 1000
+            || ! preg_match('/\/Type\s*\/Page\b/', $pdf)
         ) {
             throw new \RuntimeException(
                 'تعذر إنشاء ملف PDF صالح للحوالات.'
