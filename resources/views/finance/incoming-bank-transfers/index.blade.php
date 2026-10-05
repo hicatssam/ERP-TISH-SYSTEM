@@ -616,51 +616,79 @@
                     </td>
 
                     <td>
-                        @if(
-                            $statusValue === 'pending_verification'
-                            && (
+                        @php
+                            $canDeleteIncomingTransfer =
                                 auth()->user()->isAdmin()
-                                || auth()->user()->can('payments.verify')
-                            )
-                        )
-                            <div class="incoming-actions">
-                                <form
-                                    method="POST"
-                                    action="{{ route('incoming-bank-transfers.verify', $transfer) }}"
-                                >
-                                    @csrf
-                                    <input type="hidden" name="action" value="verify">
-                                    <button
-                                        type="submit"
-                                        class="btn btn-success btn-xs"
-                                        onclick="return confirm('اعتماد هذه الحوالة؟')"
-                                    >
-                                        اعتماد
-                                    </button>
-                                </form>
+                                || auth()->user()->hasRole('Accountant');
 
-                                <form
-                                    method="POST"
-                                    action="{{ route('incoming-bank-transfers.verify', $transfer) }}"
-                                    class="incoming-reject-form"
-                                >
-                                    @csrf
-                                    <input type="hidden" name="action" value="reject">
-                                    <input
-                                        type="text"
-                                        name="rejection_reason"
-                                        class="form-input"
-                                        maxlength="500"
-                                        required
-                                        placeholder="سبب الرفض"
+                            $canVerifyIncomingTransfer =
+                                $statusValue === 'pending_verification'
+                                && (
+                                    auth()->user()->isAdmin()
+                                    || auth()->user()->can('payments.verify')
+                                );
+                        @endphp
+
+                        @if($canVerifyIncomingTransfer || $canDeleteIncomingTransfer)
+                            <div class="incoming-actions">
+                                @if($canVerifyIncomingTransfer)
+                                    <form
+                                        method="POST"
+                                        action="{{ route('incoming-bank-transfers.verify', $transfer) }}"
                                     >
-                                    <button
-                                        type="submit"
-                                        class="btn btn-danger btn-xs"
+                                        @csrf
+                                        <input type="hidden" name="action" value="verify">
+                                        <button
+                                            type="submit"
+                                            class="btn btn-success btn-xs"
+                                            onclick="return confirm('اعتماد هذه الحوالة؟')"
+                                        >
+                                            اعتماد
+                                        </button>
+                                    </form>
+
+                                    <form
+                                        method="POST"
+                                        action="{{ route('incoming-bank-transfers.verify', $transfer) }}"
+                                        class="incoming-reject-form"
                                     >
-                                        رفض
-                                    </button>
-                                </form>
+                                        @csrf
+                                        <input type="hidden" name="action" value="reject">
+                                        <input
+                                            type="text"
+                                            name="rejection_reason"
+                                            class="form-input"
+                                            maxlength="500"
+                                            required
+                                            placeholder="سبب الرفض"
+                                        >
+                                        <button
+                                            type="submit"
+                                            class="btn btn-danger btn-xs"
+                                        >
+                                            رفض
+                                        </button>
+                                    </form>
+                                @endif
+
+                                @if($canDeleteIncomingTransfer)
+                                    <form
+                                        method="POST"
+                                        action="{{ route('incoming-bank-transfers.destroy', $transfer) }}"
+                                        onsubmit="return confirm('سيتم حذف الحوالة نهائيًا. هل أنت متأكد؟')"
+                                    >
+                                        @csrf
+                                        @method('DELETE')
+
+                                        <button
+                                            type="submit"
+                                            class="btn btn-danger btn-xs"
+                                            title="حذف الحوالة"
+                                        >
+                                            حذف
+                                        </button>
+                                    </form>
+                                @endif
                             </div>
                         @else
                             —
