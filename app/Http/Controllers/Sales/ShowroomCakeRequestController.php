@@ -558,6 +558,16 @@ class ShowroomCakeRequestController extends Controller
             );
         }
 
+        if (
+            $newStatus ===
+            ShowroomCakeRequestStatus::Completed
+        ) {
+            return back()->with(
+                'error',
+                'إكمال الطلب يتم فقط بعد استلام الفرع وإصدار فاتورة الاستلام.'
+            );
+        }
+
         abort_unless(
             $user->isAdmin()
             || $user->can(
@@ -677,7 +687,8 @@ class ShowroomCakeRequestController extends Controller
                 fn (
                     ShowroomCakeRequestStatus $status
                 ): bool =>
-                    (
+                    $status !== ShowroomCakeRequestStatus::Completed
+                    && (
                         $user->isAdmin()
                         || $user->can(
                             'showroom_cake_requests.update_status'
