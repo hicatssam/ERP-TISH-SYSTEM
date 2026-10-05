@@ -1502,7 +1502,7 @@
                         </a>
 
                         @can('showroom_sweets_requests.create')
-                            @if($statusValue === 'pending')
+                            @if(in_array($statusValue, ['pending', 'in_progress'], true))
                                 <a
                                     href="{{ route('showroom-sweets-requests.edit', $req) }}"
                                     class="btn btn-outline btn-sm"
