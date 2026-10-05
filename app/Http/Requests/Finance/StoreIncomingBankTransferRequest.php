@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\Finance;
 
-use App\Models\IncomingBankTransfer;
 use App\Models\Location;
 use App\Models\LocationPaymentAccount;
 use App\Models\PaymentMethod;
