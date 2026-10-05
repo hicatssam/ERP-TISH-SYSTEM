@@ -92,7 +92,7 @@
                         <a href="{{ route('showroom-cake-requests.show', $req) }}" class="btn btn-ghost btn-sm">عرض</a>
 
                         @can('showroom_cake_requests.create')
-                            @if($req->status->workflowValue() === 'pending')
+                            @if(in_array($req->status->workflowValue(), ['pending', 'in_progress'], true))
                                 <a href="{{ route('showroom-cake-requests.edit', $req) }}" class="btn btn-outline btn-sm">تعديل</a>
                             @endif
                         @endcan
