@@ -535,8 +535,34 @@
 .receiving-invoice-row > div:first-child{display:grid;gap:.18rem}
 .receiving-invoice-row small{color:var(--text-muted);font-size:.7rem}
 .receiving-invoice-qty{font-weight:900}
-.showroom-report-card{overflow:hidden}
-.showroom-report-table{min-width:1700px}
+.showroom-report-card{overflow:visible}
+.showroom-report-card .table-responsive{
+    display:block;
+    width:100%;
+    max-width:100%;
+    overflow-x:auto!important;
+    overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:auto;
+    padding-bottom:.35rem;
+}
+.showroom-report-card .table-responsive::-webkit-scrollbar{height:12px}
+.showroom-report-card .table-responsive::-webkit-scrollbar-track{
+    background:var(--off-white);
+    border-radius:999px;
+}
+.showroom-report-card .table-responsive::-webkit-scrollbar-thumb{
+    background:#b8bec7;
+    border:2px solid var(--off-white);
+    border-radius:999px;
+}
+.showroom-report-card .table-responsive::-webkit-scrollbar-thumb:hover{
+    background:#8e98a6;
+}
+.showroom-report-table{
+    width:max-content;
+    min-width:1700px;
+}
 .showroom-report-table th,.showroom-report-table td{text-align:center;vertical-align:middle;padding:.45rem}
 .showroom-product-name{min-width:170px;text-align:right!important}
 .showroom-product-name small{display:block;color:var(--text-muted);font-size:.62rem}
