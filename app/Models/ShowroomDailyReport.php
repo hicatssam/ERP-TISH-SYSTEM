@@ -14,6 +14,11 @@ class ShowroomDailyReport extends Model
         'status',
         'notes',
         'created_by',
+        'submitted_by',
+        'submitted_at',
+        'reviewed_by',
+        'reviewed_at',
+        'review_notes',
         'closed_by',
         'closed_at',
         'reopened_by',
@@ -24,6 +29,8 @@ class ShowroomDailyReport extends Model
     {
         return [
             'business_date' => 'date',
+            'submitted_at' => 'datetime',
+            'reviewed_at' => 'datetime',
             'closed_at' => 'datetime',
             'reopened_at' => 'datetime',
         ];
@@ -46,6 +53,16 @@ class ShowroomDailyReport extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function submittedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'submitted_by');
+    }
+
+    public function reviewedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
     public function closedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'closed_by');
@@ -58,6 +75,16 @@ class ShowroomDailyReport extends Model
 
     public function isClosed(): bool
     {
-        return $this->status === 'closed';
+        return in_array($this->status, ['closed', 'approved'], true);
+    }
+
+    public function isSubmitted(): bool
+    {
+        return $this->status === 'submitted';
+    }
+
+    public function isDraft(): bool
+    {
+        return $this->status === 'draft';
     }
 }
