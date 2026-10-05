@@ -874,10 +874,20 @@
 
                                         <span>
                                             {{ $account->name }}
-                                            @if($account->provider_name)
-                                                · {{ $account->provider_name }}
-                                            @endif
                                         </span>
+
+                                        @if($account->account_holder_name)
+                                            <small>
+                                                صاحب الحساب:
+                                                {{ $account->account_holder_name }}
+                                            </small>
+                                        @endif
+
+                                        @if($account->provider_name)
+                                            <small>
+                                                {{ $account->provider_name }}
+                                            </small>
+                                        @endif
 
                                         @if($displayNumber)
                                             <small dir="ltr">
@@ -906,7 +916,7 @@
                         </div>
 
                         <small id="incomingAccountHint" class="incoming-field-hint">
-                            اختر البطاقة الخاصة بطريقة الدفع والحساب الذي استلم الحوالة.
+                            كل حساب استلام يظهر كبطاقة مستقلة؛ إذا كان لنفس البنك أكثر من حساب ستظهر جميع الحسابات للاختيار بينها.
                         </small>
 
                         @error('payment_method_id')
