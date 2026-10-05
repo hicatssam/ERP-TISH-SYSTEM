@@ -511,7 +511,7 @@ Route::post(
             Route::resource(
                 'showroom-cake-requests',
                 ShowroomCakeRequestController::class
-            )->only(['create', 'store']);
+            )->only(['create', 'store', 'edit', 'update']);
 
             Route::patch(
                 'showroom-cake-requests/{showroomCakeRequest}/items/{item}/reservation',
@@ -643,6 +643,14 @@ Route::post(
 
         Route::post('showroom-sweets-requests', [ShowroomSweetsRequestController::class, 'store'])
             ->name('showroom-sweets-requests.store')
+            ->middleware('can:showroom_sweets_requests.create');
+
+        Route::get('showroom-sweets-requests/{showroomSweetsRequest}/edit', [ShowroomSweetsRequestController::class, 'edit'])
+            ->name('showroom-sweets-requests.edit')
+            ->middleware('can:showroom_sweets_requests.create');
+
+        Route::match(['put', 'patch'], 'showroom-sweets-requests/{showroomSweetsRequest}', [ShowroomSweetsRequestController::class, 'update'])
+            ->name('showroom-sweets-requests.update')
             ->middleware('can:showroom_sweets_requests.create');
 
         Route::get('showroom-sweets-requests/{showroomSweetsRequest}', [ShowroomSweetsRequestController::class, 'show'])
