@@ -743,4 +743,5 @@ require __DIR__ . '/release-center.php';
 require __DIR__ . '/attendance.php';
 require __DIR__ . '/print-branding.php';
 require __DIR__ . '/inventory-expiry.php';
+require __DIR__ . '/system-currencies.php';
 require __DIR__ . '/pwa.php';
