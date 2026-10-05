@@ -190,6 +190,22 @@ Route::prefix('locations/{location}')
     });
     
         // ─── Categories & Products ─────────────────────────────────────────
+        /*
+         * IMPORTANT:
+         * Static create routes must be registered before dynamic {category}/{product}
+         * show routes. Otherwise "/categories/create" is captured by
+         * "/categories/{category}" and implicit model binding returns 404.
+         */
+
+        // Catalog creation.
+        Route::middleware('can:products.create')->group(function () {
+            Route::resource('categories', CategoryController::class)
+                ->only(['create', 'store']);
+
+            Route::resource('products', ProductController::class)
+                ->only(['create', 'store']);
+        });
+
         // Read-only catalog access.
         Route::middleware('can:products.view')->group(function () {
             Route::resource('categories', CategoryController::class)
@@ -201,15 +217,6 @@ Route::prefix('locations/{location}')
             Route::resource('products.location-products', LocationProductController::class)
                 ->only(['index'])
                 ->shallow();
-        });
-
-        // Catalog creation.
-        Route::middleware('can:products.create')->group(function () {
-            Route::resource('categories', CategoryController::class)
-                ->only(['create', 'store']);
-
-            Route::resource('products', ProductController::class)
-                ->only(['create', 'store']);
         });
 
         // Catalog changes, availability and branch-specific settings.
