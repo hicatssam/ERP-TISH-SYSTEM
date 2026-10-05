@@ -41,6 +41,19 @@
         margin-top: 1rem;
     }
 
+    .currency-add-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: .5rem;
+    }
+
+    .currency-add-btn-icon {
+        width: 19px;
+        height: 19px;
+        flex: 0 0 19px;
+    }
+
     .currency-card {
         border: 1px solid var(--theme-border, #e5e7eb);
         border-radius: var(--theme-radius, 12px);
@@ -396,10 +409,25 @@
         @can('system_currencies.manage')
             <button
                 type="button"
-                class="btn btn-gold"
+                class="btn btn-gold currency-add-btn"
                 data-open-modal="createCurrencyModal"
+                title="إضافة عملة جديدة"
             >
-                + إضافة عملة
+                <svg
+                    class="currency-add-btn-icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                >
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="M12 7v10"></path>
+                    <path d="M8.5 9.2c.8-1.1 2-1.7 3.5-1.7 2 0 3.5 1 3.5 2.5 0 3.5-7 1.5-7 5 0 1.5 1.5 2.5 3.5 2.5 1.5 0 2.8-.6 3.6-1.7"></path>
+                </svg>
+                <span>إضافة عملة</span>
             </button>
         @endcan
     </div>
