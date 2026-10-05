@@ -3,7 +3,7 @@
     $transfer = $stockReceivingInvoice->stockTransfer;
 @endphp
 
-@extends('layouts.print')
+@extends(($pdfMode ?? false) ? 'layouts.pdf' : 'layouts.print')
 
 @section('pdf_mode', ($pdfMode ?? false) ? '1' : '0')
 @section('document_title', 'فاتورة استلام مخزون')
