@@ -1875,84 +1875,95 @@ function closeIncomingTransferModalFromBackdrop(event) {
     }
 }
 
+function selectIncomingPaymentChoice(button) {
+    const method = document.getElementById('incomingPaymentMethod');
+    const account = document.getElementById('incomingPaymentAccount');
+    const grid = document.getElementById('incomingPaymentChoiceGrid');
+
+    if (!button || !method || !account || !grid || button.hidden) {
+        return;
+    }
+
+    method.value = String(button.dataset.method || '');
+    account.value = String(button.dataset.account || '');
+
+    grid.querySelectorAll('.incoming-payment-choice').forEach((item) => {
+        const selected = item === button;
+        item.classList.toggle('is-selected', selected);
+        item.setAttribute('aria-pressed', selected ? 'true' : 'false');
+    });
+}
+
 function syncIncomingTransferFields() {
     const location = document.getElementById('incomingLocation');
     const method = document.getElementById('incomingPaymentMethod');
     const account = document.getElementById('incomingPaymentAccount');
+    const grid = document.getElementById('incomingPaymentChoiceGrid');
     const accountHint = document.getElementById('incomingAccountHint');
 
-    if (!location || !method || !account) {
+    if (!location || !method || !account || !grid) {
         return;
     }
 
     const locationId = String(location.value || '');
+    const choices = Array.from(
+        grid.querySelectorAll('.incoming-payment-choice')
+    );
 
-    Array.from(method.options).forEach((option, index) => {
-        if (index === 0) {
-            return;
-        }
+    let selectedChoice = null;
+    let visibleChoices = [];
 
-        const allowed = String(option.dataset.locations || '*');
-        const visible =
-            allowed === '*'
-            || (
+    choices.forEach((button) => {
+        const directLocation = String(button.dataset.location || '');
+        const allowedLocations = String(button.dataset.locations || '*');
+
+        const visible = directLocation === '*'
+            ? (
+                allowedLocations === '*'
+                || (
+                    locationId !== ''
+                    && allowedLocations.split(',').includes(locationId)
+                )
+            )
+            : (
                 locationId !== ''
-                && allowed.split(',').includes(locationId)
+                && directLocation === locationId
             );
 
-        option.hidden = !visible;
-        option.disabled = !visible;
+        button.hidden = !visible;
 
-        if (!visible && option.selected) {
-            option.selected = false;
-        }
-    });
-
-    const methodId = String(method.value || '');
-    let accountCount = 0;
-
-    Array.from(account.options).forEach((option, index) => {
-        if (index === 0) {
+        if (!visible) {
+            button.classList.remove('is-selected');
+            button.setAttribute('aria-pressed', 'false');
             return;
         }
 
-        const visible =
-            locationId !== ''
-            && methodId !== ''
-            && option.dataset.location === locationId
-            && option.dataset.method === methodId;
+        visibleChoices.push(button);
 
-        option.hidden = !visible;
-        option.disabled = !visible;
+        const matchesCurrent =
+            String(button.dataset.method || '') === String(method.value || '')
+            && String(button.dataset.account || '') === String(account.value || '');
 
-        if (visible) {
-            accountCount += 1;
-        } else if (option.selected) {
-            option.selected = false;
+        if (matchesCurrent) {
+            selectedChoice = button;
         }
     });
 
-    account.required = accountCount > 0;
+    if (selectedChoice) {
+        selectIncomingPaymentChoice(selectedChoice);
+    } else {
+        method.value = '';
+        account.value = '';
 
-    if (accountCount === 1 && !account.value) {
-        const onlyOption = Array.from(account.options).find(
-            option => !option.disabled && option.value !== ''
-        );
-
-        if (onlyOption) {
-            onlyOption.selected = true;
+        if (visibleChoices.length === 1) {
+            selectIncomingPaymentChoice(visibleChoices[0]);
         }
     }
 
     if (accountHint) {
-        accountHint.textContent =
-            methodId !== '' && accountCount === 0
-                ? 'لا يوجد حساب استلام مفعّل لهذه الطريقة في الفرع، ويمكن حفظ الحوالة بدون حساب محدد.'
-                : (
-                    accountCount > 0
-                        ? 'اختر الحساب الذي وصلت إليه الحوالة.'
-                        : ''
-                );
+        accountHint.textContent = visibleChoices.length > 0
+            ? 'اختر بطاقة طريقة الدفع والحساب الذي استلم الحوالة.'
+            : 'لا توجد طريقة دفع أو حساب استلام مفعّل لهذا الفرع.';
     }
 }
 
@@ -2010,7 +2021,6 @@ function syncTransferFilterAccounts() {
 
 document.addEventListener('DOMContentLoaded', function () {
     const location = document.getElementById('incomingLocation');
-    const method = document.getElementById('incomingPaymentMethod');
     const form = document.getElementById('incomingTransferForm');
 
     const filterLocation =
@@ -2020,7 +2030,6 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('transferFilterMethod');
 
     location?.addEventListener('change', syncIncomingTransferFields);
-    method?.addEventListener('change', syncIncomingTransferFields);
 
     filterLocation?.addEventListener(
         'change',
@@ -2039,7 +2048,28 @@ document.addEventListener('DOMContentLoaded', function () {
         document.body.style.overflow = 'hidden';
     }
 
-    form?.addEventListener('submit', function () {
+    form?.addEventListener('submit', function (event) {
+        const method = document.getElementById('incomingPaymentMethod');
+        const paymentError = document.getElementById('incomingAccountHint');
+
+        if (!method?.value) {
+            event.preventDefault();
+
+            if (paymentError) {
+                paymentError.textContent =
+                    'اختر طريقة الدفع وحساب الاستلام أولًا.';
+            }
+
+            document
+                .getElementById('incomingPaymentChoiceGrid')
+                ?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
+                });
+
+            return;
+        }
+
         const button = document.getElementById('incomingTransferSubmit');
 
         if (button) {
