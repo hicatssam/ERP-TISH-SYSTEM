@@ -307,7 +307,7 @@ class ShowroomCakeRequestController extends Controller
                                 'factory_location_id' =>
                                     $factory->id,
                                 'status' =>
-                                    ShowroomCakeRequestStatus::Pending,
+                                    ShowroomCakeRequestStatus::InProgress,
                                 'needed_by' =>
                                     $validated['needed_by']
                                     ?? null,
@@ -375,7 +375,7 @@ class ShowroomCakeRequestController extends Controller
             )
             ->with(
                 'success',
-                'تم إنشاء طلب كيك الفرع ووضعه قيد المراجعة.'
+                'تم إنشاء طلب كيك الفرع واعتماده تلقائيًا من النظام.'
             );
     }
 
@@ -949,7 +949,11 @@ class ShowroomCakeRequestController extends Controller
         User $user,
         ShowroomCakeRequest $request
     ): bool {
-        if ($request->status->workflowValue() !== 'pending') {
+        if (! in_array(
+            $request->status->workflowValue(),
+            ['pending', 'in_progress'],
+            true
+        )) {
             return false;
         }
 
