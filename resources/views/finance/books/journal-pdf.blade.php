@@ -1,4 +1,4 @@
-@extends('layouts.print')
+@extends('layouts.pdf')
 
 @section('pdf_mode', ($pdfMode ?? false) ? '1' : '0')
 @section('document_title', 'قيد محاسبي')
