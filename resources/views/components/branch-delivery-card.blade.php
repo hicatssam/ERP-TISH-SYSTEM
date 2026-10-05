@@ -64,7 +64,7 @@
                     فتح التوصيل والاستلام
                 </a>
 
-                @if($shipment->receivingInvoice)
+                @if($shipment->receivingInvoice?->isConfirmed())
                     <a href="{{ route('branch-receiving-invoices.show', $shipment->receivingInvoice) }}" class="btn btn-outline btn-sm">
                         فاتورة الاستلام {{ $shipment->receivingInvoice->invoice_number }}
                     </a>
