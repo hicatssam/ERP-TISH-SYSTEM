@@ -778,8 +778,16 @@ if (
             'receivingIssues', 'invoice', 'payments.paymentMethod', 'payments.receivedBy',
         ]);
 
-        $allowedTransitions = $this->transitionService
-            ->allowedTransitionsForUser($cakeOrder, Auth::user());
+        $allowedTransitions = collect(
+            $this->transitionService
+                ->allowedTransitionsForUser($cakeOrder, Auth::user())
+        )
+            ->reject(
+                fn (string $status): bool =>
+                    $status === CakeOrderStatus::Completed->value
+            )
+            ->values()
+            ->all();
 
         return view('sales.cake-orders.show', compact(
             'cakeOrder',
@@ -886,6 +894,16 @@ if (
             ],
             'note' => ['nullable', 'string', 'max:2000'],
         ]);
+
+        if (
+            $validated['to_status'] ===
+            CakeOrderStatus::Completed->value
+        ) {
+            return back()->with(
+                'error',
+                'إكمال الطلب يتم فقط بعد استلام الفرع وإصدار فاتورة الاستلام.'
+            );
+        }
 
         $this->transitionService->transition(
             $cakeOrder,
