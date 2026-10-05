@@ -90,6 +90,12 @@
                 <td>
                     <div class="actions">
                         <a href="{{ route('showroom-cake-requests.show', $req) }}" class="btn btn-ghost btn-sm">عرض</a>
+
+                        @can('showroom_cake_requests.create')
+                            @if($req->status->workflowValue() === 'pending')
+                                <a href="{{ route('showroom-cake-requests.edit', $req) }}" class="btn btn-outline btn-sm">تعديل</a>
+                            @endif
+                        @endcan
                         @if(in_array($req->status->value, ['draft', 'cancelled']))
                         <form action="{{ route('showroom-cake-requests.destroy', $req) }}" method="POST"
                               onsubmit="return confirm('هل تريد حذف هذا الطلب؟')">
