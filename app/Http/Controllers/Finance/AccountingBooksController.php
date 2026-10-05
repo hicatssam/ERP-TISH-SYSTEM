@@ -10,6 +10,7 @@ use App\Models\Currency;
 use App\Models\Location;
 use App\Models\PaymentMethod;
 use App\Services\Finance\AccountingBookService;
+use App\Services\Finance\AccountingPdfService;
 use App\Services\Finance\AccountingReportService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -115,6 +116,26 @@ class AccountingBooksController extends Controller
         ]);
     }
 
+    public function voucherPdf(
+        Request $request,
+        AccountingVoucher $voucher,
+        AccountingPdfService $pdf
+    ): StreamedResponse {
+        $this->assertLocation($request, $voucher->location_id);
+
+        $voucher->load([
+            'location', 'paymentMethod', 'treasuryAccount', 'counterAccount', 'currency',
+            'creator', 'poster', 'journal.lines.account', 'reversalJournal',
+        ]);
+
+        return $pdf->download(
+            'finance.books.voucher-pdf',
+            ['voucher' => $voucher],
+            'voucher-' . $voucher->number . '.pdf',
+            ($voucher->type === 'receipt' ? 'سند قبض ' : 'سند صرف ') . $voucher->number
+        );
+    }
+
     public function postVoucher(Request $request, AccountingVoucher $voucher): RedirectResponse
     {
         $this->assertLocation($request, $voucher->location_id);
@@ -204,6 +225,25 @@ class AccountingBooksController extends Controller
         ]);
     }
 
+    public function journalPdf(
+        Request $request,
+        AccountingJournal $journal,
+        AccountingPdfService $pdf
+    ): StreamedResponse {
+        $this->assertLocation($request, $journal->location_id);
+
+        $journal->load([
+            'lines.account', 'location', 'period', 'creator', 'original', 'reversal',
+        ]);
+
+        return $pdf->download(
+            'finance.books.journal-pdf',
+            ['journal' => $journal],
+            'journal-' . $journal->number . '.pdf',
+            'قيد محاسبي ' . $journal->number
+        );
+    }
+
     public function reverseJournal(Request $request, AccountingJournal $journal): RedirectResponse
     {
         $this->assertLocation($request, $journal->location_id);
@@ -216,23 +256,43 @@ class AccountingBooksController extends Controller
 
     public function statements(Request $request): View
     {
+        return view('finance.books.statements', $this->statementData($request));
+    }
+
+    public function statementsPdf(
+        Request $request,
+        AccountingPdfService $pdf
+    ): StreamedResponse {
+        $payload = $this->statementData($request);
+
+        return $pdf->download(
+            'finance.books.statements-pdf',
+            $payload,
+            'financial-statements-' . $payload['from'] . '-' . $payload['to'] . '.pdf',
+            'ميزان المراجعة والقوائم المالية',
+            'landscape'
+        );
+    }
+
+    private function statementData(Request $request): array
+    {
         $data = $request->validate([
             'location_id' => ['nullable', 'integer', 'exists:locations,id'],
             'from' => ['nullable', 'date_format:Y-m-d'],
             'to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:from', 'before_or_equal:today'],
         ]);
+
         $locationId = $this->locationId($request, $data['location_id'] ?? null);
         $from = $data['from'] ?? now()->startOfMonth()->toDateString();
         $to = $data['to'] ?? now()->toDateString();
-        if ($from > $to) {
-            return back()->withErrors(['from' => 'تاريخ البداية بعد تاريخ النهاية.']);
-        }
 
-        return view('finance.books.statements', [
+        return [
             'report' => $this->reports->report($this->locationIds($locationId), $from, $to),
-            'locations' => $this->locations($request), 'locationId' => $locationId,
-            'from' => $from, 'to' => $to,
-        ]);
+            'locations' => $this->locations($request),
+            'locationId' => $locationId,
+            'from' => $from,
+            'to' => $to,
+        ];
     }
 
     private function locationId(Request $request, ?int $requested): ?int
