@@ -11,9 +11,8 @@
         || $errors->has('location_payment_account_id')
         || $errors->has('sender_name')
         || $errors->has('sender_phone')
-        || $errors->has('sender_account_number')
-        || $errors->has('reference_number')
         || $errors->has('amount')
+        || $errors->has('approval_status')
         || $errors->has('received_at')
         || $errors->has('payment_proof')
         || $errors->has('notes');
@@ -788,18 +787,32 @@
                         >
                     @endif
 
-                    <div class="form-group">
-                        <label class="form-label">طريقة الدفع *</label>
-                        <select
+                    <div class="form-group incoming-wide">
+                        <label class="form-label">طريقة الدفع وحساب الاستلام *</label>
+
+                        <input
+                            type="hidden"
                             name="payment_method_id"
                             id="incomingPaymentMethod"
-                            class="form-select"
-                            required
+                            value="{{ old('payment_method_id') }}"
                         >
-                            <option value="">اختر طريقة الدفع</option>
 
+                        <input
+                            type="hidden"
+                            name="location_payment_account_id"
+                            id="incomingPaymentAccount"
+                            value="{{ old('location_payment_account_id') }}"
+                        >
+
+                        <div
+                            class="incoming-payment-choice-grid"
+                            id="incomingPaymentChoiceGrid"
+                        >
                             @foreach($paymentMethods as $method)
                                 @php
+                                    $methodAccounts = $paymentAccounts
+                                        ->where('payment_method_id', $method->id);
+
                                     $activeAssignments = $method->locationPaymentMethods
                                         ->where('is_active', true);
 
@@ -811,51 +824,67 @@
                                             ->implode(',');
                                 @endphp
 
-                                <option
-                                    value="{{ $method->id }}"
-                                    data-locations="{{ $allowedLocations }}"
-                                    @selected((string) old('payment_method_id') === (string) $method->id)
-                                >
-                                    {{ $method->name_ar ?: $method->name }}
-                                </option>
+                                @forelse($methodAccounts as $account)
+                                    @php
+                                        $displayNumber = $account->iban
+                                            ?: ($account->account_number ?: $account->phone_number);
+                                    @endphp
+
+                                    <button
+                                        type="button"
+                                        class="incoming-payment-choice"
+                                        data-method="{{ $method->id }}"
+                                        data-account="{{ $account->id }}"
+                                        data-location="{{ $account->location_id }}"
+                                        onclick="selectIncomingPaymentChoice(this)"
+                                    >
+                                        <span class="incoming-payment-choice-check">✓</span>
+
+                                        <strong>
+                                            {{ $method->name_ar ?: $method->name }}
+                                        </strong>
+
+                                        <span>
+                                            {{ $account->name }}
+                                            @if($account->provider_name)
+                                                · {{ $account->provider_name }}
+                                            @endif
+                                        </span>
+
+                                        @if($displayNumber)
+                                            <small dir="ltr">
+                                                {{ $displayNumber }}
+                                            </small>
+                                        @endif
+                                    </button>
+                                @empty
+                                    <button
+                                        type="button"
+                                        class="incoming-payment-choice"
+                                        data-method="{{ $method->id }}"
+                                        data-account=""
+                                        data-location="*"
+                                        data-locations="{{ $allowedLocations }}"
+                                        onclick="selectIncomingPaymentChoice(this)"
+                                    >
+                                        <span class="incoming-payment-choice-check">✓</span>
+                                        <strong>
+                                            {{ $method->name_ar ?: $method->name }}
+                                        </strong>
+                                        <span>بدون حساب استلام محدد</span>
+                                    </button>
+                                @endforelse
                             @endforeach
-                        </select>
+                        </div>
+
+                        <small id="incomingAccountHint" class="incoming-field-hint">
+                            اختر البطاقة الخاصة بطريقة الدفع والحساب الذي استلم الحوالة.
+                        </small>
+
                         @error('payment_method_id')
                             <div class="incoming-error">{{ $message }}</div>
                         @enderror
-                    </div>
 
-                    <div class="form-group">
-                        <label class="form-label">حساب الاستلام</label>
-                        <select
-                            name="location_payment_account_id"
-                            id="incomingPaymentAccount"
-                            class="form-select"
-                        >
-                            <option value="">اختر حساب الاستلام</option>
-                            @foreach($paymentAccounts as $account)
-                                @php
-                                    $displayNumber = $account->iban
-                                        ?: ($account->account_number ?: $account->phone_number);
-                                @endphp
-
-                                <option
-                                    value="{{ $account->id }}"
-                                    data-location="{{ $account->location_id }}"
-                                    data-method="{{ $account->payment_method_id }}"
-                                    @selected((string) old('location_payment_account_id') === (string) $account->id)
-                                >
-                                    {{ $account->name }}
-                                    @if($account->provider_name)
-                                        — {{ $account->provider_name }}
-                                    @endif
-                                    @if($displayNumber)
-                                        — {{ $displayNumber }}
-                                    @endif
-                                </option>
-                            @endforeach
-                        </select>
-                        <small id="incomingAccountHint" class="incoming-field-hint"></small>
                         @error('location_payment_account_id')
                             <div class="incoming-error">{{ $message }}</div>
                         @enderror
@@ -907,36 +936,38 @@
                         @enderror
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label">رقم الحساب / المحفظة</label>
-                        <input
-                            type="text"
-                            name="sender_account_number"
-                            class="form-input"
-                            maxlength="120"
-                            dir="ltr"
-                            value="{{ old('sender_account_number') }}"
-                        >
-                        <small class="incoming-field-hint">
-                            يكفي رقم الجوال أو رقم الحساب/المحفظة.
-                        </small>
-                        @error('sender_account_number')
-                            <div class="incoming-error">{{ $message }}</div>
-                        @enderror
-                    </div>
+                    <div class="form-group incoming-wide">
+                        <label class="form-label">اعتماد الحوالة *</label>
 
-                    <div class="form-group">
-                        <label class="form-label">رقم الحوالة / المرجع *</label>
-                        <input
-                            type="text"
-                            name="reference_number"
-                            class="form-input"
-                            maxlength="120"
-                            required
-                            dir="ltr"
-                            value="{{ old('reference_number') }}"
-                        >
-                        @error('reference_number')
+                        <div class="incoming-approval-grid">
+                            <label class="incoming-approval-option">
+                                <input
+                                    type="radio"
+                                    name="approval_status"
+                                    value="confirmed"
+                                    @checked(old('approval_status', 'confirmed') === 'confirmed')
+                                >
+                                <span>
+                                    <strong>اعتماد مباشر</strong>
+                                    <small>تُسجل الحوالة كمؤكدة فورًا بدون خطوة اعتماد إضافية.</small>
+                                </span>
+                            </label>
+
+                            <label class="incoming-approval-option">
+                                <input
+                                    type="radio"
+                                    name="approval_status"
+                                    value="pending_verification"
+                                    @checked(old('approval_status') === 'pending_verification')
+                                >
+                                <span>
+                                    <strong>بانتظار التحقق</strong>
+                                    <small>استخدمها فقط إذا كانت الحوالة بحاجة لمراجعة لاحقة.</small>
+                                </span>
+                            </label>
+                        </div>
+
+                        @error('approval_status')
                             <div class="incoming-error">{{ $message }}</div>
                         @enderror
                     </div>
