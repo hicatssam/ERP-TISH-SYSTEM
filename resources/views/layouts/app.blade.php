@@ -2248,6 +2248,22 @@ a.app-page-btn:hover {
                         </a>
                     @endif
 
+                    @can('showroom_cake_daily_reports.view')
+                        @if(\Illuminate\Support\Facades\Route::has('showroom-cake-daily-reports.index'))
+                            <a
+                                href="{{ route('showroom-cake-daily-reports.index') }}"
+                                class="nav-item {{ request()->routeIs('showroom-cake-daily-reports.*') ? 'active' : '' }}"
+                            >
+                                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M4 10h16v10H4z" />
+                                    <path d="M6 10c0-3 2.5-5 6-5s6 2 6 5" />
+                                    <path d="M8 15h8" />
+                                </svg>
+                                <span>تقرير قسم الكيك</span>
+                            </a>
+                        @endif
+                    @endcan
+
                     @can('reports.export')
                         <a href="{{ route('report-schedules.index') }}" class="nav-item {{ request()->routeIs('report-schedules.*') ? 'active' : '' }}">
 
