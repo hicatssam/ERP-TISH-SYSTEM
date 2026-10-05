@@ -172,6 +172,29 @@ class ShowroomDailyReportController extends Controller
                     ->keyBy('product_id')
                 : collect();
 
+            /*
+             * A product with carried stock must never disappear just because
+             * it was disabled for new sales today. Keep every product that had
+             * a prior-day report line so its closing balance can roll forward.
+             */
+            if ($priorClosing->isNotEmpty()) {
+                $missingProductIds = $priorClosing
+                    ->keys()
+                    ->diff($products->pluck('id'))
+                    ->values();
+
+                if ($missingProductIds->isNotEmpty()) {
+                    $carriedProducts = Product::query()
+                        ->whereIn('id', $missingProductIds)
+                        ->get();
+
+                    $products = $products
+                        ->concat($carriedProducts)
+                        ->unique('id')
+                        ->values();
+                }
+            }
+
             foreach ($products as $index => $product) {
                 $previousItem = $priorClosing->get($product->id);
                 $opening = $previousItem
@@ -532,13 +555,18 @@ class ShowroomDailyReportController extends Controller
             })
             ->with('unitDefinition')
             ->get()
-            ->sortBy(function (Product $product) use ($preferred): array {
+            ->sortBy(function (Product $product) use ($preferred): string {
                 $name = $product->name_ar ?: $product->name;
                 $priority = array_key_exists($name, $preferred)
                     ? $preferred[$name]
                     : 10000;
 
-                return [$priority, $name, $product->id];
+                return sprintf(
+                    '%05d|%s|%010d',
+                    $priority,
+                    $name,
+                    $product->id
+                );
             })
             ->values();
     }
