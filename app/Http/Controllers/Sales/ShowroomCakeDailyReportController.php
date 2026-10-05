@@ -84,6 +84,9 @@ class ShowroomCakeDailyReportController extends Controller
             ->first();
 
         $sourceRequests = $this->completedShowroomRequestsForDay($locationId, $date);
+        $visibleItems = $report
+            ? $this->visibleReportItems($report, $locationId, $date)
+            : collect();
 
         return view('sales.showroom-cake-daily-reports.index', [
             'locations' => $locations,
@@ -92,6 +95,7 @@ class ShowroomCakeDailyReportController extends Controller
             'report' => $report,
             'prior' => $prior,
             'sourceRequests' => $sourceRequests,
+            'visibleItems' => $visibleItems,
             'canManage' => $this->canManage($request),
             'canReview' => $this->canReview($request),
         ]);
@@ -426,6 +430,11 @@ class ShowroomCakeDailyReportController extends Controller
 
         return view('sales.showroom-cake-daily-reports.document', [
             'report' => $showroomCakeDailyReport,
+            'visibleItems' => $this->visibleReportItems(
+                $showroomCakeDailyReport,
+                (int) $showroomCakeDailyReport->location_id,
+                $showroomCakeDailyReport->business_date->toDateString()
+            ),
             'pdfMode' => false,
         ]);
     }
@@ -447,7 +456,14 @@ class ShowroomCakeDailyReportController extends Controller
 
         return $pdf->download(
             'sales.showroom-cake-daily-reports.document',
-            ['report' => $showroomCakeDailyReport],
+            [
+                'report' => $showroomCakeDailyReport,
+                'visibleItems' => $this->visibleReportItems(
+                    $showroomCakeDailyReport,
+                    (int) $showroomCakeDailyReport->location_id,
+                    $showroomCakeDailyReport->business_date->toDateString()
+                ),
+            ],
             'showroom-cake-daily-report-'
                 . $showroomCakeDailyReport->location_id
                 . '-'
@@ -491,6 +507,49 @@ class ShowroomCakeDailyReportController extends Controller
                     : max(0, $total - (int) $actual),
             ]);
         }
+    }
+
+    private function visibleReportItems(
+        ShowroomCakeDailyReport $report,
+        int $locationId,
+        string $date
+    ): Collection {
+        $report->loadMissing('items');
+
+        $requestedKeys = $this->requestedCategoryKeysForDay($locationId, $date);
+
+        return $report->items
+            ->filter(function (ShowroomCakeDailyReportItem $item) use ($requestedKeys): bool {
+                return (int) $item->opening_qty > 0
+                    || (int) $item->received_qty > 0
+                    || $requestedKeys->contains($item->category_key);
+            })
+            ->sortBy('sort_order')
+            ->values();
+    }
+
+    private function requestedCategoryKeysForDay(int $locationId, string $date): Collection
+    {
+        $requests = ShowroomCakeRequest::query()
+            ->with('items')
+            ->where('requesting_location_id', $locationId)
+            ->whereDate('needed_by', $date)
+            ->whereNotIn('status', [
+                ShowroomCakeRequestStatus::Cancelled->value,
+                ShowroomCakeRequestStatus::Rejected->value,
+            ])
+            ->get();
+
+        return $requests
+            ->flatMap(function (ShowroomCakeRequest $request): array {
+                return $request->items
+                    ->map(fn (ShowroomCakeRequestItem $item) => $this->classifyRequestItem($item))
+                    ->filter()
+                    ->values()
+                    ->all();
+            })
+            ->unique()
+            ->values();
     }
 
     private function completedShowroomRequestsForDay(int $locationId, string $date): Collection
