@@ -2,7 +2,19 @@
 @section('title', 'ميزان المراجعة والقوائم')
 @section('page-title', 'ميزان المراجعة والقوائم')
 @section('content')
-<div class="page-header"><div><h1 class="page-heading">ميزان المراجعة والقوائم</h1><p class="page-subheading">الأرصدة من قيود الدفتر المزدوج المُرحّلة فقط، حتى {{ $to }}، بعملة {{ $report['currency']->code }}.</p></div><button type="button" class="btn btn-outline" onclick="window.print()">طباعة</button></div>
+<div class="page-header">
+    <div>
+        <h1 class="page-heading">ميزان المراجعة والقوائم</h1>
+        <p class="page-subheading">الأرصدة من قيود الدفتر المزدوج المُرحّلة فقط، حتى {{ $to }}، بعملة {{ $report['currency']->code }}.</p>
+    </div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+        <a
+            class="btn btn-primary"
+            href="{{ route('accounting.books.statements.pdf', array_filter(['location_id' => $locationId, 'from' => $from, 'to' => $to], fn ($value) => $value !== null && $value !== '')) }}"
+        >تحميل PDF</a>
+        <button type="button" class="btn btn-outline" onclick="window.print()">طباعة</button>
+    </div>
+</div>
 <div class="card" style="margin-bottom:1rem"><div class="card-header"><span class="card-title">نطاق التقرير</span></div><div class="card-body"><form method="GET" action="{{ route('accounting.books.statements') }}" style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:end">
     @if($locations->count() > 1)<label>الفرع<select name="location_id" class="form-input"><option value="">جميع الفروع</option>@foreach($locations as $location)<option value="{{ $location->id }}" @selected($locationId === $location->id)>{{ $location->name }}</option>@endforeach</select></label>@endif
     <label>من<input type="date" name="from" value="{{ $from }}" class="form-input" required></label>
