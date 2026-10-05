@@ -163,10 +163,7 @@
                     @foreach($categories as $cat)
                         <option
                             value="{{ $cat->id }}"
-                            @selected(
-                                (string) old('category_id', $product->category_id ?? '')
-                                === (string) $cat->id
-                            )
+                            {{ (string) old('category_id', $product->category_id ?? '') === (string) $cat->id ? 'selected' : '' }}
                         >
                             {{ $cat->name_ar ?? $cat->name }}
                         </option>
@@ -187,7 +184,7 @@
                     @foreach($units as $unit)
                         <option
                             value="{{ $unit->id }}"
-                            @selected((string) $selectedUnitId === (string) $unit->id)
+                            {{ (string) $selectedUnitId === (string) $unit->id ? 'selected' : '' }}
                         >
                             {{ $unit->displayName() }}
                             @if($unit->symbol)
@@ -207,22 +204,22 @@
             <div class="form-group">
                 <label class="form-label">نوع المنتج *</label>
                 <select name="product_type" class="form-select" required>
-                    <option value="standard" @selected($productTypeValue === 'standard')>
+                    <option value="standard" {{ $productTypeValue === 'standard' ? 'selected' : '' }}>
                         منتج عادي
                     </option>
 
                     @if($variantsEnabled)
-                        <option value="variant" @selected($productTypeValue === 'variant')>
+                        <option value="variant" {{ $productTypeValue === 'variant' ? 'selected' : '' }}>
                             منتج بمتغيرات
                         </option>
                     @endif
                 </select>
 
-                @unless($variantsEnabled)
+                @if(! $variantsEnabled)
                     <small class="product-form-help">
                         فعّل وحدة متغيرات المنتجات لإضافة المقاسات والألوان.
                     </small>
-                @endunless
+                @endif
             </div>
         </div>
 
@@ -236,10 +233,7 @@
                         @foreach($brands as $brand)
                             <option
                                 value="{{ $brand->id }}"
-                                @selected(
-                                    (string) old('brand_id', $product->brand_id ?? '')
-                                    === (string) $brand->id
-                                )
+                                {{ (string) old('brand_id', $product->brand_id ?? '') === (string) $brand->id ? 'selected' : '' }}
                             >
                                 {{ $brand->displayName() }}
                             </option>
@@ -332,13 +326,7 @@
                                     type="checkbox"
                                     name="location_ids[]"
                                     value="{{ $location->id }}"
-                                    @checked(
-                                        in_array(
-                                            (string) $location->id,
-                                            $selectedLocationIds,
-                                            true
-                                        )
-                                    )
+                                    {{ in_array((string) $location->id, $selectedLocationIds, true) ? 'checked' : '' }}
                                 >
 
                                 <span>
@@ -382,7 +370,7 @@
                     type="checkbox"
                     name="tracks_batch"
                     value="1"
-                    @checked(old('tracks_batch', $product->tracks_batch ?? false))
+                    {{ old('tracks_batch', $product->tracks_batch ?? false) ? 'checked' : '' }}
                 >
                 تتبع الدُفعات
             </label>
@@ -392,7 +380,7 @@
                     type="checkbox"
                     name="tracks_expiry"
                     value="1"
-                    @checked(old('tracks_expiry', $product->tracks_expiry ?? false))
+                    {{ old('tracks_expiry', $product->tracks_expiry ?? false) ? 'checked' : '' }}
                 >
                 تتبع تاريخ الصلاحية
             </label>
