@@ -1475,6 +1475,12 @@
             type="showroom_sweets"
             :record="$showroomSweetsRequest"
         />
+
+        <x-branch-delivery-card
+            :source="$showroomSweetsRequest"
+            :shipment="$showroomSweetsRequest->branchShipment?->loadMissing(['driver.employee','receivingInvoice'])"
+            source-type="showroom-sweets"
+        />
     </div>
 
 
