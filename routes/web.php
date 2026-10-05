@@ -21,6 +21,7 @@ use App\Http\Controllers\Sales\CustomerController;
 use App\Http\Controllers\Sales\OrderController;
 use App\Http\Controllers\Sales\SpecialCakeOrderController;
 use App\Http\Controllers\Sales\ShowroomCakeRequestController;
+use App\Http\Controllers\Sales\ShowroomCakeDailyReportController;
 use App\Http\Controllers\Sales\ShowroomSweetsRequestController;
 use App\Http\Controllers\Finance\CustomerAccountController;
 use App\Http\Controllers\Finance\PaymentController;
@@ -523,6 +524,52 @@ Route::post(
         )
             ->name('showroom-cake-requests.destroy')
             ->middleware('can:showroom_cake_requests.delete');
+
+        // ─── Showroom Cake Daily Report ────────────────────────────────────
+        Route::get(
+            'showroom-cake-daily-reports',
+            [ShowroomCakeDailyReportController::class, 'index']
+        )->name('showroom-cake-daily-reports.index');
+
+        Route::post(
+            'showroom-cake-daily-reports',
+            [ShowroomCakeDailyReportController::class, 'create']
+        )->name('showroom-cake-daily-reports.create');
+
+        Route::put(
+            'showroom-cake-daily-reports/{showroomCakeDailyReport}',
+            [ShowroomCakeDailyReportController::class, 'update']
+        )->name('showroom-cake-daily-reports.update');
+
+        Route::post(
+            'showroom-cake-daily-reports/{showroomCakeDailyReport}/submit',
+            [ShowroomCakeDailyReportController::class, 'submit']
+        )->name('showroom-cake-daily-reports.submit');
+
+        Route::post(
+            'showroom-cake-daily-reports/{showroomCakeDailyReport}/approve',
+            [ShowroomCakeDailyReportController::class, 'approve']
+        )->name('showroom-cake-daily-reports.approve');
+
+        Route::post(
+            'showroom-cake-daily-reports/{showroomCakeDailyReport}/return',
+            [ShowroomCakeDailyReportController::class, 'returnForCorrection']
+        )->name('showroom-cake-daily-reports.return');
+
+        Route::post(
+            'showroom-cake-daily-reports/{showroomCakeDailyReport}/reopen',
+            [ShowroomCakeDailyReportController::class, 'reopen']
+        )->name('showroom-cake-daily-reports.reopen');
+
+        Route::get(
+            'showroom-cake-daily-reports/{showroomCakeDailyReport}/print',
+            [ShowroomCakeDailyReportController::class, 'print']
+        )->name('showroom-cake-daily-reports.print');
+
+        Route::get(
+            'showroom-cake-daily-reports/{showroomCakeDailyReport}/pdf',
+            [ShowroomCakeDailyReportController::class, 'pdf']
+        )->name('showroom-cake-daily-reports.pdf');
 
         // ─── Showroom Sweets Requests (طلبات حلويات الفروع) ───────────────
         Route::get('showroom-sweets-requests', [ShowroomSweetsRequestController::class, 'index'])
