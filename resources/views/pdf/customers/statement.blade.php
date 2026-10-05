@@ -3,7 +3,7 @@
     $customerStatementCurrency = $customerStatementTheme['currency_symbol'];
 @endphp
 
-@extends('layouts.print')
+@extends('layouts.pdf')
 
 @section('pdf_mode', '1')
 @section('paper_orientation', 'landscape')
