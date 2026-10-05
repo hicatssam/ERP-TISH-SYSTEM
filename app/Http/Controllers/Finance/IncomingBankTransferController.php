@@ -15,6 +15,7 @@ use App\Services\PrintThemeService;
 use App\Services\ActivityLogger;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
@@ -756,6 +757,94 @@ class IncomingBankTransferController extends Controller
             $approved
                 ? 'تم اعتماد الحوالة الواردة.'
                 : 'تم رفض الحوالة الواردة.'
+        );
+    }
+
+    public function destroy(
+        Request $request,
+        IncomingBankTransfer $incomingBankTransfer
+    ): RedirectResponse {
+        $user = $request->user();
+
+        abort_unless(
+            $user->isAdmin()
+            || $user->hasRole('Accountant'),
+            403,
+            'حذف الحوالات متاح فقط للإدارة والمحاسبين.'
+        );
+
+        $this->assertLocationAccess(
+            $incomingBankTransfer,
+            $user
+        );
+
+        $snapshot = [
+            'location_id' =>
+                $incomingBankTransfer->location_id,
+            'payment_method_id' =>
+                $incomingBankTransfer->payment_method_id,
+            'location_payment_account_id' =>
+                $incomingBankTransfer->location_payment_account_id,
+            'sender_name' =>
+                $incomingBankTransfer->sender_name,
+            'sender_phone' =>
+                $incomingBankTransfer->sender_phone,
+            'reference_number' =>
+                $incomingBankTransfer->reference_number,
+            'amount' =>
+                $incomingBankTransfer->amount,
+            'currency_code' =>
+                $incomingBankTransfer->currency_code,
+            'status' =>
+                $incomingBankTransfer->statusValue(),
+            'received_at' =>
+                $incomingBankTransfer->received_at?->toDateTimeString(),
+        ];
+
+        $proofPath = ltrim(
+            str_replace(
+                '\\',
+                '/',
+                (string) $incomingBankTransfer->payment_proof
+            ),
+            '/'
+        );
+
+        $transferId = $incomingBankTransfer->id;
+
+        $incomingBankTransfer->delete();
+
+        if (
+            $proofPath !== ''
+            && ! str_contains($proofPath, '..')
+        ) {
+            if (Storage::disk('local')->exists($proofPath)) {
+                Storage::disk('local')->delete($proofPath);
+            } elseif (Storage::disk('public')->exists($proofPath)) {
+                Storage::disk('public')->delete($proofPath);
+            }
+        }
+
+        ActivityLogger::log(
+            userId: $user->id,
+            action: 'incoming_bank_transfer.deleted',
+            module: 'payments',
+            recordType: 'incoming_bank_transfers',
+            recordId: $transferId,
+            oldValues: $snapshot,
+            newValues: null,
+            metadata: [
+                'source' => 'finance_incoming_transfer_panel',
+                'deleted_by_role' =>
+                    $user->isAdmin()
+                        ? 'admin'
+                        : 'accountant',
+            ],
+        );
+
+        return back()->with(
+            'success',
+            'تم حذف الحوالة الواردة بنجاح.'
         );
     }
 
