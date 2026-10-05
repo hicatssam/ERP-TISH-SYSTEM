@@ -259,7 +259,12 @@ class ReportController extends Controller
          */
         $pdfMode = true;
 
-        $html = view('reports.print', compact(
+        /*
+         * mPDF uses a dedicated, table-based template.
+         * The browser print view remains on reports.print, while PDF avoids
+         * browser-only layout rules that can create blank or excessive pages.
+         */
+        $html = view('reports.pdf', compact(
             'type',
             'title',
             'rows',
