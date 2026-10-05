@@ -407,6 +407,164 @@ class IncomingBankTransferController extends Controller
         );
     }
 
+    public function printReport(Request $request)
+    {
+        [$canViewAll, $locationIds] =
+            $this->resolveScope($request);
+
+        $query = $this->filteredQuery(
+            $request,
+            $locationIds
+        );
+
+        $summary = $this->summaryFor($query);
+
+        $transfers = (clone $query)
+            ->with(self::RELATIONS)
+            ->oldest('received_at')
+            ->oldest('id')
+            ->get();
+
+        $filters = $this->filterLabels(
+            $request,
+            $locationIds,
+            $canViewAll
+        );
+
+        $columns = [
+            'التاريخ',
+            'الفرع',
+            'طريقة الدفع',
+            'حساب الاستلام',
+            'المحوّل',
+            'رقم الحوالة',
+            'المبلغ',
+            'الحالة',
+            'التحقق',
+        ];
+
+        $printTheme = app(PrintThemeService::class)->settings();
+        $baseCode = $printTheme['currency_code'];
+        $baseSymbol = $printTheme['currency_symbol'];
+
+        $formattedRows = $transfers->map(
+            function (IncomingBankTransfer $transfer) use ($baseCode, $baseSymbol): array {
+                $account = $transfer->locationPaymentAccount;
+
+                $accountLabel = $account
+                    ? collect([
+                        $account->provider_name,
+                        $account->account_holder_name ?: $account->name,
+                        $account->iban
+                            ?: (
+                                $account->account_number
+                                ?: $account->phone_number
+                            ),
+                    ])->filter()->implode(' — ')
+                    : '—';
+
+                $verifiedLabel = $transfer->verifiedBy
+                    ? collect([
+                        $transfer->verifiedBy->display_name,
+                        $transfer->verified_at?->format('Y-m-d H:i'),
+                    ])->filter()->implode(' — ')
+                    : '—';
+
+                return [
+                    $transfer->received_at?->format('Y-m-d H:i') ?? '—',
+                    $transfer->location?->name ?? '—',
+                    $transfer->paymentMethod?->name_ar
+                        ?: ($transfer->paymentMethod?->name ?? '—'),
+                    $accountLabel,
+                    $transfer->sender_name ?: '—',
+                    $transfer->reference_number ?: '—',
+                    (
+                        ($transfer->currency_code ?: $baseCode) === $baseCode
+                            ? $baseSymbol
+                            : $transfer->currency_code
+                    ) . number_format((float) $transfer->amount, 2),
+                    $transfer->status?->label()
+                        ?? $transfer->statusValue(),
+                    $verifiedLabel,
+                ];
+            }
+        );
+
+        $reportSummary = [
+            'عدد الحوالات' =>
+                number_format((int) ($summary->transfers_count ?? 0)),
+        ];
+
+        foreach (
+            $transfers->groupBy(
+                fn ($transfer) =>
+                    $transfer->currency_code ?: $baseCode
+            ) as $code => $group
+        ) {
+            $unit = $code === $baseCode ? $baseSymbol : $code;
+
+            $reportSummary["الإجمالي ({$code})"] =
+                number_format((float) $group->sum('amount'), 2)
+                . ' '
+                . $unit;
+
+            foreach ([
+                'confirmed' => 'المعتمد',
+                'pending_verification' => 'بانتظار التحقق',
+                'rejected' => 'المرفوض',
+            ] as $status => $label) {
+                $amount = $group
+                    ->filter(
+                        fn ($transfer) =>
+                            $transfer->statusValue() === $status
+                    )
+                    ->sum('amount');
+
+                $reportSummary["{$label} ({$code})"] =
+                    number_format((float) $amount, 2)
+                    . ' '
+                    . $unit;
+            }
+        }
+
+        foreach ($filters as $label => $value) {
+            if (
+                filled($value)
+                && ! in_array(
+                    $value,
+                    ['كل الفروع', 'كل طرق الدفع', 'كل الحالات'],
+                    true
+                )
+            ) {
+                $reportSummary[$label] = $value;
+            }
+        }
+
+        $dateFrom = $request->input('date_from');
+        $dateTo = $request->input('date_to');
+        $title = 'تقرير الحوالات البنكية الواردة';
+        $total = $transfers->count();
+        $truncated = false;
+        $cap = $total;
+        $pdfMode = false;
+        $rows = collect();
+
+        return view('reports.print', [
+            'type' => 'incoming-bank-transfers',
+            'title' => $title,
+            'rows' => $rows,
+            'formattedRows' => $formattedRows,
+            'columns' => $columns,
+            'summary' => $reportSummary,
+            'dateFrom' => $dateFrom,
+            'dateTo' => $dateTo,
+            'truncated' => $truncated,
+            'cap' => $cap,
+            'total' => $total,
+            'pdfMode' => $pdfMode,
+        ]);
+    }
+
     public function store(
         StoreIncomingBankTransferRequest $request
     ) {
