@@ -484,3 +484,25 @@ summary.btn {
     width: 92vw;
   }
 }
+
+
+/* Mobile safe-area support for installed PWA and modern phones */
+@supports (padding: max(0px)) {
+  @media (max-width: 768px) {
+    .dahab-topbar {
+      padding-top: env(safe-area-inset-top);
+      padding-left: max(.55rem, env(safe-area-inset-left));
+      padding-right: max(.55rem, env(safe-area-inset-right));
+    }
+
+    .dahab-content {
+      padding-left: max(var(--mobile-page-pad, .75rem), env(safe-area-inset-left));
+      padding-right: max(var(--mobile-page-pad, .75rem), env(safe-area-inset-right));
+      padding-bottom: max(var(--mobile-page-pad, .75rem), env(safe-area-inset-bottom));
+    }
+
+    .dahab-sidebar {
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+  }
+}
