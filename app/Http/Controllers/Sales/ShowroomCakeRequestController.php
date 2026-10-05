@@ -396,6 +396,8 @@ class ShowroomCakeRequestController extends Controller
             'creator',
             'handledBy',
             'items',
+            'branchShipment.driver.employee',
+            'branchShipment.receivingInvoice',
         ]);
 
         $allowedTransitions =
