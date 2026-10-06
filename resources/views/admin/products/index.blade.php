@@ -405,6 +405,10 @@
                                 method="POST"
                                 class="product-delete-form"
                                 data-product-name="{{ $product->name_ar ?: $product->name }}"
+                                data-confirm-title="تأكيد حذف المنتج"
+                                data-confirm-type="danger"
+                                data-confirm-text="حذف المنتج"
+                                data-confirm="حذف «{{ $product->name_ar ?: $product->name }}» من الكتالوج؟ سيتم إخفاء المنتج من القوائم مع بقاء الطلبات والتقارير والسجلات السابقة محفوظة."
                             >
                                 @csrf
                                 @method('DELETE')
@@ -644,20 +648,6 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.js-ean13-barcode').forEach(renderEan13Barcode);
-
-    document.querySelectorAll('.product-delete-form').forEach(function (form) {
-        form.addEventListener('submit', function (event) {
-            const productName = form.dataset.productName || 'هذا المنتج';
-            const confirmed = window.confirm(
-                'حذف "' + productName + '" من الكتالوج؟\n\n'
-                + 'سيختفي المنتج من القوائم، لكن الطلبات والتقارير والسجلات السابقة ستبقى محفوظة.'
-            );
-
-            if (!confirmed) {
-                event.preventDefault();
-            }
-        });
-    });
 
     @if($errors->any())
         openProductCreateModal();
