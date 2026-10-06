@@ -134,7 +134,7 @@
             <strong>الفلاتر:</strong>
             @if(filled($filters['status'] ?? null))
                 الحالة:
-                {{ AppEnumsShowroomSweetsRequestStatus::from($filters['status'])->label() }}
+                {{ \App\Enums\ShowroomSweetsRequestStatus::from($filters['status'])->label() }}
             @endif
             @if(filled($filters['request_number'] ?? null))
                 · رقم الطلب يحتوي:
