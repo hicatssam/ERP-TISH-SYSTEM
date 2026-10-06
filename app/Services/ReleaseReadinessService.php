@@ -19,12 +19,30 @@ class ReleaseReadinessService
     public function report(): array
     {
         $checks = collect([
-            ...$this->clientSetupChecks(),
-            ...$this->moduleChecks(),
-            ...$this->databaseChecks(),
-            ...$this->filesystemChecks(),
-            ...$this->runtimeChecks(),
-            ...$this->productionChecks(),
+            ...$this->safeChecks(
+                'client',
+                fn () => $this->clientSetupChecks()
+            ),
+            ...$this->safeChecks(
+                'modules',
+                fn () => $this->moduleChecks()
+            ),
+            ...$this->safeChecks(
+                'database',
+                fn () => $this->databaseChecks()
+            ),
+            ...$this->safeChecks(
+                'filesystem',
+                fn () => $this->filesystemChecks()
+            ),
+            ...$this->safeChecks(
+                'runtime',
+                fn () => $this->runtimeChecks()
+            ),
+            ...$this->safeChecks(
+                'production',
+                fn () => $this->productionChecks()
+            ),
         ]);
 
         $summary = $this->summarize($checks);
@@ -33,9 +51,21 @@ class ReleaseReadinessService
             'generated_at' => now()->toIso8601String(),
             'summary' => $summary,
             'checks' => $checks->values()->all(),
-            'environment' => $this->environmentSnapshot(),
-            'client' => $this->clientSnapshot(),
-            'modules' => $this->moduleSnapshot(),
+            'environment' => $this->safeSnapshot(
+                fn () => $this->environmentSnapshot()
+            ),
+            'client' => $this->safeSnapshot(
+                fn () => $this->clientSnapshot()
+            ),
+            'modules' => $this->safeSnapshot(
+                fn () => $this->moduleSnapshot(),
+                [
+                    'total' => 0,
+                    'active' => [],
+                    'inactive_implemented' => [],
+                    'future' => [],
+                ]
+            ),
         ];
     }
 
@@ -551,15 +581,77 @@ class ReleaseReadinessService
             ->pluck('migration')
             ->all();
 
-        $files = collect(File::glob(database_path('migrations/*.php')))
+        $files = collect(
+            File::glob(
+                database_path('migrations/*.php')
+            )
+        )
             ->map(
                 fn (string $file) =>
-                    pathinfo($file, PATHINFO_FILENAME)
+                    pathinfo(
+                        $file,
+                        PATHINFO_FILENAME
+                    )
+            )
+            ->filter(
+                fn (string $name) =>
+                    preg_match(
+                        '/^(?:\\d{4}_\\d{2}_\\d{2}|0001_01_01)_\\d{6}_.+$/',
+                        $name
+                    ) === 1
             )
             ->values()
             ->all();
 
-        return array_values(array_diff($files, $ran));
+        return array_values(
+            array_diff(
+                $files,
+                $ran
+            )
+        );
+    }
+
+    private function safeChecks(
+        string $group,
+        callable $callback
+    ): array {
+        try {
+            $checks = $callback();
+
+            return is_array($checks)
+                ? $checks
+                : [];
+        } catch (\Throwable $e) {
+            report($e);
+
+            return [
+                $this->check(
+                    'release_check_' . $group,
+                    'فحص ' . $group,
+                    'error',
+                    'تعذر تنفيذ هذا الفحص: '
+                        . $e->getMessage(),
+                    $group
+                ),
+            ];
+        }
+    }
+
+    private function safeSnapshot(
+        callable $callback,
+        array $fallback = []
+    ): array {
+        try {
+            $snapshot = $callback();
+
+            return is_array($snapshot)
+                ? $snapshot
+                : $fallback;
+        } catch (\Throwable $e) {
+            report($e);
+
+            return $fallback;
+        }
     }
 
     private function baseCurrency(): ?array
