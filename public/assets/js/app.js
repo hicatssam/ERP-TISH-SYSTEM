@@ -249,51 +249,369 @@ document.querySelectorAll('[data-auto-dismiss]').forEach(toast => {
     setTimeout(() => toast.remove(), 5000);
 });
 
-// ── Confirmation Modal ──────────────────────────
-function openConfirmModal({ title, body, onConfirm }) {
+// ── Unified Confirmation Modal ───────────────────
+let _confirmAction = null;
+let _confirmTrigger = null;
+
+function actionMetaFromElement(element, form = null) {
+    const explicitType =
+        element?.dataset?.confirmType
+        || form?.dataset?.confirmType
+        || '';
+
+    const explicitTitle =
+        element?.dataset?.confirmTitle
+        || form?.dataset?.confirmTitle
+        || '';
+
+    const explicitText =
+        element?.dataset?.confirmText
+        || form?.dataset?.confirmText
+        || '';
+
+    const explicitMessage =
+        element?.dataset?.confirm
+        || form?.dataset?.confirm
+        || '';
+
+    const buttonText = String(
+        element?.textContent
+        || element?.value
+        || ''
+    ).trim();
+
+    const actionUrl = String(
+        form?.getAttribute('action')
+        || element?.getAttribute?.('href')
+        || ''
+    ).toLowerCase();
+
+    const methodOverride = String(
+        form?.querySelector('input[name="_method"]')?.value
+        || ''
+    ).toUpperCase();
+
+    const source = (buttonText + ' ' + actionUrl).toLowerCase();
+
+    const isDelete =
+        methodOverride === 'DELETE'
+        || /\b(delete|destroy|remove)\b/.test(source)
+        || /(حذف|إزالة)/.test(source);
+
+    const isReject =
+        /\b(reject|decline)\b/.test(source)
+        || /(رفض)/.test(source);
+
+    const isCancel =
+        /\b(cancel)\b/.test(source)
+        || /(إلغاء)/.test(source);
+
+    const isSuccess =
+        /\b(approve|approved|confirm|complete|receive|received|accept|activate|dispatch)\b/.test(source)
+        || /(موافقة|اعتماد|تأكيد|إكمال|استلام|قبول|تفعيل|إرسال)/.test(source);
+
+    let type = explicitType;
+
+    if (!type) {
+        if (isDelete || isReject) type = 'danger';
+        else if (isCancel) type = 'warning';
+        else if (isSuccess) type = 'success';
+        else type = 'info';
+    }
+
+    let title = explicitTitle;
+    let confirmText = explicitText;
+
+    if (!title) {
+        if (isDelete) title = 'تأكيد الحذف';
+        else if (isReject) title = 'تأكيد الرفض';
+        else if (isCancel) title = 'تأكيد الإلغاء';
+        else if (isSuccess) title = 'تأكيد العملية';
+        else title = 'تأكيد الإجراء';
+    }
+
+    if (!confirmText) {
+        if (isDelete) confirmText = 'حذف';
+        else if (isReject) confirmText = 'رفض';
+        else if (isCancel) confirmText = 'تأكيد الإلغاء';
+        else if (isSuccess) confirmText = buttonText || 'تأكيد';
+        else confirmText = 'متابعة';
+    }
+
+    let body = explicitMessage;
+
+    if (!body) {
+        if (isDelete) {
+            body = 'سيتم حذف هذا العنصر من النظام. السجلات التاريخية المرتبطة به تبقى محفوظة متى كان النظام يدعم ذلك.';
+        } else if (isReject) {
+            body = 'سيتم رفض هذا الطلب أو السجل. تأكد من القرار قبل المتابعة.';
+        } else if (isCancel) {
+            body = 'سيتم إلغاء العملية الحالية. هل تريد المتابعة؟';
+        } else if (isSuccess) {
+            body = 'سيتم تنفيذ هذا الإجراء وتحديث حالة السجل في النظام.';
+        } else {
+            body = 'هل أنت متأكد من تنفيذ هذه العملية؟';
+        }
+    }
+
+    return {
+        type,
+        title,
+        body,
+        confirmText
+    };
+}
+
+function openConfirmModal({
+    title,
+    body,
+    confirmText,
+    type = 'info',
+    onConfirm,
+    trigger = null
+}) {
     const modal = document.getElementById('confirmModal');
-    if (!modal) return;
-    document.getElementById('confirmTitle').textContent = title || 'تأكيد العملية';
-    document.getElementById('confirmBody').textContent  = body  || 'هل أنت متأكد؟';
+    if (!modal) {
+        if (typeof onConfirm === 'function') onConfirm();
+        return;
+    }
+
+    const icon = document.getElementById('confirmIcon');
     const btn = document.getElementById('confirmBtn');
-    btn.onclick = () => { closeConfirmModal(); onConfirm(); };
+
+    document.getElementById('confirmTitle').textContent =
+        title || 'تأكيد العملية';
+
+    document.getElementById('confirmBody').textContent =
+        body || 'هل أنت متأكد؟';
+
+    document.getElementById('confirmEyebrow').textContent =
+        type === 'danger'
+            ? 'إجراء حساس'
+            : type === 'success'
+                ? 'تأكيد واعتماد'
+                : type === 'warning'
+                    ? 'تنبيه قبل المتابعة'
+                    : 'تأكيد الإجراء';
+
+    icon?.classList.remove(
+        'modal-icon-danger',
+        'is-danger',
+        'is-success',
+        'is-warning',
+        'is-info'
+    );
+    icon?.classList.add('is-' + type);
+
+    btn.className = 'btn '
+        + (type === 'danger'
+            ? 'btn-danger'
+            : type === 'success'
+                ? 'btn-success'
+                : type === 'warning'
+                    ? 'btn-gold'
+                    : 'btn-gold');
+
+    btn.textContent = confirmText || 'تأكيد';
+
+    _confirmAction = onConfirm;
+    _confirmTrigger = trigger || document.activeElement;
+
     modal.style.display = 'flex';
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('confirm-modal-open');
+
+    window.setTimeout(() => btn.focus(), 30);
 }
 
 function closeConfirmModal() {
     const modal = document.getElementById('confirmModal');
-    if (modal) modal.style.display = 'none';
-}
+    if (!modal) return;
 
-document.getElementById('confirmModal')?.addEventListener('click', (e) => {
-    if (e.target === e.currentTarget) closeConfirmModal();
-});
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('confirm-modal-open');
 
-// ── Toggle Password Visibility ──────────────────
-function togglePassword(id, btn) {
-    const input = document.getElementById(id);
-    if (!input) return;
-    const isPassword = input.type === 'password';
-    input.type = isPassword ? 'text' : 'password';
-    // Swap icon (eye / eye-off)
-    if (btn) {
-        btn.querySelector('svg')?.setAttribute('opacity', isPassword ? '1' : '.5');
+    const restoreFocus = _confirmTrigger;
+    _confirmTrigger = null;
+    _confirmAction = null;
+
+    if (
+        restoreFocus
+        && typeof restoreFocus.focus === 'function'
+    ) {
+        window.setTimeout(() => restoreFocus.focus(), 20);
     }
 }
 
-// ── Confirm Submit ──────────────────────────────
-document.querySelectorAll('[data-confirm]').forEach(el => {
-    el.addEventListener('click', (e) => {
-        e.preventDefault();
-        const message = el.dataset.confirm || 'هل أنت متأكد؟';
-        const form = el.closest('form');
-        openConfirmModal({
-            title: 'تأكيد العملية',
-            body: message,
-            onConfirm: () => form ? form.submit() : (window.location.href = el.href)
-        });
-    });
+document.getElementById('confirmBtn')?.addEventListener(
+    'click',
+    function () {
+        const action = _confirmAction;
+        _confirmAction = null;
+
+        const modal = document.getElementById('confirmModal');
+        if (modal) {
+            modal.style.display = 'none';
+            modal.setAttribute('aria-hidden', 'true');
+        }
+
+        document.body.classList.remove('confirm-modal-open');
+
+        if (typeof action === 'function') {
+            action();
+        }
+    }
+);
+
+document.getElementById('confirmCancelBtn')?.addEventListener(
+    'click',
+    closeConfirmModal
+);
+
+document.getElementById('confirmCloseBtn')?.addEventListener(
+    'click',
+    closeConfirmModal
+);
+
+document.getElementById('confirmModal')?.addEventListener(
+    'click',
+    (event) => {
+        if (event.target === event.currentTarget) {
+            closeConfirmModal();
+        }
+    }
+);
+
+document.addEventListener('keydown', (event) => {
+    const modal = document.getElementById('confirmModal');
+
+    if (
+        event.key === 'Escape'
+        && modal
+        && modal.style.display !== 'none'
+    ) {
+        event.preventDefault();
+        closeConfirmModal();
+    }
 });
+
+/*
+ * Central form protection.
+ * This catches DELETE forms automatically and also sensitive
+ * approval/rejection/cancellation/receive/complete actions.
+ */
+document.addEventListener(
+    'submit',
+    function (event) {
+        const form = event.target;
+
+        if (!(form instanceof HTMLFormElement)) return;
+        if (form.dataset.confirmBypass === '1') return;
+        if (form.dataset.confirmedOnce === '1') {
+            form.dataset.confirmedOnce = '0';
+            return;
+        }
+
+        const submitter = event.submitter || null;
+        const methodOverride = String(
+            form.querySelector('input[name="_method"]')?.value || ''
+        ).toUpperCase();
+
+        const actionUrl = String(
+            form.getAttribute('action') || ''
+        ).toLowerCase();
+
+        const buttonText = String(
+            submitter?.textContent || submitter?.value || ''
+        ).trim();
+
+        const source = (buttonText + ' ' + actionUrl).toLowerCase();
+
+        const explicitConfirm =
+            submitter?.dataset?.confirm
+            || form.dataset.confirm;
+
+        const isSensitive =
+            Boolean(explicitConfirm)
+            || methodOverride === 'DELETE'
+            || /\b(delete|destroy|remove|approve|confirm|complete|receive|reject|cancel|accept|activate|dispatch)\b/.test(source)
+            || /(حذف|إزالة|موافقة|اعتماد|تأكيد|إكمال|استلام|رفض|إلغاء|قبول|تفعيل|إرسال)/.test(source);
+
+        if (!isSensitive) return;
+
+        event.preventDefault();
+
+        const meta = actionMetaFromElement(
+            submitter,
+            form
+        );
+
+        openConfirmModal({
+            ...meta,
+            trigger: submitter,
+            onConfirm: () => {
+                form.dataset.confirmedOnce = '1';
+
+                if (
+                    submitter
+                    && typeof form.requestSubmit === 'function'
+                ) {
+                    form.requestSubmit(submitter);
+                } else {
+                    form.submit();
+                }
+            }
+        });
+    },
+    true
+);
+
+/*
+ * Confirm links and standalone action buttons.
+ */
+document.addEventListener(
+    'click',
+    function (event) {
+        const element = event.target.closest(
+            'a[data-confirm], button[data-confirm]'
+        );
+
+        if (!element) return;
+
+        const form = element.closest('form');
+
+        // Forms are handled by the submit listener above.
+        if (form) return;
+
+        event.preventDefault();
+
+        const meta = actionMetaFromElement(
+            element,
+            null
+        );
+
+        openConfirmModal({
+            ...meta,
+            trigger: element,
+            onConfirm: () => {
+                const href = element.getAttribute('href');
+
+                if (href) {
+                    window.location.href = href;
+                } else {
+                    element.dispatchEvent(
+                        new CustomEvent(
+                            'dahab:confirmed',
+                            { bubbles: true }
+                        )
+                    );
+                }
+            }
+        });
+    },
+    true
+);
 
 // ── CSRF helper ─────────────────────────────────
 function getCsrf() {
