@@ -809,12 +809,13 @@ class ShowroomDailyReportExcelExport implements
         $deficitTotalRow =
             $deficitHeaderRow + 3;
 
-        $this->buildLockedAccountingRow(
+        $this->buildEditableAccountingRow(
             $sheet,
             $cashierRow,
             'إجمالي رصيد الكاشير',
             (float) $this->report
-                ->cashier_balance_total
+                ->cashier_balance_total,
+            true
         );
 
         $this->buildLockedAccountingRow(
