@@ -316,6 +316,7 @@ class ShowroomDailyReportController extends Controller
             'deferred_payment_amount' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
             'special_reservations_amount' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
             'debt_repayment_amount' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
+            'submit_after_save' => ['nullable', 'boolean'],
             'items' => ['required', 'array'],
             'items.*.actual_closing_kg' => [
                 'nullable',
@@ -402,9 +403,72 @@ class ShowroomDailyReportController extends Controller
             newValues: ['status' => 'draft'],
         );
 
+        if ((bool) ($data['submit_after_save'] ?? false)) {
+            $showroomDailyReport->refresh()->load('items');
+
+            foreach ($showroomDailyReport->items as $item) {
+                $hasActivity =
+                    abs((float) $item->opening_kg) > 0.0005
+                    || abs((float) $item->received_kg) > 0.0005
+                    || abs((float) $item->sales_kg) > 0.0005
+                    || abs((float) $item->takeaway_sales_kg) > 0.0005
+                    || abs((float) $item->damaged_kg) > 0.0005
+                    || abs((float) $item->returned_kg) > 0.0005
+                    || abs((float) $item->other_net_kg) > 0.0005;
+
+                if ($hasActivity && $item->actual_closing_kg === null) {
+                    throw ValidationException::withMessages([
+                        "item_{$item->id}" =>
+                            'أدخل الكمية المتبقية آخر النهار للصنف "'
+                            . $item->product_name
+                            . '" قبل إرسال التقرير.',
+                    ]);
+                }
+            }
+
+            $showroomDailyReport->update([
+                'status' => 'submitted',
+                'submitted_by' => $request->user()->id,
+                'submitted_at' => now(),
+                'reviewed_by' => null,
+                'reviewed_at' => null,
+            ]);
+
+            ActivityLogger::log(
+                userId: $request->user()->id,
+                action: 'showroom_daily_report.submitted',
+                module: 'inventory',
+                recordType: 'showroom_daily_reports',
+                recordId: $showroomDailyReport->id,
+                oldValues: ['status' => 'draft'],
+                newValues: ['status' => 'submitted'],
+            );
+
+            NotificationDispatcher::notifyByPermissions(
+                new ShowroomDailyReportWorkflowNotification(
+                    $showroomDailyReport->fresh('location'),
+                    'submitted',
+                    $request->user()
+                ),
+                permissions: ['showroom_daily_reports.review'],
+                globalPermissions: ['financial.global.view'],
+                excludeUserId: $request->user()->id,
+            );
+
+            return redirect()
+                ->route('showroom-daily-reports.index', [
+                    'location_id' => $showroomDailyReport->location_id,
+                    'date' => $showroomDailyReport->business_date->format('Y-m-d'),
+                ])
+                ->with(
+                    'success',
+                    'تم حفظ جميع بيانات التقرير وإرساله للمحاسب العام بنجاح.'
+                );
+        }
+
         return back()->with(
             'success',
-            'تم حفظ جرد نهاية اليوم. الوارد والمبيعات تبقى مرتبطة بسجلات النظام.'
+            'تم حفظ جميع بيانات التقرير داخل النظام.'
         );
     }
 
