@@ -170,7 +170,8 @@ class ProductController extends Controller
             'locations',
             'managedLocation',
             'canManageLocations',
-            'units'
+            'units',
+            'isAdmin'
         ));
     }
 
@@ -354,8 +355,28 @@ class ProductController extends Controller
 
     public function destroy(Request $request, Product $product)
     {
-        $this->ensureProductAccess($product, $request->user());
-        return back()->with('error', 'لا يمكن حذف المنتجات. استخدم التعطيل للحفاظ على السجلات المالية والمخزنية.');
+        $user = $request->user();
+
+        abort_unless(
+            $this->isSystemAdmin($user),
+            403,
+            'حذف المنتجات متاح لمدير النظام فقط.'
+        );
+
+        /*
+         * Product uses SoftDeletes.
+         * We intentionally keep the product image, location links, order items,
+         * invoices, recipes and every historical relation untouched so old
+         * reports and financial records remain readable.
+         */
+        $product->delete();
+
+        return redirect()
+            ->route('products.index')
+            ->with(
+                'success',
+                'تم حذف المنتج من الكتالوج مع الاحتفاظ بسجلاته السابقة.'
+            );
     }
 
     public function toggleStatus(Request $request, Product $product)
