@@ -1,5 +1,11 @@
 @php
-    $printTheme = app(\App\Services\PrintThemeService::class)->settings();
+    $businessName = trim((string) \App\Models\SystemSetting::get(
+        'business_legal_name',
+        \App\Models\SystemSetting::get(
+            'system_name',
+            config('app.name')
+        )
+    ));
 
     $branchLabel = filled($filters['location_id'] ?? null)
         ? ($requests->first()?->requestingLocation?->name ?? 'الفرع المحدد')
@@ -24,8 +30,8 @@
         )
     );
 
-    $primary = $printTheme['primary_color'] ?? '#d6a925';
-    $secondary = $printTheme['secondary_color'] ?? '#111827';
+    $primary = '#d6a925';
+    $secondary = '#0b2f4f';
 @endphp
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -82,11 +88,6 @@
             text-align: left;
             color: #6b7280;
             font-size: 7pt;
-        }
-
-        .logo {
-            max-width: 90px;
-            max-height: 54px;
         }
 
         .business-name {
@@ -207,16 +208,8 @@
     <table class="header">
         <tr>
             <td class="brand">
-                @if(!empty($printTheme['show_logo']) && !empty($printTheme['logo_src']))
-                    <img
-                        src="{{ $printTheme['logo_src'] }}"
-                        class="logo"
-                        alt=""
-                    >
-                @endif
-
                 <div class="business-name">
-                    {{ $printTheme['business_name'] ?? config('app.name') }}
+                    {{ $businessName !== '' ? $businessName : config('app.name') }}
                 </div>
             </td>
 
@@ -347,7 +340,7 @@
     <table class="footer">
         <tr>
             <td style="text-align:right">
-                {{ $printTheme['business_name'] ?? config('app.name') }}
+                {{ $businessName !== '' ? $businessName : config('app.name') }}
             </td>
             <td style="text-align:left" dir="ltr">
                 {{ now()->format('Y-m-d H:i') }}
