@@ -251,13 +251,13 @@
             <div class="products-filter-field">
                 <label class="products-filter-label">ترتيب المنتجات</label>
                 <select name="sort" class="form-select">
-                    <option value="oldest" @selected(request('sort') === 'oldest')>
+                    <option value="oldest" @selected(request('sort', 'oldest') === 'oldest')>
                         الأقدم إضافة أولًا
                     </option>
                     <option value="newest" @selected(request('sort') === 'newest')>
                         الأحدث إضافة أولًا
                     </option>
-                    <option value="az" @selected(request('sort', 'az') === 'az')>
+                    <option value="az" @selected(request('sort', 'oldest') === 'az')>
                         أ ← ي
                     </option>
                     <option value="za" @selected(request('sort') === 'za')>

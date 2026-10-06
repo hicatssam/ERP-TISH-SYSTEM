@@ -93,7 +93,7 @@ class ProductController extends Controller
             );
         }
 
-        $sort = $request->input('sort', 'az');
+        $sort = $request->input('sort', 'oldest');
 
         if ($sort === 'oldest') {
             $query->orderBy('created_at')->orderBy('id');
