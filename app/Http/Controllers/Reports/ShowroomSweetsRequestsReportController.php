@@ -17,9 +17,6 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
-use Mpdf\Mpdf;
-use Mpdf\Config\ConfigVariables;
-use Mpdf\Config\FontVariables;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ShowroomSweetsRequestsReportController extends Controller
@@ -150,23 +147,7 @@ class ShowroomSweetsRequestsReportController extends Controller
 
         File::ensureDirectoryExists($tempDir);
 
-        $defaultConfig = (
-            new ConfigVariables()
-        )->getDefaults();
-
-        $fontDirs = $defaultConfig['fontDir'];
-
-        $defaultFontConfig = (
-            new FontVariables()
-        )->getDefaults();
-
-        $fontData = $defaultFontConfig['fontdata'];
-
-        $cairoFontDir = public_path(
-            'assets/fonts'
-        );
-
-        $mpdf = new Mpdf([
+        $mpdf = app(\App\Services\PdfFactory::class)->make([
             'mode' => 'utf-8',
             'format' => 'A4-L',
             'margin_top' => 8,
@@ -174,19 +155,6 @@ class ShowroomSweetsRequestsReportController extends Controller
             'margin_left' => 8,
             'margin_right' => 8,
             'directionality' => 'rtl',
-            'fontDir' => array_merge(
-                $fontDirs,
-                [$cairoFontDir]
-            ),
-            'fontdata' => $fontData + [
-                'cairo' => [
-                    'R' => 'Cairo-Regular.ttf',
-                    'B' => 'Cairo-Bold.ttf',
-                    'useOTL' => 0xFF,
-                    'useKashida' => 75,
-                ],
-            ],
-            'default_font' => 'cairo',
             'tempDir' => $tempDir,
         ]);
 
@@ -790,3 +758,4 @@ class ShowroomSweetsRequestsReportController extends Controller
             ?? [];
     }
 }
+

@@ -620,9 +620,9 @@
 @unless($pdfMode ?? false)
 <script>
     window.addEventListener('load', function () {
-        window.setTimeout(function () {
+        document.fonts.ready.then(function () {
             window.print();
-        }, 350);
+        });
     });
 </script>
 @endunless

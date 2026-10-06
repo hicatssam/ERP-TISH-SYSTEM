@@ -8,6 +8,9 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\SystemSetting;
+use App\Models\ShowroomDailyReport;
+use App\Models\ShowroomDailyReportItem;
+use App\Services\Finance\AccountingPdfService;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
@@ -27,6 +30,8 @@ class PdfLayoutRegressionTest extends TestCase
             'general with HD branding images' => ['general', true],
             'native without branding images' => ['native', false],
             'native with HD branding images' => ['native', true],
+            'showroom without branding images' => ['showroom', false],
+            'showroom with HD branding images' => ['showroom', true],
         ];
     }
 
@@ -34,7 +39,7 @@ class PdfLayoutRegressionTest extends TestCase
     public function test_pdf_has_readable_text_and_no_spurious_blank_pages(string $engine, bool $images): void
     {
         Notification::fake();
-        $branch = Location::create(['name' => 'PDF Branch', 'code' => 'PDF', 'type' => 'branch', 'is_active' => true]);
+        $branch = Location::create(['name' => 'فرع النصر', 'code' => 'PDF', 'type' => 'branch', 'is_active' => true]);
         $user = User::factory()->create();
         $user->employee->locations()->attach($branch->id, ['is_primary' => true]);
         $user->assignRole(Role::findOrCreate('Admin', 'web'));
@@ -56,7 +61,7 @@ class PdfLayoutRegressionTest extends TestCase
         SystemSetting::flushCache();
 
         $category = Category::create(['name' => 'PDF Food', 'slug' => 'pdf-food']);
-        $product = Product::create(['category_id' => $category->id, 'name' => 'PDF Product', 'sku' => 'PDF-PRODUCT', 'barcode' => 'PDF-BARCODE', 'unit' => 'piece', 'base_selling_price' => 10]);
+        $product = Product::create(['category_id' => $category->id, 'name' => 'بقلاوة لوز وعيش بالجبن', 'sku' => 'PDF-PRODUCT', 'barcode' => 'PDF-BARCODE', 'unit' => 'piece', 'base_selling_price' => 10]);
         $order = Order::create([
             'order_number' => 'PDF-ORDER', 'location_id' => $branch->id, 'created_by' => $user->id,
             'status' => 'completed', 'payment_status' => 'paid', 'payment_arrangement' => 'pay_now',
@@ -66,7 +71,33 @@ class PdfLayoutRegressionTest extends TestCase
         $url = $engine === 'general'
             ? route('reports.export.pdf', 'product-sales')
             : route('reports.native.export', ['report' => 'ledger', 'format' => 'pdf']);
-        $pdf = $this->actingAs($user)->get($url)->assertOk()->streamedContent();
+        if ($engine === 'showroom') {
+            $report = ShowroomDailyReport::make([
+                'id' => 3, 'business_date' => '2026-10-06', 'status' => 'draft',
+                'debts_amount' => 1500, 'customer_treats_amount' => 200,
+                'customer_discount_amount' => 150, 'special_reservations_amount' => 1080,
+            ]);
+            $report->setRelation('location', $branch);
+            $report->setRelation('submittedBy', null);
+            $report->setRelation('reviewedBy', null);
+            $report->setRelation('items', collect([
+                ShowroomDailyReportItem::make([
+                    'product_name' => $product->name, 'opening_kg' => 12.5,
+                    'received_trays' => 20, 'received_kg' => 10,
+                    'sales_kg' => 5, 'damaged_kg' => 0, 'other_net_kg' => 0,
+                    'actual_closing_kg' => 17.5, 'variance_kg' => 0,
+                ]),
+            ]));
+            $response = app(AccountingPdfService::class)->download(
+                'inventory.showroom-daily-reports.document', ['report' => $report],
+                'showroom.pdf', 'كشف تفصيلي للحلويات', 'landscape'
+            );
+            ob_start();
+            $response->sendContent();
+            $pdf = ob_get_clean();
+        } else {
+            $pdf = $this->actingAs($user)->get($url)->assertOk()->streamedContent();
+        }
 
         if (getenv('PDF_LAYOUT_ARTIFACTS')) {
             $directory = storage_path('app/pdf-layout-regression');
@@ -74,6 +105,7 @@ class PdfLayoutRegressionTest extends TestCase
             file_put_contents($directory.'/'.$engine.'-'.($images ? 'images' : 'plain').'.pdf', $pdf);
         }
         $this->assertStringStartsWith('%PDF', $pdf);
+        $this->assertMatchesRegularExpression('/\/BaseFont\s*\/[A-Z+]*Cairo/i', $pdf, 'Cairo must be embedded in every report.');
         preg_match_all('/\/Type\s*\/Page\b/', $pdf, $pages);
         $this->assertLessThanOrEqual(2, count($pages[0]), 'A short report should not create blank pages.');
         preg_match_all('/stream\r?\n(.*?)\r?\nendstream/s', $pdf, $streams);
@@ -88,3 +120,4 @@ class PdfLayoutRegressionTest extends TestCase
         $this->assertGreaterThanOrEqual(5, min($fontSizes), 'Text must remain legible instead of shrinking to near-zero size.');
     }
 }
+

@@ -147,6 +147,7 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
+    @include('layouts.print.fonts')
     <meta charset="UTF-8">
 
     <meta
@@ -678,7 +679,7 @@
             <button
                 type="button"
                 class="print-screen-btn primary"
-                onclick="window.print()"
+                onclick="document.fonts.ready.then(() => window.print())"
             >
                 🖨️ طباعة
             </button>
@@ -756,3 +757,4 @@
 
 </body>
 </html>
+

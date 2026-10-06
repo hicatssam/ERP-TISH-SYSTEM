@@ -6,11 +6,13 @@ use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use Maatwebsite\Excel\Concerns\WithDefaultStyles;
+use PhpOffice\PhpSpreadsheet\Style\Style;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class ReportExport implements FromArray, WithHeadings, WithTitle, WithStyles, ShouldAutoSize
+class ReportExport implements FromArray, WithHeadings, WithTitle, WithStyles, WithDefaultStyles, ShouldAutoSize
 {
     public function __construct(
         private array $rows,
@@ -31,6 +33,11 @@ class ReportExport implements FromArray, WithHeadings, WithTitle, WithStyles, Sh
     public function title(): string
     {
         return mb_substr($this->title, 0, 31); // sheet name max 31 chars
+    }
+
+    public function defaultStyles(Style $defaultStyle): array
+    {
+        return ['font' => ['name' => 'Cairo']];
     }
 
     public function styles(Worksheet $sheet): array
@@ -83,3 +90,4 @@ class ReportExport implements FromArray, WithHeadings, WithTitle, WithStyles, Sh
         ];
     }
 }
+

@@ -56,7 +56,7 @@ class ShowroomDailyReportExcelExport implements
         $sheet->getParent()
             ?->getDefaultStyle()
             ->getFont()
-            ->setName('Arial')
+            ->setName('Cairo')
             ->setSize(10);
 
         $sheet->getPageSetup()
@@ -1111,3 +1111,4 @@ class ShowroomDailyReportExcelExport implements
             ->setFormatRows(false);
     }
 }
+

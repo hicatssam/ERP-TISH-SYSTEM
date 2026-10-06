@@ -17,7 +17,6 @@ use BackedEnum;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Mpdf\Mpdf;
 
 class InvoiceController extends Controller
 {
@@ -112,7 +111,7 @@ class InvoiceController extends Controller
         ])->render();
 
         $printService = app(PrintThemeService::class);
-        $mpdf = new Mpdf([
+        $mpdf = app(\App\Services\PdfFactory::class)->make([
             'mode' => 'utf-8',
             'format' => $printService->pdfFormat($printService->settings()),
             'margin_top' => 0,
@@ -120,7 +119,6 @@ class InvoiceController extends Controller
             'margin_left' => 0,
             'margin_right' => 0,
             'directionality' => 'rtl',
-            'default_font' => 'dejavusans',
         ]);
 
         $mpdf->SetTitle($invoice->invoice_number);
@@ -250,3 +248,4 @@ class InvoiceController extends Controller
         }
     }
 }
+

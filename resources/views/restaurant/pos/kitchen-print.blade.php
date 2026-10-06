@@ -1,10 +1,11 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
+    @include('layouts.print.fonts')
     <meta charset="utf-8">
     <title>تذكرة المطبخ — {{ $order->order_number }}</title>
     <style>
-        *{box-sizing:border-box}body{font-family:Arial,Tahoma,sans-serif;margin:0;padding:16px;color:#111}
+        *{box-sizing:border-box}body{font-family:Cairo,Arial,sans-serif;margin:0;padding:16px;color:#111}
         .receipt{width:80mm;max-width:100%;margin:0 auto}h1{text-align:center;font-size:18px;margin:0 0 6px}
         .meta{font-size:12px;line-height:1.7;border-block:1px dashed #888;padding:8px 0;margin:8px 0}
         h2{font-size:15px;margin:14px 0 5px}.item{display:flex;gap:8px;justify-content:space-between;border-bottom:1px dotted #bbb;padding:7px 0;font-size:13px}
@@ -13,7 +14,7 @@
     </style>
 </head>
 <body>
-    <button class="no-print" type="button" onclick="window.print()">طباعة التذكرة</button>
+    <button class="no-print" type="button" onclick="document.fonts.ready.then(() => window.print())">طباعة التذكرة</button>
     <div class="receipt">
         <h1>تذكرة المطبخ</h1>
         <div class="meta">
@@ -29,6 +30,7 @@
             @endforeach
         @endforeach
     </div>
-    <script>window.addEventListener('load', () => window.setTimeout(() => window.print(), 250));</script>
+    <script>window.addEventListener('load', () => document.fonts.ready.then(() => window.print()));</script>
 </body>
 </html>
+

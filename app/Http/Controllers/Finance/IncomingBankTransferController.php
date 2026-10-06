@@ -22,7 +22,6 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
-use Mpdf\Mpdf;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class IncomingBankTransferController extends Controller
@@ -354,7 +353,7 @@ class IncomingBankTransferController extends Controller
 
         File::ensureDirectoryExists($tempDir);
 
-        $mpdf = new Mpdf([
+        $mpdf = app(\App\Services\PdfFactory::class)->make([
             'mode' => 'utf-8',
             'format' => $printService->pdfFormat($printTheme, 'landscape'),
             'margin_top' => 0,
@@ -362,7 +361,6 @@ class IncomingBankTransferController extends Controller
             'margin_left' => 0,
             'margin_right' => 0,
             'directionality' => 'rtl',
-            'default_font' => 'dejavusans',
             'autoScriptToLang' => true,
             'autoLangToFont' => true,
             'tempDir' => $tempDir,

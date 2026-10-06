@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
+    @include('layouts.print.fonts')
     <meta charset="UTF-8">
 
     <title>كشف حساب - {{ $customer->name }}</title>
@@ -8,7 +9,7 @@
     <style>
         body {
             direction: rtl;
-            font-family: dejavusans, sans-serif;
+            font-family: cairo;
             font-size: 10.5pt;
             color: #252525;
             line-height: 1.65;

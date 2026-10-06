@@ -284,7 +284,7 @@
     $recordCount = (int) ($total ?? $reportRows->count());
 @endphp
 
-@extends('layouts.print')
+@extends(($pdfMode ?? false) ? 'layouts.pdf' : 'layouts.print')
 
 @section('pdf_mode', ($pdfMode ?? false) ? '1' : '0')
 @section('paper_orientation', 'landscape')
@@ -435,3 +435,4 @@
         </div>
     @endif
 @endsection
+

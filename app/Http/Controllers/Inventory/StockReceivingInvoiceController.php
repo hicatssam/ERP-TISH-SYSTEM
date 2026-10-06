@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Inventory;
 use App\Http\Controllers\Controller;
 use App\Models\StockReceivingInvoice;
 use App\Services\PrintThemeService;
-use Mpdf\Mpdf;
 
 class StockReceivingInvoiceController extends Controller
 {
@@ -49,7 +48,7 @@ class StockReceivingInvoiceController extends Controller
         ])->render();
 
         $printService = app(PrintThemeService::class);
-        $mpdf = new Mpdf([
+        $mpdf = app(\App\Services\PdfFactory::class)->make([
             'mode'           => 'utf-8',
             'format'         => $printService->pdfFormat($printService->settings()),
             'margin_top'     => 0,
@@ -57,7 +56,6 @@ class StockReceivingInvoiceController extends Controller
             'margin_left'    => 0,
             'margin_right'   => 0,
             'directionality' => 'rtl',
-            'default_font'   => 'dejavusans',
         ]);
 
         $mpdf->SetTitle('فاتورة استلام ' . $stockReceivingInvoice->invoice_number);
@@ -69,3 +67,4 @@ class StockReceivingInvoiceController extends Controller
             ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
     }
 }
+

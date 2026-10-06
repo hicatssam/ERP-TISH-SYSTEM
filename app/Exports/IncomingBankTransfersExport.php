@@ -10,6 +10,8 @@ use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use Maatwebsite\Excel\Concerns\WithDefaultStyles;
+use PhpOffice\PhpSpreadsheet\Style\Style;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
@@ -22,7 +24,7 @@ class IncomingBankTransfersExport implements
     WithHeadings,
     WithMapping,
     ShouldAutoSize,
-    WithStyles,
+    WithStyles, WithDefaultStyles,
     WithEvents,
     WithTitle
 {
@@ -102,6 +104,11 @@ class IncomingBankTransfersExport implements
             $transfer->rejection_reason,
             $transfer->notes,
         ];
+    }
+
+    public function defaultStyles(Style $defaultStyle): array
+    {
+        return ['font' => ['name' => 'Cairo']];
     }
 
     public function styles(Worksheet $sheet): array
@@ -391,3 +398,4 @@ class IncomingBankTransfersExport implements
         ];
     }
 }
+

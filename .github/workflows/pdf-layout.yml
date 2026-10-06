@@ -2,10 +2,15 @@ name: PDF Layout Regression
 
 on:
   push:
-    branches: [codex/fix-pdf-layout]
+    branches: [codex/fix-pdf-layout, codex/unify-document-fonts]
   pull_request:
     paths:
-      - 'resources/views/layouts/pdf.blade.php'
+      - 'resources/views/**'
+      - 'app/Services/PdfFactory.php'
+      - 'app/Exports/**'
+      - 'app/Http/Controllers/Finance/**'
+      - 'app/Http/Controllers/Inventory/**'
+      - 'app/Http/Controllers/Reports/**'
       - 'app/Services/Finance/AccountingPdfService.php'
       - 'app/Http/Controllers/Reports/ReportController.php'
       - 'tests/Feature/Reports/PdfLayoutRegressionTest.php'
@@ -29,7 +34,7 @@ jobs:
       - name: Verify actual PDF text size and pagination
         env:
           PDF_LAYOUT_ARTIFACTS: '1'
-        run: php artisan test tests/Feature/Reports/PdfLayoutRegressionTest.php
+        run: php artisan test tests/Feature/Reports tests/Feature/ReportExportTest.php tests/Feature/ShowroomDailyReportExcelExportTest.php tests/Feature/UnifiedInvoiceDocumentTest.php tests/Feature/SendScheduledReportsTest.php
       - name: Save rendered PDF fixtures
         if: always()
         uses: actions/upload-artifact@v4
@@ -37,3 +42,4 @@ jobs:
           name: pdf-layout-fixtures
           path: storage/app/pdf-layout-regression/*.pdf
           retention-days: 7
+

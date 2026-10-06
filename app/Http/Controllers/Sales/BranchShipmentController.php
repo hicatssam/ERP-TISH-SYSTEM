@@ -15,7 +15,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
-use Mpdf\Mpdf;
 
 class BranchShipmentController extends Controller
 {
@@ -256,7 +255,7 @@ class BranchShipmentController extends Controller
         ])->render();
 
         $printService = app(PrintThemeService::class);
-        $mpdf = new Mpdf([
+        $mpdf = app(\App\Services\PdfFactory::class)->make([
             'mode' => 'utf-8',
             'format' => $printService->pdfFormat($printService->settings()),
             'margin_top' => 0,
@@ -264,7 +263,6 @@ class BranchShipmentController extends Controller
             'margin_left' => 0,
             'margin_right' => 0,
             'directionality' => 'rtl',
-            'default_font' => 'dejavusans',
         ]);
 
         $mpdf->SetTitle('فاتورة استلام ' . $branchReceivingInvoice->invoice_number);

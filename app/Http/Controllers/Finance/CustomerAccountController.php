@@ -11,7 +11,6 @@ use App\Services\Customers\CustomerAccountService;
 use App\Services\PrintThemeService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use Mpdf\Mpdf;
 
 class CustomerAccountController extends Controller
 {
@@ -131,7 +130,7 @@ class CustomerAccountController extends Controller
         ))->render();
 
         $printService = app(PrintThemeService::class);
-        $mpdf = new Mpdf([
+        $mpdf = app(\App\Services\PdfFactory::class)->make([
             'mode' => 'utf-8',
             'format' => $printService->pdfFormat($printService->settings(), 'landscape'),
             'margin_top' => 0,
@@ -139,7 +138,6 @@ class CustomerAccountController extends Controller
             'margin_left' => 0,
             'margin_right' => 0,
             'directionality' => 'rtl',
-            'default_font' => 'dejavusans',
         ]);
 
         $mpdf->SetTitle('كشف حساب - ' . $customer->name);
@@ -299,3 +297,4 @@ class CustomerAccountController extends Controller
         );
     }
 }
+

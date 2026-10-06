@@ -23,7 +23,6 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
-use Mpdf\Mpdf;
 
 class ReportController extends Controller
 {
@@ -290,7 +289,7 @@ class ReportController extends Controller
         \Illuminate\Support\Facades\File::ensureDirectoryExists($tempDir);
 
         $printService = app(PrintThemeService::class);
-        $mpdf = new Mpdf([
+        $mpdf = app(\App\Services\PdfFactory::class)->make([
             'mode'             => 'utf-8',
             'format'           => $printService->pdfFormat($printService->settings(), 'landscape'),
             'margin_top'       => 0,
@@ -298,9 +297,6 @@ class ReportController extends Controller
             'margin_left'      => 0,
             'margin_right'     => 0,
             'directionality'   => 'rtl',
-            'default_font'     => 'dejavusans',
-            'autoScriptToLang' => true,
-            'autoLangToFont'   => true,
             'tempDir'          => $tempDir,
         ]);
 
@@ -1438,3 +1434,4 @@ class ReportController extends Controller
         };
     }
 }
+

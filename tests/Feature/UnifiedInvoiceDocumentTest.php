@@ -12,7 +12,7 @@ use App\Models\StockTransfer;
 use App\Models\Supplier;
 use App\Models\SystemSetting;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Mpdf\Mpdf;
+use App\Services\PdfFactory;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -72,11 +72,10 @@ class UnifiedInvoiceDocumentTest extends TestCase
             );
         }
 
-        $renderer = new Mpdf([
+        $renderer = app(PdfFactory::class)->make([
             'mode' => 'utf-8',
             'format' => 'A4',
             'directionality' => 'rtl',
-            'default_font' => 'dejavusans',
         ]);
         $renderer->WriteHTML($pdf);
         $this->assertStringStartsWith('%PDF-', $renderer->Output('', 'S'));
@@ -162,11 +161,10 @@ class UnifiedInvoiceDocumentTest extends TestCase
 
     private function assertCanGeneratePdf(string $html, string $format = 'A4'): void
     {
-        $renderer = new Mpdf([
+        $renderer = app(PdfFactory::class)->make([
             'mode' => 'utf-8',
             'format' => $format,
             'directionality' => 'rtl',
-            'default_font' => 'dejavusans',
         ]);
         $renderer->WriteHTML($html);
 
@@ -187,3 +185,4 @@ class UnifiedInvoiceDocumentTest extends TestCase
         SystemSetting::flushCache();
     }
 }
+

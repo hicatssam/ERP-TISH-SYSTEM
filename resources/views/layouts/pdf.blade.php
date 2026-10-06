@@ -55,7 +55,7 @@
             direction: rtl;
             margin: 0;
             padding: 0;
-            font-family: cairo, dejavusans;
+            font-family: cairo;
             font-size: 8.3pt;
             line-height: 1.55;
             color: {{ $printTheme['text_color'] ?? '#1f2937' }};
@@ -63,6 +63,7 @@
         }
 
         * { box-sizing: border-box; }
+        table, td, th { font-family: cairo; }
 
         table {
             width: 100%;
@@ -356,3 +357,4 @@
     @endif
 </body>
 </html>
+
