@@ -46,6 +46,13 @@
             >
                 PDF
             </a>
+
+            <a
+                href="{{ route('showroom-daily-reports.excel', $report) }}"
+                class="btn btn-gold"
+            >
+                تنزيل Excel
+            </a>
         </div>
     @endif
 </div>
