@@ -77,6 +77,42 @@
             </div>
 
             <div class="form-group">
+                <label class="form-label">ترتيب المنتجات</label>
+                <select name="product_sort" class="form-select">
+                    <option
+                        value="created_asc"
+                        @selected(($filters['product_sort'] ?? 'created_asc') === 'created_asc')
+                    >
+                        حسب الإضافة أولًا في النظام
+                    </option>
+                    <option
+                        value="created_desc"
+                        @selected(($filters['product_sort'] ?? '') === 'created_desc')
+                    >
+                        الأحدث إضافة أولًا
+                    </option>
+                    <option
+                        value="name_asc"
+                        @selected(($filters['product_sort'] ?? '') === 'name_asc')
+                    >
+                        حسب اسم المنتج
+                    </option>
+                    <option
+                        value="quantity_desc"
+                        @selected(($filters['product_sort'] ?? '') === 'quantity_desc')
+                    >
+                        الكمية الأعلى أولًا
+                    </option>
+                    <option
+                        value="quantity_asc"
+                        @selected(($filters['product_sort'] ?? '') === 'quantity_asc')
+                    >
+                        الكمية الأقل أولًا
+                    </option>
+                </select>
+            </div>
+
+            <div class="form-group">
                 <label class="form-label">الحالة</label>
                 <select name="status" class="form-select">
                     <option value="">كل الحالات</option>
@@ -372,7 +408,7 @@
 <style>
 .ssr-report-page{display:grid;gap:1rem}
 .ssr-report-actions{display:flex;gap:.55rem;flex-wrap:wrap}
-.ssr-filter-grid{display:grid;grid-template-columns:repeat(6,minmax(145px,1fr)) auto;gap:.75rem;align-items:end}
+.ssr-filter-grid{display:grid;grid-template-columns:repeat(7,minmax(140px,1fr)) auto;gap:.75rem;align-items:end}
 .ssr-filter-actions{display:flex;gap:.5rem;align-items:center}
 .ssr-summary-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
 .ssr-table-wrap{overflow-x:auto}
