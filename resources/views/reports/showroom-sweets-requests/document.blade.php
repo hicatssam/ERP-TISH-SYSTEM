@@ -13,6 +13,10 @@
         default => 'كل الفترات',
     };
 
+    $productLabel = $selectedProduct
+        ? ($selectedProduct->name_ar ?: $selectedProduct->name)
+        : 'كل المنتجات';
+
     $detailRows = $requests->flatMap(
         fn($request) => $request->items->map(
             fn($item) => [
@@ -29,7 +33,7 @@
 @section('document_title', 'تقرير طلبات حلويات الفروع')
 @section('document_number', 'SSR-RPT-' . now()->format('Ymd'))
 @section('document_date', now()->format('Y-m-d'))
-@section('document_subtitle', $branchLabel . ' — ' . $periodLabel)
+@section('document_subtitle', $branchLabel . ' — ' . $periodLabel . ' — ' . $productLabel)
 @section('document_meta', 'عدد الطلبات: ' . $summary['requests_count'] . ' · عدد البنود: ' . $summary['items_count'])
 @section('signature_right', 'المحاسب / المراجع')
 @section('signature_left', 'اعتماد الإدارة')
@@ -129,10 +133,19 @@
         </table>
     </div>
 
-    @if(filled($filters['status'] ?? null) || filled($filters['request_number'] ?? null))
+    @if(
+        filled($filters['product_id'] ?? null)
+        || filled($filters['status'] ?? null)
+        || filled($filters['request_number'] ?? null)
+    )
         <div class="print-soft-box" style="margin-top:9px;text-align:right">
             <strong>الفلاتر:</strong>
+            @if(filled($filters['product_id'] ?? null))
+                المنتج:
+                {{ $productLabel }}
+            @endif
             @if(filled($filters['status'] ?? null))
+                @if(filled($filters['product_id'] ?? null)) · @endif
                 الحالة:
                 {{ \App\Enums\ShowroomSweetsRequestStatus::from($filters['status'])->label() }}
             @endif
