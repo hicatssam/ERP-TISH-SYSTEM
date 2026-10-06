@@ -56,6 +56,27 @@
             </div>
 
             <div class="form-group">
+                <label class="form-label">المنتج</label>
+                <select name="product_id" class="form-select">
+                    <option value="">كل المنتجات</option>
+                    @foreach($products as $product)
+                        <option
+                            value="{{ $product->id }}"
+                            @selected(
+                                (string) ($filters['product_id'] ?? '')
+                                === (string) $product->id
+                            )
+                        >
+                            {{ $product->name_ar ?: $product->name }}
+                            @if($product->sku)
+                                — {{ $product->sku }}
+                            @endif
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="form-group">
                 <label class="form-label">الحالة</label>
                 <select name="status" class="form-select">
                     <option value="">كل الحالات</option>
@@ -292,7 +313,7 @@
 <style>
 .ssr-report-page{display:grid;gap:1rem}
 .ssr-report-actions{display:flex;gap:.55rem;flex-wrap:wrap}
-.ssr-filter-grid{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr)) auto;gap:.75rem;align-items:end}
+.ssr-filter-grid{display:grid;grid-template-columns:repeat(6,minmax(145px,1fr)) auto;gap:.75rem;align-items:end}
 .ssr-filter-actions{display:flex;gap:.5rem;align-items:center}
 .ssr-summary-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
 .ssr-table-wrap{overflow-x:auto}
