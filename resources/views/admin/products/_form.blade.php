@@ -2,13 +2,6 @@
     $currencySymbol = app(\App\Services\PrintThemeService::class)->settings()['currency_symbol'];
     $editing = isset($product) && $product !== null;
 
-    $productTypeValue = old(
-        'product_type',
-        $editing
-            ? ($product->product_type?->value ?? 'standard')
-            : 'standard'
-    );
-
     $selectedUnitId = old(
         'unit_id',
         $editing
@@ -155,7 +148,7 @@
     <section class="product-form-section">
         <div class="product-form-section-title">التصنيف والبيع</div>
 
-        <div class="product-form-grid three">
+        <div class="product-form-grid">
             <div class="form-group">
                 <label class="form-label">الفئة *</label>
                 <select name="category_id" class="form-select" required>
@@ -201,53 +194,15 @@
                 @endif
             </div>
 
-            <div class="form-group">
-                <label class="form-label">نوع المنتج *</label>
-                <select name="product_type" class="form-select" required>
-                    <option value="standard" {{ $productTypeValue === 'standard' ? 'selected' : '' }}>
-                        منتج عادي
-                    </option>
-
-                    @if($variantsEnabled)
-                        <option value="variant" {{ $productTypeValue === 'variant' ? 'selected' : '' }}>
-                            منتج بمتغيرات
-                        </option>
-                    @endif
-                </select>
-
-                @if(! $variantsEnabled)
-                    <small class="product-form-help">
-                        فعّل وحدة متغيرات المنتجات لإضافة المقاسات والألوان.
-                    </small>
-                @endif
-            </div>
+            <input
+                type="hidden"
+                name="product_type"
+                value="{{ $editing ? ($product->product_type?->value ?? 'standard') : 'standard' }}"
+            >
+        </div>
         </div>
 
         <div class="product-form-grid">
-            <div class="form-group">
-                <label class="form-label">العلامة التجارية</label>
-
-                @if($brands->isNotEmpty())
-                    <select name="brand_id" class="form-select">
-                        <option value="">بدون علامة</option>
-                        @foreach($brands as $brand)
-                            <option
-                                value="{{ $brand->id }}"
-                                {{ (string) old('brand_id', $product->brand_id ?? '') === (string) $brand->id ? 'selected' : '' }}
-                            >
-                                {{ $brand->displayName() }}
-                            </option>
-                        @endforeach
-                    </select>
-                @else
-                    <input
-                        class="form-input"
-                        value="وحدة العلامات التجارية غير مفعلة"
-                        disabled
-                    >
-                @endif
-            </div>
-
             <div class="form-group">
                 <label class="form-label">السعر الأساسي ({{ $currencySymbol }}) *</label>
                 <input
@@ -260,6 +215,7 @@
                     required
                 >
             </div>
+
         </div>
     </section>
 
