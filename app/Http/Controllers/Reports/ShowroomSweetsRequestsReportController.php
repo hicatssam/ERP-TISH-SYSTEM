@@ -5,13 +5,17 @@ namespace App\Http\Controllers\Reports;
 use App\Enums\ShowroomSweetsRequestStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Location;
+use App\Models\Product;
+use App\Models\SystemSetting;
 use App\Models\ShowroomSweetsRequest;
 use App\Models\User;
+use App\Services\PrintThemeService;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Mpdf\Mpdf;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -48,6 +52,15 @@ class ShowroomSweetsRequestsReportController extends Controller
                 ),
                 'statusEnum' =>
                     ShowroomSweetsRequestStatus::workflowCases(),
+                'products' => Product::query()
+                    ->active()
+                    ->orderByRaw("COALESCE(NULLIF(name_ar, ''), name)")
+                    ->get([
+                        'id',
+                        'name',
+                        'name_ar',
+                        'sku',
+                    ]),
                 'filters' => $filters,
                 'summary' => $summary,
                 'canViewAll' => $canViewAll,
@@ -107,6 +120,7 @@ class ShowroomSweetsRequestsReportController extends Controller
                 'requests' => $requests,
                 'summary' => $summary,
                 'filters' => $filters,
+                'branding' => $this->pdfBranding(),
             ]
         )->render();
 
@@ -176,6 +190,7 @@ class ShowroomSweetsRequestsReportController extends Controller
         $validated = validator(
             $request->only([
                 'location_id',
+                'product_id',
                 'status',
                 'date_from',
                 'date_to',
@@ -186,6 +201,11 @@ class ShowroomSweetsRequestsReportController extends Controller
                     'nullable',
                     'integer',
                     'exists:locations,id',
+                ],
+                'product_id' => [
+                    'nullable',
+                    'integer',
+                    'exists:products,id',
                 ],
                 'status' => [
                     'nullable',
@@ -227,6 +247,12 @@ class ShowroomSweetsRequestsReportController extends Controller
         User $user,
         array $filters
     ): Builder {
+        $productId = filled(
+            $filters['product_id'] ?? null
+        )
+            ? (int) $filters['product_id']
+            : null;
+
         $query = ShowroomSweetsRequest::query()
             ->with([
                 'requestingLocation:id,name',
@@ -234,14 +260,60 @@ class ShowroomSweetsRequestsReportController extends Controller
                 'creator.employee',
                 'handledBy.employee',
                 'receivedBy.employee',
-                'items.product',
-            ])
-            ->withCount('items')
-            ->withSum('items as requested_quantity_total', 'quantity')
-            ->withSum(
-                'items as reserved_quantity_total',
-                'reserved_quantity'
-            );
+                'items' => function ($items) use ($productId): void {
+                    if ($productId) {
+                        $items->where(
+                            'product_id',
+                            $productId
+                        );
+                    }
+
+                    $items->with('product');
+                },
+            ]);
+
+        if ($productId) {
+            $query
+                ->whereHas(
+                    'items',
+                    fn ($items) => $items->where(
+                        'product_id',
+                        $productId
+                    )
+                )
+                ->withCount([
+                    'items as items_count' =>
+                        fn ($items) => $items->where(
+                            'product_id',
+                            $productId
+                        ),
+                ])
+                ->withSum([
+                    'items as requested_quantity_total' =>
+                        fn ($items) => $items->where(
+                            'product_id',
+                            $productId
+                        ),
+                ], 'quantity')
+                ->withSum([
+                    'items as reserved_quantity_total' =>
+                        fn ($items) => $items->where(
+                            'product_id',
+                            $productId
+                        ),
+                ], 'reserved_quantity');
+        } else {
+            $query
+                ->withCount('items')
+                ->withSum(
+                    'items as requested_quantity_total',
+                    'quantity'
+                )
+                ->withSum(
+                    'items as reserved_quantity_total',
+                    'reserved_quantity'
+                );
+        }
 
         $canViewAll = $this->canViewAll($user);
 
@@ -416,6 +488,99 @@ class ShowroomSweetsRequestsReportController extends Controller
             'id',
             'name',
         ]);
+    }
+
+    private function pdfBranding(): array
+    {
+        $theme = app(
+            PrintThemeService::class
+        )->settings();
+
+        return [
+            'primary_color' =>
+                $theme['primary_color'] ?? '#d6a925',
+            'secondary_color' =>
+                $theme['secondary_color'] ?? '#0b2f4f',
+            'text_color' =>
+                $theme['text_color'] ?? '#1f2937',
+            'business_name' =>
+                $theme['business_name'] ?? config('app.name'),
+            'business_name_en' =>
+                $theme['business_name_en'] ?? '',
+            'business_tagline' =>
+                $theme['business_tagline'] ?? '',
+            'business_phone' =>
+                $theme['business_phone'] ?? '',
+            'business_email' =>
+                $theme['business_email'] ?? '',
+            'business_address' =>
+                $theme['business_address'] ?? '',
+            'footer_text' =>
+                $theme['footer_text'] ?? '',
+            'show_logo' =>
+                (bool) ($theme['show_logo'] ?? true),
+            'logo_path' => $this->pdfLogoPath(),
+        ];
+    }
+
+    /**
+     * mPDF is given a local logo path rather than a Base64 data URI.
+     * This keeps branding while avoiding the blank-page issue caused
+     * by embedding a large image payload in the report HTML.
+     */
+    private function pdfLogoPath(): ?string
+    {
+        foreach ([
+            SystemSetting::get('print_logo'),
+            SystemSetting::get('brand_report_logo'),
+            SystemSetting::get('brand_logo'),
+        ] as $value) {
+            $value = trim((string) $value);
+
+            if (
+                $value === ''
+                || str_starts_with($value, 'data:image/')
+                || preg_match('#^https?://#i', $value)
+                || str_starts_with($value, '//')
+            ) {
+                continue;
+            }
+
+            $normalized = ltrim(
+                str_replace('\\', '/', $value),
+                '/'
+            );
+
+            $relative = preg_replace(
+                '#^storage/#',
+                '',
+                $normalized
+            );
+
+            if (
+                ! str_contains($relative, '..')
+                && Storage::disk('public')->exists($relative)
+            ) {
+                return Storage::disk('public')->path(
+                    $relative
+                );
+            }
+
+            foreach ([
+                public_path($normalized),
+                public_path('storage/' . $relative),
+                storage_path('app/public/' . $relative),
+            ] as $candidate) {
+                if (
+                    is_string($candidate)
+                    && is_file($candidate)
+                ) {
+                    return $candidate;
+                }
+            }
+        }
+
+        return null;
     }
 
     private function userLocationIds(
