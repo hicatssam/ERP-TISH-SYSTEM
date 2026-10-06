@@ -97,13 +97,15 @@ class ShowroomSweetsRequestsReportController extends Controller
             . now()->format('Ymd-His')
             . '.pdf';
 
+        $summary = $this->summaryFromCollection(
+            $requests
+        );
+
         return $pdf->download(
             'reports.showroom-sweets-requests.document',
             [
                 'requests' => $requests,
-                'summary' => $this->summaryFromCollection(
-                    $requests
-                ),
+                'summary' => $summary,
                 'filters' => $filters,
             ],
             $filename,
