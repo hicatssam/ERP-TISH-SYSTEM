@@ -53,7 +53,7 @@
 
     .products-filter-main{
         display:grid;
-        grid-template-columns:minmax(260px,1.5fr) repeat(5,minmax(150px,1fr));
+        grid-template-columns:minmax(260px,1.6fr) repeat(4,minmax(150px,1fr));
         gap:.75rem;
         align-items:end;
     }
@@ -159,7 +159,7 @@
         @can('products.update')
         @if(Route::has('catalog.index'))
         <a href="{{ route('catalog.index') }}" class="btn btn-outline">
-            إعدادات الكتالوج
+            إعدادات المنتجات
         </a>
         @endif
         @endcan
@@ -240,21 +240,6 @@
             </div>
 
             <div class="products-filter-field">
-                <label class="products-filter-label">نوع المنتج</label>
-                <select name="product_type" class="form-select">
-                    <option value="">كل الأنواع</option>
-                    <option value="standard" @selected(request('product_type') === 'standard')>
-                        منتج عادي
-                    </option>
-                    @if($variantsEnabled)
-                        <option value="variant" @selected(request('product_type') === 'variant')>
-                            منتج بمتغيرات
-                        </option>
-                    @endif
-                </select>
-            </div>
-
-            <div class="products-filter-field">
                 <label class="products-filter-label">الحالة</label>
                 <select name="status" class="form-select">
                     <option value="">كل الحالات</option>
@@ -275,30 +260,12 @@
                 </select>
             </div>
 
-            @if($brands->isNotEmpty())
-                <div class="products-filter-field">
-                    <label class="products-filter-label">العلامة التجارية</label>
-                    <select name="brand_id" class="form-select">
-                        <option value="">كل العلامات</option>
-                        @foreach($brands as $brand)
-                            <option
-                                value="{{ $brand->id }}"
-                                @selected(
-                                    (string) request('brand_id')
-                                    === (string) $brand->id
-                                )
-                            >
-                                {{ $brand->displayName() }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-            @endif
+
         </div>
 
         <div class="products-filter-footer">
             <div class="products-active-filters">
-                @if(request()->hasAny(['q','location_id','category_id','product_type','status','brand_id','sort']))
+                @if(request()->hasAny(['q','location_id','category_id','status','sort']))
                     <span>الفلاتر الحالية مطبقة على النتائج</span>
                 @else
                     <span>عرض جميع المنتجات</span>
