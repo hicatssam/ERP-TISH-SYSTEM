@@ -15,8 +15,10 @@ use App\Models\ShowroomDailyReport;
 use App\Models\ShowroomDailyReportItem;
 use App\Models\ShowroomSweetsRequest;
 use App\Models\StockMovement;
+use App\Notifications\ShowroomDailyReportWorkflowNotification;
 use App\Services\ActivityLogger;
 use App\Services\Finance\AccountingPdfService;
+use App\Services\Notifications\NotificationDispatcher;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -296,13 +298,14 @@ class ShowroomDailyReportController extends Controller
 
         $data = $request->validate([
             'notes' => ['nullable', 'string', 'max:2000'],
-            'credit_debt_amount' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
-            'empty_packages_balance' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
-            'tahlayat_amount' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
-            'customer_discount_total' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
-            'prepaid_discount_amount' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
-            'reservations_amount' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
-            'report_total_amount' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
+            'debts_amount' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
+            'trays_packages_balance' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
+            'customer_treats_amount' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
+            'customer_discount_amount' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
+            'previous_prepaid_amount' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
+            'deferred_payment_amount' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
+            'special_reservations_amount' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
+            'debt_repayment_amount' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
             'items' => ['required', 'array'],
             'items.*.actual_closing_kg' => [
                 'nullable',
@@ -354,13 +357,28 @@ class ShowroomDailyReportController extends Controller
                 'notes' => filled($data['notes'] ?? null)
                     ? trim((string) $data['notes'])
                     : null,
-                'credit_debt_amount' => (float) ($data['credit_debt_amount'] ?? 0),
-                'empty_packages_balance' => (float) ($data['empty_packages_balance'] ?? 0),
-                'tahlayat_amount' => (float) ($data['tahlayat_amount'] ?? 0),
-                'customer_discount_total' => (float) ($data['customer_discount_total'] ?? 0),
-                'prepaid_discount_amount' => (float) ($data['prepaid_discount_amount'] ?? 0),
-                'reservations_amount' => (float) ($data['reservations_amount'] ?? 0),
-                'report_total_amount' => (float) ($data['report_total_amount'] ?? 0),
+                'debts_amount' => $debts = (float) ($data['debts_amount'] ?? 0),
+                'trays_packages_balance' => $traysPackages = (float) ($data['trays_packages_balance'] ?? 0),
+                'customer_treats_amount' => $customerTreats = (float) ($data['customer_treats_amount'] ?? 0),
+                'customer_discount_amount' => $customerDiscount = (float) ($data['customer_discount_amount'] ?? 0),
+                'previous_prepaid_amount' => $previousPrepaid = (float) ($data['previous_prepaid_amount'] ?? 0),
+                'accounting_total_primary' => round(
+                    $debts
+                    + $traysPackages
+                    + $customerTreats
+                    - $customerDiscount
+                    - $previousPrepaid,
+                    2
+                ),
+                'deferred_payment_amount' => $deferredPayment = (float) ($data['deferred_payment_amount'] ?? 0),
+                'special_reservations_amount' => $specialReservations = (float) ($data['special_reservations_amount'] ?? 0),
+                'debt_repayment_amount' => $debtRepayment = (float) ($data['debt_repayment_amount'] ?? 0),
+                'accounting_total_secondary' => round(
+                    $deferredPayment
+                    + $specialReservations
+                    - $debtRepayment,
+                    2
+                ),
             ]);
         });
 
@@ -437,6 +455,17 @@ class ShowroomDailyReportController extends Controller
             newValues: ['status' => 'submitted'],
         );
 
+        NotificationDispatcher::notifyByPermissions(
+            new ShowroomDailyReportWorkflowNotification(
+                $showroomDailyReport->fresh('location'),
+                'submitted',
+                $request->user()
+            ),
+            permissions: ['showroom_daily_reports.review'],
+            globalPermissions: ['financial.global.view'],
+            excludeUserId: $request->user()->id,
+        );
+
         return back()->with(
             'success',
             'تم إرسال التقرير للمحاسب العام للمراجعة والاعتماد.'
@@ -484,6 +513,19 @@ class ShowroomDailyReportController extends Controller
             newValues: ['status' => 'approved'],
         );
 
+        NotificationDispatcher::notifyLocationUsers(
+            (int) $showroomDailyReport->location_id,
+            new ShowroomDailyReportWorkflowNotification(
+                $showroomDailyReport->fresh('location'),
+                'approved',
+                $request->user()
+            ),
+            permissions: [
+                'showroom_daily_reports.manage_branch',
+                'inventory.count',
+            ]
+        );
+
         return back()->with(
             'success',
             'تم تدقيق واعتماد تقرير المعرض. أصبح جاهزًا للترحيل لليوم التالي.'
@@ -515,6 +557,7 @@ class ShowroomDailyReportController extends Controller
             'reviewed_by' => $request->user()->id,
             'reviewed_at' => now(),
             'review_notes' => trim($data['review_notes']),
+            'returned_for_correction_at' => now(),
             'submitted_by' => null,
             'submitted_at' => null,
         ]);
@@ -532,9 +575,22 @@ class ShowroomDailyReportController extends Controller
             ],
         );
 
+        NotificationDispatcher::notifyLocationUsers(
+            (int) $showroomDailyReport->location_id,
+            new ShowroomDailyReportWorkflowNotification(
+                $showroomDailyReport->fresh('location'),
+                'returned',
+                $request->user()
+            ),
+            permissions: [
+                'showroom_daily_reports.manage_branch',
+                'inventory.count',
+            ]
+        );
+
         return back()->with(
             'success',
-            'تمت إعادة التقرير للفرع للتصحيح.'
+            'تمت إعادة التقرير للفرع للتصحيح وتم إرسال إشعار للفرع.'
         );
     }
 
