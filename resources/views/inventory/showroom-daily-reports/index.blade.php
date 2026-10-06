@@ -662,7 +662,7 @@
                 <div class="showroom-booking-net-card">
                     <div class="showroom-financial-summary-head">
                         <div>
-                            <strong>صافي الحجز</strong>
+                            <strong>إجمالي العجز</strong>
                             <small>
                                 إجمالي رصيد الكاشير − الإجمالي المالي للتقرير
                             </small>
@@ -686,7 +686,7 @@
                         </div>
 
                         <div class="showroom-financial-row net-total">
-                            <span>صافي الحجز</span>
+                            <span>إجمالي العجز</span>
                             <strong id="netBookingTotal">
                                 {{ number_format((float) $report->net_booking_total, 2) }}
                             </strong>
