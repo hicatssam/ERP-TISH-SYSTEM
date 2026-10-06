@@ -81,14 +81,14 @@
         }
 
         .logo {
-            max-width: 82px;
-            max-height: 50px;
-            margin-bottom: 2px;
+            max-width: 118px;
+            max-height: 68px;
+            margin-bottom: 3px;
         }
 
         .business-name {
             color: {{ $navy }};
-            font-size: 8.2pt;
+            font-size: 8.6pt;
             font-weight: bold;
         }
 
