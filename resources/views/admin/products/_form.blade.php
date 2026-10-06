@@ -200,7 +200,6 @@
                 value="{{ $editing ? ($product->product_type?->value ?? 'standard') : 'standard' }}"
             >
         </div>
-        </div>
 
         <div class="product-form-grid">
             <div class="form-group">
