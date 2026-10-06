@@ -188,6 +188,7 @@
                         <th>المنتج</th>
                         <th>الوحدة</th>
                         <th>عدد الطلبات</th>
+                        <th>تفصيل الفروع</th>
                         <th>إجمالي الكمية المطلوبة</th>
                         <th>إجمالي المحجوز</th>
                     </tr>
@@ -201,6 +202,14 @@
                             </td>
                             <td>{{ $total['unit'] }}</td>
                             <td>{{ $total['requests_count'] }}</td>
+                            <td class="ssr-branch-breakdown-cell">
+                                @foreach($total['branches'] as $branch)
+                                    <span class="ssr-branch-chip">
+                                        {{ $branch['branch_name'] }}
+                                        <b>{{ number_format($branch['quantity'], 3) }}</b>
+                                    </span>
+                                @endforeach
+                            </td>
                             <td>
                                 <strong>{{ number_format($total['quantity'], 3) }}</strong>
                             </td>
@@ -208,7 +217,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6">
+                            <td colspan="7">
                                 <div class="empty-state-sm">
                                     لا توجد منتجات ضمن الفلاتر الحالية.
                                 </div>
@@ -377,6 +386,9 @@
 .ssr-table tfoot th{background:#fff8df;color:#8c6818;font-weight:900}
 .ssr-product-totals-table{min-width:760px}
 .ssr-product-totals-table th,.ssr-product-totals-table td{text-align:center;vertical-align:middle}
+.ssr-branch-breakdown-cell{text-align:right!important;min-width:280px}
+.ssr-branch-chip{display:inline-flex;gap:.3rem;align-items:center;margin:.12rem;padding:.22rem .42rem;border:1px solid var(--border);border-radius:999px;background:var(--off-white);font-size:.67rem;white-space:nowrap}
+.ssr-branch-chip b{color:var(--gold-dark,#8a6500)}
 @media(max-width:1100px){.ssr-filter-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.ssr-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){.ssr-filter-grid,.ssr-summary-grid{grid-template-columns:1fr}.ssr-filter-actions,.ssr-report-actions{width:100%}.ssr-filter-actions .btn,.ssr-report-actions .btn{flex:1}.page-header{align-items:stretch}}
 </style>
