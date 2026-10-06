@@ -132,6 +132,10 @@ class ShowroomSweetsRequestsReportController extends Controller
             'تقرير طلبات حلويات الفروع'
         );
 
+        // Keep report tables inside one landscape page width.
+        $mpdf->simpleTables = true;
+        $mpdf->shrink_tables_to_fit = 1;
+
         $mpdf->SetDisplayMode('fullwidth');
         $mpdf->WriteHTML($html);
 
