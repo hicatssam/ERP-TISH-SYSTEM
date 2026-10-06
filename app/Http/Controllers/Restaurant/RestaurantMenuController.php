@@ -82,6 +82,8 @@ class RestaurantMenuController extends Controller
                     $locationProducts->where('location_id', $location->id)
                         ->where('is_available', true)
                 );
+            } elseif ($status === 'takeaway') {
+                $query->where('is_takeaway_item', true);
             }
         }
 
