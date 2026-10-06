@@ -39,7 +39,7 @@ class TakeawayDailyReportController extends Controller
             ->forLocation($location->id)
             ->where('is_takeaway_item', true)
             ->with([
-                'product:id,name,name_ar,sku',
+                'product:id,name,name_ar,sku,base_selling_price',
                 'product.locationProducts' => fn ($query) =>
                     $query->where('location_id', $location->id),
             ])
