@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Inventory;
 
+use App\Exports\ShowroomDailyReportExcelExport;
 use App\Enums\MovementReason;
 use App\Enums\MovementType;
 use App\Http\Controllers\Controller;
@@ -9,6 +10,7 @@ use App\Models\BranchReceivingInvoice;
 use App\Models\Inventory;
 use App\Models\Location;
 use App\Models\Product;
+use App\Models\ShowroomCakeDailyReport;
 use App\Models\ShowroomDailyReport;
 use App\Models\ShowroomDailyReportItem;
 use App\Models\ShowroomSweetsRequest;
@@ -22,6 +24,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ShowroomDailyReportController extends Controller
@@ -600,6 +603,61 @@ class ShowroomDailyReportController extends Controller
             'report' => $showroomDailyReport,
             'pdfMode' => false,
         ]);
+    }
+
+    public function excel(
+        Request $request,
+        ShowroomDailyReport $showroomDailyReport
+    ) {
+        $this->assertViewAccess($request);
+        $this->assertLocationAccess(
+            $request,
+            (int) $showroomDailyReport->location_id
+        );
+
+        /*
+         * Refresh automatic system-owned values immediately before export so
+         * the workbook always matches the latest confirmed receiving invoices
+         * and sales recorded for the branch.
+         */
+        if ($showroomDailyReport->isDraft()) {
+            $this->syncAutomaticColumns(
+                $showroomDailyReport
+            );
+        }
+
+        $showroomDailyReport->refresh()->load([
+            'location',
+            'items.product',
+        ]);
+
+        $cakeReport = ShowroomCakeDailyReport::query()
+            ->with('items')
+            ->where(
+                'location_id',
+                $showroomDailyReport->location_id
+            )
+            ->whereDate(
+                'business_date',
+                $showroomDailyReport->business_date
+            )
+            ->first();
+
+        $filename =
+            'showroom-report-'
+            . $showroomDailyReport->location_id
+            . '-'
+            . $showroomDailyReport->business_date
+                ->format('Y-m-d')
+            . '.xlsx';
+
+        return Excel::download(
+            new ShowroomDailyReportExcelExport(
+                $showroomDailyReport,
+                $cakeReport
+            ),
+            $filename
+        );
     }
 
     public function pdf(
