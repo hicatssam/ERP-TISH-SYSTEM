@@ -586,7 +586,13 @@ class ShowroomSweetsRequestsReportController extends Controller
             }
         }
 
-        return null;
+        $fallback = public_path(
+            'assets/images/logo.png'
+        );
+
+        return is_file($fallback)
+            ? $fallback
+            : null;
     }
 
     private function userLocationIds(
