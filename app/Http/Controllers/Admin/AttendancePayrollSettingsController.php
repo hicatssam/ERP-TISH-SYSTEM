@@ -45,6 +45,59 @@ class AttendancePayrollSettingsController extends Controller
         );
     }
 
+    public function activateFaceAttendance(
+        Request $request
+    ): RedirectResponse {
+        DB::transaction(function (): void {
+            SystemSetting::set('attendance_enabled', 1);
+            SystemSetting::set('attendance_biometric_enabled', 1);
+            SystemSetting::set(
+                'attendance_employee_face_punch_enabled',
+                1
+            );
+
+            if (
+                trim(
+                    (string) SystemSetting::get(
+                        'compreface_base_url',
+                        ''
+                    )
+                ) === ''
+            ) {
+                SystemSetting::set(
+                    'compreface_base_url',
+                    'http://127.0.0.1:8001'
+                );
+            }
+        });
+
+        SystemSetting::flushCache();
+
+        $configured =
+            $this->faceAttendance->configured();
+
+        if (! $configured) {
+            return redirect()
+                ->route('settings.attendance-payroll.edit')
+                ->with(
+                    'warning',
+                    'تم تفعيل بصمة الوجه داخل النظام. بقي فقط حفظ مفتاح Face Recognition الخاص بـ CompreFace.'
+                );
+        }
+
+        $connected =
+            $this->faceAttendance->connectionOk();
+
+        return redirect()
+            ->route('settings.attendance-payroll.edit')
+            ->with(
+                $connected ? 'success' : 'warning',
+                $connected
+                    ? 'تم تجهيز بصمة الوجه والاتصال بخدمة CompreFace بنجاح. يمكنك الآن تسجيل وجوه الموظفين وفتح كشك الحضور.'
+                    : 'تم تفعيل بصمة الوجه داخل النظام، لكن خدمة CompreFace لا تستجيب حاليًا. شغّل الخدمة ثم أعد اختبار الاتصال.'
+            );
+    }
+
     public function update(
         Request $request
     ): RedirectResponse {
@@ -131,6 +184,21 @@ class AttendancePayrollSettingsController extends Controller
         }
 
         SystemSetting::flushCache();
+
+        /*
+         * Saving valid CompreFace credentials should make the feature ready
+         * without requiring the administrator to discover three separate
+         * attendance switches.
+         */
+        if ($this->faceAttendance->configured()) {
+            SystemSetting::set('attendance_enabled', 1);
+            SystemSetting::set('attendance_biometric_enabled', 1);
+            SystemSetting::set(
+                'attendance_employee_face_punch_enabled',
+                1
+            );
+            SystemSetting::flushCache();
+        }
 
         return redirect()
             ->route('settings.attendance-payroll.edit')
