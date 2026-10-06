@@ -136,7 +136,7 @@ class ShowroomDailyReportExcelExport implements
         $this->buildAccountingSection($sheet);
         $this->applyProtection($sheet);
 
-        $sheet->getPageSetup()->setPrintArea('A1:H68');
+        $sheet->getPageSetup()->setPrintArea('A1:G68');
     }
 
     private function setWidths(Worksheet $sheet): void
@@ -148,8 +148,7 @@ class ShowroomDailyReportExcelExport implements
             'D' => 13,
             'E' => 13,
             'F' => 13,
-            'G' => 14,
-            'H' => 15,
+            'G' => 15,
         ];
 
         foreach ($widths as $column => $width) {
@@ -190,12 +189,11 @@ class ShowroomDailyReportExcelExport implements
             'وارد/سدر',
             'وارد/كيلو',
             'مبيعات/كيلو',
-            'Take Away/كيلو',
             'المتبقي/كيلو',
         ];
 
         $sheet->fromArray($headers, null, 'A4');
-        $this->styleHeader($sheet, 'A4:H4', 'FFF2CC', '000000');
+        $this->styleHeader($sheet, 'A4:G4', 'FFF2CC', '000000');
         $sheet->getRowDimension(4)->setRowHeight(24);
 
         $itemsByName = $this->report->items
@@ -211,18 +209,16 @@ class ShowroomDailyReportExcelExport implements
             $sheet->setCellValue("D{$row}", (float) ($item?->received_trays ?? 0));
             $sheet->setCellValue("E{$row}", (float) ($item?->received_kg ?? 0));
             $sheet->setCellValue("F{$row}", (float) ($item?->sales_kg ?? 0));
-            $sheet->setCellValue("G{$row}", (float) ($item?->takeaway_sales_kg ?? 0));
-
             if ($item?->actual_closing_kg !== null) {
-                $sheet->setCellValue("H{$row}", (float) $item->actual_closing_kg);
+                $sheet->setCellValue("G{$row}", (float) $item->actual_closing_kg);
             } else {
-                $sheet->setCellValue("H{$row}", 0);
+                $sheet->setCellValue("G{$row}", 0);
             }
 
             $fill = $index % 2 === 0 ? 'FFF9E6' : 'FFFFFF';
-            $this->styleDataRow($sheet, "A{$row}:H{$row}", $fill);
+            $this->styleDataRow($sheet, "A{$row}:G{$row}", $fill);
 
-            $sheet->getStyle("C{$row}:H{$row}")
+            $sheet->getStyle("C{$row}:G{$row}")
                 ->getNumberFormat()
                 ->setFormatCode('0.000');
 
@@ -236,16 +232,10 @@ class ShowroomDailyReportExcelExport implements
                 ->getStartColor()
                 ->setARGB('FFF2F2F2');
 
-            $sheet->getStyle("G{$row}")
-                ->getFill()
-                ->setFillType(Fill::FILL_SOLID)
-                ->getStartColor()
-                ->setARGB('FFDDEBF7');
-
             /*
              * Actual closing is the branch accountant/manual count.
              */
-            $sheet->getStyle("H{$row}")
+            $sheet->getStyle("G{$row}")
                 ->getFill()
                 ->setFillType(Fill::FILL_SOLID)
                 ->getStartColor()
@@ -546,7 +536,7 @@ class ShowroomDailyReportExcelExport implements
         string $fill,
         string $fontColor
     ): void {
-        $sheet->mergeCells("A{$row}:H{$row}");
+        $sheet->mergeCells("A{$row}:G{$row}");
         $sheet->setCellValue("A{$row}", $text);
 
         $sheet->getStyle("A{$row}:G{$row}")
