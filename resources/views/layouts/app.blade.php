@@ -1700,6 +1700,26 @@ a.app-page-btn:hover {
 
                     @can('restaurant_menu.view')
 
+                        @if(\Illuminate\Support\Facades\Route::has('restaurant.takeaway-report.index'))
+
+                            <a href="{{ route('restaurant.takeaway-report.index') }}"
+                               class="nav-item {{ request()->routeIs('restaurant.takeaway-report.*') ? 'active' : '' }}">
+
+                                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 6h18v12H3z" />
+                                    <path d="M7 10h10M7 14h6" />
+                                </svg>
+
+                                <span>تقرير Take Away</span>
+
+                            </a>
+
+                        @endif
+
+                    @endcan
+
+                    @can('restaurant_menu.view')
+
                         @if(\Illuminate\Support\Facades\Route::has('restaurant.menu.banners.index'))
 
                             <a href="{{ route('restaurant.menu.banners.index') }}"
