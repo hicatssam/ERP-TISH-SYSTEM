@@ -154,12 +154,12 @@
 
     <table class="showroom-accounting-doc" cellpadding="0" cellspacing="0" style="margin-top:8px">
         <tr>
-            <td colspan="3" style="font-weight:bold;background:#eaf6ea">صافي الحجز</td>
+            <td colspan="3" style="font-weight:bold;background:#eaf6ea">إجمالي العجز</td>
         </tr>
         <tr>
             <td><span>إجمالي رصيد الكاشير</span><strong>{{ number_format((float) $report->cashier_balance_total, 2) }}</strong></td>
             <td><span>الإجمالي المالي للتقرير</span><strong>{{ number_format((float) $report->financial_report_total, 2) }}</strong></td>
-            <td style="background:#eaf6ea"><span>صافي الحجز</span><strong>{{ number_format((float) $report->net_booking_total, 2) }}</strong></td>
+            <td style="background:#eaf6ea"><span>إجمالي العجز</span><strong>{{ number_format((float) $report->net_booking_total, 2) }}</strong></td>
         </tr>
     </table>
 
