@@ -1,15 +1,11 @@
 @php
-    $businessName = trim((string) \App\Models\SystemSetting::get(
-        'business_legal_name',
-        \App\Models\SystemSetting::get(
-            'system_name',
-            config('app.name')
-        )
-    ));
-
     $branchLabel = filled($filters['location_id'] ?? null)
         ? ($requests->first()?->requestingLocation?->name ?? 'الفرع المحدد')
         : 'كل الفروع';
+
+    $productLabel = $selectedProduct
+        ? ($selectedProduct->name_ar ?: $selectedProduct->name)
+        : 'كل المنتجات';
 
     $periodLabel = match (true) {
         filled($filters['date_from'] ?? null) && filled($filters['date_to'] ?? null)
@@ -29,6 +25,10 @@
             ]
         )
     );
+
+    $primary = $branding['primary_color'] ?? '#d6a925';
+    $secondary = $branding['secondary_color'] ?? '#0b2f4f';
+    $textColor = $branding['text_color'] ?? '#1f2937';
 @endphp
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -41,7 +41,8 @@
             font-family: dejavusans;
             font-size: 8pt;
             margin: 0;
-            color: #1f2937;
+            color: {{ $textColor }};
+            background: #ffffff;
         }
 
         table {
@@ -49,109 +50,259 @@
             width: 100%;
         }
 
-        th, td {
-            border: 1px solid #d1d5db;
+        th,
+        td {
             padding: 4px;
             text-align: center;
             vertical-align: middle;
         }
 
-        .top td {
-            border: 0;
-            border-bottom: 2px solid #d6a925;
-            padding-bottom: 7px;
+        .brand-bar {
+            height: 5px;
+            background: {{ $primary }};
+            margin: 0 0 7px;
         }
 
-        .title {
+        .header {
+            border-bottom: 2px solid {{ $secondary }};
+        }
+
+        .header td {
+            border: 0;
+            padding: 4px 3px 8px;
+        }
+
+        .logo-cell {
+            width: 20%;
+            text-align: right;
+        }
+
+        .title-cell {
+            width: 55%;
+            text-align: center;
+        }
+
+        .meta-cell {
+            width: 25%;
+            text-align: left;
+            color: #64748b;
+            font-size: 6.8pt;
+        }
+
+        .logo {
+            max-width: 85px;
+            max-height: 52px;
+        }
+
+        .business-name {
+            color: {{ $secondary }};
+            font-size: 10pt;
+            font-weight: bold;
+        }
+
+        .business-name-en {
+            color: #8a6d12;
+            font-size: 6.5pt;
+            margin-top: 1px;
+        }
+
+        .report-title {
             font-size: 15pt;
             font-weight: bold;
-            color: #0b2f4f;
+            color: {{ $secondary }};
         }
 
-        .muted {
-            color: #6b7280;
-            font-size: 7pt;
+        .report-subtitle {
+            color: #64748b;
+            font-size: 6.8pt;
+            margin-top: 2px;
+        }
+
+        .business-info {
+            margin-top: 5px;
+            padding: 4px 6px;
+            background: #faf8f1;
+            border-right: 3px solid {{ $primary }};
+            color: #5f6772;
+            font-size: 6.4pt;
+        }
+
+        .summary {
+            margin-top: 7px;
+            margin-bottom: 7px;
         }
 
         .summary td {
+            border: 1px solid #d9dee5;
             background: #f8fafc;
-            font-size: 7pt;
+            font-size: 6.6pt;
+            color: #64748b;
         }
 
         .summary strong {
             display: block;
             margin-top: 2px;
+            color: {{ $secondary }};
             font-size: 10pt;
-            color: #0b2f4f;
+        }
+
+        .filters-line {
+            margin: 6px 0;
+            padding: 5px 7px;
+            border: 1px solid #e7dcc0;
+            background: #fffaf0;
+            color: #66551c;
+            font-size: 6.7pt;
         }
 
         .section {
-            margin: 8px 0 5px;
+            margin: 7px 0 5px;
             padding: 5px 7px;
-            background: #f8fafc;
-            border-right: 3px solid #d6a925;
+            color: #ffffff;
+            background: {{ $secondary }};
+            border-right: 4px solid {{ $primary }};
             font-weight: bold;
-            color: #0b2f4f;
+            font-size: 8pt;
+        }
+
+        .report {
+            border: 1px solid #cbd5e1;
         }
 
         .report th {
-            background: #0b2f4f;
+            border: 1px solid {{ $secondary }};
+            background: {{ $secondary }};
             color: #ffffff;
-            font-size: 6.3pt;
+            font-size: 6.2pt;
             font-weight: bold;
         }
 
         .report td {
-            font-size: 6.2pt;
+            border: 1px solid #d9dee5;
+            font-size: 6pt;
+        }
+
+        .report tr.alt td {
+            background: #fbfcfd;
+        }
+
+        .muted {
+            color: #64748b;
+            font-size: 5.8pt;
         }
 
         .total th {
+            border: 1px solid #d9bd56;
             background: #fff3cd;
             color: #6b5200;
+            font-weight: bold;
         }
 
-        .filters {
-            margin-top: 8px;
-            border: 1px solid #d1d5db;
-            background: #f8fafc;
-            padding: 6px;
-            font-size: 7pt;
+        .signatures {
+            margin-top: 13px;
+        }
+
+        .signatures td {
+            width: 50%;
+            border: 0;
+            padding: 8px 25px 0;
+            text-align: center;
+        }
+
+        .signature-line {
+            border-top: 1px solid #94a3b8;
+            padding-top: 4px;
+            color: #475569;
+            font-size: 6.5pt;
         }
 
         .footer {
-            margin-top: 10px;
-            border-top: 1px solid #d6a925;
+            margin-top: 12px;
+            border-top: 1px solid {{ $primary }};
         }
 
         .footer td {
             border: 0;
-            color: #6b7280;
-            font-size: 6pt;
-            padding-top: 5px;
+            padding-top: 4px;
+            color: #7b8490;
+            font-size: 5.8pt;
         }
     </style>
 </head>
 <body>
 
-<table class="top">
+<div class="brand-bar"></div>
+
+<table class="header">
     <tr>
-        <td style="width:25%;text-align:right">
-            <strong>{{ $businessName !== '' ? $businessName : config('app.name') }}</strong>
+        <td class="logo-cell">
+            @if(
+                !empty($branding['show_logo'])
+                && !empty($branding['logo_path'])
+                && is_file($branding['logo_path'])
+            )
+                <img
+                    src="{{ $branding['logo_path'] }}"
+                    class="logo"
+                    alt=""
+                >
+            @else
+                <div class="business-name">
+                    {{ $branding['business_name'] ?? config('app.name') }}
+                </div>
+            @endif
+
+            @if(!empty($branding['business_name_en']))
+                <div class="business-name-en">
+                    {{ $branding['business_name_en'] }}
+                </div>
+            @endif
         </td>
 
-        <td style="width:50%;text-align:center">
-            <div class="title">تقرير طلبات حلويات الفروع</div>
-            <div class="muted">{{ $branchLabel }} — {{ $periodLabel }}</div>
+        <td class="title-cell">
+            <div class="report-title">
+                تقرير طلبات حلويات الفروع
+            </div>
+
+            <div class="report-subtitle">
+                {{ $branchLabel }}
+                · {{ $periodLabel }}
+                · {{ $productLabel }}
+            </div>
         </td>
 
-        <td style="width:25%;text-align:left" class="muted">
-            SSR-RPT-{{ now()->format('Ymd') }}<br>
-            {{ now()->format('Y-m-d H:i') }}
+        <td class="meta-cell">
+            <strong>SSR-RPT-{{ now()->format('Ymd') }}</strong><br>
+            تاريخ الإنشاء: {{ now()->format('Y-m-d H:i') }}<br>
+            عدد الطلبات: {{ $summary['requests_count'] }}
         </td>
     </tr>
 </table>
 
-<br>
+@if(
+    !empty($branding['business_phone'])
+    || !empty($branding['business_email'])
+    || !empty($branding['business_address'])
+    || !empty($branding['business_tagline'])
+)
+    <div class="business-info">
+        @if(!empty($branding['business_tagline']))
+            {{ $branding['business_tagline'] }}
+        @endif
+
+        @if(!empty($branding['business_address']))
+            · {{ $branding['business_address'] }}
+        @endif
+
+        @if(!empty($branding['business_phone']))
+            · {{ $branding['business_phone'] }}
+        @endif
+
+        @if(!empty($branding['business_email']))
+            · {{ $branding['business_email'] }}
+        @endif
+    </div>
+@endif
 
 <table class="summary">
     <tr>
@@ -182,7 +333,26 @@
     </tr>
 </table>
 
-<div class="section">تفاصيل الطلبات والأصناف</div>
+<div class="filters-line">
+    <strong>نطاق التقرير:</strong>
+    الفرع: {{ $branchLabel }}
+    · المنتج: {{ $productLabel }}
+    · الفترة: {{ $periodLabel }}
+
+    @if(filled($filters['status'] ?? null))
+        · الحالة:
+        {{ AppEnumsShowroomSweetsRequestStatus::from($filters['status'])->label() }}
+    @endif
+
+    @if(filled($filters['request_number'] ?? null))
+        · رقم الطلب:
+        {{ $filters['request_number'] }}
+    @endif
+</div>
+
+<div class="section">
+    تفاصيل الطلبات والأصناف
+</div>
 
 <table class="report">
     <tr>
@@ -200,37 +370,58 @@
             $showroomRequest = $row['request'];
             $item = $row['item'];
         @endphp
-        <tr>
+
+        <tr class="{{ $loop->even ? 'alt' : '' }}">
             <td>{{ $loop->iteration }}</td>
 
             <td>
-                <strong dir="ltr">{{ $showroomRequest->request_number }}</strong><br>
-                <span>{{ $showroomRequest->status->label() }}</span>
+                <strong dir="ltr">
+                    {{ $showroomRequest->request_number }}
+                </strong><br>
+                <span class="muted">
+                    {{ $showroomRequest->status->label() }}
+                </span>
             </td>
 
             <td>
-                <strong>{{ $showroomRequest->requestingLocation?->name ?? '—' }}</strong><br>
+                <strong>
+                    {{ $showroomRequest->requestingLocation?->name ?? '—' }}
+                </strong><br>
                 <span class="muted">
+                    مصنع:
                     {{ $showroomRequest->factoryLocation?->name ?? '—' }}
                 </span>
             </td>
 
             <td>
-                <span>{{ $showroomRequest->created_at?->format('Y-m-d H:i') ?? '—' }}</span><br>
+                {{ $showroomRequest->created_at?->format('Y-m-d H:i') ?? '—' }}<br>
                 <span class="muted">
-                    مطلوب: {{ $showroomRequest->needed_by?->format('Y-m-d') ?? '—' }}
+                    مطلوب:
+                    {{ $showroomRequest->needed_by?->format('Y-m-d') ?? '—' }}
                 </span>
             </td>
 
             <td style="text-align:right">
-                <strong>{{ $item->displayProductName() }}</strong>
+                <strong>
+                    {{ $item->displayProductName() }}
+                </strong>
+
+                @if($item->product?->sku)
+                    <br>
+                    <span class="muted" dir="ltr">
+                        {{ $item->product->sku }}
+                    </span>
+                @endif
             </td>
 
             <td>
-                <strong>{{ number_format((float) $item->quantity, 3) }}</strong>
-                {{ $item->requested_unit }}<br>
+                <strong>
+                    {{ number_format((float) $item->quantity, 3) }}
+                    {{ $item->requested_unit }}
+                </strong><br>
                 <span class="muted">
-                    محجوز: {{ number_format((float) $item->reserved_quantity, 3) }}
+                    محجوز:
+                    {{ number_format((float) $item->reserved_quantity, 3) }}
                 </span>
             </td>
 
@@ -260,30 +451,28 @@
     @endif
 </table>
 
-@if(
-    filled($filters['status'] ?? null)
-    || filled($filters['request_number'] ?? null)
-)
-    <div class="filters">
-        <strong>الفلاتر:</strong>
-
-        @if(filled($filters['status'] ?? null))
-            الحالة:
-            {{ \App\Enums\ShowroomSweetsRequestStatus::from($filters['status'])->label() }}
-        @endif
-
-        @if(filled($filters['request_number'] ?? null))
-            · رقم الطلب:
-            {{ $filters['request_number'] }}
-        @endif
-    </div>
-@endif
+<table class="signatures">
+    <tr>
+        <td>
+            <div class="signature-line">
+                المحاسب / المراجع
+            </div>
+        </td>
+        <td>
+            <div class="signature-line">
+                اعتماد الإدارة
+            </div>
+        </td>
+    </tr>
+</table>
 
 <table class="footer">
     <tr>
         <td style="text-align:right">
-            {{ $businessName !== '' ? $businessName : config('app.name') }}
+            {{ $branding['footer_text']
+                ?: ($branding['business_name'] ?? config('app.name')) }}
         </td>
+
         <td style="text-align:left" dir="ltr">
             {{ now()->format('Y-m-d H:i') }}
         </td>
