@@ -133,6 +133,49 @@
         </table>
     </div>
 
+    @if($productTotals->isNotEmpty())
+        <div class="print-section" style="margin-top:10px">
+            <div class="print-section-title">إجمالي كل منتج</div>
+
+            <table class="print-table" cellpadding="0" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>المنتج</th>
+                        <th>الوحدة</th>
+                        <th>عدد الطلبات</th>
+                        <th>تفصيل الفروع</th>
+                        <th>إجمالي الكمية</th>
+                        <th>إجمالي المحجوز</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($productTotals as $total)
+                        <tr>
+                            <td>{{ $loop->iteration }}</td>
+                            <td style="text-align:right">
+                                <strong>{{ $total['product_name'] }}</strong>
+                            </td>
+                            <td>{{ $total['unit'] }}</td>
+                            <td>{{ $total['requests_count'] }}</td>
+                            <td style="text-align:right">
+                                @foreach($total['branches'] as $branch)
+                                    {{ $branch['branch_name'] }}:
+                                    {{ number_format($branch['quantity'], 3) }}
+                                    @unless($loop->last) · @endunless
+                                @endforeach
+                            </td>
+                            <td>
+                                <strong>{{ number_format($total['quantity'], 3) }}</strong>
+                            </td>
+                            <td>{{ number_format($total['reserved_quantity'], 3) }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    @endif
+
     @if(
         filled($filters['product_id'] ?? null)
         || filled($filters['status'] ?? null)
