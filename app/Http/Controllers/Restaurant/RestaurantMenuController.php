@@ -170,6 +170,7 @@ class RestaurantMenuController extends Controller
                 'show_in_pos' => $request->boolean('show_in_pos', true),
                 'show_in_qr' => $request->boolean('show_in_qr', true),
                 'show_in_delivery' => $request->boolean('show_in_delivery', true),
+                'is_takeaway_item' => $request->boolean('is_takeaway_item'),
                 'inventory_mode' => $data['inventory_mode'] ?? 'auto',
             ]);
 
@@ -214,6 +215,7 @@ class RestaurantMenuController extends Controller
                 'show_in_pos' => $request->boolean('show_in_pos'),
                 'show_in_qr' => $request->boolean('show_in_qr'),
                 'show_in_delivery' => $request->boolean('show_in_delivery'),
+                'is_takeaway_item' => $request->boolean('is_takeaway_item'),
                 'inventory_mode' => $data['inventory_mode'] ?? 'auto',
             ]);
 
