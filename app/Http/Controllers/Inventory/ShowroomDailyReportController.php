@@ -129,6 +129,15 @@ class ShowroomDailyReportController extends Controller
             ->orderBy('issued_at')
             ->get();
 
+        $pendingReviewReports = $this->canReview($request)
+            ? ShowroomDailyReport::query()
+                ->with(['location', 'submittedBy.employee'])
+                ->where('status', 'submitted')
+                ->orderBy('business_date')
+                ->orderBy('location_id')
+                ->get()
+            : collect();
+
         return view('inventory.showroom-daily-reports.index', [
             'locations' => $locations,
             'locationId' => $locationId,
@@ -137,6 +146,7 @@ class ShowroomDailyReportController extends Controller
             'prior' => $prior,
             'hasLater' => $hasLater,
             'receivingInvoices' => $receivingInvoices,
+            'pendingReviewReports' => $pendingReviewReports,
             'canManage' => $this->canManage($request),
             'canSubmit' => $this->canManage($request),
             'canReview' => $this->canReview($request),
