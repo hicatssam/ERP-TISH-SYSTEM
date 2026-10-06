@@ -40,6 +40,13 @@
                 </button>
             @endcan
 
+            <a
+                class="rm-btn rm-btn-light"
+                href="{{ route('restaurant.takeaway-report.index', ['location_id' => $location->id]) }}"
+            >
+                تقرير Take Away
+            </a>
+
             @can('restaurant_pos.use')
                 <a
                     class="rm-btn rm-btn-light"
@@ -97,6 +104,7 @@
             <option value="inactive" @selected(request('status') === 'inactive')>معطل من المنيو</option>
             <option value="available" @selected(request('status') === 'available')>متاح في الفرع</option>
             <option value="unavailable" @selected(request('status') === 'unavailable')>غير متاح في الفرع</option>
+            <option value="takeaway" @selected(request('status') === 'takeaway')>منتجات Take Away</option>
         </select>
 
         <button class="rm-btn rm-btn-primary" type="submit">تصفية</button>
@@ -192,6 +200,9 @@
                             </span>
                             <span class="{{ $menuItem->show_in_delivery ? 'enabled' : '' }}">
                                 <b>توصيل</b><small>{{ $menuItem->show_in_delivery ? 'ظاهر' : 'مخفي' }}</small>
+                            </span>
+                            <span class="{{ $menuItem->is_takeaway_item ? 'enabled takeaway' : '' }}">
+                                <b>Take Away</b><small>{{ $menuItem->is_takeaway_item ? 'محدد' : 'غير محدد' }}</small>
                             </span>
                         </div>
                     </div>
@@ -348,6 +359,12 @@
                                         <input type="checkbox" name="show_in_delivery" value="1" @checked($menuItem->show_in_delivery)>
                                         <span>قنوات التوصيل</span>
                                     </label>
+
+                                    <label class="rm-check">
+                                        <input type="hidden" name="is_takeaway_item" value="0">
+                                        <input type="checkbox" name="is_takeaway_item" value="1" @checked($menuItem->is_takeaway_item)>
+                                        <span>منتج Take Away</span>
+                                    </label>
                                 </div>
 
                                 <div class="rm-editor-actions">
@@ -493,6 +510,12 @@
                         <input type="hidden" name="show_in_delivery" value="0">
                         <input type="checkbox" name="show_in_delivery" value="1" checked>
                         <span>قنوات التوصيل</span>
+                    </label>
+
+                    <label class="rm-check">
+                        <input type="hidden" name="is_takeaway_item" value="0">
+                        <input type="checkbox" name="is_takeaway_item" value="1">
+                        <span>منتج Take Away</span>
                     </label>
                 </div>
             </div>
@@ -893,7 +916,7 @@
 
 .rm-channel-list {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 5px;
     margin-top: 12px;
 }
@@ -916,6 +939,12 @@
     color: var(--rm-accent);
     background: color-mix(in srgb, var(--rm-accent) 8%, var(--rm-surface));
     border-color: color-mix(in srgb, var(--rm-accent) 18%, var(--rm-border));
+}
+
+.rm-channel-list span.takeaway {
+    color: #0f6b4f;
+    background: #edf9f4;
+    border-color: #bfe6d8;
 }
 
 .rm-channel-list b {
@@ -1291,6 +1320,10 @@
     .rm-form-grid,
     .rm-filters {
         grid-template-columns: 1fr;
+    }
+
+    .rm-channel-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .rm-card-main {
