@@ -513,6 +513,7 @@
                                 step="0.01"
                                 min="0"
                                 name="customer_discount_amount"
+                                id="customerDiscountAmount"
                                 class="form-input js-primary-accounting js-subtract"
                                 value="{{ old('customer_discount_amount', $report->customer_discount_amount) }}"
                                 @disabled(!$isDraft || !$canManage)
@@ -550,6 +551,17 @@
                     </div>
 
                     <div class="showroom-accounting-grid secondary">
+                        <div class="form-group">
+                            <label class="form-label">رصيد باكيج / أمس</label>
+                            <input
+                                type="text"
+                                class="form-input system-accounting-input"
+                                value="{{ number_format((float) $report->previous_package_balance, 2, '.', '') }}"
+                                readonly
+                            >
+                            <small class="form-help">يُرحّل تلقائيًا من تقرير اليوم السابق.</small>
+                        </div>
+
                         <div class="form-group">
                             <label class="form-label">الدفع الآجل / الحجوزات الآجلة</label>
                             <input
@@ -595,6 +607,90 @@
                         <strong id="secondaryAccountingTotal">
                             {{ number_format((float) $report->accounting_total_secondary, 2) }}
                         </strong>
+                    </div>
+                </div>
+
+                <div class="showroom-accounting-divider"></div>
+
+                <div
+                    class="showroom-financial-summary"
+                    id="financialReportSummary"
+                    data-sales-total="{{ (float) $report->report_sales_total }}"
+                    data-cashier-total="{{ (float) $report->cashier_balance_total }}"
+                >
+                    <div class="showroom-financial-summary-head">
+                        <div>
+                            <strong>الإجمالي المالي للتقرير</strong>
+                            <small>
+                                إجمالي بيع التقرير + إجمالي السداد والحجوزات − إجمالي الخصومات
+                            </small>
+                        </div>
+                        <span class="badge badge-blue">محسوب تلقائيًا</span>
+                    </div>
+
+                    <div class="showroom-financial-table">
+                        <div class="showroom-financial-row">
+                            <span>إجمالي بيع التقرير</span>
+                            <strong id="financialSalesTotal">
+                                {{ number_format((float) $report->report_sales_total, 2) }}
+                            </strong>
+                        </div>
+
+                        <div class="showroom-financial-row">
+                            <span>إجمالي السداد والحجوزات</span>
+                            <strong id="financialReservationsTotal">
+                                {{ number_format((float) $report->accounting_total_secondary, 2) }}
+                            </strong>
+                        </div>
+
+                        <div class="showroom-financial-row">
+                            <span>إجمالي الخصومات</span>
+                            <strong id="financialDiscountsTotal">
+                                {{ number_format((float) $report->customer_discount_amount, 2) }}
+                            </strong>
+                        </div>
+
+                        <div class="showroom-financial-row total">
+                            <span>الإجمالي المالي للتقرير</span>
+                            <strong id="financialReportTotal">
+                                {{ number_format((float) $report->financial_report_total, 2) }}
+                            </strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="showroom-booking-net-card">
+                    <div class="showroom-financial-summary-head">
+                        <div>
+                            <strong>صافي الحجز</strong>
+                            <small>
+                                إجمالي رصيد الكاشير − الإجمالي المالي للتقرير
+                            </small>
+                        </div>
+                        <span class="badge badge-blue">من النظام</span>
+                    </div>
+
+                    <div class="showroom-financial-table">
+                        <div class="showroom-financial-row">
+                            <span>إجمالي رصيد الكاشير</span>
+                            <strong id="netCashierBalance">
+                                {{ number_format((float) $report->cashier_balance_total, 2) }}
+                            </strong>
+                        </div>
+
+                        <div class="showroom-financial-row">
+                            <span>الإجمالي المالي للتقرير</span>
+                            <strong id="netFinancialTotal">
+                                {{ number_format((float) $report->financial_report_total, 2) }}
+                            </strong>
+                        </div>
+
+                        <div class="showroom-financial-row net-total">
+                            <span>صافي الحجز</span>
+                            <strong id="netBookingTotal">
+                                {{ number_format((float) $report->net_booking_total, 2) }}
+                            </strong>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -799,7 +895,7 @@
 .showroom-accounting-head > div{display:grid;gap:.22rem}
 .showroom-accounting-head small{color:var(--text-muted);font-size:.7rem}
 .showroom-accounting-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:.8rem}
-.showroom-accounting-grid.secondary{grid-template-columns:repeat(3,minmax(0,1fr))}
+.showroom-accounting-grid.secondary{grid-template-columns:repeat(4,minmax(0,1fr))}
 .showroom-accounting-block{display:grid;gap:.85rem}
 .showroom-accounting-block-title{display:flex;justify-content:space-between;gap:.75rem;align-items:flex-end;flex-wrap:wrap}
 .showroom-accounting-block-title span{font-weight:900}
@@ -809,6 +905,20 @@
 .showroom-accounting-total strong{font-size:1.15rem;color:#8c6818}
 .showroom-accounting-total.secondary-total{background:#eef7ee;border-color:#b7d7b0}
 .showroom-accounting-total.secondary-total strong{color:#2f6f2f}
+.system-accounting-input{background:var(--off-white)!important;color:var(--text-muted)!important;font-weight:800}
+.showroom-financial-summary,.showroom-booking-net-card{display:grid;gap:.85rem;padding:1rem;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
+.showroom-booking-net-card{margin-top:1rem;background:#f8fbff;border-color:#c8dff4}
+.showroom-financial-summary-head{display:flex;align-items:flex-start;justify-content:space-between;gap:.8rem;flex-wrap:wrap}
+.showroom-financial-summary-head>div{display:grid;gap:.2rem}
+.showroom-financial-summary-head strong{font-size:.95rem}
+.showroom-financial-summary-head small{color:var(--text-muted);font-size:.68rem}
+.showroom-financial-table{display:grid;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.showroom-financial-row{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.75rem .9rem;border-bottom:1px solid var(--border)}
+.showroom-financial-row:last-child{border-bottom:0}
+.showroom-financial-row span{font-weight:700}
+.showroom-financial-row strong{font-size:.95rem}
+.showroom-financial-row.total{background:#fff5d9;color:#7a5400;font-weight:900}
+.showroom-financial-row.net-total{background:#eaf6ea;color:#256b2b;font-weight:900}
 .showroom-review-queue-item{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.8rem .9rem;border:1px solid var(--border);border-radius:10px;text-decoration:none;color:inherit;margin-bottom:.55rem;background:var(--surface);transition:.15s ease}
 .showroom-review-queue-item:last-child{margin-bottom:0}
 .showroom-review-queue-item:hover{border-color:var(--gold);background:#fffaf0}
@@ -926,6 +1036,29 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (primaryOutput) primaryOutput.textContent = primary.toFixed(2);
         if (secondaryOutput) secondaryOutput.textContent = secondary.toFixed(2);
+
+        const summary = document.getElementById('financialReportSummary');
+
+        if (summary) {
+            const salesTotal = parseFloat(summary.dataset.salesTotal || '0') || 0;
+            const cashierTotal = parseFloat(summary.dataset.cashierTotal || '0') || 0;
+            const discountInput = document.getElementById('customerDiscountAmount');
+            const discountsTotal = numberValue(discountInput);
+            const financialTotal = salesTotal + secondary - discountsTotal;
+            const netBooking = cashierTotal - financialTotal;
+
+            const reservationsOutput = document.getElementById('financialReservationsTotal');
+            const discountsOutput = document.getElementById('financialDiscountsTotal');
+            const financialOutput = document.getElementById('financialReportTotal');
+            const netFinancialOutput = document.getElementById('netFinancialTotal');
+            const netBookingOutput = document.getElementById('netBookingTotal');
+
+            if (reservationsOutput) reservationsOutput.textContent = secondary.toFixed(2);
+            if (discountsOutput) discountsOutput.textContent = discountsTotal.toFixed(2);
+            if (financialOutput) financialOutput.textContent = financialTotal.toFixed(2);
+            if (netFinancialOutput) netFinancialOutput.textContent = financialTotal.toFixed(2);
+            if (netBookingOutput) netBookingOutput.textContent = netBooking.toFixed(2);
+        }
     }
 
     document.querySelectorAll(
