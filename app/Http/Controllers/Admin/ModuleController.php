@@ -13,12 +13,33 @@ use Illuminate\View\View;
 
 class ModuleController extends Controller
 {
+    /**
+     * Dahab is a food-service installation.
+     * Retail/fashion catalog modules stay in the database for historical
+     * compatibility, but are intentionally invisible and unavailable here.
+     */
+    private const HIDDEN_MODULE_CODES = [
+        'clothing',
+        'shoes',
+        'product_variants',
+        'sizes',
+        'colors',
+        'brands',
+    ];
+
     public function index(Request $request): View
     {
         $this->ensureAdmin($request);
 
         $query = Module::query()
-            ->with(['dependencies'])
+            ->whereNotIn('code', self::HIDDEN_MODULE_CODES)
+            ->with([
+                'dependencies' => fn ($query) =>
+                    $query->whereNotIn(
+                        'modules.code',
+                        self::HIDDEN_MODULE_CODES
+                    ),
+            ])
             ->orderBy('sort_order')
             ->orderBy('name');
 
@@ -44,9 +65,21 @@ class ModuleController extends Controller
             'types' => ModuleType::cases(),
             'bundles' => ModuleBundle::query()
                 ->where('is_active', true)
-                ->with(['businessProfile', 'modules'])
+                ->with([
+                    'businessProfile',
+                    'modules' => fn ($query) =>
+                        $query->whereNotIn(
+                            'modules.code',
+                            self::HIDDEN_MODULE_CODES
+                        ),
+                ])
                 ->orderBy('sort_order')
-                ->get(),
+                ->get()
+                ->filter(
+                    fn (ModuleBundle $bundle) =>
+                        $bundle->modules->isNotEmpty()
+                )
+                ->values(),
         ]);
     }
 
@@ -56,6 +89,15 @@ class ModuleController extends Controller
         ModuleService $modules
     ): RedirectResponse {
         $this->ensureAdmin($request);
+
+        abort_if(
+            in_array(
+                $module->code,
+                self::HIDDEN_MODULE_CODES,
+                true
+            ),
+            404
+        );
 
         $validated = $request->validate([
             'enabled' => ['required', 'boolean'],
