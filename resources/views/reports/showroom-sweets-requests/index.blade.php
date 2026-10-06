@@ -306,9 +306,6 @@
             </div>
         @endif
     </div>
-</div>
-@endsection
-
     <div class="card ssr-product-totals-card">
         <div class="card-header">
             <div>
@@ -367,6 +364,9 @@
             </table>
         </div>
     </div>
+
+</div>
+@endsection
 
 @push('styles')
 <style>
