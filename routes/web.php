@@ -38,6 +38,7 @@ use App\Http\Controllers\Finance\EmployeePurchaseController;
 use App\Http\Controllers\Finance\AccountingBooksController;
 use App\Http\Controllers\Reports\ReportController;
 use App\Http\Controllers\Reports\ReportScheduleController;
+use App\Http\Controllers\Reports\ShowroomSweetsRequestsReportController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Admin\PaymentMethodController;
@@ -632,6 +633,24 @@ Route::post(
             'showroom-cake-daily-reports/{showroomCakeDailyReport}/pdf',
             [ShowroomCakeDailyReportController::class, 'pdf']
         )->name('showroom-cake-daily-reports.pdf');
+
+        // ─── Showroom Sweets Requests Report ─────────────────────────────
+        Route::middleware('can:reports.view')->group(function () {
+            Route::get(
+                'reports/showroom-sweets-requests',
+                [ShowroomSweetsRequestsReportController::class, 'index']
+            )->name('reports.showroom-sweets-requests.index');
+
+            Route::get(
+                'reports/showroom-sweets-requests/print',
+                [ShowroomSweetsRequestsReportController::class, 'print']
+            )->name('reports.showroom-sweets-requests.print');
+
+            Route::get(
+                'reports/showroom-sweets-requests/pdf',
+                [ShowroomSweetsRequestsReportController::class, 'pdf']
+            )->name('reports.showroom-sweets-requests.pdf');
+        });
 
         // ─── Showroom Sweets Requests (طلبات حلويات الفروع) ───────────────
         Route::get('showroom-sweets-requests', [ShowroomSweetsRequestController::class, 'index'])
