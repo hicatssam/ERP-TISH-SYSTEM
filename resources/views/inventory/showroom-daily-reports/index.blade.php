@@ -191,6 +191,23 @@
         @endif
     </div>
 
+    @if($canReview)
+        <div class="alert alert-info showroom-persisted-report" style="margin-bottom:1rem">
+            <strong>هذا التقرير محفوظ داخل النظام.</strong>
+            <div style="margin-top:.35rem;display:flex;gap:.8rem;flex-wrap:wrap">
+                <span>رقم التقرير: #{{ $report->id }}</span>
+                <span>الفرع: {{ $report->location->name }}</span>
+                <span>التاريخ: {{ $report->business_date->format('Y-m-d') }}</span>
+                @if($report->submittedBy)
+                    <span>أرسله: {{ $report->submittedBy->display_name }}</span>
+                @endif
+                @if($report->submitted_at)
+                    <span>وقت الإرسال: {{ $report->submitted_at->format('Y-m-d H:i') }}</span>
+                @endif
+            </div>
+        </div>
+    @endif
+
     @if($report->review_notes)
         <div class="alert alert-info" style="margin-bottom:1rem">
             <strong>ملاحظة المحاسب العام:</strong>
