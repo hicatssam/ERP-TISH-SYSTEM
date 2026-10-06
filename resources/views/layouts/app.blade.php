@@ -1262,7 +1262,7 @@ a.app-page-btn:hover {
 
                                 </svg>
 
-                                <span>إعدادات الكتالوج</span>
+                                <span>إعدادات المنتجات</span>
 
                             </a>
 
