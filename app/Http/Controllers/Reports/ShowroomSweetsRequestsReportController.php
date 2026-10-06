@@ -63,6 +63,9 @@ class ShowroomSweetsRequestsReportController extends Controller
                     ]),
                 'filters' => $filters,
                 'summary' => $summary,
+                'productTotals' => $this->productTotals(
+                    (clone $query)->get()
+                ),
                 'canViewAll' => $canViewAll,
             ]
         );
@@ -85,6 +88,9 @@ class ShowroomSweetsRequestsReportController extends Controller
             [
                 'requests' => $requests,
                 'summary' => $this->summaryFromCollection(
+                    $requests
+                ),
+                'productTotals' => $this->productTotals(
                     $requests
                 ),
                 'filters' => $filters,
@@ -122,6 +128,9 @@ class ShowroomSweetsRequestsReportController extends Controller
             [
                 'requests' => $requests,
                 'summary' => $summary,
+                'productTotals' => $this->productTotals(
+                    $requests
+                ),
                 'filters' => $filters,
                 'selectedProduct' => filled($filters['product_id'] ?? null)
                     ? Product::find((int) $filters['product_id'])
@@ -463,6 +472,69 @@ class ShowroomSweetsRequestsReportController extends Controller
                     )
             ),
         ];
+    }
+
+    private function productTotals(
+        Collection $requests
+    ): Collection {
+        return $requests
+            ->flatMap(
+                fn (ShowroomSweetsRequest $request) =>
+                    $request->items->map(
+                        fn ($item) => [
+                            'product_id' =>
+                                (int) $item->product_id,
+                            'product_name' =>
+                                $item->displayProductName(),
+                            'unit' =>
+                                $item->requested_unit,
+                            'quantity' =>
+                                (float) $item->quantity,
+                            'reserved_quantity' =>
+                                (float) $item->reserved_quantity,
+                            'request_id' =>
+                                (int) $request->id,
+                        ]
+                    )
+            )
+            ->groupBy(
+                fn (array $row) =>
+                    $row['product_id']
+                    . '|'
+                    . $row['unit']
+            )
+            ->map(function (
+                Collection $rows
+            ): array {
+                $first = $rows->first();
+
+                return [
+                    'product_id' =>
+                        $first['product_id'],
+                    'product_name' =>
+                        $first['product_name'],
+                    'unit' =>
+                        $first['unit'],
+                    'quantity' =>
+                        $rows->sum('quantity'),
+                    'reserved_quantity' =>
+                        $rows->sum(
+                            'reserved_quantity'
+                        ),
+                    'requests_count' =>
+                        $rows
+                            ->pluck('request_id')
+                            ->unique()
+                            ->count(),
+                ];
+            })
+            ->sortBy(
+                fn (array $row) =>
+                    mb_strtolower(
+                        $row['product_name']
+                    )
+            )
+            ->values();
     }
 
     private function canViewAll(
