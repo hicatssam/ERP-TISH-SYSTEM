@@ -3548,6 +3548,78 @@ a.app-page-btn:hover {
         })();
     </script>
 
+    {{-- =========================================================
+         تمرير أفقي بالجداول باستخدام عجلة الماوس
+         يمنع الحاجة للنزول إلى شريط التمرير السفلي في الجداول العريضة.
+    ========================================================= --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const selector = [
+                '.table-wrap',
+                '.table-responsive',
+                '.ssr-table-wrap'
+            ].join(',');
+
+            document.querySelectorAll(selector).forEach(function (scroller) {
+                if (scroller.dataset.wheelHorizontalReady === '1') {
+                    return;
+                }
+
+                scroller.dataset.wheelHorizontalReady = '1';
+
+                scroller.addEventListener(
+                    'wheel',
+                    function (event) {
+                        /*
+                         * نفعّل الحركة فقط عندما يوجد Overflow أفقي فعلي.
+                         * اللمس/Trackpad الأفقي الطبيعي يبقى كما هو.
+                         */
+                        const maxScroll = Math.max(
+                            0,
+                            scroller.scrollWidth - scroller.clientWidth
+                        );
+
+                        if (maxScroll < 2) {
+                            return;
+                        }
+
+                        const verticalDelta = event.deltaY;
+                        const horizontalDelta = event.deltaX;
+
+                        if (
+                            Math.abs(horizontalDelta)
+                            > Math.abs(verticalDelta)
+                        ) {
+                            return;
+                        }
+
+                        const direction =
+                            getComputedStyle(scroller).direction === 'rtl'
+                                ? -1
+                                : 1;
+
+                        const before = scroller.scrollLeft;
+
+                        scroller.scrollLeft +=
+                            verticalDelta * direction;
+
+                        const moved =
+                            Math.abs(scroller.scrollLeft - before) > 0.5;
+
+                        /*
+                         * إذا الجدول تحرك فعلاً، نمنع Scroll الصفحة.
+                         * عند الوصول لنهاية الجدول يرجع Scroll الصفحة طبيعي.
+                         */
+                        if (moved) {
+                            event.preventDefault();
+                        }
+                    },
+                    { passive: false }
+                );
+            });
+        });
+    </script>
+
     @stack('scripts')
 
 </body>
