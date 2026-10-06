@@ -102,6 +102,12 @@
                             <td>{{ $loop->iteration }}</td>
                             <td>
                                 <strong>{{ $row['name'] }}</strong>
+
+                                @if($row['auto_included'])
+                                    <span class="ta-auto-badge">
+                                        تلقائي من المبيعات
+                                    </span>
+                                @endif
                             </td>
                             <td dir="ltr">{{ $row['sku'] ?: '—' }}</td>
                             <td>{{ number_format($row['unit_price'], 2) }}</td>
@@ -147,6 +153,7 @@
 .ta-filter-grid{display:grid;grid-template-columns:minmax(180px,1fr) minmax(180px,1fr) auto;gap:.75rem;align-items:end}
 .ta-stats{grid-template-columns:repeat(4,minmax(0,1fr))}
 .ta-table tfoot th{background:#fff8df;color:#9a6a00;font-weight:900}
+.ta-auto-badge{display:inline-flex;margin-inline-start:.4rem;padding:.16rem .42rem;border-radius:999px;background:#eef7ff;color:#0f4c81;font-size:.62rem;font-weight:800;vertical-align:middle}
 @media(max-width:900px){.ta-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){.ta-filter-grid,.ta-stats{grid-template-columns:1fr}.ta-filter-grid .btn{width:100%}}
 </style>
