@@ -24,13 +24,14 @@ class ShowroomDailyReportExcelExportTest extends TestCase
 
         $report = new ShowroomDailyReport([
             'business_date' => '2026-10-06',
-            'credit_debt_amount' => 50,
-            'empty_packages_balance' => 12,
-            'tahlayat_amount' => 7,
-            'customer_discount_total' => 4,
-            'prepaid_discount_amount' => 3,
-            'reservations_amount' => 9,
-            'report_total_amount' => 100,
+            'debts_amount' => 50,
+            'trays_packages_balance' => 12,
+            'customer_treats_amount' => 7,
+            'customer_discount_amount' => 4,
+            'previous_prepaid_amount' => 3,
+            'deferred_payment_amount' => 9,
+            'special_reservations_amount' => 6,
+            'debt_repayment_amount' => 2,
         ]);
 
         $report->setRelation('location', $location);
@@ -126,8 +127,13 @@ class ShowroomDailyReportExcelExportTest extends TestCase
             );
 
             $this->assertSame(
-                'إجمالي المبلغ',
-                $sheet->getCell('E57')->getValue()
+                '=SUM(C55:C57)-SUM(C58:C59)',
+                $sheet->getCell('C60')->getValue()
+            );
+
+            $this->assertSame(
+                '=C63+C64-C65',
+                $sheet->getCell('C66')->getValue()
             );
         } finally {
             @unlink($tmp);
