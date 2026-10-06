@@ -65,6 +65,13 @@ class ModuleController extends Controller
             'types' => ModuleType::cases(),
             'bundles' => ModuleBundle::query()
                 ->where('is_active', true)
+                ->whereDoesntHave(
+                    'modules',
+                    fn ($query) => $query->whereIn(
+                        'modules.code',
+                        self::HIDDEN_MODULE_CODES
+                    )
+                )
                 ->with([
                     'businessProfile',
                     'modules' => fn ($query) =>
