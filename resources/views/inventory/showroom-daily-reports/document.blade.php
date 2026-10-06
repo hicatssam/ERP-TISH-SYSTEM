@@ -6,9 +6,7 @@
         'received' => $items->sum(fn($i) => (float) $i->received_kg),
         'sales' => $items->sum(fn($i) => (float) $i->sales_kg),
         'damaged' => $items->sum(fn($i) => (float) $i->damaged_kg),
-        'returned' => $items->sum(fn($i) => (float) $i->returned_kg),
         'other' => $items->sum(fn($i) => (float) $i->other_net_kg),
-        'expected' => $items->sum(fn($i) => (float) $i->expected_closing_kg),
         'actual' => $items->sum(fn($i) => (float) ($i->actual_closing_kg ?? 0)),
         'variance' => $items->sum(fn($i) => (float) ($i->variance_kg ?? 0)),
     ];
@@ -66,9 +64,7 @@
                     <th>وارد / كجم</th>
                     <th>مبيعات / كجم</th>
                     <th>تالف / كجم</th>
-                    <th>مرتجع / كجم</th>
                     <th>حركات أخرى صافي</th>
-                    <th>رصيد النظام</th>
                     <th>المتبقي الفعلي</th>
                     <th>الفرق</th>
                 </tr>
@@ -83,9 +79,7 @@
                         <td>{{ number_format((float) $item->received_kg, 3) }}</td>
                         <td>{{ number_format((float) $item->sales_kg, 3) }}</td>
                         <td>{{ number_format((float) $item->damaged_kg, 3) }}</td>
-                        <td>{{ number_format((float) $item->returned_kg, 3) }}</td>
                         <td>{{ number_format((float) $item->other_net_kg, 3) }}</td>
-                        <td>{{ number_format((float) $item->expected_closing_kg, 3) }}</td>
                         <td>{{ $item->actual_closing_kg === null ? '—' : number_format((float) $item->actual_closing_kg, 3) }}</td>
                         <td class="{{ abs((float) ($item->variance_kg ?? 0)) > 0.0005 ? 'variance-bad' : '' }}">
                             {{ $item->variance_kg === null ? '—' : number_format((float) $item->variance_kg, 3) }}
@@ -101,9 +95,7 @@
                     <th>{{ number_format($totals['received'], 3) }}</th>
                     <th>{{ number_format($totals['sales'], 3) }}</th>
                     <th>{{ number_format($totals['damaged'], 3) }}</th>
-                    <th>{{ number_format($totals['returned'], 3) }}</th>
                     <th>{{ number_format($totals['other'], 3) }}</th>
-                    <th>{{ number_format($totals['expected'], 3) }}</th>
                     <th>{{ number_format($totals['actual'], 3) }}</th>
                     <th>{{ number_format($totals['variance'], 3) }}</th>
                 </tr>
