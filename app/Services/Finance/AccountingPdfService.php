@@ -5,6 +5,8 @@ namespace App\Services\Finance;
 use App\Services\PrintThemeService;
 use Illuminate\Support\Facades\File;
 use Mpdf\Mpdf;
+use Mpdf\Config\ConfigVariables;
+use Mpdf\Config\FontVariables;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AccountingPdfService
@@ -29,6 +31,12 @@ class AccountingPdfService
         $tempDir = storage_path('app/mpdf/accounting');
         File::ensureDirectoryExists($tempDir);
 
+        $defaultConfig = (new ConfigVariables())->getDefaults();
+        $defaultFontConfig = (new FontVariables())->getDefaults();
+
+        $fontDirs = $defaultConfig['fontDir'];
+        $fontData = $defaultFontConfig['fontdata'];
+
         $mpdf = new Mpdf([
             'mode' => 'utf-8',
             'format' => $this->printTheme->pdfFormat($settings, $orientation),
@@ -37,9 +45,19 @@ class AccountingPdfService
             'margin_left' => 0,
             'margin_right' => 0,
             'directionality' => 'rtl',
-            'default_font' => 'dejavusans',
-            'autoScriptToLang' => true,
-            'autoLangToFont' => true,
+            'fontDir' => array_merge(
+                $fontDirs,
+                [public_path('assets/fonts')]
+            ),
+            'fontdata' => $fontData + [
+                'cairo' => [
+                    'R' => 'Cairo-Regular.ttf',
+                    'B' => 'Cairo-Bold.ttf',
+                ],
+            ],
+            'default_font' => 'cairo',
+            'autoScriptToLang' => false,
+            'autoLangToFont' => false,
             'tempDir' => $tempDir,
         ]);
 
