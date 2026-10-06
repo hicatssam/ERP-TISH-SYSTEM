@@ -671,11 +671,21 @@
                     </div>
 
                     <div class="showroom-financial-table">
-                        <div class="showroom-financial-row">
+                        <div class="showroom-financial-row cashier-manual-row">
                             <span>إجمالي رصيد الكاشير</span>
-                            <strong id="netCashierBalance">
-                                {{ number_format((float) $report->cashier_balance_total, 2) }}
-                            </strong>
+                            <div class="cashier-manual-input-wrap">
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    name="cashier_balance_total"
+                                    id="cashierBalanceTotal"
+                                    class="form-input"
+                                    value="{{ old('cashier_balance_total', $report->cashier_balance_total) }}"
+                                    @disabled(!$isDraft || !$canManage)
+                                >
+                                <small>إدخال يدوي حاليًا لحين تفعيل نظام الكاشير.</small>
+                            </div>
                         </div>
 
                         <div class="showroom-financial-row">
@@ -919,6 +929,10 @@
 .showroom-financial-row strong{font-size:.95rem}
 .showroom-financial-row.total{background:#fff5d9;color:#7a5400;font-weight:900}
 .showroom-financial-row.net-total{background:#eaf6ea;color:#256b2b;font-weight:900}
+.cashier-manual-row{align-items:flex-start}
+.cashier-manual-input-wrap{display:grid;gap:.25rem;min-width:220px;max-width:320px;width:100%}
+.cashier-manual-input-wrap small{color:var(--text-muted);font-size:.65rem}
+@media(max-width:600px){.cashier-manual-row{flex-direction:column}.cashier-manual-input-wrap{max-width:none;min-width:0}}
 .showroom-review-queue-item{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.8rem .9rem;border:1px solid var(--border);border-radius:10px;text-decoration:none;color:inherit;margin-bottom:.55rem;background:var(--surface);transition:.15s ease}
 .showroom-review-queue-item:last-child{margin-bottom:0}
 .showroom-review-queue-item:hover{border-color:var(--gold);background:#fffaf0}
@@ -1041,7 +1055,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (summary) {
             const salesTotal = parseFloat(summary.dataset.salesTotal || '0') || 0;
-            const cashierTotal = parseFloat(summary.dataset.cashierTotal || '0') || 0;
+            const cashierInput = document.getElementById('cashierBalanceTotal');
+            const cashierTotal = numberValue(cashierInput);
             const discountInput = document.getElementById('customerDiscountAmount');
             const discountsTotal = numberValue(discountInput);
             const financialTotal = salesTotal + secondary - discountsTotal;
@@ -1062,7 +1077,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     document.querySelectorAll(
-        '.js-primary-accounting, .js-secondary-accounting'
+        '.js-primary-accounting, .js-secondary-accounting, #cashierBalanceTotal'
     ).forEach(function (input) {
         input.addEventListener('input', updateAccountingTotals);
         input.addEventListener('change', updateAccountingTotals);
