@@ -71,6 +71,34 @@
         <div class="card">
             <div class="card-header"><span class="card-title">بيانات الطلب</span></div>
             <div class="card-body order-grid order-grid-2">
+                @if($canChooseLocation ?? false)
+                    <div class="form-group">
+                        <label class="form-label">الفرع *</label>
+                        <select
+                            name="location_id"
+                            id="adminLocationSelect"
+                            class="form-select @error('location_id') is-invalid @enderror"
+                            required
+                        >
+                            @foreach($locations as $branch)
+                                <option
+                                    value="{{ $branch->id }}"
+                                    @selected((string) old('location_id', $location->id) === (string) $branch->id)
+                                >
+                                    {{ $branch->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('location_id')
+                            <span class="form-error">{{ $message }}</span>
+                        @enderror
+                        <small class="form-help">
+                            اختيار الفرع يحدد العملاء والمنتجات المتاحة لهذا الطلب.
+                        </small>
+                    </div>
+                @else
+                    <input type="hidden" name="location_id" value="{{ $location->id }}">
+                @endif
                 <div class="form-group" id="customerGroup">
                     <label class="form-label">العميل</label>
                     <select name="customer_id" id="customerSelect" class="form-select @error('customer_id') is-invalid @enderror">
@@ -761,6 +789,19 @@ document.addEventListener('DOMContentLoaded', () => {
         updatePaymentFields();
     }
 
+
+    const adminLocationSelect = document.getElementById('adminLocationSelect');
+
+    adminLocationSelect?.addEventListener('change', function () {
+        const url = new URL(window.location.href);
+        url.searchParams.set('location_id', this.value);
+
+        if (quickSaleInput.value === '1') {
+            url.searchParams.set('mode', 'quick');
+        }
+
+        window.location.href = url.toString();
+    });
 
     addItemButton.addEventListener('click', () => {
         const row = template.content.firstElementChild.cloneNode(true);
