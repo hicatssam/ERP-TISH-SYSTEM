@@ -74,20 +74,6 @@ class ProductController extends Controller
             );
         }
 
-        if ($request->filled('brand_id')) {
-            $query->where(
-                'brand_id',
-                $request->integer('brand_id')
-            );
-        }
-
-        if ($request->filled('product_type')) {
-            $query->where(
-                'product_type',
-                $request->string('product_type')->toString()
-            );
-        }
-
         if ($request->filled('status')) {
             $query->where(
                 'is_active',
@@ -133,10 +119,8 @@ class ProductController extends Controller
             ->paginate(25)
             ->withQueryString();
         $categories = Category::query()->active()->orderBy('sort_order')->get();
-        $brands = $this->modules->isEnabled('brands')
-            ? Brand::query()->active()->orderBy('sort_order')->get()
-            : collect();
-        $variantsEnabled = $this->modules->isEnabled('product_variants');
+        $brands = collect();
+        $variantsEnabled = false;
 
         $filterLocations = $isAdmin
             ? $this->activeProductLocations()
@@ -180,8 +164,8 @@ class ProductController extends Controller
         $user = $request->user();
         [$categories, $locations, $managedLocation, $canManageLocations] = $this->formLocationData($user);
         $units = Unit::query()->active()->orderBy('sort_order')->orderBy('name')->get();
-        $brands = $this->modules->isEnabled('brands') ? Brand::query()->active()->orderBy('sort_order')->get() : collect();
-        $variantsEnabled = $this->modules->isEnabled('product_variants');
+        $brands = collect();
+        $variantsEnabled = false;
 
         return view('admin.products.create', compact(
             'categories', 'locations', 'managedLocation', 'canManageLocations',
@@ -201,6 +185,10 @@ class ProductController extends Controller
             : [(int) $this->managedBranch($user)->id];
 
         $this->ensureCategoryAvailableToUser((int) $data['category_id'], $user);
+
+        $data['product_type'] = ProductType::STANDARD->value;
+        $data['brand_id'] = null;
+
         $this->normalizeCatalogFields($data, $request);
         unset($data['location_id']);
 
@@ -263,7 +251,7 @@ class ProductController extends Controller
             ]));
         }
 
-        $variantsEnabled = $this->modules->isEnabled('product_variants');
+        $variantsEnabled = false;
         return view('admin.products.show', compact(
             'product',
             'variantsEnabled',
@@ -297,8 +285,8 @@ class ProductController extends Controller
 
         $categories = $categories->orderBy('sort_order')->get();
         $units = Unit::query()->active()->orderBy('sort_order')->orderBy('name')->get();
-        $brands = $this->modules->isEnabled('brands') ? Brand::query()->active()->orderBy('sort_order')->get() : collect();
-        $variantsEnabled = $this->modules->isEnabled('product_variants');
+        $brands = collect();
+        $variantsEnabled = false;
 
         return view('admin.products.edit', compact(
             'product', 'categories', 'locations', 'managedLocation', 'selectedLocationIds',
@@ -320,14 +308,10 @@ class ProductController extends Controller
 
         $this->ensureCategoryAvailableToUser((int) $data['category_id'], $user);
 
-        if (
-            ($data['product_type'] ?? 'standard') === ProductType::STANDARD->value
-            && $product->variants()->exists()
-        ) {
-            throw ValidationException::withMessages([
-                'product_type' => 'لا يمكن تحويل المنتج إلى عادي قبل معالجة المتغيرات الموجودة.',
-            ]);
-        }
+        $data['product_type'] = $product->variants()->exists()
+            ? ($product->product_type?->value ?? ProductType::STANDARD->value)
+            : ProductType::STANDARD->value;
+        $data['brand_id'] = null;
 
         $this->normalizeCatalogFields($data, $request);
         unset($data['remove_image'], $data['location_id']);
@@ -393,18 +377,7 @@ class ProductController extends Controller
         $data['tracks_batch'] = $request->boolean('tracks_batch') || $request->boolean('tracks_expiry');
         $data['tracks_expiry'] = $request->boolean('tracks_expiry');
 
-        $type = ProductType::from((string) $data['product_type']);
-        if ($type === ProductType::VARIANT && ! $this->modules->isEnabled('product_variants')) {
-            throw ValidationException::withMessages([
-                'product_type' => 'فعّل وحدة متغيرات المنتجات أولًا قبل إنشاء منتج بمتغيرات.',
-            ]);
-        }
 
-        if (! empty($data['brand_id']) && ! $this->modules->isEnabled('brands')) {
-            throw ValidationException::withMessages([
-                'brand_id' => 'فعّل وحدة العلامات التجارية أولًا.',
-            ]);
-        }
     }
 
     private function formLocationData(User $user): array
