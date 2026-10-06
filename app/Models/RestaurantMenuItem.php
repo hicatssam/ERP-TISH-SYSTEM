@@ -23,6 +23,7 @@ class RestaurantMenuItem extends Model
         'show_in_pos',
         'show_in_qr',
         'show_in_delivery',
+        'is_takeaway_item',
         'inventory_mode',
     ];
 
@@ -34,6 +35,7 @@ class RestaurantMenuItem extends Model
             'show_in_pos' => 'boolean',
             'show_in_qr' => 'boolean',
             'show_in_delivery' => 'boolean',
+            'is_takeaway_item' => 'boolean',
         ];
     }
 
