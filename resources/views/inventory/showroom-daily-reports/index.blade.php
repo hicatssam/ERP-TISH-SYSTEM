@@ -74,6 +74,50 @@
     </div>
 @endif
 
+@if($canReview)
+    <div class="card" style="margin-bottom:1rem">
+        <div class="card-header">
+            <div>
+                <div class="card-title">تقارير الفروع بانتظار تدقيق المحاسب العام</div>
+                <small class="text-muted">
+                    هذه التقارير محفوظة في النظام وتم إرسالها من الفروع للمراجعة.
+                </small>
+            </div>
+            <span class="badge badge-warning">
+                {{ $pendingReviewReports->count() }} تقرير
+            </span>
+        </div>
+
+        <div class="card-body">
+            @forelse($pendingReviewReports as $pendingReport)
+                <a
+                    href="{{ route('showroom-daily-reports.index', [
+                        'location_id' => $pendingReport->location_id,
+                        'date' => $pendingReport->business_date->format('Y-m-d'),
+                    ]) }}"
+                    class="showroom-review-queue-item"
+                >
+                    <div>
+                        <strong>{{ $pendingReport->location?->name ?? '—' }}</strong>
+                        <small>
+                            {{ $pendingReport->business_date->format('Y-m-d') }}
+                            @if($pendingReport->submittedBy)
+                                · أرسله {{ $pendingReport->submittedBy->display_name }}
+                            @endif
+                        </small>
+                    </div>
+
+                    <span class="btn btn-outline btn-sm">فتح التقرير</span>
+                </a>
+            @empty
+                <div class="empty-state-sm">
+                    لا توجد تقارير مرسلة بانتظار المراجعة حاليًا.
+                </div>
+            @endforelse
+        </div>
+    </div>
+@endif
+
 <form
     method="GET"
     action="{{ route('showroom-daily-reports.index') }}"
@@ -764,6 +808,12 @@
 .showroom-accounting-total strong{font-size:1.15rem;color:#8c6818}
 .showroom-accounting-total.secondary-total{background:#eef7ee;border-color:#b7d7b0}
 .showroom-accounting-total.secondary-total strong{color:#2f6f2f}
+.showroom-review-queue-item{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.8rem .9rem;border:1px solid var(--border);border-radius:10px;text-decoration:none;color:inherit;margin-bottom:.55rem;background:var(--surface);transition:.15s ease}
+.showroom-review-queue-item:last-child{margin-bottom:0}
+.showroom-review-queue-item:hover{border-color:var(--gold);background:#fffaf0}
+.showroom-review-queue-item>div{display:grid;gap:.18rem;min-width:0}
+.showroom-review-queue-item small{color:var(--text-muted);font-size:.7rem}
+@media(max-width:600px){.showroom-review-queue-item{align-items:stretch;flex-direction:column}.showroom-review-queue-item .btn{width:100%}}
 .showroom-num,.showroom-note{width:100%;min-width:88px;padding:.42rem .45rem;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font:inherit;text-align:center}
 .showroom-note{min-width:140px;text-align:right}
 .showroom-num:disabled,.showroom-note:disabled{background:var(--off-white);color:var(--text-muted)}
