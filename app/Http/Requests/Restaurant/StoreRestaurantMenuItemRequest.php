@@ -28,6 +28,7 @@ class StoreRestaurantMenuItemRequest extends FormRequest
             'show_in_pos' => ['nullable', 'boolean'],
             'show_in_qr' => ['nullable', 'boolean'],
             'show_in_delivery' => ['nullable', 'boolean'],
+            'is_takeaway_item' => ['nullable', 'boolean'],
             'inventory_mode' => ['nullable', 'in:auto,product,recipe'],
 
             // Price / availability are stored in location_products, not duplicated in the menu.
