@@ -120,7 +120,7 @@ class ProductController extends Controller
             ->withQueryString();
         $categories = Category::query()->active()->orderBy('sort_order')->get();
         $brands = collect();
-        $variantsEnabled = false;
+        $variantsEnabled = true;
 
         $filterLocations = $isAdmin
             ? $this->activeProductLocations()
@@ -165,7 +165,7 @@ class ProductController extends Controller
         [$categories, $locations, $managedLocation, $canManageLocations] = $this->formLocationData($user);
         $units = Unit::query()->active()->orderBy('sort_order')->orderBy('name')->get();
         $brands = collect();
-        $variantsEnabled = false;
+        $variantsEnabled = true;
 
         return view('admin.products.create', compact(
             'categories', 'locations', 'managedLocation', 'canManageLocations',
@@ -186,7 +186,6 @@ class ProductController extends Controller
 
         $this->ensureCategoryAvailableToUser((int) $data['category_id'], $user);
 
-        $data['product_type'] = ProductType::STANDARD->value;
         $data['brand_id'] = null;
 
         $this->normalizeCatalogFields($data, $request);
@@ -214,10 +213,14 @@ class ProductController extends Controller
             $user->id,
         );
 
-        return redirect()->route('products.index')->with(
-            'success',
-            "تم إنشاء المنتج بنجاح. SKU: {$product->sku} — الباركود: {$product->barcode}"
-        );
+        $message = "تم إنشاء المنتج بنجاح. SKU: {$product->sku} — الباركود: {$product->barcode}";
+
+        if ($product->isVariantProduct() && $user->can('products.update')) {
+            return redirect()->route('products.variants.create', $product)
+                ->with('success', $message . ' أضف المتغيرات الآن.');
+        }
+
+        return redirect()->route('products.index')->with('success', $message);
     }
 
     public function show(Request $request, Product $product)
@@ -251,7 +254,7 @@ class ProductController extends Controller
             ]));
         }
 
-        $variantsEnabled = false;
+        $variantsEnabled = true;
         return view('admin.products.show', compact(
             'product',
             'variantsEnabled',
@@ -286,7 +289,7 @@ class ProductController extends Controller
         $categories = $categories->orderBy('sort_order')->get();
         $units = Unit::query()->active()->orderBy('sort_order')->orderBy('name')->get();
         $brands = collect();
-        $variantsEnabled = false;
+        $variantsEnabled = true;
 
         return view('admin.products.edit', compact(
             'product', 'categories', 'locations', 'managedLocation', 'selectedLocationIds',
@@ -308,9 +311,11 @@ class ProductController extends Controller
 
         $this->ensureCategoryAvailableToUser((int) $data['category_id'], $user);
 
-        $data['product_type'] = $product->variants()->exists()
-            ? ($product->product_type?->value ?? ProductType::STANDARD->value)
-            : ProductType::STANDARD->value;
+        if ($data['product_type'] === ProductType::STANDARD->value && $product->variants()->exists()) {
+            throw ValidationException::withMessages([
+                'product_type' => 'لا يمكن تحويل منتج لديه متغيرات إلى منتج عادي.',
+            ]);
+        }
         $data['brand_id'] = null;
 
         $this->normalizeCatalogFields($data, $request);

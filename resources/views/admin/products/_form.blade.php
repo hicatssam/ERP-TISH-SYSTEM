@@ -194,11 +194,27 @@
                 @endif
             </div>
 
-            <input
-                type="hidden"
-                name="product_type"
-                value="{{ $editing ? ($product->product_type?->value ?? 'standard') : 'standard' }}"
-            >
+            <fieldset class="form-group" style="border:0;padding:0;margin:0">
+                <legend class="form-label">نوع المنتج *</legend>
+                <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+                    @foreach(\App\Enums\ProductType::cases() as $type)
+                        <label class="product-location-option">
+                            <input
+                                type="radio"
+                                name="product_type"
+                                value="{{ $type->value }}"
+                                {{ (string) old('product_type', $product->product_type?->value ?? 'standard') === $type->value ? 'checked' : '' }}
+                                required
+                            >
+                            <strong>{{ $type->label() }}</strong>
+                        </label>
+                    @endforeach
+                </div>
+                <small class="product-form-help">
+                    للمنتج بمتغيرات: احفظ المنتج أولًا، ثم أضف متغيراته بأسعار وباركود مستقلين.
+                </small>
+                @error('product_type')<small class="product-form-help" style="color:#b42318">{{ $message }}</small>@enderror
+            </fieldset>
         </div>
 
         <div class="product-form-grid">

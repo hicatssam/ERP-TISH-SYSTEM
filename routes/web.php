@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\EmployeeController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ProductVariantController;
 use App\Http\Controllers\Admin\LocationProductController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingsController;
@@ -241,6 +242,18 @@ Route::prefix('locations/{location}')
             Route::resource('products.location-products', LocationProductController::class)
                 ->only(['store', 'update', 'destroy'])
                 ->shallow();
+        });
+
+        // Product variants use the existing product permissions and branch access checks.
+        Route::get('products/{product}/variants', [ProductVariantController::class, 'index'])
+            ->middleware('can:products.view')
+            ->name('products.variants.index');
+
+        Route::middleware('can:products.update')->group(function () {
+            Route::resource('products.variants', ProductVariantController::class)
+                ->only(['create', 'store', 'edit', 'update']);
+            Route::post('products/{product}/variants/{variant}/toggle', [ProductVariantController::class, 'toggle'])
+                ->name('products.variants.toggle');
         });
 
         // ─── Inventory ─────────────────────────────────────────────────────
