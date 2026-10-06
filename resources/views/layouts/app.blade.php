@@ -2278,6 +2278,20 @@ a.app-page-btn:hover {
                         </a>
                     @endif
 
+
+                    @if(\Illuminate\Support\Facades\Route::has('reports.showroom-sweets-requests.index'))
+                        <a
+                            href="{{ route('reports.showroom-sweets-requests.index') }}"
+                            class="nav-item {{ request()->routeIs('reports.showroom-sweets-requests.*') ? 'active' : '' }}"
+                        >
+                            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M4 4h16v16H4z" />
+                                <path d="M8 8h8M8 12h8M8 16h5" />
+                            </svg>
+                            <span>تقرير طلبات حلويات الفروع</span>
+                        </a>
+                    @endif
+
                     @can('reports.export')
                         <a href="{{ route('report-schedules.index') }}" class="nav-item {{ request()->routeIs('report-schedules.*') ? 'active' : '' }}">
 
