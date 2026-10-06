@@ -66,7 +66,8 @@ class ShowroomSweetsRequestsReportController extends Controller
                 'filters' => $filters,
                 'summary' => $summary,
                 'productTotals' => $this->productTotals(
-                    (clone $query)->get()
+                    (clone $query)->get(),
+                    $filters
                 ),
                 'canViewAll' => $canViewAll,
             ]
