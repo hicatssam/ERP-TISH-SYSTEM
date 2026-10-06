@@ -32,6 +32,9 @@ class ShowroomDailyReportExcelExportTest extends TestCase
             'deferred_payment_amount' => 9,
             'special_reservations_amount' => 6,
             'debt_repayment_amount' => 2,
+            'previous_package_balance' => 18,
+            'report_sales_total' => 1000,
+            'cashier_balance_total' => 1200,
         ]);
 
         $report->setRelation('location', $location);
@@ -131,9 +134,24 @@ class ShowroomDailyReportExcelExportTest extends TestCase
                 $sheet->getCell('C60')->getValue()
             );
 
+            $this->assertEquals(
+                18.0,
+                (float) $sheet->getCell('C63')->getValue()
+            );
+
             $this->assertSame(
-                '=C63+C64-C65',
-                $sheet->getCell('C66')->getValue()
+                '=C64+C65-C66',
+                $sheet->getCell('C67')->getValue()
+            );
+
+            $this->assertSame(
+                '=C70+C71-C72',
+                $sheet->getCell('C73')->getValue()
+            );
+
+            $this->assertSame(
+                '=C76-C77',
+                $sheet->getCell('C78')->getValue()
             );
         } finally {
             @unlink($tmp);
