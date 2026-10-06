@@ -332,6 +332,11 @@ Route::prefix('locations/{location}')
             [ShowroomDailyReportController::class, 'pdf']
         )->name('showroom-daily-reports.pdf');
 
+        Route::get(
+            'showroom-daily-reports/{showroomDailyReport}/excel',
+            [ShowroomDailyReportController::class, 'excel']
+        )->name('showroom-daily-reports.excel');
+
 
         // ─── Stock Requests ────────────────────────────────────────────────
         Route::middleware('can:stock_requests.create')->group(function () {
