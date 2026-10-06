@@ -40,6 +40,13 @@ Route::middleware([
     )->middleware('can:settings.manage')
         ->name('settings.attendance-payroll.update');
 
+
+    Route::post(
+        '/settings/attendance-payroll/face/activate',
+        [AttendancePayrollSettingsController::class, 'activateFaceAttendance']
+    )->middleware('can:settings.manage')
+        ->name('settings.attendance-payroll.face.activate');
+
     Route::get(
         '/attendance/face/connection-test',
         [FaceAttendanceController::class, 'connectionTest']
