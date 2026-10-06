@@ -28,6 +28,7 @@ class UpdateRestaurantMenuItemRequest extends FormRequest
             'show_in_pos' => ['nullable', 'boolean'],
             'show_in_qr' => ['nullable', 'boolean'],
             'show_in_delivery' => ['nullable', 'boolean'],
+            'is_takeaway_item' => ['nullable', 'boolean'],
             'inventory_mode' => ['nullable', 'in:auto,product,recipe'],
 
             'selling_price' => ['required', 'numeric', 'min:0', 'max:999999999.99'],
