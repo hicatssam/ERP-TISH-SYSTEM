@@ -197,6 +197,7 @@
             'trays' => $report->items->sum(fn($i) => (float) $i->received_trays),
             'received' => $report->items->sum(fn($i) => (float) $i->received_kg),
             'sales' => $report->items->sum(fn($i) => (float) $i->sales_kg),
+            'takeaway' => $report->items->sum(fn($i) => (float) $i->takeaway_sales_kg),
             'damaged' => $report->items->sum(fn($i) => (float) $i->damaged_kg),
             'other' => $report->items->sum(fn($i) => (float) $i->other_net_kg),
             'actual' => $report->items->sum(fn($i) => (float) ($i->actual_closing_kg ?? 0)),
@@ -335,6 +336,7 @@
                             <th>وارد سدر</th>
                             <th>وارد / كجم</th>
                             <th>مبيعات / كجم</th>
+                            <th>Take Away / كجم</th>
                             <th>تالف / كجم</th>
                             <th>حركات أخرى صافي</th>
                             <th>المتبقي الفعلي آخر النهار</th>
@@ -364,6 +366,10 @@
 
                                 <td class="auto-cell">{{ number_format((float) $item->received_kg, 3) }}</td>
                                 <td class="auto-cell">{{ number_format((float) $item->sales_kg, 3) }}</td>
+                                <td class="auto-cell takeaway-cell">
+                                    <strong>{{ number_format((float) $item->takeaway_sales_kg, 3) }}</strong>
+                                    <small class="system-source-note">من طلبات Take Away</small>
+                                </td>
                                 <td class="auto-cell">{{ number_format((float) $item->damaged_kg, 3) }}</td>
 
                                 <td class="auto-cell {{ abs((float) $item->other_net_kg) > 0.0005 ? 'has-variance' : '' }}">
@@ -402,7 +408,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="11">
+                                <td colspan="12">
                                     <div class="empty-state-sm">
                                         لا توجد منتجات مفعلة لهذا الفرع.
                                     </div>
@@ -418,6 +424,7 @@
                             <th>{{ number_format($totals['trays'], 2) }}</th>
                             <th>{{ number_format($totals['received'], 3) }}</th>
                             <th>{{ number_format($totals['sales'], 3) }}</th>
+                            <th>{{ number_format($totals['takeaway'], 3) }}</th>
                             <th>{{ number_format($totals['damaged'], 3) }}</th>
                             <th>{{ number_format($totals['other'], 3) }}</th>
                             <th>{{ number_format($totals['actual'], 3) }}</th>
@@ -793,6 +800,7 @@
 .showroom-product-name small{display:block;color:var(--text-muted);font-size:.62rem}
 .auto-cell{background:var(--off-white);color:var(--text-muted)}
 .system-source-note{display:block;margin-top:.18rem;color:#64748b;font-size:.58rem;font-weight:700}
+.takeaway-cell{background:#eef7ff!important;color:#0f4c81!important}
 .showroom-accounting-section{border-top:1px solid var(--border);background:color-mix(in srgb,var(--surface) 82%,#fff)}
 .showroom-accounting-head{display:flex;justify-content:space-between;align-items:flex-start;gap:.75rem;margin-bottom:1rem}
 .showroom-accounting-head > div{display:grid;gap:.22rem}
