@@ -24,8 +24,8 @@
     <div>
         <h1 class="page-heading">تقرير المعرض اليومي</h1>
         <p class="page-subheading">
-            الاستلام والمبيعات تُقرأ تلقائيًا من النظام، ومسؤول الفرع يدخل فقط جرد آخر النهار وما يلزم من ملاحظات.
-            بعد الإرسال يتولى المحاسب العام التدقيق والاعتماد.
+            السابق والوارد والمبيعات تُقرأ تلقائيًا من النظام ولا يمكن تعديلها من التقرير.
+            محاسب الفرع يدخل فقط الجرد الفعلي وبياناته اليومية، ثم يرسل التقرير للمحاسب العام للتدقيق.
         </p>
     </div>
 
@@ -203,7 +203,7 @@
             <div>
                 <div class="card-title">فواتير الاستلام المرتبطة بهذا اليوم</div>
                 <small class="text-muted">
-                    الوارد بالكيلو لا يُكتب مرة ثانية هنا؛ يتم أخذه من استلامات المخزون الموجودة أصلًا.
+                    هذه الفواتير هي الاستلامات التي أكدها الفرع من مسؤول التحميل. لا يعاد إدخالها أو تعديلها من التقرير.
                 </small>
             </div>
         </div>
@@ -225,7 +225,7 @@
                     </div>
 
                     <a
-                        href="{{ route('stock-receiving-invoices.show', $invoice) }}"
+                        href="{{ route('branch-receiving-invoices.show', $invoice) }}"
                         class="btn btn-outline btn-xs"
                         target="_blank"
                     >
@@ -252,7 +252,7 @@
                 <div>
                     <div class="card-title">كشف تفصيلي للحلويات</div>
                     <small class="text-muted">
-                        الأعمدة الرمادية محسوبة تلقائيًا من المخزون. مسؤول الفرع يدخل فقط وارد السدر إن لزم، والمتبقي الفعلي آخر اليوم، والملاحظة.
+                        البيانات القادمة من النظام للعرض فقط ولا يمكن تعديلها. محاسب الفرع يدخل المتبقي الفعلي آخر اليوم والملاحظة فقط.
                     </small>
                 </div>
             </div>
@@ -289,16 +289,9 @@
 
                                 <td class="auto-cell">{{ number_format((float) $item->opening_kg, 3) }}</td>
 
-                                <td>
-                                    <input
-                                        type="number"
-                                        step="0.01"
-                                        min="0"
-                                        name="items[{{ $item->id }}][received_trays]"
-                                        value="{{ old("items.{$item->id}.received_trays", $item->received_trays) }}"
-                                        class="showroom-num"
-                                        @disabled(!$isDraft || !$canManage)
-                                    >
+                                <td class="auto-cell">
+                                    <strong>{{ number_format((float) $item->received_trays, 2) }}</strong>
+                                    <small class="system-source-note">من فاتورة الاستلام</small>
                                 </td>
 
                                 <td class="auto-cell">{{ number_format((float) $item->received_kg, 3) }}</td>
@@ -375,6 +368,109 @@
                 <div class="showroom-bottom-scroll-inner"></div>
             </div>
 
+            <div class="card-body showroom-accounting-section">
+                <div class="showroom-accounting-head">
+                    <div>
+                        <strong>بيانات محاسب الفرع</strong>
+                        <small>هذه فقط البيانات اليدوية الإضافية المسموح إدخالها في التقرير.</small>
+                    </div>
+                    <span class="badge badge-blue">إدخال يدوي</span>
+                </div>
+
+                <div class="showroom-accounting-grid">
+                    <div class="form-group">
+                        <label class="form-label">مديونية الدفع الآجل</label>
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            name="credit_debt_amount"
+                            class="form-input"
+                            value="{{ old('credit_debt_amount', $report->credit_debt_amount) }}"
+                            @disabled(!$isDraft || !$canManage)
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">باقي باكيج / علب فارغة</label>
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            name="empty_packages_balance"
+                            class="form-input"
+                            value="{{ old('empty_packages_balance', $report->empty_packages_balance) }}"
+                            @disabled(!$isDraft || !$canManage)
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">تحلايات</label>
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            name="tahlayat_amount"
+                            class="form-input"
+                            value="{{ old('tahlayat_amount', $report->tahlayat_amount) }}"
+                            @disabled(!$isDraft || !$canManage)
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">خصم الزبائن الإجمالي</label>
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            name="customer_discount_total"
+                            class="form-input"
+                            value="{{ old('customer_discount_total', $report->customer_discount_total) }}"
+                            @disabled(!$isDraft || !$canManage)
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">الدفع المسبق / الخصومات</label>
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            name="prepaid_discount_amount"
+                            class="form-input"
+                            value="{{ old('prepaid_discount_amount', $report->prepaid_discount_amount) }}"
+                            @disabled(!$isDraft || !$canManage)
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">الحجوزات</label>
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            name="reservations_amount"
+                            class="form-input"
+                            value="{{ old('reservations_amount', $report->reservations_amount) }}"
+                            @disabled(!$isDraft || !$canManage)
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">إجمالي المبلغ</label>
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            name="report_total_amount"
+                            class="form-input"
+                            value="{{ old('report_total_amount', $report->report_total_amount) }}"
+                            @disabled(!$isDraft || !$canManage)
+                        >
+                    </div>
+                </div>
+            </div>
+
             <div class="card-body">
                 <div class="form-group">
                     <label class="form-label">ملاحظات الفرع</label>
@@ -403,7 +499,7 @@
             <div>
                 <strong>الخطوة الأخيرة للفرع</strong>
                 <span>
-                    بعد إدخال المتبقي الفعلي لكل صنف، أرسل التقرير للمحاسب العام.
+                    بعد إدخال الجرد الفعلي وبيانات محاسب الفرع، أرسل التقرير للمحاسب العام.
                 </span>
             </div>
 
@@ -568,6 +664,12 @@
 .showroom-product-name{min-width:170px;text-align:right!important}
 .showroom-product-name small{display:block;color:var(--text-muted);font-size:.62rem}
 .auto-cell{background:var(--off-white);color:var(--text-muted)}
+.system-source-note{display:block;margin-top:.18rem;color:#64748b;font-size:.58rem;font-weight:700}
+.showroom-accounting-section{border-top:1px solid var(--border);background:color-mix(in srgb,var(--surface) 82%,#fff)}
+.showroom-accounting-head{display:flex;justify-content:space-between;align-items:flex-start;gap:.75rem;margin-bottom:1rem}
+.showroom-accounting-head > div{display:grid;gap:.22rem}
+.showroom-accounting-head small{color:var(--text-muted);font-size:.7rem}
+.showroom-accounting-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.8rem}
 .showroom-num,.showroom-note{width:100%;min-width:88px;padding:.42rem .45rem;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font:inherit;text-align:center}
 .showroom-note{min-width:140px;text-align:right}
 .showroom-num:disabled,.showroom-note:disabled{background:var(--off-white);color:var(--text-muted)}
@@ -603,7 +705,7 @@
 .review-form{display:grid;gap:.65rem}
 .showroom-close-panel{display:flex;justify-content:flex-end;margin-top:1rem}
 @media(max-width:900px){
-    .showroom-filter-grid,.showroom-summary-grid,.accounting-review-actions{grid-template-columns:1fr}
+    .showroom-filter-grid,.showroom-summary-grid,.accounting-review-actions,.showroom-accounting-grid{grid-template-columns:1fr}
     .showroom-workflow-card{align-items:stretch;flex-direction:column}
     .receiving-invoice-row{grid-template-columns:1fr}
 }
