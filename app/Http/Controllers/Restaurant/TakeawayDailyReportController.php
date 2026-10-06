@@ -35,7 +35,14 @@ class TakeawayDailyReportController extends Controller
         $start = CarbonImmutable::parse($date)->startOfDay();
         $end = $start->addDay();
 
-        $menuItems = RestaurantMenuItem::query()
+        /*
+         * Accounting rule:
+         * 1) Keep configured Take Away menu items visible even with zero sales.
+         * 2) Automatically include every product actually sold through a
+         *    Take Away order for the selected branch/day, even if the menu
+         *    flag was not configured yet.
+         */
+        $configuredMenuItems = RestaurantMenuItem::query()
             ->forLocation($location->id)
             ->where('is_takeaway_item', true)
             ->with([
@@ -47,61 +54,100 @@ class TakeawayDailyReportController extends Controller
             ->orderBy('id')
             ->get();
 
-        $productIds = $menuItems->pluck('product_id')->filter()->values();
+        $sales = DB::table('order_items')
+            ->join('orders', 'orders.id', '=', 'order_items.order_id')
+            ->leftJoin('products', 'products.id', '=', 'order_items.product_id')
+            ->where('orders.location_id', $location->id)
+            ->whereNull('orders.deleted_at')
+            ->where('orders.restaurant_service_type', 'takeaway')
+            ->whereIn('orders.status', ['confirmed', 'completed'])
+            ->where(function ($query) use ($start, $end): void {
+                $query
+                    ->where(function ($confirmed) use ($start, $end): void {
+                        $confirmed
+                            ->whereNotNull('orders.confirmed_at')
+                            ->where('orders.confirmed_at', '>=', $start)
+                            ->where('orders.confirmed_at', '<', $end);
+                    })
+                    ->orWhere(function ($legacy) use ($start, $end): void {
+                        $legacy
+                            ->whereNull('orders.confirmed_at')
+                            ->where('orders.created_at', '>=', $start)
+                            ->where('orders.created_at', '<', $end);
+                    });
+            })
+            ->groupBy(
+                'order_items.product_id',
+                'products.name',
+                'products.name_ar',
+                'products.sku',
+                'products.base_selling_price'
+            )
+            ->selectRaw('
+                order_items.product_id,
+                MAX(products.name) as product_name,
+                MAX(products.name_ar) as product_name_ar,
+                MAX(products.sku) as sku,
+                MAX(products.base_selling_price) as base_selling_price,
+                SUM(order_items.quantity) as sold_quantity,
+                SUM(order_items.line_total) as sales_total,
+                COUNT(DISTINCT order_items.order_id) as orders_count
+            ')
+            ->get()
+            ->keyBy('product_id');
 
-        $sales = $productIds->isEmpty()
+        $configuredByProduct = $configuredMenuItems
+            ->keyBy('product_id');
+
+        $productIds = $configuredMenuItems
+            ->pluck('product_id')
+            ->merge($sales->keys())
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        $locationPrices = $productIds->isEmpty()
             ? collect()
-            : DB::table('order_items')
-                ->join('orders', 'orders.id', '=', 'order_items.order_id')
-                ->where('orders.location_id', $location->id)
-                ->whereNull('orders.deleted_at')
-                ->where('orders.restaurant_service_type', 'takeaway')
-                ->whereIn('orders.status', ['confirmed', 'completed'])
-                ->whereIn('order_items.product_id', $productIds)
-                ->where(function ($query) use ($start, $end): void {
-                    $query
-                        ->where(function ($confirmed) use ($start, $end): void {
-                            $confirmed
-                                ->whereNotNull('orders.confirmed_at')
-                                ->where('orders.confirmed_at', '>=', $start)
-                                ->where('orders.confirmed_at', '<', $end);
-                        })
-                        ->orWhere(function ($legacy) use ($start, $end): void {
-                            $legacy
-                                ->whereNull('orders.confirmed_at')
-                                ->where('orders.created_at', '>=', $start)
-                                ->where('orders.created_at', '<', $end);
-                        });
-                })
-                ->groupBy('order_items.product_id')
-                ->selectRaw('
-                    order_items.product_id,
-                    SUM(order_items.quantity) as sold_quantity,
-                    SUM(order_items.line_total) as sales_total,
-                    COUNT(DISTINCT order_items.order_id) as orders_count
-                ')
-                ->get()
-                ->keyBy('product_id');
+            : DB::table('location_products')
+                ->where('location_id', $location->id)
+                ->whereIn('product_id', $productIds)
+                ->pluck('local_selling_price', 'product_id');
 
-        $rows = $menuItems->map(function (RestaurantMenuItem $menuItem) use ($sales) {
-            $sale = $sales->get($menuItem->product_id);
-            $locationProduct = $menuItem->product?->locationProducts?->first();
+        $rows = $productIds->map(function (int $productId) use (
+            $configuredByProduct,
+            $sales,
+            $locationPrices
+        ): array {
+            $menuItem = $configuredByProduct->get($productId);
+            $sale = $sales->get($productId);
+
+            $name = $menuItem?->displayName()
+                ?: ($sale?->product_name_ar ?: $sale?->product_name)
+                ?: 'منتج Take Away';
 
             return [
                 'menu_item' => $menuItem,
-                'product' => $menuItem->product,
-                'name' => $menuItem->displayName(),
-                'sku' => $menuItem->product?->sku,
+                'product' => $menuItem?->product,
+                'name' => $name,
+                'sku' => $menuItem?->product?->sku ?: ($sale?->sku ?? null),
                 'unit_price' => (float) (
-                    $locationProduct?->local_selling_price
-                    ?? $menuItem->product?->base_selling_price
+                    $locationPrices->get($productId)
+                    ?? $menuItem?->product?->base_selling_price
+                    ?? $sale?->base_selling_price
                     ?? 0
                 ),
                 'sold_quantity' => (float) ($sale?->sold_quantity ?? 0),
                 'sales_total' => (float) ($sale?->sales_total ?? 0),
                 'orders_count' => (int) ($sale?->orders_count ?? 0),
+                'auto_included' => $menuItem === null && $sale !== null,
             ];
-        });
+        })->sortByDesc(function (array $row): array {
+            return [
+                $row['sold_quantity'] > 0 ? 1 : 0,
+                $row['sold_quantity'],
+            ];
+        })->values();
 
         $totals = [
             'products' => $rows->count(),
