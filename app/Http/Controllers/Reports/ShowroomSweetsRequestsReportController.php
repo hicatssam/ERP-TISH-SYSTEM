@@ -102,7 +102,7 @@ class ShowroomSweetsRequestsReportController extends Controller
         );
 
         return $pdf->download(
-            'reports.showroom-sweets-requests.document',
+            'reports.showroom-sweets-requests.pdf',
             [
                 'requests' => $requests,
                 'summary' => $summary,
