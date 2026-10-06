@@ -18,6 +18,12 @@ class StoreOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'location_id' => [
+                'nullable',
+                'integer',
+                'exists:locations,id',
+            ],
+
             'quick_sale' => [
                 'nullable',
                 'boolean',
