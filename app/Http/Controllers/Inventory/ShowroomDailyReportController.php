@@ -5,13 +5,14 @@ namespace App\Http\Controllers\Inventory;
 use App\Enums\MovementReason;
 use App\Enums\MovementType;
 use App\Http\Controllers\Controller;
+use App\Models\BranchReceivingInvoice;
 use App\Models\Inventory;
 use App\Models\Location;
 use App\Models\Product;
 use App\Models\ShowroomDailyReport;
 use App\Models\ShowroomDailyReportItem;
+use App\Models\ShowroomSweetsRequest;
 use App\Models\StockMovement;
-use App\Models\StockReceivingInvoice;
 use App\Services\ActivityLogger;
 use App\Services\Finance\AccountingPdfService;
 use Carbon\CarbonImmutable;
@@ -114,9 +115,11 @@ class ShowroomDailyReportController extends Controller
             ->whereDate('business_date', '>', $date)
             ->exists();
 
-        $receivingInvoices = StockReceivingInvoice::query()
-            ->with(['receivedBy.employee', 'sendingLocation'])
+        $receivingInvoices = BranchReceivingInvoice::query()
+            ->with(['receivedBy.employee', 'sendingLocation', 'items'])
             ->where('receiving_location_id', $locationId)
+            ->where('status', 'confirmed')
+            ->where('source_type', (new ShowroomSweetsRequest())->getMorphClass())
             ->whereDate('issued_at', $date)
             ->orderBy('issued_at')
             ->get();
@@ -290,13 +293,14 @@ class ShowroomDailyReportController extends Controller
 
         $data = $request->validate([
             'notes' => ['nullable', 'string', 'max:2000'],
+            'credit_debt_amount' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
+            'empty_packages_balance' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
+            'tahlayat_amount' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
+            'customer_discount_total' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
+            'prepaid_discount_amount' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
+            'reservations_amount' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
+            'report_total_amount' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
             'items' => ['required', 'array'],
-            'items.*.received_trays' => [
-                'nullable',
-                'numeric',
-                'min:0',
-                'max:9999999.99',
-            ],
             'items.*.actual_closing_kg' => [
                 'nullable',
                 'numeric',
@@ -329,8 +333,6 @@ class ShowroomDailyReportController extends Controller
                         : null;
 
                 $item->update([
-                    'received_trays' =>
-                        (float) ($input['received_trays'] ?? 0),
                     'actual_closing_kg' => $actual,
                     'variance_kg' => $actual === null
                         ? null
@@ -349,6 +351,13 @@ class ShowroomDailyReportController extends Controller
                 'notes' => filled($data['notes'] ?? null)
                     ? trim((string) $data['notes'])
                     : null,
+                'credit_debt_amount' => (float) ($data['credit_debt_amount'] ?? 0),
+                'empty_packages_balance' => (float) ($data['empty_packages_balance'] ?? 0),
+                'tahlayat_amount' => (float) ($data['tahlayat_amount'] ?? 0),
+                'customer_discount_total' => (float) ($data['customer_discount_total'] ?? 0),
+                'prepaid_discount_amount' => (float) ($data['prepaid_discount_amount'] ?? 0),
+                'reservations_amount' => (float) ($data['reservations_amount'] ?? 0),
+                'report_total_amount' => (float) ($data['report_total_amount'] ?? 0),
             ]);
         });
 
@@ -643,6 +652,17 @@ class ShowroomDailyReportController extends Controller
             ->get()
             ->groupBy('product_id');
 
+        /*
+         * Operational receiving invoices are the source of truth for what the
+         * branch actually received from the loading/delivery workflow. These
+         * values are displayed read-only in the daily report.
+         */
+        $receivedFromDelivery = $this->branchReceiptTotals(
+            (int) $report->location_id,
+            $start,
+            $end
+        );
+
         $prior = ShowroomDailyReport::query()
             ->where('location_id', $report->location_id)
             ->whereDate('business_date', '<', $date)
@@ -676,7 +696,7 @@ class ShowroomDailyReportController extends Controller
                         )
                 );
 
-            $received = $this->sumReasons(
+            $movementReceivedKg = $this->sumReasons(
                 $rows,
                 [
                     MovementReason::TransferReceipt,
@@ -685,6 +705,25 @@ class ShowroomDailyReportController extends Controller
                 ],
                 MovementType::In
             );
+
+            $deliveryReceipt = $receivedFromDelivery->get(
+                (int) $item->product_id,
+                [
+                    'trays' => 0.0,
+                    'kg' => 0.0,
+                ]
+            );
+
+            $receivedTrays = (float) ($deliveryReceipt['trays'] ?? 0);
+            $received = (float) ($deliveryReceipt['kg'] ?? 0);
+
+            /*
+             * Older branches may still have inventory receipt movements but no
+             * operational branch receiving invoice for the day.
+             */
+            if ($received <= 0.0005) {
+                $received = $movementReceivedKg;
+            }
 
             $sales = $this->sumReasons(
                 $rows,
@@ -737,6 +776,7 @@ class ShowroomDailyReportController extends Controller
 
             $item->update([
                 'opening_kg' => round(max(0, $opening), 3),
+                'received_trays' => round(max(0, $receivedTrays), 2),
                 'received_kg' => round($received, 3),
                 'sales_kg' => round($sales, 3),
                 'damaged_kg' => round($damaged, 3),
@@ -748,6 +788,72 @@ class ShowroomDailyReportController extends Controller
                     : round($actual - max(0, $expected), 3),
             ]);
         }
+    }
+
+    /**
+     * Aggregate confirmed branch receiving invoices for showroom sweets.
+     *
+     * Quantities recorded in kg-like units are reported as kilograms.
+     * Other units are reported in the "وارد سدر" column exactly as received.
+     *
+     * @return Collection<int, array{trays: float, kg: float}>
+     */
+    private function branchReceiptTotals(
+        int $locationId,
+        CarbonImmutable $start,
+        CarbonImmutable $end
+    ): Collection {
+        $invoices = BranchReceivingInvoice::query()
+            ->with('items')
+            ->where('receiving_location_id', $locationId)
+            ->where('status', 'confirmed')
+            ->where('source_type', (new ShowroomSweetsRequest())->getMorphClass())
+            ->where('issued_at', '>=', $start)
+            ->where('issued_at', '<', $end)
+            ->get();
+
+        $totals = collect();
+
+        foreach ($invoices as $invoice) {
+            foreach ($invoice->items as $invoiceItem) {
+                $productId = (int) (
+                    $invoiceItem->metadata['product_id']
+                    ?? 0
+                );
+
+                if ($productId <= 0) {
+                    continue;
+                }
+
+                $quantity = (float) (
+                    $invoiceItem->received_quantity
+                    ?? 0
+                );
+
+                $unit = mb_strtolower(
+                    trim((string) $invoiceItem->unit)
+                );
+
+                $current = $totals->get(
+                    $productId,
+                    ['trays' => 0.0, 'kg' => 0.0]
+                );
+
+                if (in_array(
+                    $unit,
+                    ['kg', 'kilogram', 'كيلو', 'كيلوغرام', 'كجم'],
+                    true
+                )) {
+                    $current['kg'] += $quantity;
+                } else {
+                    $current['trays'] += $quantity;
+                }
+
+                $totals->put($productId, $current);
+            }
+        }
+
+        return $totals;
     }
 
     private function sumReasons(
