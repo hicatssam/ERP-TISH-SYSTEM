@@ -45,8 +45,10 @@
     <title>{{ $documentTitle }}</title>
     <style>
         @page {
-            size: A4 {{ $orientation }};
-            margin: 10mm;
+            margin-top: 10mm;
+            margin-bottom: 10mm;
+            margin-left: 10mm;
+            margin-right: 10mm;
         }
 
         body {
@@ -82,7 +84,7 @@
         .pdf-meta-cell { width: 33%; text-align: left; }
 
         .print-logo {
-            max-width: {{ $pdfLogoSize }}px;
+            width: {{ $pdfLogoSize }}px;
             max-height: 74px;
         }
 
@@ -202,7 +204,7 @@
         }
 
         .pdf-signature-image {
-            max-width: 110px;
+            width: 110px;
             max-height: 42px;
             margin-bottom: 4px;
         }
@@ -227,7 +229,7 @@
         }
 
         .pdf-stamp img {
-            max-width: 85px;
+            width: 85px;
             max-height: 85px;
         }
 

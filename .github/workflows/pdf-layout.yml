@@ -1,0 +1,39 @@
+name: PDF Layout Regression
+
+on:
+  push:
+    branches: [codex/fix-pdf-layout]
+  pull_request:
+    paths:
+      - 'resources/views/layouts/pdf.blade.php'
+      - 'app/Services/Finance/AccountingPdfService.php'
+      - 'app/Http/Controllers/Reports/ReportController.php'
+      - 'tests/Feature/Reports/PdfLayoutRegressionTest.php'
+      - '.github/workflows/pdf-layout.yml'
+
+jobs:
+  pdf:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_sqlite, sqlite3, intl, gd, zip
+          coverage: none
+      - run: |
+          cp .env.example .env
+          touch database/database.sqlite
+          composer install --no-interaction --prefer-dist --no-progress
+          php artisan key:generate
+      - name: Verify actual PDF text size and pagination
+        env:
+          PDF_LAYOUT_ARTIFACTS: '1'
+        run: php artisan test tests/Feature/Reports/PdfLayoutRegressionTest.php
+      - name: Save rendered PDF fixtures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdf-layout-fixtures
+          path: storage/app/pdf-layout-regression/*.pdf
+          retention-days: 7
