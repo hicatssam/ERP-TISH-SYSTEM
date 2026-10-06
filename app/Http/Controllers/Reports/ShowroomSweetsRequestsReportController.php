@@ -7,12 +7,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Location;
 use App\Models\ShowroomSweetsRequest;
 use App\Models\User;
-use App\Services\Finance\AccountingPdfService;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\File;
 use Illuminate\View\View;
+use Mpdf\Mpdf;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ShowroomSweetsRequestsReportController extends Controller
@@ -80,8 +81,7 @@ class ShowroomSweetsRequestsReportController extends Controller
     }
 
     public function pdf(
-        Request $request,
-        AccountingPdfService $pdf
+        Request $request
     ): StreamedResponse {
         $filters = $this->validatedFilters($request);
 
@@ -101,16 +101,68 @@ class ShowroomSweetsRequestsReportController extends Controller
             $requests
         );
 
-        return $pdf->download(
+        $html = view(
             'reports.showroom-sweets-requests.pdf',
             [
                 'requests' => $requests,
                 'summary' => $summary,
                 'filters' => $filters,
-            ],
+            ]
+        )->render();
+
+        $tempDir = storage_path(
+            'app/mpdf/showroom-sweets-requests'
+        );
+
+        File::ensureDirectoryExists($tempDir);
+
+        $mpdf = new Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A4-L',
+            'margin_top' => 8,
+            'margin_bottom' => 8,
+            'margin_left' => 8,
+            'margin_right' => 8,
+            'directionality' => 'rtl',
+            'default_font' => 'dejavusans',
+            'tempDir' => $tempDir,
+        ]);
+
+        $mpdf->SetTitle(
+            'تقرير طلبات حلويات الفروع'
+        );
+
+        $mpdf->SetDisplayMode('fullwidth');
+        $mpdf->WriteHTML($html);
+
+        $pdfBinary = $mpdf->Output(
+            '',
+            \Mpdf\Output\Destination::STRING_RETURN
+        );
+
+        if (
+            ! str_starts_with($pdfBinary, '%PDF')
+            || strlen($pdfBinary) < 1000
+        ) {
+            throw new \RuntimeException(
+                'تعذر إنشاء ملف PDF لتقرير طلبات حلويات الفروع.'
+            );
+        }
+
+        return response()->streamDownload(
+            static function () use ($pdfBinary): void {
+                echo $pdfBinary;
+            },
             $filename,
-            'تقرير طلبات حلويات الفروع',
-            'landscape'
+            [
+                'Content-Type' => 'application/pdf',
+                'Content-Length' =>
+                    (string) strlen($pdfBinary),
+                'Cache-Control' =>
+                    'private, no-store, max-age=0',
+                'Pragma' => 'no-cache',
+                'X-Content-Type-Options' => 'nosniff',
+            ]
         );
     }
 
