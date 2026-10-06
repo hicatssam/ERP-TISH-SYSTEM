@@ -50,11 +50,12 @@
         class="print-signature-table"
         cellpadding="0"
         cellspacing="0"
+        style="margin-top:28px;page-break-inside:avoid"
     >
         <tr>
             @if($showRight)
                 <td style="width:{{ $cellWidth }}">
-                    <div style="height:46px"></div>
+                    <div style="height:84px"></div>
 
                     <div class="print-signature-line"></div>
                     <div class="print-signature-label">
@@ -72,7 +73,7 @@
                             alt="التوقيع المعتمد"
                         >
                     @else
-                        <div style="height:46px"></div>
+                        <div style="height:84px"></div>
                     @endif
 
                     <div class="print-signature-line"></div>
