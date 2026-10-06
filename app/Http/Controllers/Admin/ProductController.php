@@ -36,6 +36,8 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
+        $isAdmin = $this->isSystemAdmin($user);
+
         $query = Product::query()
             ->with([
                 'category',
@@ -45,7 +47,7 @@ class ProductController extends Controller
             ])
             ->withCount('variants');
 
-        if (! $this->isSystemAdmin($user)) {
+        if (! $isAdmin) {
             $location = $this->managedBranch($user);
             $query
                 ->whereHas('locationProducts', fn (Builder $locationProducts) => $this->constrainLocationProducts($locationProducts, (int) $location->id))
@@ -65,16 +67,80 @@ class ProductController extends Controller
             });
         }
 
-        if ($request->filled('category_id')) $query->where('category_id', $request->integer('category_id'));
-        if ($request->filled('brand_id')) $query->where('brand_id', $request->integer('brand_id'));
-        if ($request->filled('product_type')) $query->where('product_type', $request->string('product_type')->toString());
+        if ($request->filled('category_id')) {
+            $query->where(
+                'category_id',
+                $request->integer('category_id')
+            );
+        }
 
-        $products = $query->orderBy('name')->paginate(25)->withQueryString();
+        if ($request->filled('brand_id')) {
+            $query->where(
+                'brand_id',
+                $request->integer('brand_id')
+            );
+        }
+
+        if ($request->filled('product_type')) {
+            $query->where(
+                'product_type',
+                $request->string('product_type')->toString()
+            );
+        }
+
+        if ($request->filled('status')) {
+            $query->where(
+                'is_active',
+                $request->input('status') === 'active'
+            );
+        }
+
+        if ($isAdmin && $request->filled('location_id')) {
+            $locationId = $request->integer('location_id');
+
+            $query->whereHas(
+                'locationProducts',
+                fn (Builder $locationProducts) =>
+                    $locationProducts
+                        ->where('location_id', $locationId)
+                        ->where('is_available', true)
+            );
+        }
+
+        $sort = $request->input('sort', 'az');
+
+        if ($sort === 'za') {
+            $query
+                ->orderByRaw("
+                    COALESCE(
+                        NULLIF(name_ar, ''),
+                        name
+                    ) DESC
+                ")
+                ->orderByDesc('id');
+        } else {
+            $query
+                ->orderByRaw("
+                    COALESCE(
+                        NULLIF(name_ar, ''),
+                        name
+                    ) ASC
+                ")
+                ->orderBy('id');
+        }
+
+        $products = $query
+            ->paginate(25)
+            ->withQueryString();
         $categories = Category::query()->active()->orderBy('sort_order')->get();
         $brands = $this->modules->isEnabled('brands')
             ? Brand::query()->active()->orderBy('sort_order')->get()
             : collect();
         $variantsEnabled = $this->modules->isEnabled('product_variants');
+
+        $filterLocations = $isAdmin
+            ? $this->activeProductLocations()
+            : collect();
 
         /*
          * Product creation lives in a modal on the products index.
@@ -100,6 +166,7 @@ class ProductController extends Controller
             'createCategories',
             'brands',
             'variantsEnabled',
+            'filterLocations',
             'locations',
             'managedLocation',
             'canManageLocations',
