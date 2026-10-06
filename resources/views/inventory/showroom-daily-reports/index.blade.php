@@ -622,8 +622,20 @@
             @if($isDraft && $canManage)
                 <div class="card-footer showroom-actions">
                     <button type="submit" class="btn btn-outline">
-                        حفظ الجرد
+                        حفظ البيانات
                     </button>
+
+                    @if($canSubmit)
+                        <button
+                            type="submit"
+                            name="submit_after_save"
+                            value="1"
+                            class="btn btn-gold"
+                            onclick="return confirm('سيتم حفظ جميع البيانات الحالية ثم إرسال التقرير للمحاسب العام. متابعة؟')"
+                        >
+                            حفظ وإرسال للمحاسب العام
+                        </button>
+                    @endif
                 </div>
             @endif
         </div>
@@ -634,20 +646,9 @@
             <div>
                 <strong>الخطوة الأخيرة للفرع</strong>
                 <span>
-                    بعد إدخال الجرد الفعلي وبيانات محاسب الفرع، أرسل التقرير للمحاسب العام.
+                    استخدم زر «حفظ وإرسال للمحاسب العام» داخل التقرير حتى تُحفظ جميع القيم قبل الإرسال.
                 </span>
             </div>
-
-            <form
-                method="POST"
-                action="{{ route('showroom-daily-reports.submit', $report) }}"
-                onsubmit="return confirm('إرسال التقرير للمحاسب العام؟ بعد الإرسال لن يستطيع الفرع تعديله إلا إذا أعاده المحاسب للتصحيح.')"
-            >
-                @csrf
-                <button type="submit" class="btn btn-gold">
-                    إرسال للمحاسب العام
-                </button>
-            </form>
         </div>
     @endif
 
