@@ -280,7 +280,7 @@
     @if(filled($filters['status'] ?? null))
         &nbsp; | &nbsp;
         الحالة:
-        {{ AppEnumsShowroomSweetsRequestStatus::from($filters['status'])->label() }}
+        {{ \App\Enums\ShowroomSweetsRequestStatus::from($filters['status'])->label() }}
     @endif
 </div>
 
