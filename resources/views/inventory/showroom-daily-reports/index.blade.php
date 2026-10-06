@@ -379,101 +379,161 @@
                 <div class="showroom-accounting-head">
                     <div>
                         <strong>بيانات محاسب الفرع</strong>
-                        <small>هذه فقط البيانات اليدوية الإضافية المسموح إدخالها في التقرير.</small>
+                        <small>
+                            بيانات النظام لا تُعدل هنا. هذه الحقول فقط إدخال محاسب الفرع، والإجماليات تُحسب تلقائيًا.
+                        </small>
                     </div>
-                    <span class="badge badge-blue">إدخال يدوي</span>
+                    <span class="badge badge-blue">
+                        {{ $report->returned_for_correction_at ? 'مفتوح للتصحيح' : 'إدخال يدوي' }}
+                    </span>
                 </div>
 
-                <div class="showroom-accounting-grid">
-                    <div class="form-group">
-                        <label class="form-label">مديونية الدفع الآجل</label>
-                        <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            name="credit_debt_amount"
-                            class="form-input"
-                            value="{{ old('credit_debt_amount', $report->credit_debt_amount) }}"
-                            @disabled(!$isDraft || !$canManage)
-                        >
+                @if($report->returned_for_correction_at && $isDraft)
+                    <div class="alert alert-warning" style="margin-bottom:1rem">
+                        <strong>أعاد المحاسب العام التقرير للتصحيح.</strong>
+                        @if($report->review_notes)
+                            <div style="margin-top:.35rem">
+                                السبب: {{ $report->review_notes }}
+                            </div>
+                        @endif
+                    </div>
+                @endif
+
+                <div class="showroom-accounting-block">
+                    <div class="showroom-accounting-block-title">
+                        <span>الحركة المالية اليومية</span>
+                        <small>الإجمالي = المديونيات + الصواني/البكج + التحليات − الخصم − الدفع المسبق</small>
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label">باقي باكيج / علب فارغة</label>
-                        <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            name="empty_packages_balance"
-                            class="form-input"
-                            value="{{ old('empty_packages_balance', $report->empty_packages_balance) }}"
-                            @disabled(!$isDraft || !$canManage)
-                        >
+                    <div class="showroom-accounting-grid">
+                        <div class="form-group">
+                            <label class="form-label">المديونيات</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                name="debts_amount"
+                                class="form-input js-primary-accounting"
+                                value="{{ old('debts_amount', $report->debts_amount) }}"
+                                @disabled(!$isDraft || !$canManage)
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">باقي صواني / بكج مغلف</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                name="trays_packages_balance"
+                                class="form-input js-primary-accounting"
+                                value="{{ old('trays_packages_balance', $report->trays_packages_balance) }}"
+                                @disabled(!$isDraft || !$canManage)
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">تحليات الزبائن</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                name="customer_treats_amount"
+                                class="form-input js-primary-accounting"
+                                value="{{ old('customer_treats_amount', $report->customer_treats_amount) }}"
+                                @disabled(!$isDraft || !$canManage)
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">خصم الزبائن</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                name="customer_discount_amount"
+                                class="form-input js-primary-accounting js-subtract"
+                                value="{{ old('customer_discount_amount', $report->customer_discount_amount) }}"
+                                @disabled(!$isDraft || !$canManage)
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">الدفع المسبق (حجوزات سابقة)</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                name="previous_prepaid_amount"
+                                class="form-input js-primary-accounting js-subtract"
+                                value="{{ old('previous_prepaid_amount', $report->previous_prepaid_amount) }}"
+                                @disabled(!$isDraft || !$canManage)
+                            >
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label">تحلايات</label>
-                        <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            name="tahlayat_amount"
-                            class="form-input"
-                            value="{{ old('tahlayat_amount', $report->tahlayat_amount) }}"
-                            @disabled(!$isDraft || !$canManage)
-                        >
+                    <div class="showroom-accounting-total">
+                        <span>الإجمالي</span>
+                        <strong id="primaryAccountingTotal">
+                            {{ number_format((float) $report->accounting_total_primary, 2) }}
+                        </strong>
+                    </div>
+                </div>
+
+                <div class="showroom-accounting-divider"></div>
+
+                <div class="showroom-accounting-block">
+                    <div class="showroom-accounting-block-title">
+                        <span>الحجوزات والسداد</span>
+                        <small>الإجمالي = الدفع الآجل + الحجوزات الخاصة − سداد المديونيات</small>
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label">خصم الزبائن الإجمالي</label>
-                        <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            name="customer_discount_total"
-                            class="form-input"
-                            value="{{ old('customer_discount_total', $report->customer_discount_total) }}"
-                            @disabled(!$isDraft || !$canManage)
-                        >
+                    <div class="showroom-accounting-grid secondary">
+                        <div class="form-group">
+                            <label class="form-label">الدفع الآجل / الحجوزات الآجلة</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                name="deferred_payment_amount"
+                                class="form-input js-secondary-accounting"
+                                value="{{ old('deferred_payment_amount', $report->deferred_payment_amount) }}"
+                                @disabled(!$isDraft || !$canManage)
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">الحجوزات الخاصة / حلويات + كيك</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                name="special_reservations_amount"
+                                class="form-input js-secondary-accounting"
+                                value="{{ old('special_reservations_amount', $report->special_reservations_amount) }}"
+                                @disabled(!$isDraft || !$canManage)
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">سداد المديونيات</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                name="debt_repayment_amount"
+                                class="form-input js-secondary-accounting js-subtract"
+                                value="{{ old('debt_repayment_amount', $report->debt_repayment_amount) }}"
+                                @disabled(!$isDraft || !$canManage)
+                            >
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label">الدفع المسبق / الخصومات</label>
-                        <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            name="prepaid_discount_amount"
-                            class="form-input"
-                            value="{{ old('prepaid_discount_amount', $report->prepaid_discount_amount) }}"
-                            @disabled(!$isDraft || !$canManage)
-                        >
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">الحجوزات</label>
-                        <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            name="reservations_amount"
-                            class="form-input"
-                            value="{{ old('reservations_amount', $report->reservations_amount) }}"
-                            @disabled(!$isDraft || !$canManage)
-                        >
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">إجمالي المبلغ</label>
-                        <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            name="report_total_amount"
-                            class="form-input"
-                            value="{{ old('report_total_amount', $report->report_total_amount) }}"
-                            @disabled(!$isDraft || !$canManage)
-                        >
+                    <div class="showroom-accounting-total secondary-total">
+                        <span>الإجمالي</span>
+                        <strong id="secondaryAccountingTotal">
+                            {{ number_format((float) $report->accounting_total_secondary, 2) }}
+                        </strong>
                     </div>
                 </div>
             </div>
@@ -676,7 +736,17 @@
 .showroom-accounting-head{display:flex;justify-content:space-between;align-items:flex-start;gap:.75rem;margin-bottom:1rem}
 .showroom-accounting-head > div{display:grid;gap:.22rem}
 .showroom-accounting-head small{color:var(--text-muted);font-size:.7rem}
-.showroom-accounting-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.8rem}
+.showroom-accounting-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:.8rem}
+.showroom-accounting-grid.secondary{grid-template-columns:repeat(3,minmax(0,1fr))}
+.showroom-accounting-block{display:grid;gap:.85rem}
+.showroom-accounting-block-title{display:flex;justify-content:space-between;gap:.75rem;align-items:flex-end;flex-wrap:wrap}
+.showroom-accounting-block-title span{font-weight:900}
+.showroom-accounting-block-title small{color:var(--text-muted);font-size:.68rem}
+.showroom-accounting-divider{height:2px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:1.1rem 0}
+.showroom-accounting-total{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.9rem 1rem;border:1px solid #f2c96d;background:#fff8df;border-radius:10px;font-weight:900}
+.showroom-accounting-total strong{font-size:1.15rem;color:#8c6818}
+.showroom-accounting-total.secondary-total{background:#eef7ee;border-color:#b7d7b0}
+.showroom-accounting-total.secondary-total strong{color:#2f6f2f}
 .showroom-num,.showroom-note{width:100%;min-width:88px;padding:.42rem .45rem;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font:inherit;text-align:center}
 .showroom-note{min-width:140px;text-align:right}
 .showroom-num:disabled,.showroom-note:disabled{background:var(--off-white);color:var(--text-muted)}
@@ -712,7 +782,7 @@
 .review-form{display:grid;gap:.65rem}
 .showroom-close-panel{display:flex;justify-content:flex-end;margin-top:1rem}
 @media(max-width:900px){
-    .showroom-filter-grid,.showroom-summary-grid,.accounting-review-actions,.showroom-accounting-grid{grid-template-columns:1fr}
+    .showroom-filter-grid,.showroom-summary-grid,.accounting-review-actions,.showroom-accounting-grid,.showroom-accounting-grid.secondary{grid-template-columns:1fr}
     .showroom-workflow-card{align-items:stretch;flex-direction:column}
     .receiving-invoice-row{grid-template-columns:1fr}
 }
@@ -761,6 +831,43 @@ document.addEventListener('DOMContentLoaded', function () {
 
     syncWidth();
     window.addEventListener('resize', syncWidth);
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    function numberValue(input) {
+        const value = parseFloat(input?.value || '0');
+        return Number.isFinite(value) ? value : 0;
+    }
+
+    function updateAccountingTotals() {
+        let primary = 0;
+        document.querySelectorAll('.js-primary-accounting').forEach(function (input) {
+            const value = numberValue(input);
+            primary += input.classList.contains('js-subtract') ? -value : value;
+        });
+
+        let secondary = 0;
+        document.querySelectorAll('.js-secondary-accounting').forEach(function (input) {
+            const value = numberValue(input);
+            secondary += input.classList.contains('js-subtract') ? -value : value;
+        });
+
+        const primaryOutput = document.getElementById('primaryAccountingTotal');
+        const secondaryOutput = document.getElementById('secondaryAccountingTotal');
+
+        if (primaryOutput) primaryOutput.textContent = primary.toFixed(2);
+        if (secondaryOutput) secondaryOutput.textContent = secondary.toFixed(2);
+    }
+
+    document.querySelectorAll(
+        '.js-primary-accounting, .js-secondary-accounting'
+    ).forEach(function (input) {
+        input.addEventListener('input', updateAccountingTotals);
+        input.addEventListener('change', updateAccountingTotals);
+    });
+
+    updateAccountingTotals();
 });
 </script>
 @endpush
