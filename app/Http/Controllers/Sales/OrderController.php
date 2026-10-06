@@ -102,16 +102,47 @@ class OrderController extends Controller
         return view('sales.orders.index', compact('orders','salesChannels'));
     }
 
- public function create()
+ public function create(Request $request)
 {
+    /** @var User $user */
     $user = Auth::user();
-    $location = $user->primaryLocation();
 
-    abort_unless(
-        $location && $location->isBranch(),
-        403,
-        'لا يوجد فرع رئيسي صالح مرتبط بحسابك.'
-    );
+    $canChooseLocation = $user->isAdmin();
+
+    $locations = $canChooseLocation
+        ? Location::query()
+            ->where('type', 'branch')
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get()
+        : collect();
+
+    if ($canChooseLocation) {
+        $requestedLocationId = (int) (
+            $request->input('location_id')
+            ?: old('location_id')
+            ?: $locations->first()?->id
+        );
+
+        $location = $locations->firstWhere(
+            'id',
+            $requestedLocationId
+        );
+
+        abort_unless(
+            $location,
+            422,
+            'اختر فرعًا صالحًا لإنشاء الطلب.'
+        );
+    } else {
+        $location = $user->primaryLocation();
+
+        abort_unless(
+            $location && $location->isBranch(),
+            403,
+            'لا يوجد فرع رئيسي صالح مرتبط بحسابك.'
+        );
+    }
 
     // العميل المركزي يظهر في كل فرع مسموح له بالسحب منه.
     $customers = Customer::query()
@@ -123,6 +154,27 @@ class OrderController extends Controller
                 ->where('location_id', $location->id),
         ], 'remaining_amount')
         ->orderByRaw("CASE WHEN customer_type = 'individual' THEN 1 ELSE 0 END")
+        ->orderBy('name')
+        ->get();
+
+    $products = Product::query()
+        ->active()
+        ->where('product_type', 'standard')
+        ->where(function ($query) use ($location): void {
+            $query
+                ->whereDoesntHave('locationProducts')
+                ->orWhereHas(
+                    'locationProducts',
+                    fn ($locationsQuery) => $locationsQuery
+                        ->where('location_id', $location->id)
+                        ->where('is_available', true)
+                );
+        })
+        ->with([
+            'category',
+            'locationProducts' => fn ($query) =>
+                $query->where('location_id', $location->id),
+        ])
         ->orderBy('name')
         ->get();
 
@@ -139,7 +191,10 @@ class OrderController extends Controller
 
     return view('sales.orders.create', compact(
         'location',
+        'locations',
+        'canChooseLocation',
         'customers',
+        'products',
         'paymentMethods',
         'salesChannels'
     ));
@@ -150,9 +205,23 @@ class OrderController extends Controller
     Gate::authorize('create', Order::class);
 
     $user = $request->user();
-    $location = $this->requiredPrimaryBranch($user);
-
     $data = $request->validated();
+
+    if ($user->isAdmin()) {
+        $location = Location::query()
+            ->whereKey((int) ($data['location_id'] ?? 0))
+            ->where('type', 'branch')
+            ->where('is_active', true)
+            ->first();
+
+        if (! $location) {
+            throw ValidationException::withMessages([
+                'location_id' => 'يجب اختيار فرع فعال صالح للطلب.',
+            ]);
+        }
+    } else {
+        $location = $this->requiredPrimaryBranch($user);
+    }
 
     /*
     |--------------------------------------------------------------------------
