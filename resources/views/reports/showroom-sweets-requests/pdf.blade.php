@@ -341,7 +341,7 @@
 
     @if(filled($filters['status'] ?? null))
         · الحالة:
-        {{ AppEnumsShowroomSweetsRequestStatus::from($filters['status'])->label() }}
+        {{ \App\Enums\ShowroomSweetsRequestStatus::from($filters['status'])->label() }}
     @endif
 
     @if(filled($filters['request_number'] ?? null))
@@ -450,6 +450,46 @@
         </tr>
     @endif
 </table>
+
+@if($productTotals->isNotEmpty())
+<div class="section">
+    إجمالي كل منتج
+</div>
+
+<table class="report">
+    <tr>
+        <th>#</th>
+        <th>المنتج</th>
+        <th>الوحدة</th>
+        <th>عدد الطلبات</th>
+        <th>تفصيل الفروع</th>
+        <th>الإجمالي</th>
+        <th>المحجوز</th>
+    </tr>
+
+    @foreach($productTotals as $total)
+        <tr class="{{ $loop->even ? 'alt' : '' }}">
+            <td>{{ $loop->iteration }}</td>
+            <td style="text-align:right">
+                <strong>{{ $total['product_name'] }}</strong>
+            </td>
+            <td>{{ $total['unit'] }}</td>
+            <td>{{ $total['requests_count'] }}</td>
+            <td style="text-align:right">
+                @foreach($total['branches'] as $branch)
+                    {{ $branch['branch_name'] }}:
+                    {{ number_format($branch['quantity'], 3) }}
+                    @unless($loop->last) · @endunless
+                @endforeach
+            </td>
+            <td>
+                <strong>{{ number_format($total['quantity'], 3) }}</strong>
+            </td>
+            <td>{{ number_format($total['reserved_quantity'], 3) }}</td>
+        </tr>
+    @endforeach
+</table>
+@endif
 
 <table class="signatures">
     <tr>
