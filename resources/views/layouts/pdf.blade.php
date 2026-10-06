@@ -29,6 +29,14 @@
 
     $signatureRight = trim($__env->yieldContent('signature_right', 'توقيع المستلم'));
     $signatureLeft = trim($__env->yieldContent('signature_left', 'اعتماد الإدارة'));
+
+    $pdfLogoSize = min(
+        150,
+        max(
+            115,
+            (int) ($printTheme['logo_size'] ?? 90)
+        )
+    );
 @endphp
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -45,8 +53,9 @@
             direction: rtl;
             margin: 0;
             padding: 0;
-            font-family: dejavusans;
-            font-size: 8.5pt;
+            font-family: cairo, dejavusans;
+            font-size: 8.3pt;
+            line-height: 1.55;
             color: {{ $printTheme['text_color'] ?? '#1f2937' }};
             background: #ffffff;
         }
@@ -59,7 +68,7 @@
         }
 
         .pdf-header {
-            margin-bottom: 10px;
+            margin-bottom: 11px;
             border-bottom: 2px solid {{ $printTheme['primary_color'] ?? '#d6a925' }};
         }
 
@@ -73,14 +82,14 @@
         .pdf-meta-cell { width: 33%; text-align: left; }
 
         .print-logo {
-            max-width: {{ (int) ($printTheme['logo_size'] ?? 90) }}px;
-            max-height: 58px;
+            max-width: {{ $pdfLogoSize }}px;
+            max-height: 74px;
         }
 
         .print-business-name {
             margin-top: 3px;
-            font-size: 11pt;
-            font-weight: bold;
+            font-size: 10.5pt;
+            font-weight: 700;
             color: {{ $printTheme['secondary_color'] ?? '#111827' }};
         }
 
@@ -96,8 +105,8 @@
 
         .pdf-document-title {
             margin-top: 5px;
-            font-size: 15pt;
-            font-weight: bold;
+            font-size: 16.5pt;
+            font-weight: 700;
             color: {{ $printTheme['secondary_color'] ?? '#111827' }};
         }
 
@@ -111,12 +120,13 @@
 
         .print-section-title {
             margin-bottom: 5px;
-            padding: 5px 7px;
-            border-right: 3px solid {{ $printTheme['primary_color'] ?? '#d6a925' }};
-            background: #f8fafc;
+            padding: 4px 0 5px;
+            border-right: 0;
+            border-bottom: 2px solid {{ $printTheme['primary_color'] ?? '#d6a925' }};
+            background: #ffffff;
             color: {{ $printTheme['secondary_color'] ?? '#111827' }};
-            font-size: 8pt;
-            font-weight: bold;
+            font-size: 8.5pt;
+            font-weight: 700;
         }
 
         .print-table {
@@ -126,17 +136,17 @@
 
         .print-table th {
             padding: 5px 4px;
-            border: 1px solid {{ $printTheme['secondary_color'] ?? '#111827' }};
-            background: {{ $printTheme['secondary_color'] ?? '#111827' }};
+            border: 1px solid #d7dde3;
+            background: {{ $printTheme['secondary_color'] ?? '#0b2f4f' }};
             color: #ffffff;
             text-align: center;
-            font-size: 6.8pt;
-            font-weight: bold;
+            font-size: 6.9pt;
+            font-weight: 700;
         }
 
         .print-table td {
-            padding: 4px;
-            border: 1px solid #dfe4e9;
+            padding: 4.5px 4px;
+            border: 1px solid #e2e6ea;
             text-align: center;
             vertical-align: middle;
             font-size: 6.7pt;
@@ -151,7 +161,7 @@
         .print-summary td {
             padding: 7px 6px;
             border: 1px solid #dfe4e9;
-            background: #f8fafc;
+            background: #ffffff;
             text-align: center;
             vertical-align: middle;
         }
