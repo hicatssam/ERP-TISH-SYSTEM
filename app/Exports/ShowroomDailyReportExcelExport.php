@@ -136,7 +136,7 @@ class ShowroomDailyReportExcelExport implements
         $this->buildAccountingSection($sheet);
         $this->applyProtection($sheet);
 
-        $sheet->getPageSetup()->setPrintArea('A1:G68');
+        $sheet->getPageSetup()->setPrintArea('A1:G80');
     }
 
     private function setWidths(Worksheet $sheet): void
@@ -370,9 +370,7 @@ class ShowroomDailyReportExcelExport implements
     private function buildAccountingSection(Worksheet $sheet): void
     {
         /*
-         * First accounting block:
-         * debts + trays/packages + customer treats
-         * - customer discounts - previous prepaid reservations.
+         * Branch accountant inputs.
          */
         $sheet->mergeCells('A54:G54');
         $sheet->setCellValue('A54', 'الحركة المالية اليومية');
@@ -392,7 +390,7 @@ class ShowroomDailyReportExcelExport implements
             $sheet->setCellValue("C{$row}", $value);
             $sheet->mergeCells("D{$row}:G{$row}");
 
-            $sheet->getStyle("A{$row}:H{$row}")
+            $sheet->getStyle("A{$row}:G{$row}")
                 ->applyFromArray([
                     'alignment' => [
                         'horizontal' => Alignment::HORIZONTAL_CENTER,
@@ -431,9 +429,6 @@ class ShowroomDailyReportExcelExport implements
                 'borders' => $this->borders(),
             ]);
 
-        /*
-         * Visual separator between the two accounting blocks.
-         */
         $sheet->mergeCells('A61:G61');
         $sheet->setCellValue('A61', '');
         $sheet->getRowDimension(61)->setRowHeight(7);
@@ -444,21 +439,21 @@ class ShowroomDailyReportExcelExport implements
             ->setARGB('FFE5E7EB');
 
         /*
-         * Second accounting block:
-         * deferred payments/reservations + special reservations
-         * - debt repayments.
+         * Reservations and settlements.
+         * Previous package balance is system-carried and therefore locked.
          */
         $sheet->mergeCells('A62:G62');
         $sheet->setCellValue('A62', 'الحجوزات والسداد');
         $this->styleHeader($sheet, 'A62:G62', 'E2F0D9', '2F6F2F');
 
         $secondaryRows = [
-            63 => ['الدفع الآجل / الحجوزات الآجلة', (float) $this->report->deferred_payment_amount],
-            64 => ['الحجوزات الخاصة / حلويات + كيك', (float) $this->report->special_reservations_amount],
-            65 => ['سداد المديونيات', (float) $this->report->debt_repayment_amount],
+            63 => ['رصيد باكيج / أمس', (float) $this->report->previous_package_balance, false],
+            64 => ['الدفع الآجل / الحجوزات الآجلة', (float) $this->report->deferred_payment_amount, true],
+            65 => ['الحجوزات الخاصة / حلويات + كيك', (float) $this->report->special_reservations_amount, true],
+            66 => ['سداد المديونيات', (float) $this->report->debt_repayment_amount, true],
         ];
 
-        foreach ($secondaryRows as $row => [$label, $value]) {
+        foreach ($secondaryRows as $row => [$label, $value, $editable]) {
             $sheet->mergeCells("A{$row}:B{$row}");
             $sheet->setCellValue("A{$row}", $label);
             $sheet->setCellValue("C{$row}", $value);
@@ -477,19 +472,27 @@ class ShowroomDailyReportExcelExport implements
                 ->getFill()
                 ->setFillType(Fill::FILL_SOLID)
                 ->getStartColor()
-                ->setARGB('FFA9D18E');
+                ->setARGB(
+                    $editable
+                        ? 'FFA9D18E'
+                        : 'FFF2F2F2'
+                );
 
-            $sheet->getStyle("C{$row}")
-                ->getProtection()
-                ->setLocked(Protection::PROTECTION_UNPROTECTED);
+            if ($editable) {
+                $sheet->getStyle("C{$row}")
+                    ->getProtection()
+                    ->setLocked(
+                        Protection::PROTECTION_UNPROTECTED
+                    );
+            }
         }
 
-        $sheet->mergeCells('A66:B66');
-        $sheet->setCellValue('A66', 'الإجمالي');
-        $sheet->setCellValue('C66', '=C63+C64-C65');
-        $sheet->mergeCells('D66:G66');
+        $sheet->mergeCells('A67:B67');
+        $sheet->setCellValue('A67', 'إجمالي السداد والحجوزات');
+        $sheet->setCellValue('C67', '=C64+C65-C66');
+        $sheet->mergeCells('D67:G67');
 
-        $sheet->getStyle('A66:G66')
+        $sheet->getStyle('A67:G67')
             ->applyFromArray([
                 'font' => [
                     'bold' => true,
@@ -506,17 +509,122 @@ class ShowroomDailyReportExcelExport implements
                 'borders' => $this->borders(),
             ]);
 
-        $sheet->getStyle('C55:C66')
+        $sheet->mergeCells('A68:G68');
+        $sheet->setCellValue('A68', '');
+        $sheet->getRowDimension(68)->setRowHeight(7);
+        $sheet->getStyle('A68:G68')
+            ->getFill()
+            ->setFillType(Fill::FILL_SOLID)
+            ->getStartColor()
+            ->setARGB('FFE5E7EB');
+
+        /*
+         * Requested financial equation:
+         * report sales + reservations/settlements - discounts.
+         */
+        $sheet->mergeCells('A69:G69');
+        $sheet->setCellValue('A69', 'الإجمالي المالي للتقرير');
+        $this->styleHeader($sheet, 'A69:G69', 'FFF5D9', '7A5400');
+
+        $financialRows = [
+            70 => ['إجمالي بيع التقرير', (float) $this->report->report_sales_total],
+            71 => ['إجمالي السداد والحجوزات', '=C67'],
+            72 => ['إجمالي الخصومات', '=C58'],
+            73 => ['الإجمالي المالي للتقرير', '=C70+C71-C72'],
+        ];
+
+        foreach ($financialRows as $row => [$label, $value]) {
+            $sheet->mergeCells("A{$row}:B{$row}");
+            $sheet->setCellValue("A{$row}", $label);
+            $sheet->setCellValue("C{$row}", $value);
+            $sheet->mergeCells("D{$row}:G{$row}");
+
+            $sheet->getStyle("A{$row}:G{$row}")
+                ->applyFromArray([
+                    'font' => [
+                        'bold' => $row === 73,
+                    ],
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => [
+                            'argb' => $row === 73
+                                ? 'FFFFD966'
+                                : 'FFF8FAFC',
+                        ],
+                    ],
+                    'alignment' => [
+                        'horizontal' => Alignment::HORIZONTAL_CENTER,
+                        'vertical' => Alignment::VERTICAL_CENTER,
+                    ],
+                    'borders' => $this->borders(),
+                ]);
+        }
+
+        $sheet->mergeCells('A74:G74');
+        $sheet->setCellValue('A74', '');
+        $sheet->getRowDimension(74)->setRowHeight(7);
+        $sheet->getStyle('A74:G74')
+            ->getFill()
+            ->setFillType(Fill::FILL_SOLID)
+            ->getStartColor()
+            ->setARGB('FFE5E7EB');
+
+        /*
+         * Net booking:
+         * cashier balance - financial report total.
+         */
+        $sheet->mergeCells('A75:G75');
+        $sheet->setCellValue('A75', 'صافي الحجز');
+        $this->styleHeader($sheet, 'A75:G75', 'EAF6EA', '256B2B');
+
+        $sheet->mergeCells('A76:B76');
+        $sheet->setCellValue('A76', 'إجمالي رصيد الكاشير');
+        $sheet->setCellValue('C76', (float) $this->report->cashier_balance_total);
+        $sheet->mergeCells('D76:G76');
+
+        $sheet->mergeCells('A77:B77');
+        $sheet->setCellValue('A77', 'الإجمالي المالي للتقرير');
+        $sheet->setCellValue('C77', '=C73');
+        $sheet->mergeCells('D77:G77');
+
+        $sheet->mergeCells('A78:B78');
+        $sheet->setCellValue('A78', 'صافي الحجز');
+        $sheet->setCellValue('C78', '=C76-C77');
+        $sheet->mergeCells('D78:G78');
+
+        foreach ([76, 77, 78] as $row) {
+            $sheet->getStyle("A{$row}:G{$row}")
+                ->applyFromArray([
+                    'font' => [
+                        'bold' => $row === 78,
+                    ],
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => [
+                            'argb' => $row === 78
+                                ? 'FFE2F0D9'
+                                : 'FFF8FAFC',
+                        ],
+                    ],
+                    'alignment' => [
+                        'horizontal' => Alignment::HORIZONTAL_CENTER,
+                        'vertical' => Alignment::VERTICAL_CENTER,
+                    ],
+                    'borders' => $this->borders(),
+                ]);
+        }
+
+        $sheet->getStyle('C55:C78')
             ->getNumberFormat()
             ->setFormatCode('#,##0.00');
 
-        $sheet->mergeCells('A68:G68');
+        $sheet->mergeCells('A80:G80');
         $sheet->setCellValue(
-            'A68',
-            'الخلايا الرمادية مصدرها النظام — الخلايا الخضراء إدخال محاسب الفرع — الإجماليات معادلات تلقائية'
+            'A80',
+            'الخلايا الرمادية بيانات نظام — الخلايا الخضراء إدخال محاسب الفرع — الإجماليات معادلات تلقائية'
         );
 
-        $sheet->getStyle('A68:G68')
+        $sheet->getStyle('A80:G80')
             ->applyFromArray([
                 'font' => [
                     'italic' => true,
