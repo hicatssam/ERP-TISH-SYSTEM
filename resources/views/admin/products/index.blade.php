@@ -36,6 +36,119 @@
         font-size: .7rem;
         direction: rtl;
     }
+
+    .products-filter-card{
+        margin-bottom:1rem;
+        padding:1rem;
+        background:var(--card-bg,#fff);
+        border:1px solid var(--border);
+        border-radius:16px;
+        box-shadow:0 3px 12px rgba(15,23,42,.04);
+    }
+
+    .products-filter-form{
+        display:grid;
+        gap:1rem;
+    }
+
+    .products-filter-main{
+        display:grid;
+        grid-template-columns:minmax(260px,1.5fr) repeat(5,minmax(150px,1fr));
+        gap:.75rem;
+        align-items:end;
+    }
+
+    .products-filter-search,
+    .products-filter-field{
+        min-width:0;
+    }
+
+    .products-filter-label{
+        display:block;
+        margin-bottom:.4rem;
+        font-size:.72rem;
+        font-weight:800;
+        color:var(--text-muted);
+    }
+
+    .products-search-wrap{
+        position:relative;
+    }
+
+    .products-search-wrap svg{
+        position:absolute;
+        top:50%;
+        right:.85rem;
+        width:18px;
+        height:18px;
+        transform:translateY(-50%);
+        color:var(--text-muted);
+        pointer-events:none;
+    }
+
+    .products-search-wrap .form-input{
+        padding-right:2.55rem;
+    }
+
+    .products-filter-footer{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:1rem;
+        padding-top:.85rem;
+        border-top:1px solid var(--border);
+    }
+
+    .products-active-filters{
+        color:var(--text-muted);
+        font-size:.7rem;
+        font-weight:700;
+    }
+
+    .products-filter-actions{
+        display:flex;
+        gap:.55rem;
+        flex-wrap:wrap;
+    }
+
+    @media(max-width:1280px){
+        .products-filter-main{
+            grid-template-columns:repeat(3,minmax(0,1fr));
+        }
+
+        .products-filter-search{
+            grid-column:span 2;
+        }
+    }
+
+    @media(max-width:760px){
+        .products-filter-card{
+            padding:.85rem;
+            border-radius:14px;
+        }
+
+        .products-filter-main{
+            grid-template-columns:1fr;
+        }
+
+        .products-filter-search{
+            grid-column:auto;
+        }
+
+        .products-filter-footer{
+            align-items:stretch;
+            flex-direction:column;
+        }
+
+        .products-filter-actions{
+            display:grid;
+            grid-template-columns:1fr 1fr;
+        }
+
+        .products-filter-actions .btn{
+            width:100%;
+        }
+    }
 </style>
 @endpush
 
@@ -67,13 +180,140 @@
     <div class="alert alert-danger" style="margin-bottom:1rem">{{ session('error') }}</div>
 @endif
 
-<div class="filter-row">
-    <form method="GET" action="{{ route('products.index') }}" class="filter-grid" style="width:100%">
-        <input type="search" name="q" class="form-input" placeholder="الاسم / SKU / الباركود" value="{{ request('q') }}">
-        <select name="category_id" class="form-input"><option value="">كل الفئات</option>@foreach($categories as $category)<option value="{{ $category->id }}" @selected((string)request('category_id')===(string)$category->id)>{{ $category->name_ar ?? $category->name }}</option>@endforeach</select>
-        @if($brands->isNotEmpty())<select name="brand_id" class="form-input"><option value="">كل العلامات</option>@foreach($brands as $brand)<option value="{{ $brand->id }}" @selected((string)request('brand_id')===(string)$brand->id)>{{ $brand->displayName() }}</option>@endforeach</select>@endif
-        @if($variantsEnabled)<select name="product_type" class="form-input"><option value="">كل الأنواع</option><option value="standard" @selected(request('product_type')==='standard')>عادي</option><option value="variant" @selected(request('product_type')==='variant')>بمتغيرات</option></select>@endif
-        <button class="btn btn-gold" type="submit">تطبيق</button>
+<div class="products-filter-card">
+    <form method="GET" action="{{ route('products.index') }}" class="products-filter-form">
+        <div class="products-filter-main">
+            <div class="products-filter-search">
+                <label class="products-filter-label">بحث</label>
+                <div class="products-search-wrap">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="m21 21-4.35-4.35"/>
+                    </svg>
+                    <input
+                        type="search"
+                        name="q"
+                        class="form-input"
+                        placeholder="اسم المنتج / SKU / الباركود"
+                        value="{{ request('q') }}"
+                    >
+                </div>
+            </div>
+
+            @if($filterLocations->isNotEmpty())
+                <div class="products-filter-field">
+                    <label class="products-filter-label">الفرع / المصنع</label>
+                    <select name="location_id" class="form-select">
+                        <option value="">كل الفروع والمصانع</option>
+                        @foreach($filterLocations as $filterLocation)
+                            <option
+                                value="{{ $filterLocation->id }}"
+                                @selected(
+                                    (string) request('location_id')
+                                    === (string) $filterLocation->id
+                                )
+                            >
+                                {{ $filterLocation->name }}
+                                — {{ $filterLocation->isFactory() ? 'مصنع' : 'فرع' }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            @endif
+
+            <div class="products-filter-field">
+                <label class="products-filter-label">الفئة</label>
+                <select name="category_id" class="form-select">
+                    <option value="">كل الفئات</option>
+                    @foreach($categories as $category)
+                        <option
+                            value="{{ $category->id }}"
+                            @selected(
+                                (string) request('category_id')
+                                === (string) $category->id
+                            )
+                        >
+                            {{ $category->name_ar ?? $category->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="products-filter-field">
+                <label class="products-filter-label">نوع المنتج</label>
+                <select name="product_type" class="form-select">
+                    <option value="">كل الأنواع</option>
+                    <option value="standard" @selected(request('product_type') === 'standard')>
+                        منتج عادي
+                    </option>
+                    @if($variantsEnabled)
+                        <option value="variant" @selected(request('product_type') === 'variant')>
+                            منتج بمتغيرات
+                        </option>
+                    @endif
+                </select>
+            </div>
+
+            <div class="products-filter-field">
+                <label class="products-filter-label">الحالة</label>
+                <select name="status" class="form-select">
+                    <option value="">كل الحالات</option>
+                    <option value="active" @selected(request('status') === 'active')>نشط</option>
+                    <option value="inactive" @selected(request('status') === 'inactive')>معطل</option>
+                </select>
+            </div>
+
+            <div class="products-filter-field">
+                <label class="products-filter-label">الترتيب الأبجدي</label>
+                <select name="sort" class="form-select">
+                    <option value="az" @selected(request('sort', 'az') === 'az')>
+                        أ ← ي
+                    </option>
+                    <option value="za" @selected(request('sort') === 'za')>
+                        ي ← أ
+                    </option>
+                </select>
+            </div>
+
+            @if($brands->isNotEmpty())
+                <div class="products-filter-field">
+                    <label class="products-filter-label">العلامة التجارية</label>
+                    <select name="brand_id" class="form-select">
+                        <option value="">كل العلامات</option>
+                        @foreach($brands as $brand)
+                            <option
+                                value="{{ $brand->id }}"
+                                @selected(
+                                    (string) request('brand_id')
+                                    === (string) $brand->id
+                                )
+                            >
+                                {{ $brand->displayName() }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            @endif
+        </div>
+
+        <div class="products-filter-footer">
+            <div class="products-active-filters">
+                @if(request()->hasAny(['q','location_id','category_id','product_type','status','brand_id','sort']))
+                    <span>الفلاتر الحالية مطبقة على النتائج</span>
+                @else
+                    <span>عرض جميع المنتجات</span>
+                @endif
+            </div>
+
+            <div class="products-filter-actions">
+                <a href="{{ route('products.index') }}" class="btn btn-outline">
+                    مسح الفلاتر
+                </a>
+                <button class="btn btn-gold" type="submit">
+                    تطبيق الفلاتر
+                </button>
+            </div>
+        </div>
     </form>
 </div>
 
