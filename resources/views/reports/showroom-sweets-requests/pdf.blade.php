@@ -231,7 +231,8 @@
         }
 
         .signatures {
-            margin-top: 14px;
+            margin-top: 24mm;
+            page-break-inside: avoid;
         }
 
         .signatures td {
@@ -244,10 +245,10 @@
 
         .signature-line {
             display: inline-block;
-            width: 110px;
-            border-top: 1px solid #b9c0c7;
-            margin-top: 18px;
-            padding-top: 3px;
+            width: 165px;
+            border-top: 1px solid #aeb6bf;
+            margin-top: 28mm;
+            padding-top: 4px;
         }
 
         .footer {
