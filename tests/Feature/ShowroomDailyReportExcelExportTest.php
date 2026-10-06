@@ -101,24 +101,29 @@ class ShowroomDailyReportExcelExportTest extends TestCase
                 $sheet->getCell('B5')->getValue()
             );
 
+            $this->assertSame(
+                'اسم المعرض: فرع النصر',
+                $sheet->getCell('A7')->getValue()
+            );
+
             $this->assertEquals(
                 5.0,
                 (float) $sheet->getCell('C5')->getValue()
             );
 
             $this->assertSame(
-                '=C39+D39',
-                $sheet->getCell('E39')->getValue()
+                '=C11+D11',
+                $sheet->getCell('E11')->getValue()
             );
 
             $this->assertSame(
-                '=MAX(0,E39-G39)',
-                $sheet->getCell('F39')->getValue()
+                '=MAX(0,E11-G11)',
+                $sheet->getCell('F11')->getValue()
             );
 
             $this->assertSame(
-                '=SUM(C39:C51)',
-                $sheet->getCell('C52')->getValue()
+                '=SUM(C11:C11)',
+                $sheet->getCell('C12')->getValue()
             );
 
             $this->assertSame(
@@ -130,28 +135,33 @@ class ShowroomDailyReportExcelExportTest extends TestCase
             );
 
             $this->assertSame(
-                '=SUM(C55:C57)-SUM(C58:C59)',
-                $sheet->getCell('C60')->getValue()
+                '=SUM(C15:C17)-SUM(C18:C19)',
+                $sheet->getCell('C20')->getValue()
             );
 
             $this->assertEquals(
                 18.0,
-                (float) $sheet->getCell('C63')->getValue()
+                (float) $sheet->getCell('C23')->getValue()
             );
 
             $this->assertSame(
-                '=C64+C65-C66',
-                $sheet->getCell('C67')->getValue()
+                '=C24+C25-C26',
+                $sheet->getCell('C27')->getValue()
             );
 
             $this->assertSame(
-                '=C70+C71-C72',
-                $sheet->getCell('C73')->getValue()
+                '=C30+C31-C32',
+                $sheet->getCell('C33')->getValue()
             );
 
             $this->assertSame(
-                '=C76-C77',
-                $sheet->getCell('C78')->getValue()
+                'إجمالي العجز',
+                $sheet->getCell('A35')->getValue()
+            );
+
+            $this->assertSame(
+                '=C36-C37',
+                $sheet->getCell('C38')->getValue()
             );
         } finally {
             @unlink($tmp);
