@@ -170,65 +170,6 @@
         </div>
     </div>
 
-    <div class="card ssr-product-totals-card">
-        <div class="card-header">
-            <div>
-                <div class="card-title">إجمالي كل منتج</div>
-                <small class="text-muted">
-                    مجموع الكميات لكل منتج حسب الفلاتر الحالية.
-                </small>
-            </div>
-        </div>
-
-        <div class="table-responsive">
-            <table class="data-table ssr-product-totals-table">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>المنتج</th>
-                        <th>الوحدة</th>
-                        <th>عدد الطلبات</th>
-                        <th>تفصيل الفروع</th>
-                        <th>إجمالي الكمية المطلوبة</th>
-                        <th>إجمالي المحجوز</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($productTotals as $total)
-                        <tr>
-                            <td>{{ $loop->iteration }}</td>
-                            <td>
-                                <strong>{{ $total['product_name'] }}</strong>
-                            </td>
-                            <td>{{ $total['unit'] }}</td>
-                            <td>{{ $total['requests_count'] }}</td>
-                            <td class="ssr-branch-breakdown-cell">
-                                @foreach($total['branches'] as $branch)
-                                    <span class="ssr-branch-chip">
-                                        {{ $branch['branch_name'] }}
-                                        <b>{{ number_format($branch['quantity'], 3) }}</b>
-                                    </span>
-                                @endforeach
-                            </td>
-                            <td>
-                                <strong>{{ number_format($total['quantity'], 3) }}</strong>
-                            </td>
-                            <td>{{ number_format($total['reserved_quantity'], 3) }}</td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="7">
-                                <div class="empty-state-sm">
-                                    لا توجد منتجات ضمن الفلاتر الحالية.
-                                </div>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
-
     <div class="card">
         <div class="card-header">
             <div>
@@ -367,6 +308,65 @@
     </div>
 </div>
 @endsection
+
+    <div class="card ssr-product-totals-card">
+        <div class="card-header">
+            <div>
+                <div class="card-title">إجمالي كل منتج</div>
+                <small class="text-muted">
+                    مجموع الكميات لكل منتج حسب الفلاتر الحالية.
+                </small>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="data-table ssr-product-totals-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>المنتج</th>
+                        <th>الوحدة</th>
+                        <th>عدد الطلبات</th>
+                        <th>تفصيل الفروع</th>
+                        <th>إجمالي الكمية المطلوبة</th>
+                        <th>إجمالي المحجوز</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($productTotals as $total)
+                        <tr>
+                            <td>{{ $loop->iteration }}</td>
+                            <td>
+                                <strong>{{ $total['product_name'] }}</strong>
+                            </td>
+                            <td>{{ $total['unit'] }}</td>
+                            <td>{{ $total['requests_count'] }}</td>
+                            <td class="ssr-branch-breakdown-cell">
+                                @foreach($total['branches'] as $branch)
+                                    <span class="ssr-branch-chip">
+                                        {{ $branch['branch_name'] }}
+                                        <b>{{ number_format($branch['quantity'], 3) }}</b>
+                                    </span>
+                                @endforeach
+                            </td>
+                            <td>
+                                <strong>{{ number_format($total['quantity'], 3) }}</strong>
+                            </td>
+                            <td>{{ number_format($total['reserved_quantity'], 3) }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7">
+                                <div class="empty-state-sm">
+                                    لا توجد منتجات ضمن الفلاتر الحالية.
+                                </div>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
 
 @push('styles')
 <style>
