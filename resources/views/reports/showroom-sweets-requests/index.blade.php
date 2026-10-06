@@ -170,6 +170,56 @@
         </div>
     </div>
 
+    <div class="card ssr-product-totals-card">
+        <div class="card-header">
+            <div>
+                <div class="card-title">إجمالي كل منتج</div>
+                <small class="text-muted">
+                    مجموع الكميات لكل منتج حسب الفلاتر الحالية.
+                </small>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="data-table ssr-product-totals-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>المنتج</th>
+                        <th>الوحدة</th>
+                        <th>عدد الطلبات</th>
+                        <th>إجمالي الكمية المطلوبة</th>
+                        <th>إجمالي المحجوز</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($productTotals as $total)
+                        <tr>
+                            <td>{{ $loop->iteration }}</td>
+                            <td>
+                                <strong>{{ $total['product_name'] }}</strong>
+                            </td>
+                            <td>{{ $total['unit'] }}</td>
+                            <td>{{ $total['requests_count'] }}</td>
+                            <td>
+                                <strong>{{ number_format($total['quantity'], 3) }}</strong>
+                            </td>
+                            <td>{{ number_format($total['reserved_quantity'], 3) }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6">
+                                <div class="empty-state-sm">
+                                    لا توجد منتجات ضمن الفلاتر الحالية.
+                                </div>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-header">
             <div>
@@ -325,6 +375,8 @@
 .ssr-product-chip small{color:var(--text-muted)}
 .ssr-product-more{display:inline-flex;padding:.2rem .4rem;font-size:.65rem;font-weight:800;color:var(--text-muted)}
 .ssr-table tfoot th{background:#fff8df;color:#8c6818;font-weight:900}
+.ssr-product-totals-table{min-width:760px}
+.ssr-product-totals-table th,.ssr-product-totals-table td{text-align:center;vertical-align:middle}
 @media(max-width:1100px){.ssr-filter-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.ssr-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){.ssr-filter-grid,.ssr-summary-grid{grid-template-columns:1fr}.ssr-filter-actions,.ssr-report-actions{width:100%}.ssr-filter-actions .btn,.ssr-report-actions .btn{flex:1}.page-header{align-items:stretch}}
 </style>
