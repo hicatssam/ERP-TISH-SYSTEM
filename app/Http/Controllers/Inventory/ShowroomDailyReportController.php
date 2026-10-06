@@ -411,7 +411,6 @@ class ShowroomDailyReportController extends Controller
                     abs((float) $item->opening_kg) > 0.0005
                     || abs((float) $item->received_kg) > 0.0005
                     || abs((float) $item->sales_kg) > 0.0005
-                    || abs((float) $item->takeaway_sales_kg) > 0.0005
                     || abs((float) $item->damaged_kg) > 0.0005
                     || abs((float) $item->returned_kg) > 0.0005
                     || abs((float) $item->other_net_kg) > 0.0005;
@@ -851,12 +850,6 @@ class ShowroomDailyReportController extends Controller
             $end
         );
 
-        $takeawaySales = $this->takeawaySalesTotals(
-            (int) $report->location_id,
-            $start,
-            $end
-        );
-
         $prior = ShowroomDailyReport::query()
             ->where('location_id', $report->location_id)
             ->whereDate('business_date', '<', $date)
@@ -973,10 +966,6 @@ class ShowroomDailyReportController extends Controller
                 'received_trays' => round(max(0, $receivedTrays), 2),
                 'received_kg' => round($received, 3),
                 'sales_kg' => round($sales, 3),
-                'takeaway_sales_kg' => round(
-                    (float) $takeawaySales->get((int) $item->product_id, 0),
-                    3
-                ),
                 'damaged_kg' => round($damaged, 3),
                 'returned_kg' => round($returned, 3),
                 'other_net_kg' => $otherNet,
@@ -996,50 +985,6 @@ class ShowroomDailyReportController extends Controller
      *
      * @return Collection<int, array{trays: float, kg: float}>
      */
-    /**
-     * Take Away sales per product for the branch/day.
-     *
-     * This is system-owned data and is never entered manually in the report.
-     * We use the order confirmation moment because stock/sales are committed
-     * when an order is confirmed. For historical rows without confirmed_at,
-     * created_at is used as a fallback.
-     *
-     * @return Collection<int, float>
-     */
-    private function takeawaySalesTotals(
-        int $locationId,
-        CarbonImmutable $start,
-        CarbonImmutable $end
-    ): Collection {
-        return DB::table('order_items')
-            ->join('orders', 'orders.id', '=', 'order_items.order_id')
-            ->where('orders.location_id', $locationId)
-            ->whereNull('orders.deleted_at')
-            ->where('orders.restaurant_service_type', 'takeaway')
-            ->whereIn('orders.status', ['confirmed', 'completed'])
-            ->where(function ($query) use ($start, $end): void {
-                $query
-                    ->where(function ($confirmed) use ($start, $end): void {
-                        $confirmed
-                            ->whereNotNull('orders.confirmed_at')
-                            ->where('orders.confirmed_at', '>=', $start)
-                            ->where('orders.confirmed_at', '<', $end);
-                    })
-                    ->orWhere(function ($legacy) use ($start, $end): void {
-                        $legacy
-                            ->whereNull('orders.confirmed_at')
-                            ->where('orders.created_at', '>=', $start)
-                            ->where('orders.created_at', '<', $end);
-                    });
-            })
-            ->groupBy('order_items.product_id')
-            ->selectRaw('order_items.product_id, SUM(order_items.quantity) as total_quantity')
-            ->pluck('total_quantity', 'product_id')
-            ->map(
-                fn ($quantity): float => (float) $quantity
-            );
-    }
-
     private function branchReceiptTotals(
         int $locationId,
         CarbonImmutable $start,
