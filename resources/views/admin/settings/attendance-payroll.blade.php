@@ -26,6 +26,16 @@
 .att-warning{padding:.85rem 1rem;border:1px solid color-mix(in srgb,var(--theme-warning) 30%,var(--border));background:color-mix(in srgb,var(--theme-warning) 7%,var(--surface));border-radius:12px;font-size:.76rem;line-height:1.7}
 .att-savebar{position:sticky;bottom:0;margin-top:1rem;padding:.85rem 1rem;border:1px solid var(--border);border-radius:14px;background:color-mix(in srgb,var(--surface) 94%,transparent);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:space-between;gap:1rem;z-index:10}
 .att-savebar small{color:var(--text-muted)}
+.face-ready-card{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1rem;padding:1rem 1.1rem;border:1px solid var(--border);border-radius:16px;background:linear-gradient(135deg,color-mix(in srgb,var(--theme-primary) 7%,var(--surface)),var(--surface))}
+.face-ready-main{display:flex;align-items:flex-start;gap:.8rem}
+.face-ready-icon{width:46px;height:46px;flex:0 0 46px;border-radius:14px;display:grid;place-items:center;background:var(--theme-primary);color:#fff;font-weight:900}
+.face-ready-copy strong{display:block;font-size:.9rem}
+.face-ready-copy small{display:block;margin-top:.22rem;color:var(--text-muted);font-size:.7rem;line-height:1.7}
+.face-ready-state{display:inline-flex;align-items:center;gap:.35rem;margin-top:.45rem;padding:.25rem .55rem;border-radius:999px;font-size:.64rem;font-weight:850}
+.face-ready-state.ready{color:var(--theme-success);background:color-mix(in srgb,var(--theme-success) 10%,transparent)}
+.face-ready-state.pending{color:var(--theme-warning);background:color-mix(in srgb,var(--theme-warning) 10%,transparent)}
+.face-ready-actions{display:flex;gap:.5rem;flex-wrap:wrap}
+@media(max-width:800px){.face-ready-card{align-items:stretch;flex-direction:column}.face-ready-actions .btn{flex:1}}
 @media(max-width:800px){.att-settings-grid{grid-template-columns:1fr}.att-number-grid{grid-template-columns:1fr}.att-settings-head,.att-savebar{align-items:stretch;flex-direction:column}.att-savebar .btn{width:100%}}
 </style>
 
@@ -42,6 +52,52 @@
             <p class="page-subheading">
                 التحكم بتفعيل الحضور، البصمة والوجه وسياسات تأثير الدوام على الرواتب.
             </p>
+        </div>
+    </div>
+
+    <div class="face-ready-card">
+        <div class="face-ready-main">
+            <div class="face-ready-icon">✓</div>
+
+            <div class="face-ready-copy">
+                <strong>تجهيز بصمة الوجه والحضور تلقائيًا</strong>
+                <small>
+                    زر واحد يفعّل نظام الحضور والحضور البيومتري وتسجيل الوجه للموظفين،
+                    ويجهز عنوان CompreFace الافتراضي. بعد حفظ مفتاح Face Recognition يصبح النظام جاهزًا لتسجيل الوجوه والحضور والانصراف.
+                </small>
+
+                @if($faceAttendance['configured'])
+                    <span class="face-ready-state ready">
+                        ● إعداد الوجه محفوظ — جاهز لاختبار الاتصال
+                    </span>
+                @else
+                    <span class="face-ready-state pending">
+                        ● التفعيل جاهز — يحتاج مفتاح CompreFace فقط
+                    </span>
+                @endif
+            </div>
+        </div>
+
+        <div class="face-ready-actions">
+            <form
+                method="POST"
+                action="{{ route('settings.attendance-payroll.face.activate') }}"
+            >
+                @csrf
+                <button type="submit" class="btn btn-gold">
+                    تفعيل وتجهيز بصمة الوجه
+                </button>
+            </form>
+
+            @if($faceAttendance['configured'])
+                <a class="btn btn-outline" href="{{ route('attendance.index') }}">
+                    تسجيل وجوه الموظفين
+                </a>
+
+                <a class="btn btn-outline" href="{{ route('attendance.face.kiosk') }}">
+                    فتح كشك الحضور
+                </a>
+            @endif
         </div>
     </div>
 
