@@ -44,6 +44,7 @@ class ShowroomDailyReportExcelExportTest extends TestCase
                     'received_trays' => 2,
                     'received_kg' => 4,
                     'sales_kg' => 3,
+                    'takeaway_sales_kg' => 1.5,
                     'actual_closing_kg' => 6,
                 ]),
             ])
@@ -101,6 +102,16 @@ class ShowroomDailyReportExcelExportTest extends TestCase
             $this->assertEquals(
                 5.0,
                 (float) $sheet->getCell('C5')->getValue()
+            );
+
+            $this->assertSame(
+                'Take Away/كيلو',
+                $sheet->getCell('G4')->getValue()
+            );
+
+            $this->assertEquals(
+                1.5,
+                (float) $sheet->getCell('G5')->getValue()
             );
 
             $this->assertSame(
