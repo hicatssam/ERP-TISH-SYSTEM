@@ -186,18 +186,13 @@
 
 <table class="report">
     <tr>
-        <th style="width:4%">#</th>
-        <th style="width:11%">رقم الطلب</th>
-        <th style="width:10%">الفرع</th>
-        <th style="width:10%">المصنع</th>
-        <th style="width:10%">تاريخ الطلب</th>
-        <th style="width:9%">مطلوب بتاريخ</th>
-        <th style="width:8%">الحالة</th>
-        <th style="width:15%">الصنف</th>
-        <th style="width:7%">الكمية</th>
-        <th style="width:7%">الوحدة</th>
-        <th style="width:7%">محجوز</th>
-        <th style="width:12%">منشئ الطلب</th>
+        <th>#</th>
+        <th>الطلب / الحالة</th>
+        <th>الفرع / المصنع</th>
+        <th>التواريخ</th>
+        <th>الصنف</th>
+        <th>الكمية / المحجوز</th>
+        <th>منشئ الطلب</th>
     </tr>
 
     @forelse($detailRows as $row)
@@ -207,21 +202,45 @@
         @endphp
         <tr>
             <td>{{ $loop->iteration }}</td>
-            <td dir="ltr">{{ $showroomRequest->request_number }}</td>
-            <td>{{ $showroomRequest->requestingLocation?->name ?? '—' }}</td>
-            <td>{{ $showroomRequest->factoryLocation?->name ?? '—' }}</td>
-            <td>{{ $showroomRequest->created_at?->format('Y-m-d H:i') ?? '—' }}</td>
-            <td>{{ $showroomRequest->needed_by?->format('Y-m-d') ?? '—' }}</td>
-            <td>{{ $showroomRequest->status->label() }}</td>
-            <td style="text-align:right">{{ $item->displayProductName() }}</td>
-            <td>{{ number_format((float) $item->quantity, 3) }}</td>
-            <td>{{ $item->requested_unit }}</td>
-            <td>{{ number_format((float) $item->reserved_quantity, 3) }}</td>
-            <td>{{ $showroomRequest->creator?->display_name ?? '—' }}</td>
+
+            <td>
+                <strong dir="ltr">{{ $showroomRequest->request_number }}</strong><br>
+                <span>{{ $showroomRequest->status->label() }}</span>
+            </td>
+
+            <td>
+                <strong>{{ $showroomRequest->requestingLocation?->name ?? '—' }}</strong><br>
+                <span class="muted">
+                    {{ $showroomRequest->factoryLocation?->name ?? '—' }}
+                </span>
+            </td>
+
+            <td>
+                <span>{{ $showroomRequest->created_at?->format('Y-m-d H:i') ?? '—' }}</span><br>
+                <span class="muted">
+                    مطلوب: {{ $showroomRequest->needed_by?->format('Y-m-d') ?? '—' }}
+                </span>
+            </td>
+
+            <td style="text-align:right">
+                <strong>{{ $item->displayProductName() }}</strong>
+            </td>
+
+            <td>
+                <strong>{{ number_format((float) $item->quantity, 3) }}</strong>
+                {{ $item->requested_unit }}<br>
+                <span class="muted">
+                    محجوز: {{ number_format((float) $item->reserved_quantity, 3) }}
+                </span>
+            </td>
+
+            <td>
+                {{ $showroomRequest->creator?->display_name ?? '—' }}
+            </td>
         </tr>
     @empty
         <tr>
-            <td colspan="12">
+            <td colspan="7">
                 لا توجد طلبات تطابق الفلاتر المحددة.
             </td>
         </tr>
@@ -229,10 +248,13 @@
 
     @if($detailRows->isNotEmpty())
         <tr class="total">
-            <th colspan="8">الإجمالي</th>
-            <th>{{ number_format($summary['requested_quantity'], 3) }}</th>
-            <th>—</th>
-            <th>{{ number_format($summary['reserved_quantity'], 3) }}</th>
+            <th colspan="5">الإجمالي</th>
+            <th>
+                {{ number_format($summary['requested_quantity'], 3) }}
+                <br>
+                محجوز:
+                {{ number_format($summary['reserved_quantity'], 3) }}
+            </th>
             <th></th>
         </tr>
     @endif
