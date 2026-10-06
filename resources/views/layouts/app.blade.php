@@ -152,7 +152,16 @@ $brandName =
 
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="{{ asset('assets/css/app.css') }}">
+    @php
+        $appCssAssetVersion = @filemtime(
+            public_path('assets/css/app.css')
+        ) ?: 1;
+    @endphp
+
+    <link
+        rel="stylesheet"
+        href="{{ asset('assets/css/app.css') }}?v={{ $appCssAssetVersion }}"
+    >
 
    <script src="{{ asset('assets/js/live-updates.js') }}" defer></script>
 
