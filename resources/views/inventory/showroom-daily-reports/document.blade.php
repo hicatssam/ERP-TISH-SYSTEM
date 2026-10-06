@@ -5,7 +5,6 @@
         'trays' => $items->sum(fn($i) => (float) $i->received_trays),
         'received' => $items->sum(fn($i) => (float) $i->received_kg),
         'sales' => $items->sum(fn($i) => (float) $i->sales_kg),
-        'takeaway' => $items->sum(fn($i) => (float) $i->takeaway_sales_kg),
         'damaged' => $items->sum(fn($i) => (float) $i->damaged_kg),
         'other' => $items->sum(fn($i) => (float) $i->other_net_kg),
         'actual' => $items->sum(fn($i) => (float) ($i->actual_closing_kg ?? 0)),
@@ -54,7 +53,6 @@
             <td><span>الرصيد السابق / كجم</span><strong>{{ number_format($totals['opening'], 3) }}</strong></td>
             <td><span>الوارد / كجم</span><strong>{{ number_format($totals['received'], 3) }}</strong></td>
             <td><span>المبيعات / كجم</span><strong>{{ number_format($totals['sales'], 3) }}</strong></td>
-            <td><span>Take Away / كجم</span><strong>{{ number_format($totals['takeaway'], 3) }}</strong></td>
             <td><span>المتبقي الفعلي / كجم</span><strong>{{ number_format($totals['actual'], 3) }}</strong></td>
         </tr>
     </table>
@@ -69,7 +67,6 @@
                     <th>وارد سدر</th>
                     <th>وارد / كجم</th>
                     <th>مبيعات / كجم</th>
-                    <th>Take Away / كجم</th>
                     <th>تالف / كجم</th>
                     <th>حركات أخرى صافي</th>
                     <th>المتبقي الفعلي</th>
@@ -85,7 +82,6 @@
                         <td>{{ number_format((float) $item->received_trays, 2) }}</td>
                         <td>{{ number_format((float) $item->received_kg, 3) }}</td>
                         <td>{{ number_format((float) $item->sales_kg, 3) }}</td>
-                        <td>{{ number_format((float) $item->takeaway_sales_kg, 3) }}</td>
                         <td>{{ number_format((float) $item->damaged_kg, 3) }}</td>
                         <td>{{ number_format((float) $item->other_net_kg, 3) }}</td>
                         <td>{{ $item->actual_closing_kg === null ? '—' : number_format((float) $item->actual_closing_kg, 3) }}</td>
@@ -102,7 +98,6 @@
                     <th>{{ number_format($totals['trays'], 2) }}</th>
                     <th>{{ number_format($totals['received'], 3) }}</th>
                     <th>{{ number_format($totals['sales'], 3) }}</th>
-                    <th>{{ number_format($totals['takeaway'], 3) }}</th>
                     <th>{{ number_format($totals['damaged'], 3) }}</th>
                     <th>{{ number_format($totals['other'], 3) }}</th>
                     <th>{{ number_format($totals['actual'], 3) }}</th>
