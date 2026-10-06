@@ -241,7 +241,7 @@ class ShowroomDailyReportExcelExport implements
                 ->getStartColor()
                 ->setARGB('FFE2F0D9');
 
-            $sheet->getStyle("H{$row}")
+            $sheet->getStyle("G{$row}")
                 ->getProtection()
                 ->setLocked(Protection::PROTECTION_UNPROTECTED);
         }
