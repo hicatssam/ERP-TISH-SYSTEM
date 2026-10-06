@@ -394,9 +394,29 @@
                 <td>
                     <div class="actions">
                         <a href="{{ route('products.show', $product) }}" class="btn btn-ghost btn-sm">عرض</a>
+
                         @can('products.update')
-                        <a href="{{ route('products.edit', $product) }}" class="btn btn-outline btn-sm">تعديل</a>
+                            <a href="{{ route('products.edit', $product) }}" class="btn btn-outline btn-sm">تعديل</a>
                         @endcan
+
+                        @if($isAdmin ?? false)
+                            <form
+                                action="{{ route('products.destroy', $product) }}"
+                                method="POST"
+                                class="product-delete-form"
+                                data-product-name="{{ $product->name_ar ?: $product->name }}"
+                            >
+                                @csrf
+                                @method('DELETE')
+
+                                <button
+                                    type="submit"
+                                    class="btn btn-sm product-delete-btn"
+                                >
+                                    حذف
+                                </button>
+                            </form>
+                        @endif
                     </div>
                 </td>
             </tr>
@@ -462,6 +482,16 @@
 
 @push('styles')
 <style>
+.product-delete-form{display:inline-flex;margin:0}
+.product-delete-btn{
+    border:1px solid #fecaca;
+    background:#fff;
+    color:#b91c1c;
+}
+.product-delete-btn:hover{
+    background:#fef2f2;
+    border-color:#fca5a5;
+}
 .product-create-modal{
     position:fixed;
     inset:0;
@@ -614,6 +644,20 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.js-ean13-barcode').forEach(renderEan13Barcode);
+
+    document.querySelectorAll('.product-delete-form').forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            const productName = form.dataset.productName || 'هذا المنتج';
+            const confirmed = window.confirm(
+                'حذف "' + productName + '" من الكتالوج؟\n\n'
+                + 'سيختفي المنتج من القوائم، لكن الطلبات والتقارير والسجلات السابقة ستبقى محفوظة.'
+            );
+
+            if (!confirmed) {
+                event.preventDefault();
+            }
+        });
+    });
 
     @if($errors->any())
         openProductCreateModal();
