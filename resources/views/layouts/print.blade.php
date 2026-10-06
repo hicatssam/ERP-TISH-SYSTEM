@@ -500,7 +500,7 @@
 
         .print-signature-table {
             width: 100%;
-            margin-top: 22px;
+            margin-top: 28px;
             page-break-inside: avoid;
         }
 
@@ -519,7 +519,9 @@
         }
 
         .print-signature-line {
+            width: 72%;
             height: 1px;
+            margin: 0 auto;
             background: #9ca3af;
         }
 
