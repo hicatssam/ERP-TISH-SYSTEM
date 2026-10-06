@@ -88,6 +88,9 @@ class ShowroomSweetsRequestsReportController extends Controller
                     $requests
                 ),
                 'filters' => $filters,
+                'selectedProduct' => filled($filters['product_id'] ?? null)
+                    ? Product::find((int) $filters['product_id'])
+                    : null,
                 'pdfMode' => false,
             ]
         );
@@ -120,6 +123,9 @@ class ShowroomSweetsRequestsReportController extends Controller
                 'requests' => $requests,
                 'summary' => $summary,
                 'filters' => $filters,
+                'selectedProduct' => filled($filters['product_id'] ?? null)
+                    ? Product::find((int) $filters['product_id'])
+                    : null,
                 'branding' => $this->pdfBranding(),
             ]
         )->render();
