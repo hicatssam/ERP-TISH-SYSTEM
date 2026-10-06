@@ -109,36 +109,33 @@
 
     <table class="showroom-accounting-doc" cellpadding="0" cellspacing="0">
         <tr>
-            <td>
-                <span>مديونية الدفع الآجل</span>
-                <strong>{{ number_format((float) $report->credit_debt_amount, 2) }}</strong>
-            </td>
-            <td>
-                <span>باقي باكيج / علب فارغة</span>
-                <strong>{{ number_format((float) $report->empty_packages_balance, 2) }}</strong>
-            </td>
-            <td>
-                <span>تحلايات</span>
-                <strong>{{ number_format((float) $report->tahlayat_amount, 2) }}</strong>
-            </td>
-            <td>
-                <span>خصم الزبائن الإجمالي</span>
-                <strong>{{ number_format((float) $report->customer_discount_total, 2) }}</strong>
-            </td>
+            <td colspan="5" style="font-weight:bold;background:#f5edd8">الحركة المالية اليومية</td>
         </tr>
         <tr>
-            <td>
-                <span>الدفع المسبق / الخصومات</span>
-                <strong>{{ number_format((float) $report->prepaid_discount_amount, 2) }}</strong>
-            </td>
-            <td>
-                <span>الحجوزات</span>
-                <strong>{{ number_format((float) $report->reservations_amount, 2) }}</strong>
-            </td>
-            <td colspan="2">
-                <span>إجمالي المبلغ</span>
-                <strong>{{ number_format((float) $report->report_total_amount, 2) }}</strong>
-            </td>
+            <td><span>المديونيات</span><strong>{{ number_format((float) $report->debts_amount, 2) }}</strong></td>
+            <td><span>باقي صواني / بكج مغلف</span><strong>{{ number_format((float) $report->trays_packages_balance, 2) }}</strong></td>
+            <td><span>تحليات الزبائن</span><strong>{{ number_format((float) $report->customer_treats_amount, 2) }}</strong></td>
+            <td><span>خصم الزبائن</span><strong>{{ number_format((float) $report->customer_discount_amount, 2) }}</strong></td>
+            <td><span>الدفع المسبق (حجوزات سابقة)</span><strong>{{ number_format((float) $report->previous_prepaid_amount, 2) }}</strong></td>
+        </tr>
+        <tr>
+            <td colspan="4" style="text-align:right;font-weight:bold">الإجمالي</td>
+            <td style="background:#fff8df"><strong>{{ number_format((float) $report->accounting_total_primary, 2) }}</strong></td>
+        </tr>
+    </table>
+
+    <table class="showroom-accounting-doc" cellpadding="0" cellspacing="0" style="margin-top:8px">
+        <tr>
+            <td colspan="3" style="font-weight:bold;background:#eef7ee">الحجوزات والسداد</td>
+        </tr>
+        <tr>
+            <td><span>الدفع الآجل / الحجوزات الآجلة</span><strong>{{ number_format((float) $report->deferred_payment_amount, 2) }}</strong></td>
+            <td><span>الحجوزات الخاصة / حلويات + كيك</span><strong>{{ number_format((float) $report->special_reservations_amount, 2) }}</strong></td>
+            <td><span>سداد المديونيات</span><strong>{{ number_format((float) $report->debt_repayment_amount, 2) }}</strong></td>
+        </tr>
+        <tr>
+            <td colspan="2" style="text-align:right;font-weight:bold">الإجمالي</td>
+            <td style="background:#eef7ee"><strong>{{ number_format((float) $report->accounting_total_secondary, 2) }}</strong></td>
         </tr>
     </table>
 
