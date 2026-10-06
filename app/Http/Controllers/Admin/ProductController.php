@@ -95,7 +95,11 @@ class ProductController extends Controller
 
         $sort = $request->input('sort', 'az');
 
-        if ($sort === 'za') {
+        if ($sort === 'oldest') {
+            $query->orderBy('created_at')->orderBy('id');
+        } elseif ($sort === 'newest') {
+            $query->orderByDesc('created_at')->orderByDesc('id');
+        } elseif ($sort === 'za') {
             $query
                 ->orderByRaw("
                     COALESCE(
