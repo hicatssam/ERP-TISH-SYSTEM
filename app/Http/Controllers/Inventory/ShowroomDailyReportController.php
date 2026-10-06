@@ -395,7 +395,9 @@ class ShowroomDailyReportController extends Controller
             ]);
         });
 
-        $this->syncFinancialSummary($showroomDailyReport);
+        $this->syncFinancialSummary(
+            $showroomDailyReport->refresh()
+        );
 
         ActivityLogger::log(
             userId: $request->user()->id,
