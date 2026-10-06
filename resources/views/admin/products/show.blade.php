@@ -114,8 +114,6 @@
                 <tr><td style="color:var(--text-muted)">الاسم العربي</td><td>{{ $product->name_ar ?? '—' }}</td></tr>
                 <tr><td style="color:var(--text-muted)">الاسم الإنجليزي</td><td>{{ $product->name }}</td></tr>
                 <tr><td style="color:var(--text-muted)">الفئة</td><td>{{ $product->category?->name_ar ?? $product->category?->name }}</td></tr>
-                <tr><td style="color:var(--text-muted)">العلامة التجارية</td><td>{{ $product->brand?->displayName() ?? '—' }}</td></tr>
-                <tr><td style="color:var(--text-muted)">نوع المنتج</td><td>{{ $product->product_type?->label() ?? 'منتج عادي' }}</td></tr>
                 <tr><td style="color:var(--text-muted)">SKU</td><td><code>{{ $product->sku }}</code></td></tr>
                 <tr><td style="color:var(--text-muted)">الباركود</td><td dir="ltr">{{ $product->barcode ?? '—' }}</td></tr>
                 <tr><td style="color:var(--text-muted)">الوحدة</td><td>{{ $product->unitDefinition?->displayName() ?? $product->unit }}</td></tr>
