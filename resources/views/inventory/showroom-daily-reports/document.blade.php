@@ -126,16 +126,40 @@
 
     <table class="showroom-accounting-doc" cellpadding="0" cellspacing="0" style="margin-top:8px">
         <tr>
-            <td colspan="3" style="font-weight:bold;background:#eef7ee">الحجوزات والسداد</td>
+            <td colspan="4" style="font-weight:bold;background:#eef7ee">الحجوزات والسداد</td>
         </tr>
         <tr>
+            <td><span>رصيد باكيج / أمس</span><strong>{{ number_format((float) $report->previous_package_balance, 2) }}</strong></td>
             <td><span>الدفع الآجل / الحجوزات الآجلة</span><strong>{{ number_format((float) $report->deferred_payment_amount, 2) }}</strong></td>
             <td><span>الحجوزات الخاصة / حلويات + كيك</span><strong>{{ number_format((float) $report->special_reservations_amount, 2) }}</strong></td>
             <td><span>سداد المديونيات</span><strong>{{ number_format((float) $report->debt_repayment_amount, 2) }}</strong></td>
         </tr>
         <tr>
-            <td colspan="2" style="text-align:right;font-weight:bold">الإجمالي</td>
+            <td colspan="3" style="text-align:right;font-weight:bold">الإجمالي</td>
             <td style="background:#eef7ee"><strong>{{ number_format((float) $report->accounting_total_secondary, 2) }}</strong></td>
+        </tr>
+    </table>
+
+    <table class="showroom-accounting-doc" cellpadding="0" cellspacing="0" style="margin-top:8px">
+        <tr>
+            <td colspan="4" style="font-weight:bold;background:#fff5d9">الإجمالي المالي للتقرير</td>
+        </tr>
+        <tr>
+            <td><span>إجمالي بيع التقرير</span><strong>{{ number_format((float) $report->report_sales_total, 2) }}</strong></td>
+            <td><span>إجمالي السداد والحجوزات</span><strong>{{ number_format((float) $report->accounting_total_secondary, 2) }}</strong></td>
+            <td><span>إجمالي الخصومات</span><strong>{{ number_format((float) $report->customer_discount_amount, 2) }}</strong></td>
+            <td style="background:#fff5d9"><span>الإجمالي المالي</span><strong>{{ number_format((float) $report->financial_report_total, 2) }}</strong></td>
+        </tr>
+    </table>
+
+    <table class="showroom-accounting-doc" cellpadding="0" cellspacing="0" style="margin-top:8px">
+        <tr>
+            <td colspan="3" style="font-weight:bold;background:#eaf6ea">صافي الحجز</td>
+        </tr>
+        <tr>
+            <td><span>إجمالي رصيد الكاشير</span><strong>{{ number_format((float) $report->cashier_balance_total, 2) }}</strong></td>
+            <td><span>الإجمالي المالي للتقرير</span><strong>{{ number_format((float) $report->financial_report_total, 2) }}</strong></td>
+            <td style="background:#eaf6ea"><span>صافي الحجز</span><strong>{{ number_format((float) $report->net_booking_total, 2) }}</strong></td>
         </tr>
     </table>
 
