@@ -98,6 +98,7 @@ class ShowroomDailyReportController extends Controller
 
         if ($report && $report->isDraft()) {
             $this->syncAutomaticColumns($report);
+            $this->syncFinancialSummary($report);
             $report->refresh()->load([
                 'location',
                 'items.product',
@@ -264,6 +265,7 @@ class ShowroomDailyReportController extends Controller
         });
 
         $this->syncAutomaticColumns($report);
+        $this->syncFinancialSummary($report);
 
         ActivityLogger::log(
             userId: $request->user()->id,
@@ -393,6 +395,8 @@ class ShowroomDailyReportController extends Controller
             ]);
         });
 
+        $this->syncFinancialSummary($showroomDailyReport);
+
         ActivityLogger::log(
             userId: $request->user()->id,
             action: 'showroom_daily_report.branch_updated',
@@ -488,6 +492,7 @@ class ShowroomDailyReportController extends Controller
         }
 
         $this->syncAutomaticColumns($showroomDailyReport);
+        $this->syncFinancialSummary($showroomDailyReport);
 
         $showroomDailyReport->load('items');
 
@@ -753,6 +758,9 @@ class ShowroomDailyReportController extends Controller
             $this->syncAutomaticColumns(
                 $showroomDailyReport
             );
+            $this->syncFinancialSummary(
+                $showroomDailyReport
+            );
         }
 
         $showroomDailyReport->refresh()->load([
@@ -985,6 +993,91 @@ class ShowroomDailyReportController extends Controller
      *
      * @return Collection<int, array{trays: float, kg: float}>
      */
+    /**
+     * Refresh the monetary snapshot used by branch accounting.
+     *
+     * - Previous package balance is carried from the latest earlier report.
+     * - Report sales total comes from active regular-order invoices for the day.
+     * - Cashier balance uses the cashier session closing actual amount when
+     *   available, otherwise the session expected balance.
+     * - Financial report total follows the requested accounting equation:
+     *   sales + reservations/settlements total - discounts.
+     * - Net booking = cashier balance - financial report total.
+     */
+    private function syncFinancialSummary(
+        ShowroomDailyReport $report
+    ): void {
+        $date = CarbonImmutable::parse(
+            $report->business_date
+        );
+
+        $start = $date->startOfDay();
+        $end = $start->addDay();
+
+        $previousPackageBalance = (float) (
+            ShowroomDailyReport::query()
+                ->where('location_id', $report->location_id)
+                ->whereDate('business_date', '<', $date->toDateString())
+                ->latest('business_date')
+                ->value('trays_packages_balance')
+            ?? 0
+        );
+
+        $reportSalesTotal = (float) DB::table('invoices')
+            ->where('location_id', $report->location_id)
+            ->whereNull('deleted_at')
+            ->where('status', 'active')
+            ->where('order_type', 'order')
+            ->where('issued_at', '>=', $start)
+            ->where('issued_at', '<', $end)
+            ->sum('total_amount');
+
+        $cashierBalanceTotal = (float) DB::table('cash_sessions')
+            ->where('location_id', $report->location_id)
+            ->where('opened_at', '>=', $start)
+            ->where('opened_at', '<', $end)
+            ->selectRaw(
+                'COALESCE(SUM(COALESCE(actual_cash, expected_cash)), 0) as total'
+            )
+            ->value('total');
+
+        $reservationsSettlementsTotal = (float) (
+            $report->accounting_total_secondary
+            ?? 0
+        );
+
+        $discountsTotal = (float) (
+            $report->customer_discount_amount
+            ?? 0
+        );
+
+        $financialReportTotal = round(
+            $reportSalesTotal
+            + $reservationsSettlementsTotal
+            - $discountsTotal,
+            2
+        );
+
+        $netBookingTotal = round(
+            $cashierBalanceTotal
+            - $financialReportTotal,
+            2
+        );
+
+        $report->forceFill([
+            'previous_package_balance' =>
+                round($previousPackageBalance, 2),
+            'report_sales_total' =>
+                round($reportSalesTotal, 2),
+            'financial_report_total' =>
+                $financialReportTotal,
+            'cashier_balance_total' =>
+                round($cashierBalanceTotal, 2),
+            'net_booking_total' =>
+                $netBookingTotal,
+        ])->save();
+    }
+
     private function branchReceiptTotals(
         int $locationId,
         CarbonImmutable $start,
