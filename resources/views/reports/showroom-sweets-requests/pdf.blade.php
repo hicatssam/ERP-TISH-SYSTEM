@@ -36,14 +36,15 @@
 <head>
     <meta charset="UTF-8">
     <title>تقرير طلبات حلويات الفروع</title>
+
     <style>
         body {
             direction: rtl;
             margin: 0;
             background: #ffffff;
             color: {{ $text }};
-            font-family: dejavusans;
-            font-size: 8pt;
+            font-family: cairo;
+            font-size: 8.2pt;
         }
 
         table {
@@ -51,121 +52,132 @@
             border-collapse: collapse;
         }
 
+        .header {
+            margin-bottom: 3px;
+        }
+
         .header td {
             border: 0;
             vertical-align: middle;
-            padding: 0 0 7px;
+            padding: 0;
         }
 
-        .logo-cell {
-            width: 24%;
+        .brand-cell {
+            width: 22%;
             text-align: right;
         }
 
         .title-cell {
-            width: 52%;
+            width: 56%;
             text-align: center;
         }
 
         .meta-cell {
-            width: 24%;
+            width: 22%;
             text-align: left;
             color: {{ $muted }};
-            font-size: 6.5pt;
-            line-height: 1.7;
+            font-size: 6.4pt;
+            line-height: 1.8;
         }
 
         .logo {
-            max-width: 72px;
-            max-height: 44px;
+            max-width: 82px;
+            max-height: 50px;
+            margin-bottom: 2px;
         }
 
         .business-name {
-            font-size: 9pt;
-            font-weight: bold;
             color: {{ $navy }};
+            font-size: 8.2pt;
+            font-weight: bold;
         }
 
         .business-en {
-            margin-top: 2px;
             color: {{ $muted }};
-            font-size: 6pt;
+            font-size: 5.8pt;
+            margin-top: 1px;
         }
 
         .report-title {
             color: {{ $navy }};
-            font-size: 15pt;
+            font-size: 17pt;
             font-weight: bold;
+            line-height: 1.25;
         }
 
         .report-subtitle {
-            margin-top: 3px;
             color: {{ $muted }};
-            font-size: 6.6pt;
+            font-size: 6.5pt;
+            margin-top: 3px;
         }
 
-        .rule {
+        .gold-rule {
             height: 2px;
             background: {{ $primary }};
-            margin-bottom: 7px;
+            margin: 6px 0 8px;
         }
 
         .scope {
+            margin-bottom: 8px;
             padding: 5px 7px;
-            margin-bottom: 7px;
-            background: #f7f8fa;
-            border: 1px solid #e3e7eb;
-            color: #4d5966;
-            font-size: 6.5pt;
+            background: #fafbfc;
+            border: 1px solid #e7eaee;
+            color: #4c5966;
+            font-size: 6.3pt;
+        }
+
+        .scope strong {
+            color: {{ $navy }};
         }
 
         .summary {
-            margin-bottom: 9px;
+            margin-bottom: 10px;
             table-layout: fixed;
         }
 
         .summary td {
-            border: 1px solid #e1e5e9;
-            padding: 6px 5px;
+            border: 1px solid #e4e8ec;
             background: #ffffff;
+            padding: 6px 5px;
             text-align: center;
         }
 
         .summary-label {
             display: block;
             color: {{ $muted }};
-            font-size: 6.2pt;
+            font-size: 6pt;
+            line-height: 1.35;
         }
 
         .summary-value {
             display: block;
+            color: {{ $navy }};
+            font-size: 11pt;
+            font-weight: bold;
             margin-top: 2px;
+        }
+
+        .section-head {
+            margin: 10px 0 5px;
+            padding: 0;
             color: {{ $navy }};
-            font-size: 10pt;
+            font-size: 8.8pt;
             font-weight: bold;
         }
 
-        .section-title {
-            margin: 9px 0 5px;
-            color: {{ $navy }};
-            font-size: 8.4pt;
-            font-weight: bold;
-            text-align: right;
-        }
-
-        .section-title span {
+        .section-head span {
             display: inline-block;
             padding-bottom: 2px;
             border-bottom: 2px solid {{ $primary }};
         }
 
         .report-table {
-            border: 1px solid #d7dde3;
+            border: 1px solid #dce1e6;
         }
 
         .report-table th {
             padding: 5px 4px;
-            border: 1px solid #d7dde3;
+            border: 1px solid #d2d9df;
             background: {{ $navy }};
             color: #ffffff;
             font-size: 6.2pt;
@@ -175,14 +187,15 @@
 
         .report-table td {
             padding: 5px 4px;
-            border: 1px solid #e1e5e9;
-            font-size: 6.1pt;
+            border: 1px solid #e4e8ec;
+            font-size: 6.25pt;
             text-align: center;
             vertical-align: middle;
+            line-height: 1.55;
         }
 
         .report-table tr.alt td {
-            background: #f8fafb;
+            background: #fafbfc;
         }
 
         .muted {
@@ -197,9 +210,9 @@
 
         .total-row th {
             padding: 5px 4px;
-            border: 1px solid #e0cf99;
+            border: 1px solid #e6d6a7;
             background: #fffaf0;
-            color: #70571b;
+            color: #765a18;
             font-weight: bold;
         }
 
@@ -210,13 +223,35 @@
         }
 
         .branch-line {
+            display: inline-block;
+            margin: 1px 0;
             color: #4d5966;
             font-size: 5.8pt;
-            line-height: 1.6;
+            line-height: 1.5;
+        }
+
+        .signatures {
+            margin-top: 14px;
+        }
+
+        .signatures td {
+            border: 0;
+            width: 50%;
+            color: #5e6873;
+            font-size: 6.3pt;
+            padding-top: 6px;
+        }
+
+        .signature-line {
+            display: inline-block;
+            width: 110px;
+            border-top: 1px solid #b9c0c7;
+            margin-top: 18px;
+            padding-top: 3px;
         }
 
         .footer {
-            margin-top: 12px;
+            margin-top: 10px;
             border-top: 1px solid #d8dde2;
         }
 
@@ -224,26 +259,31 @@
             border: 0;
             padding-top: 5px;
             color: #7b8490;
-            font-size: 5.6pt;
+            font-size: 5.5pt;
         }
     </style>
 </head>
+
 <body>
 
 <table class="header">
     <tr>
-        <td class="logo-cell">
+        <td class="brand-cell">
             @if(
                 !empty($branding['show_logo'])
                 && !empty($branding['logo_path'])
                 && is_file($branding['logo_path'])
             )
-                <img src="{{ $branding['logo_path'] }}" class="logo" alt="">
-            @else
-                <div class="business-name">
-                    {{ $branding['business_name'] ?? config('app.name') }}
-                </div>
+                <img
+                    src="{{ $branding['logo_path'] }}"
+                    class="logo"
+                    alt=""
+                >
             @endif
+
+            <div class="business-name">
+                {{ $branding['business_name'] ?? config('app.name') }}
+            </div>
 
             @if(!empty($branding['business_name_en']))
                 <div class="business-en">
@@ -253,9 +293,16 @@
         </td>
 
         <td class="title-cell">
-            <div class="report-title">تقرير طلبات حلويات الفروع</div>
+            <div class="report-title">
+                تقرير طلبات حلويات الفروع
+            </div>
+
             <div class="report-subtitle">
-                {{ $branchLabel }} · {{ $productLabel }} · {{ $periodLabel }}
+                {{ $branchLabel }}
+                &nbsp; · &nbsp;
+                {{ $productLabel }}
+                &nbsp; · &nbsp;
+                {{ $periodLabel }}
             </div>
         </td>
 
@@ -267,10 +314,11 @@
     </tr>
 </table>
 
-<div class="rule"></div>
+<div class="gold-rule"></div>
 
 <div class="scope">
-    <strong>نطاق التقرير:</strong>
+    <strong>نطاق التقرير</strong>
+    &nbsp; — &nbsp;
     الفرع: {{ $branchLabel }}
     &nbsp; | &nbsp;
     المنتج: {{ $productLabel }}
@@ -288,24 +336,35 @@
     <tr>
         <td>
             <span class="summary-label">إجمالي الطلبات</span>
-            <span class="summary-value">{{ $summary['requests_count'] }}</span>
+            <span class="summary-value">
+                {{ $summary['requests_count'] }}
+            </span>
         </td>
+
         <td>
             <span class="summary-label">بنود الأصناف</span>
-            <span class="summary-value">{{ $summary['items_count'] }}</span>
+            <span class="summary-value">
+                {{ $summary['items_count'] }}
+            </span>
         </td>
+
         <td>
             <span class="summary-label">الكمية المطلوبة</span>
-            <span class="summary-value">{{ number_format($summary['requested_quantity'], 3) }}</span>
+            <span class="summary-value">
+                {{ number_format($summary['requested_quantity'], 3) }}
+            </span>
         </td>
+
         <td>
             <span class="summary-label">الكمية المحجوزة</span>
-            <span class="summary-value">{{ number_format($summary['reserved_quantity'], 3) }}</span>
+            <span class="summary-value">
+                {{ number_format($summary['reserved_quantity'], 3) }}
+            </span>
         </td>
     </tr>
 </table>
 
-<div class="section-title">
+<div class="section-head">
     <span>تفاصيل الطلبات</span>
 </div>
 
@@ -325,33 +384,49 @@
             $showroomRequest = $row['request'];
             $item = $row['item'];
         @endphp
+
         <tr class="{{ $loop->even ? 'alt' : '' }}">
             <td>{{ $loop->iteration }}</td>
 
             <td>
-                <strong dir="ltr">{{ $showroomRequest->request_number }}</strong><br>
-                <span class="muted">{{ $showroomRequest->status->label() }}</span>
+                <strong dir="ltr">
+                    {{ $showroomRequest->request_number }}
+                </strong>
+                <br>
+                <span class="muted">
+                    {{ $showroomRequest->status->label() }}
+                </span>
             </td>
 
             <td>
-                <strong>{{ $showroomRequest->requestingLocation?->name ?? '—' }}</strong><br>
+                <strong>
+                    {{ $showroomRequest->requestingLocation?->name ?? '—' }}
+                </strong>
+                <br>
                 <span class="muted">
                     {{ $showroomRequest->factoryLocation?->name ?? '—' }}
                 </span>
             </td>
 
             <td>
-                {{ $showroomRequest->created_at?->format('Y-m-d H:i') ?? '—' }}<br>
+                {{ $showroomRequest->created_at?->format('Y-m-d H:i') ?? '—' }}
+                <br>
                 <span class="muted">
-                    مطلوب: {{ $showroomRequest->needed_by?->format('Y-m-d') ?? '—' }}
+                    مطلوب:
+                    {{ $showroomRequest->needed_by?->format('Y-m-d') ?? '—' }}
                 </span>
             </td>
 
             <td style="text-align:right">
-                <strong>{{ $item->displayProductName() }}</strong>
+                <strong>
+                    {{ $item->displayProductName() }}
+                </strong>
+
                 @if($item->product?->sku)
                     <br>
-                    <span class="muted" dir="ltr">{{ $item->product->sku }}</span>
+                    <span class="muted" dir="ltr">
+                        {{ $item->product->sku }}
+                    </span>
                 @endif
             </td>
 
@@ -359,9 +434,11 @@
                 <span class="qty">
                     {{ number_format((float) $item->quantity, 3) }}
                     {{ $item->requested_unit }}
-                </span><br>
+                </span>
+                <br>
                 <span class="muted">
-                    محجوز: {{ number_format((float) $item->reserved_quantity, 3) }}
+                    محجوز:
+                    {{ number_format((float) $item->reserved_quantity, 3) }}
                 </span>
             </td>
 
@@ -383,7 +460,8 @@
             <th>
                 {{ number_format($summary['requested_quantity'], 3) }}
                 <br>
-                محجوز {{ number_format($summary['reserved_quantity'], 3) }}
+                محجوز
+                {{ number_format($summary['reserved_quantity'], 3) }}
             </th>
             <th></th>
         </tr>
@@ -391,7 +469,7 @@
 </table>
 
 @if($productTotals->isNotEmpty())
-    <div class="section-title">
+    <div class="section-head">
         <span>إجمالي كل منتج</span>
     </div>
 
@@ -411,7 +489,9 @@
                 <td>{{ $loop->iteration }}</td>
 
                 <td style="text-align:right">
-                    <strong>{{ $total['product_name'] }}</strong>
+                    <strong>
+                        {{ $total['product_name'] }}
+                    </strong>
                 </td>
 
                 <td>{{ $total['unit'] }}</td>
@@ -422,8 +502,11 @@
                     @foreach($total['branches'] as $branch)
                         <span class="branch-line">
                             {{ $branch['branch_name'] }}:
-                            <strong>{{ number_format($branch['quantity'], 3) }}</strong>
+                            <strong>
+                                {{ number_format($branch['quantity'], 3) }}
+                            </strong>
                         </span>
+
                         @unless($loop->last)
                             &nbsp; | &nbsp;
                         @endunless
@@ -431,7 +514,9 @@
                 </td>
 
                 <td>
-                    <strong class="qty">{{ number_format($total['quantity'], 3) }}</strong>
+                    <strong class="qty">
+                        {{ number_format($total['quantity'], 3) }}
+                    </strong>
                 </td>
 
                 <td>
@@ -441,6 +526,22 @@
         @endforeach
     </table>
 @endif
+
+<table class="signatures">
+    <tr>
+        <td style="text-align:right">
+            <span class="signature-line">
+                المحاسب / المراجع
+            </span>
+        </td>
+
+        <td style="text-align:left">
+            <span class="signature-line">
+                اعتماد الإدارة
+            </span>
+        </td>
+    </tr>
+</table>
 
 <table class="footer">
     <tr>
