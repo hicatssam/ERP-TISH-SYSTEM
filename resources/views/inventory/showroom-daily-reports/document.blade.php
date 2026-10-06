@@ -40,6 +40,10 @@
     .showroom-doc-summary strong{display:block;margin-top:2px;font-size:9pt}
     .showroom-doc-table th,.showroom-doc-table td{font-size:6.2pt!important;padding:3.5px!important}
     .variance-bad{color:#b42318;font-weight:bold}
+    .showroom-accounting-doc{margin-top:9px;table-layout:fixed}
+    .showroom-accounting-doc td{padding:5px;border:1px solid #dfe4e9;text-align:center}
+    .showroom-accounting-doc span{display:block;color:#6b7280;font-size:6.2pt}
+    .showroom-accounting-doc strong{display:block;margin-top:2px;font-size:8pt}
 </style>
 @endpush
 
@@ -102,6 +106,41 @@
             </tfoot>
         </table>
     </div>
+
+    <table class="showroom-accounting-doc" cellpadding="0" cellspacing="0">
+        <tr>
+            <td>
+                <span>مديونية الدفع الآجل</span>
+                <strong>{{ number_format((float) $report->credit_debt_amount, 2) }}</strong>
+            </td>
+            <td>
+                <span>باقي باكيج / علب فارغة</span>
+                <strong>{{ number_format((float) $report->empty_packages_balance, 2) }}</strong>
+            </td>
+            <td>
+                <span>تحلايات</span>
+                <strong>{{ number_format((float) $report->tahlayat_amount, 2) }}</strong>
+            </td>
+            <td>
+                <span>خصم الزبائن الإجمالي</span>
+                <strong>{{ number_format((float) $report->customer_discount_total, 2) }}</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <span>الدفع المسبق / الخصومات</span>
+                <strong>{{ number_format((float) $report->prepaid_discount_amount, 2) }}</strong>
+            </td>
+            <td>
+                <span>الحجوزات</span>
+                <strong>{{ number_format((float) $report->reservations_amount, 2) }}</strong>
+            </td>
+            <td colspan="2">
+                <span>إجمالي المبلغ</span>
+                <strong>{{ number_format((float) $report->report_total_amount, 2) }}</strong>
+            </td>
+        </tr>
+    </table>
 
     @if($report->notes)
         <div class="print-soft-box" style="margin-top:9px;text-align:right">
