@@ -494,6 +494,11 @@ class ShowroomSweetsRequestsReportController extends Controller
                                 (float) $item->reserved_quantity,
                             'request_id' =>
                                 (int) $request->id,
+                            'branch_id' =>
+                                (int) $request->requesting_location_id,
+                            'branch_name' =>
+                                $request->requestingLocation?->name
+                                ?? '—',
                         ]
                     )
             )
@@ -507,6 +512,34 @@ class ShowroomSweetsRequestsReportController extends Controller
                 Collection $rows
             ): array {
                 $first = $rows->first();
+
+                $branches = $rows
+                    ->groupBy('branch_id')
+                    ->map(function (
+                        Collection $branchRows
+                    ): array {
+                        $branch = $branchRows->first();
+
+                        return [
+                            'branch_id' =>
+                                $branch['branch_id'],
+                            'branch_name' =>
+                                $branch['branch_name'],
+                            'quantity' =>
+                                $branchRows->sum('quantity'),
+                            'reserved_quantity' =>
+                                $branchRows->sum(
+                                    'reserved_quantity'
+                                ),
+                            'requests_count' =>
+                                $branchRows
+                                    ->pluck('request_id')
+                                    ->unique()
+                                    ->count(),
+                        ];
+                    })
+                    ->sortBy('branch_name')
+                    ->values();
 
                 return [
                     'product_id' =>
@@ -526,6 +559,7 @@ class ShowroomSweetsRequestsReportController extends Controller
                             ->pluck('request_id')
                             ->unique()
                             ->count(),
+                    'branches' => $branches,
                 ];
             })
             ->sortBy(
