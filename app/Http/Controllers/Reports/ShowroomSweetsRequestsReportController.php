@@ -93,7 +93,8 @@ class ShowroomSweetsRequestsReportController extends Controller
                     $requests
                 ),
                 'productTotals' => $this->productTotals(
-                    $requests
+                    $requests,
+                    $filters
                 ),
                 'filters' => $filters,
                 'selectedProduct' => filled($filters['product_id'] ?? null)
@@ -131,7 +132,8 @@ class ShowroomSweetsRequestsReportController extends Controller
                 'requests' => $requests,
                 'summary' => $summary,
                 'productTotals' => $this->productTotals(
-                    $requests
+                    $requests,
+                    $filters
                 ),
                 'filters' => $filters,
                 'selectedProduct' => filled($filters['product_id'] ?? null)
@@ -476,63 +478,134 @@ class ShowroomSweetsRequestsReportController extends Controller
 
     private function productTotals(
         Collection $requests,
-        array $filters
+        array $filters = []
     ): Collection {
         $rows = $requests
-            ->flatMap(function (ShowroomSweetsRequest $request) {
-                return $request->items->map(function ($item) use ($request) {
-                    return [
-                        'product_id' => (int) $item->product_id,
-                        'name' => $item->displayProductName(),
-                        'unit' => (string) $item->requested_unit,
-                        'quantity' => (float) $item->quantity,
-                        'reserved_quantity' => (float) $item->reserved_quantity,
-                        'request_id' => (int) $request->id,
-                        'location_id' => (int) $request->requesting_location_id,
-                        'location_name' => $request->requestingLocation?->name ?? '—',
-                        'created_at' => $item->product?->created_at,
-                    ];
-                });
-            })
-            ->groupBy('product_id')
-            ->map(function (Collection $items) {
-                $first = $items->first();
+            ->flatMap(
+                fn (ShowroomSweetsRequest $request) =>
+                    $request->items->map(
+                        fn ($item) => [
+                            'product_id' =>
+                                (int) $item->product_id,
+                            'product_name' =>
+                                $item->displayProductName(),
+                            'unit' =>
+                                (string) $item->requested_unit,
+                            'quantity' =>
+                                (float) $item->quantity,
+                            'reserved_quantity' =>
+                                (float) $item->reserved_quantity,
+                            'request_id' =>
+                                (int) $request->id,
+                            'branch_id' =>
+                                (int) $request->requesting_location_id,
+                            'branch_name' =>
+                                $request->requestingLocation?->name
+                                ?? '—',
+                            'product_created_at' =>
+                                $item->product?->created_at,
+                        ]
+                    )
+            )
+            ->groupBy(
+                fn (array $row) =>
+                    $row['product_id']
+                    . '|'
+                    . $row['unit']
+            )
+            ->map(function (
+                Collection $productRows
+            ): array {
+                $first = $productRows->first();
 
-                $branches = $items
-                    ->groupBy('location_id')
-                    ->map(function (Collection $branchItems) {
+                $branches = $productRows
+                    ->groupBy('branch_id')
+                    ->map(function (
+                        Collection $branchRows
+                    ): array {
+                        $branch = $branchRows->first();
+
                         return [
-                            'name' => $branchItems->first()['location_name'],
-                            'quantity' => $branchItems->sum('quantity'),
+                            'branch_id' =>
+                                $branch['branch_id'],
+                            'branch_name' =>
+                                $branch['branch_name'],
+                            'quantity' =>
+                                $branchRows->sum('quantity'),
+                            'reserved_quantity' =>
+                                $branchRows->sum(
+                                    'reserved_quantity'
+                                ),
+                            'requests_count' =>
+                                $branchRows
+                                    ->pluck('request_id')
+                                    ->unique()
+                                    ->count(),
                         ];
                     })
+                    ->sortBy('branch_name')
                     ->values();
 
                 return [
-                    'product_id' => $first['product_id'],
-                    'name' => $first['name'],
-                    'unit' => $first['unit'],
-                    'requests_count' => $items
-                        ->pluck('request_id')
-                        ->unique()
-                        ->count(),
-                    'quantity' => $items->sum('quantity'),
-                    'reserved_quantity' => $items->sum('reserved_quantity'),
+                    'product_id' =>
+                        $first['product_id'],
+                    'product_name' =>
+                        $first['product_name'],
+                    'unit' =>
+                        $first['unit'],
+                    'quantity' =>
+                        $productRows->sum('quantity'),
+                    'reserved_quantity' =>
+                        $productRows->sum(
+                            'reserved_quantity'
+                        ),
+                    'requests_count' =>
+                        $productRows
+                            ->pluck('request_id')
+                            ->unique()
+                            ->count(),
                     'branches' => $branches,
-                    'created_at' => $items
-                        ->pluck('created_at')
-                        ->filter()
-                        ->min(),
+                    'product_created_at' =>
+                        $productRows
+                            ->pluck('product_created_at')
+                            ->filter()
+                            ->min(),
                 ];
             })
             ->values();
 
-        return match ($filters['product_sort'] ?? 'created_asc') {
-            'created_desc' => $rows->sortByDesc('created_at')->values(),
-            'name_asc' => $rows->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)->values(),
-            'quantity_desc' => $rows->sortByDesc('quantity')->values(),
-            'quantity_asc' => $rows->sortBy('quantity')->values(),
-            default => $rows->sortBy('created_at')->values(),
+        return match (
+            $filters['product_sort'] ?? 'created_asc'
+        ) {
+            'created_desc' =>
+                $rows
+                    ->sortByDesc('product_created_at')
+                    ->values(),
+
+            'name_asc' =>
+                $rows
+                    ->sortBy(
+                        fn (array $row) =>
+                            mb_strtolower(
+                                $row['product_name']
+                            )
+                    )
+                    ->values(),
+
+            'quantity_desc' =>
+                $rows
+                    ->sortByDesc('quantity')
+                    ->values(),
+
+            'quantity_asc' =>
+                $rows
+                    ->sortBy('quantity')
+                    ->values(),
+
+            default =>
+                $rows
+                    ->sortBy('product_created_at')
+                    ->values(),
         };
     }
 
@@ -570,103 +643,6 @@ class ShowroomSweetsRequestsReportController extends Controller
                     )
             ),
         ];
-    }
-
-    private function productTotals(
-        Collection $requests
-    ): Collection {
-        return $requests
-            ->flatMap(
-                fn (ShowroomSweetsRequest $request) =>
-                    $request->items->map(
-                        fn ($item) => [
-                            'product_id' =>
-                                (int) $item->product_id,
-                            'product_name' =>
-                                $item->displayProductName(),
-                            'unit' =>
-                                $item->requested_unit,
-                            'quantity' =>
-                                (float) $item->quantity,
-                            'reserved_quantity' =>
-                                (float) $item->reserved_quantity,
-                            'request_id' =>
-                                (int) $request->id,
-                            'branch_id' =>
-                                (int) $request->requesting_location_id,
-                            'branch_name' =>
-                                $request->requestingLocation?->name
-                                ?? '—',
-                        ]
-                    )
-            )
-            ->groupBy(
-                fn (array $row) =>
-                    $row['product_id']
-                    . '|'
-                    . $row['unit']
-            )
-            ->map(function (
-                Collection $rows
-            ): array {
-                $first = $rows->first();
-
-                $branches = $rows
-                    ->groupBy('branch_id')
-                    ->map(function (
-                        Collection $branchRows
-                    ): array {
-                        $branch = $branchRows->first();
-
-                        return [
-                            'branch_id' =>
-                                $branch['branch_id'],
-                            'branch_name' =>
-                                $branch['branch_name'],
-                            'quantity' =>
-                                $branchRows->sum('quantity'),
-                            'reserved_quantity' =>
-                                $branchRows->sum(
-                                    'reserved_quantity'
-                                ),
-                            'requests_count' =>
-                                $branchRows
-                                    ->pluck('request_id')
-                                    ->unique()
-                                    ->count(),
-                        ];
-                    })
-                    ->sortBy('branch_name')
-                    ->values();
-
-                return [
-                    'product_id' =>
-                        $first['product_id'],
-                    'product_name' =>
-                        $first['product_name'],
-                    'unit' =>
-                        $first['unit'],
-                    'quantity' =>
-                        $rows->sum('quantity'),
-                    'reserved_quantity' =>
-                        $rows->sum(
-                            'reserved_quantity'
-                        ),
-                    'requests_count' =>
-                        $rows
-                            ->pluck('request_id')
-                            ->unique()
-                            ->count(),
-                    'branches' => $branches,
-                ];
-            })
-            ->sortBy(
-                fn (array $row) =>
-                    mb_strtolower(
-                        $row['product_name']
-                    )
-            )
-            ->values();
     }
 
     private function canViewAll(
