@@ -4,6 +4,7 @@ use App\Http\Controllers\Restaurant\RestaurantDashboardController;
 use App\Http\Controllers\Restaurant\RestaurantMenuController;
 use App\Http\Controllers\Restaurant\RestaurantPosController;
 use App\Http\Controllers\Restaurant\RestaurantTableController;
+use App\Http\Controllers\Restaurant\TakeawayDailyReportController;
 use App\Http\Middleware\EnsureModuleEnabled;
 use Illuminate\Support\Facades\Route;
 
@@ -68,6 +69,10 @@ Route::middleware([
                     ->name('toggle-status')
                     ->middleware('can:restaurant_menu.manage');
             });
+
+        Route::middleware('can:restaurant_menu.view')
+            ->get('/takeaway-report', [TakeawayDailyReportController::class, 'index'])
+            ->name('takeaway-report.index');
 
         Route::middleware('can:restaurant_menu.view')
             ->prefix('menu/banners')
