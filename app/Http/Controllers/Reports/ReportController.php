@@ -52,7 +52,7 @@ class ReportController extends Controller
         'collections'           => 'تقرير التحصيلات',
         'outstanding'           => 'تقرير الأرصدة المعلقة',
         'activity-logs'         => 'سجل النشاطات',
-        'payment-method-sales'  => 'المبيعات حسب طريقة الدفع',
+        'payment-method-sales'  => 'التحصيلات حسب طريقة الدفع',
         'sales-channel-sales'   => 'المبيعات حسب قناة البيع',
     ];
 
@@ -83,6 +83,7 @@ class ReportController extends Controller
         return view('reports.index', [
             'reportTypes' => $this->reportTypes,
             'reportIcons' => $this->reportIcons,
+            'reportGroups' => app(\App\Support\ReportCatalog::class)->groups(),
         ]);
     }
 
@@ -92,6 +93,7 @@ class ReportController extends Controller
             abort(404);
         }
 
+        $this->validateFilters($request, $type);
         $user       = Auth::user();
         $title      = $this->reportTypes[$type];
         $dateFrom   = $request->input('date_from', $this->defaultDateFrom($type));
@@ -122,9 +124,11 @@ class ReportController extends Controller
 
         [$columns, $data, $summary] = $this->buildReportData($type, $locationIds, $dateFrom, $dateTo, true);
 
+        $rowFormatter = fn ($row) => $this->formatRowForExport($type, $row);
+
         return view('reports.show', compact(
             'type', 'title', 'data', 'columns', 'summary',
-            'dateFrom', 'dateTo', 'locations', 'locationId'
+            'dateFrom', 'dateTo', 'locations', 'locationId', 'rowFormatter'
         ));
     }
 
@@ -148,6 +152,7 @@ class ReportController extends Controller
             abort(404);
         }
 
+        $this->validateFilters($request, $type);
         $user       = Auth::user();
         $dateFrom   = $request->input('date_from', $this->defaultDateFrom($type));
         $dateTo     = $request->input('date_to',   $this->defaultDateTo($type));
@@ -174,6 +179,7 @@ class ReportController extends Controller
             abort(404);
         }
 
+        $this->validateFilters($request, $type);
         $user       = Auth::user();
         $dateFrom   = $request->input('date_from', $this->defaultDateFrom($type));
         $dateTo     = $request->input('date_to',   $this->defaultDateTo($type));
@@ -210,6 +216,7 @@ class ReportController extends Controller
             abort(404);
         }
 
+        $this->validateFilters($request, $type);
         $user       = Auth::user();
         $dateFrom   = $request->input('date_from', $this->defaultDateFrom($type));
         $dateTo     = $request->input('date_to',   $this->defaultDateTo($type));
@@ -350,6 +357,7 @@ class ReportController extends Controller
             abort(404);
         }
 
+        $this->validateFilters($request, $type);
         $user       = Auth::user();
         $dateFrom   = $request->input(
             'date_from',
@@ -423,6 +431,31 @@ class ReportController extends Controller
     // ─────────────────────────────────────────────────────────────────────────
     //  Helpers
     // ─────────────────────────────────────────────────────────────────────────
+
+    private function validateFilters(Request $request, string $type): void
+    {
+        $filters = [
+            'date_from' => $request->input('date_from') ?: $this->defaultDateFrom($type),
+            'date_to' => $request->input('date_to') ?: $this->defaultDateTo($type),
+            'location_id' => $request->input('location_id'),
+        ];
+        validator($filters, [
+            'date_from' => ['required', 'date_format:Y-m-d'],
+            'date_to' => ['required', 'date_format:Y-m-d', 'after_or_equal:date_from'],
+            'location_id' => ['nullable', 'integer', 'exists:locations,id'],
+        ])->validate();
+        $request->merge($filters);
+    }
+
+    private function inventoryReportQuery(Collection $locationIds)
+    {
+        return Inventory::query()->with(['product', 'location'])
+            ->whereIn('location_id', $locationIds)
+            ->select('inventories.*')
+            ->selectSub(DB::table('location_products')->select('minimum_stock_level')
+                ->whereColumn('location_products.location_id', 'inventories.location_id')
+                ->whereColumn('location_products.product_id', 'inventories.product_id')->limit(1), 'minimum_stock_level');
+    }
 
     private function defaultDateFrom(
         string $type
@@ -709,6 +742,35 @@ class ReportController extends Controller
         $end     = $dateTo . ' 23:59:59';
 
         switch ($type) {
+            case 'payment-method-sales':
+                $columns = ['طريقة الدفع', 'عدد الدفعات المؤكدة', 'إجمالي التحصيلات'];
+                $query = Payment::query()
+                    ->leftJoin('payment_methods', 'payment_methods.id', '=', 'payments.payment_method_id')
+                    ->whereIn('payments.location_id', $locationIds)
+                    ->where('payments.status', 'confirmed')
+                    ->whereBetween('payments.paid_at', [$dateFrom, $end])
+                    ->selectRaw("COALESCE(NULLIF(payment_methods.name_ar, ''), payment_methods.name, 'غير محدد') as payment_method_name")
+                    ->selectRaw('COUNT(payments.id) as payment_count, SUM(payments.amount) as total_collected')
+                    ->groupBy('payments.payment_method_id', 'payment_methods.name_ar', 'payment_methods.name')
+                    ->orderByDesc('total_collected')->orderBy('payments.payment_method_id');
+                break;
+
+            case 'sales-channel-sales':
+                $columns = ['قناة البيع', 'عدد الطلبات', 'إجمالي المبيعات', 'خصم القناة', 'العمولة', 'صافي إيراد القناة'];
+                $query = Order::query()
+                    ->leftJoin('sales_channels', 'sales_channels.id', '=', 'orders.sales_channel_id')
+                    ->whereIn('orders.location_id', $locationIds)
+                    ->whereIn('orders.status', ['confirmed', 'completed'])
+                    ->whereBetween('orders.created_at', [$dateFrom, $end])
+                    ->selectRaw("COALESCE(sales_channels.name, 'بدون قناة') as channel_name")
+                    ->selectRaw('COUNT(orders.id) as order_count, SUM(orders.total_amount) as total_sales')
+                    ->selectRaw('SUM(COALESCE(orders.channel_discount_amount, 0)) as channel_discounts')
+                    ->selectRaw('SUM(COALESCE(orders.channel_commission_amount, 0)) as commissions')
+                    ->selectRaw('SUM(COALESCE(orders.channel_net_revenue, orders.total_amount)) as net_revenue')
+                    ->groupBy('orders.sales_channel_id', 'sales_channels.name')
+                    ->orderByDesc('total_sales')->orderBy('orders.sales_channel_id');
+                break;
+
             case 'orders':
                 $columns = ['#', 'العميل', 'الفرع', 'المبلغ', 'الحالة', 'التاريخ'];
                 $query   = Order::with(['customer', 'location'])
@@ -795,7 +857,8 @@ class ReportController extends Controller
                     ->join('orders', 'orders.id', '=', 'order_items.order_id')
                     ->whereIn('orders.location_id', $locationIds->toArray())
                     ->whereBetween('orders.created_at', [$dateFrom, $end])
-                    ->where('orders.status', '!=', 'cancelled')
+                    ->whereNull('orders.deleted_at')
+                    ->whereIn('orders.status', ['confirmed', 'completed'])
                     ->groupBy('order_items.product_id', 'order_items.product_name')
                     ->select(
                         'order_items.product_name',
@@ -807,10 +870,10 @@ class ReportController extends Controller
                 break;
 
             case 'low-stock':
-                $columns = ['المنتج', 'الموقع', 'الكمية الحالية', 'الحد الأدنى'];
-                $query   = Inventory::with(['product', 'location'])
+                $columns = ['المنتج', 'الموقع', 'الكمية المتاحة', 'الحد الأدنى'];
+                $query   = $this->inventoryReportQuery($locationIds)
                     ->whereIn('location_id', $locationIds)
-                    ->whereRaw('quantity <= (SELECT minimum_stock_level FROM location_products WHERE location_products.location_id = inventories.location_id AND location_products.product_id = inventories.product_id LIMIT 1)')
+                    ->whereRaw('(CASE WHEN quantity - reserved_quantity < 0 THEN 0 ELSE quantity - reserved_quantity END) <= (SELECT minimum_stock_level FROM location_products WHERE location_products.location_id = inventories.location_id AND location_products.product_id = inventories.product_id LIMIT 1)')
                     ->orderBy('id'); // stable — id is unique
                 break;
 
@@ -826,6 +889,8 @@ class ReportController extends Controller
             case 'stock-transfers':
                 $columns = ['من', 'إلى', 'الحالة', 'المرسل', 'التاريخ'];
                 $query   = StockTransfer::with(['fromLocation', 'toLocation', 'dispatchedBy'])
+                    ->where(fn ($scope) => $scope->whereIn('from_location_id', $locationIds)
+                        ->orWhereIn('to_location_id', $locationIds))
                     ->whereBetween('created_at', [$dateFrom, $end])
                     ->latest()
                     ->orderByDesc('id');
@@ -865,6 +930,10 @@ class ReportController extends Controller
             case 'activity-logs':
                 $columns = ['المستخدم', 'الإجراء', 'السجل', 'التاريخ'];
                 $query   = ActivityLog::with('user')
+                    ->when(Auth::user()?->isAdmin() && request()->filled('location_id'), fn ($scope) => $scope->whereIn('metadata->location_id', $locationIds))
+                    ->when(Auth::user() && ! Auth::user()->isAdmin(), fn ($scope) => $scope
+                        ->where(fn ($branch) => $branch->whereIn('metadata->location_id', $locationIds)
+                            ->orWhere(fn ($own) => $own->where('user_id', Auth::id())->whereNull('metadata->location_id'))))
                     ->whereBetween('created_at', [$dateFrom, $end])
                     ->latest()
                     ->orderByDesc('id');
@@ -896,7 +965,7 @@ class ReportController extends Controller
                 break;
 
             case 'inventory':
-                $columns = ['المنتج', 'الموقع', 'الكمية', 'الحد الأدنى', 'الحد الأقصى'];
+                $columns = ['المنتج', 'الموقع', 'الكمية', 'الحد الأدنى'];
                 $query   = Inventory::with(['product', 'location'])
                     ->whereIn('location_id', $locationIds)
                     ->orderBy('id'); // stable — id is unique
@@ -1105,6 +1174,21 @@ class ReportController extends Controller
     ): array {
         $end = $dateTo . ' 23:59:59';
 
+        if (in_array($type, ['monthly-sales', 'branch-sales', 'product-sales', 'payment-method-sales', 'sales-channel-sales'], true)) {
+            [, $query] = $this->buildExportQuery($type, $locationIds, $dateFrom, $dateTo);
+            $source = DB::query()->fromSub((clone $query)->reorder(), 'report_totals');
+            $amountColumn = match ($type) {
+                'product-sales' => 'total_revenue',
+                'payment-method-sales' => 'total_collected',
+                default => 'total_sales',
+            };
+            return [
+                'عدد مجموعات التقرير' => (clone $source)->count(),
+                ($type === 'payment-method-sales' ? 'إجمالي التحصيلات ' : 'إجمالي المبيعات ') . $this->currencySymbol()
+                    => number_format((float) (clone $source)->sum($amountColumn), 2),
+            ];
+        }
+
         return match ($type) {
             'orders' => [
                 'الإجمالي' => Order::whereIn('location_id', $locationIds)->whereBetween('created_at', [$dateFrom, $end])->count(),
@@ -1114,7 +1198,7 @@ class ReportController extends Controller
             'invoices' => [
                 'إجمالي الفواتير'    => Invoice::whereIn('location_id', $locationIds)->whereBetween('issued_at', [$dateFrom, $end])->count(),
                 ('إجمالي المبيعات ' . $this->currencySymbol()) => number_format(Invoice::whereIn('location_id', $locationIds)->whereBetween('issued_at', [$dateFrom, $end])->where('status', 'active')->sum('total_amount'), 2),
-                ('إجمالي المتبقي ' . $this->currencySymbol())  => number_format(Invoice::whereIn('location_id', $locationIds)->where('status', 'active')->sum('remaining_amount'), 2),
+                ('إجمالي المتبقي ' . $this->currencySymbol())  => number_format(Invoice::whereIn('location_id', $locationIds)->where('status', 'active')->whereBetween('issued_at', [$dateFrom, $end])->sum('remaining_amount'), 2),
             ],
             'payments' => [
                 'عدد الدفعات'       => Payment::whereIn('location_id', $locationIds)->whereBetween('paid_at', [$dateFrom, $end])->count(),
@@ -1134,7 +1218,7 @@ class ReportController extends Controller
                 ];
             })(),
             'low-stock' => [
-                'منتجات منخفضة' => Inventory::whereIn('location_id', $locationIds)->whereRaw('quantity <= (SELECT minimum_stock_level FROM location_products WHERE location_products.location_id = inventories.location_id AND location_products.product_id = inventories.product_id LIMIT 1)')->count(),
+                'منتجات منخفضة' => Inventory::whereIn('location_id', $locationIds)->whereRaw('(CASE WHEN quantity - reserved_quantity < 0 THEN 0 ELSE quantity - reserved_quantity END) <= (SELECT minimum_stock_level FROM location_products WHERE location_products.location_id = inventories.location_id AND location_products.product_id = inventories.product_id LIMIT 1)')->count(),
             ],
             'collections' => [
                 ('إجمالي التحصيلات ' . $this->currencySymbol()) => number_format(Payment::whereIn('location_id', $locationIds)->where('status', 'confirmed')->whereBetween('paid_at', [$dateFrom, $end])->sum('amount'), 2),
@@ -1165,270 +1249,9 @@ class ReportController extends Controller
         string $dateTo,
         bool $paginate
     ): array {
-        $columns = [];
-        $data    = collect();
-        $summary = [];
-
-        $end = $dateTo . ' 23:59:59';
-
-        switch ($type) {
-            case 'orders':
-                $columns = ['#', 'العميل', 'الفرع', 'المبلغ', 'الحالة', 'التاريخ'];
-                $query = Order::with(['customer', 'location'])
-                    ->whereIn('location_id', $locationIds)
-                    ->whereBetween('created_at', [$dateFrom, $end])
-                    ->latest();
-                $summary = [
-                    'الإجمالي' => (clone $query)->count(),
-                    'المكتملة' => (clone $query)->where('status', 'completed')->count(),
-                    'الملغاة'  => (clone $query)->where('status', 'cancelled')->count(),
-                ];
-                $data = $paginate ? $query->paginate(25)->withQueryString() : $query->get();
-                break;
-
-            case 'invoices':
-                $columns = ['#', 'العميل', 'الفرع', 'الإجمالي', 'المدفوع', 'المتبقي', 'الحالة', 'التاريخ'];
-                $query = Invoice::with(['customer', 'location'])
-                    ->whereIn('location_id', $locationIds)
-                    ->whereBetween('issued_at', [$dateFrom, $end])
-                    ->latest('issued_at');
-                $summary = [
-                    'إجمالي الفواتير'    => (clone $query)->count(),
-                    ('إجمالي المبيعات ' . $this->currencySymbol()) => number_format(Invoice::whereIn('location_id', $locationIds)->whereBetween('issued_at', [$dateFrom, $end])->where('status', 'active')->sum('total_amount'), 2),
-                    ('إجمالي المتبقي ' . $this->currencySymbol())  => number_format(Invoice::whereIn('location_id', $locationIds)->where('status', 'active')->sum('remaining_amount'), 2),
-                ];
-                $data = $paginate ? $query->paginate(25)->withQueryString() : $query->get();
-                break;
-
-            case 'payments':
-                $columns = ['#', 'الفاتورة', 'الفرع', 'المبلغ', 'الطريقة', 'الحالة', 'التاريخ'];
-                $query = $this->paymentReportQuery(
-                    $locationIds,
-                    $dateFrom,
-                    $end
-                )
-                    ->latest('payments.paid_at')
-                    ->orderByDesc('payments.id');
-
-                $summary = [
-                    'عدد الدفعات' => (clone $query)->count(),
-                    ('إجمالي المحصّل ' . $this->currencySymbol()) => number_format(
-                        Payment::query()
-                            ->whereIn('location_id', $locationIds)
-                            ->where('status', 'confirmed')
-                            ->whereBetween('paid_at', [$dateFrom, $end])
-                            ->sum('amount'),
-                        2
-                    ),
-                ];
-
-                $data = $paginate
-                    ? $query->paginate(25)->withQueryString()
-                    : $query->get();
-                break;
-
-            case 'daily-sales':
-                $columns = ['التاريخ', 'عدد الفواتير', ('إجمالي المبيعات ' . $this->currencySymbol()), ('إجمالي التحصيلات ' . $this->currencySymbol())];
-                $query = Invoice::whereIn('location_id', $locationIds)
-                    ->where('status', 'active')
-                    ->whereBetween('issued_at', [$dateFrom, $end])
-                    ->select(
-                        DB::raw('DATE(issued_at) as sale_date'),
-                        DB::raw('COUNT(*) as invoice_count'),
-                        DB::raw('SUM(total_amount) as total_sales'),
-                        DB::raw('SUM(paid_amount) as total_paid')
-                    )
-                    ->groupBy('sale_date')
-                    ->orderByDesc('sale_date');
-                $summary = $this->buildReportSummary(
-                    'daily-sales',
-                    $locationIds,
-                    $dateFrom,
-                    $dateTo
-                );
-                $data = $paginate ? $query->paginate(31)->withQueryString() : $query->get();
-                break;
-
-            case 'monthly-sales':
-                $columns = ['الشهر', 'عدد الفواتير', ('إجمالي المبيعات ' . $this->currencySymbol()), ('إجمالي التحصيلات ' . $this->currencySymbol())];
-                $query = Invoice::whereIn('location_id', $locationIds)
-                    ->where('status', 'active')
-                    ->whereBetween('issued_at', [$dateFrom, $end])
-                    ->select(
-                        DB::raw($this->yearMonthExpression('issued_at') . ' as sale_month'),
-                        DB::raw('COUNT(*) as invoice_count'),
-                        DB::raw('SUM(total_amount) as total_sales'),
-                        DB::raw('SUM(paid_amount) as total_paid')
-                    )
-                    ->groupBy('sale_month')
-                    ->orderByDesc('sale_month');
-                $data = $paginate ? $query->paginate(12)->withQueryString() : $query->get();
-                break;
-
-            case 'branch-sales':
-                $columns = ['الفرع', 'عدد الفواتير', ('إجمالي المبيعات ' . $this->currencySymbol()), ('إجمالي التحصيلات ' . $this->currencySymbol())];
-                $query = Invoice::whereIn('location_id', $locationIds)
-                    ->where('status', 'active')
-                    ->whereBetween('issued_at', [$dateFrom, $end])
-                    ->join('locations', 'locations.id', '=', 'invoices.location_id')
-                    ->select(
-                        'locations.name as branch_name',
-                        DB::raw('COUNT(*) as invoice_count'),
-                        DB::raw('SUM(invoices.total_amount) as total_sales'),
-                        DB::raw('SUM(invoices.paid_amount) as total_paid')
-                    )
-                    ->groupBy('invoices.location_id', 'locations.name')
-                    ->orderByDesc('total_sales');
-                $data = $paginate ? $query->paginate(20)->withQueryString() : $query->get();
-                break;
-
-            case 'product-sales':
-                $columns = ['المنتج', 'الكمية المباعة', ('إجمالي المبيعات ' . $this->currencySymbol())];
-                $query = DB::table('order_items')
-                    ->join('orders', 'orders.id', '=', 'order_items.order_id')
-                    ->whereIn('orders.location_id', $locationIds->toArray())
-                    ->whereBetween('orders.created_at', [$dateFrom, $end])
-                    ->where('orders.status', '!=', 'cancelled')
-                    ->groupBy('order_items.product_id', 'order_items.product_name')
-                    ->select(
-                        'order_items.product_name',
-                        DB::raw('SUM(order_items.quantity) as total_qty'),
-                        DB::raw('SUM(order_items.line_total) as total_revenue')
-                    )
-                    ->orderByDesc('total_qty');
-                $data = $paginate ? $query->paginate(25) : collect($query->get());
-                break;
-
-            case 'low-stock':
-                $columns = ['المنتج', 'الموقع', 'الكمية الحالية', 'الحد الأدنى'];
-                $query = Inventory::with(['product', 'location'])
-                    ->whereIn('location_id', $locationIds)
-                    ->whereRaw('quantity <= (SELECT minimum_stock_level FROM location_products WHERE location_products.location_id = inventories.location_id AND location_products.product_id = inventories.product_id LIMIT 1)');
-                $summary = ['منتجات منخفضة' => (clone $query)->count()];
-                $data = $paginate ? $query->paginate(25)->withQueryString() : $query->get();
-                break;
-
-            case 'stock-movements':
-                $columns = ['المنتج', 'الموقع', 'النوع', 'الكمية', 'التاريخ'];
-                $query = StockMovement::with(['product', 'location'])
-                    ->whereIn('location_id', $locationIds)
-                    ->whereBetween('created_at', [$dateFrom, $end])
-                    ->latest();
-                $data = $paginate ? $query->paginate(25)->withQueryString() : $query->get();
-                break;
-
-            case 'stock-transfers':
-                $columns = ['من', 'إلى', 'الحالة', 'المرسل', 'التاريخ'];
-                $query = StockTransfer::with(['fromLocation', 'toLocation', 'dispatchedBy'])
-                    ->whereBetween('created_at', [$dateFrom, $end])
-                    ->latest();
-                $data = $paginate ? $query->paginate(25)->withQueryString() : $query->get();
-                break;
-
-            case 'cash-sessions':
-                $columns = ['الفرع', 'الموظف', 'الرصيد الافتتاحي', 'المستلم', 'الفعلي', 'الفرق', 'الحالة', 'التاريخ'];
-                $query = CashSession::with(['location', 'employee'])
-                    ->whereIn('location_id', $locationIds)
-                    ->whereBetween('created_at', [$dateFrom, $end])
-                    ->latest();
-                $data = $paginate ? $query->paginate(25)->withQueryString() : $query->get();
-                break;
-
-            case 'collections':
-                $columns = ['العميل', 'الفاتورة', 'المبلغ', 'الطريقة', 'التاريخ'];
-                $query = $this->paymentReportQuery(
-                    $locationIds,
-                    $dateFrom,
-                    $end,
-                    true
-                )
-                    ->latest('payments.paid_at')
-                    ->orderByDesc('payments.id');
-
-                $summary = [
-                    ('إجمالي التحصيلات ' . $this->currencySymbol()) => number_format(
-                        Payment::query()
-                            ->whereIn('location_id', $locationIds)
-                            ->where('status', 'confirmed')
-                            ->whereBetween('paid_at', [$dateFrom, $end])
-                            ->sum('amount'),
-                        2
-                    ),
-                ];
-
-                $data = $paginate
-                    ? $query->paginate(25)->withQueryString()
-                    : $query->get();
-                break;
-
-            case 'outstanding':
-                $columns = ['العميل', 'رقم الفاتورة', 'الإجمالي', 'المدفوع', 'المتبقي', 'تاريخ الفاتورة'];
-                $query = Invoice::with(['customer', 'location'])
-                    ->whereIn('location_id', $locationIds)
-                    ->where('status', 'active')
-                    ->where('remaining_amount', '>', 0)
-                    ->latest('issued_at');
-                $summary = [
-                    ('إجمالي المستحقات ' . $this->currencySymbol()) => number_format(Invoice::whereIn('location_id', $locationIds)->where('status', 'active')->where('remaining_amount', '>', 0)->sum('remaining_amount'), 2),
-                    'عدد الفواتير'         => (clone $query)->count(),
-                ];
-                $data = $paginate ? $query->paginate(25)->withQueryString() : $query->get();
-                break;
-
-            case 'activity-logs':
-                $columns = ['المستخدم', 'الإجراء', 'السجل', 'التاريخ'];
-                $query = ActivityLog::with('user')
-                    ->whereBetween('created_at', [$dateFrom, $end])
-                    ->latest();
-                $data = $paginate ? $query->paginate(25)->withQueryString() : $query->get();
-                break;
-
-            case 'cake-orders':
-                $columns = ['رقم الطلب', 'العميل', 'الفرع', 'الحالة', 'تاريخ التسليم', 'التاريخ'];
-                $query = SpecialCakeOrder::with(['customer', 'originBranch'])
-                    ->whereIn('origin_branch_id', $locationIds)
-                    ->whereBetween('created_at', [$dateFrom, $end])
-                    ->latest();
-                $data = $paginate ? $query->paginate(25)->withQueryString() : $query->get();
-                break;
-
-            case 'cake-production':
-                $columns = [
-                    'نوع الكيك',
-                    'الحجم',
-                    'الشكل',
-                    'طلبات خاصة',
-                    'طلبات الفروع',
-                    'الإجمالي',
-                ];
-
-                $query = $this->cakeProductionQuery(
-                    $locationIds,
-                    $dateFrom,
-                    $dateTo
-                );
-
-                $summary = $this->cakeProductionSummary(
-                    $locationIds,
-                    $dateFrom,
-                    $dateTo
-                );
-
-                $data = $paginate
-                    ? $query->paginate(25)->withQueryString()
-                    : $query->get();
-                break;
-
-            case 'inventory':
-                $columns = ['المنتج', 'الموقع', 'الكمية', 'الحد الأدنى', 'الحد الأقصى'];
-                $query = Inventory::with(['product', 'location'])
-                    ->whereIn('location_id', $locationIds);
-                $data = $paginate ? $query->paginate(25)->withQueryString() : $query->get();
-                break;
-
-            default:
-                break;
-        }
+        [$columns, $query] = $this->buildExportQuery($type, $locationIds, $dateFrom, $dateTo);
+        $summary = $this->buildReportSummary($type, $locationIds, $dateFrom, $dateTo);
+        $data = $paginate ? $query->paginate(25)->withQueryString() : $query->get();
 
         return [$columns, $data, $summary];
     }
@@ -1535,14 +1358,14 @@ class ReportController extends Controller
             'low-stock' => [
                 $row->product?->name ?? '—',
                 $row->location?->name ?? '—',
-                (int) ($row->quantity ?? 0),
+                number_format((float) ($row->available_quantity ?? 0), 3, '.', ''),
                 $row->minimum_stock_level ?? '—',
             ],
             'stock-movements' => [
                 $row->product?->name ?? '—',
                 $row->location?->name ?? '—',
                 $row->movement_type?->label() ?? $row->movement_type?->value ?? '—',
-                number_format($row->quantity ?? 0, 2),
+                number_format($row->quantity ?? 0, 3, '.', ''),
                 ArabicDate::date($row->created_at, false),
             ],
             'stock-transfers' => [
@@ -1595,9 +1418,21 @@ class ReportController extends Controller
             'inventory' => [
                 $row->product?->name ?? '—',
                 $row->location?->name ?? '—',
-                (int) ($row->quantity ?? 0),
+                number_format((float) ($row->quantity ?? 0), 3, '.', ''),
                 $row->minimum_stock_level ?? '—',
-                $row->maximum_stock_level ?? '—',
+            ],
+            'payment-method-sales' => [
+                $row->payment_method_name ?? 'غير محدد',
+                (int) ($row->payment_count ?? 0),
+                number_format((float) ($row->total_collected ?? 0), 2),
+            ],
+            'sales-channel-sales' => [
+                $row->channel_name ?? 'بدون قناة',
+                (int) ($row->order_count ?? 0),
+                number_format((float) ($row->total_sales ?? 0), 2),
+                number_format((float) ($row->channel_discounts ?? 0), 2),
+                number_format((float) ($row->commissions ?? 0), 2),
+                number_format((float) ($row->net_revenue ?? 0), 2),
             ],
             default => is_array($row) ? array_values($row) : [(string) $row],
         };

@@ -38,6 +38,7 @@ use App\Http\Controllers\Finance\AccountingLedgerController;
 use App\Http\Controllers\Finance\EmployeePurchaseController;
 use App\Http\Controllers\Finance\AccountingBooksController;
 use App\Http\Controllers\Reports\ReportController;
+use App\Http\Controllers\Reports\NativeReportController;
 use App\Http\Controllers\Reports\ReportScheduleController;
 use App\Http\Controllers\Reports\ShowroomSweetsRequestsReportController;
 use App\Http\Controllers\ProfileController;
@@ -858,6 +859,10 @@ Route::post(
         ->name('financial-periods.close')
         ->middleware('can:financial.periods.close');
 });
+        Route::get('reports/native/{report}/{format}', [NativeReportController::class, 'export'])
+            ->middleware('can:reports.export')
+            ->name('reports.native.export');
+
         // ─── Reports ───────────────────────────────────────────────────────
         Route::middleware('can:reports.view')->group(function () {
             Route::get('reports', [ReportController::class, 'index'])

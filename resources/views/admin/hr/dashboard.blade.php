@@ -4,6 +4,7 @@
 @section('page-title', 'الموارد البشرية')
 
 @section('content')
+@include('reports.partials.native-actions', ['nativeReport' => 'attendance'])
 <div style="max-width:1260px;margin:auto">
     <div class="page-actions">
         <div><h1 class="page-heading">متابعة الموارد البشرية</h1><p class="page-subheading">أرقام ومهام الموظفين ضمن نطاق الفروع المسموح لك بعرضها.</p></div>

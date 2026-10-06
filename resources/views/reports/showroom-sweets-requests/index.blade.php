@@ -4,6 +4,7 @@
 @section('page-title', 'تقرير طلبات حلويات الفروع')
 
 @section('content')
+@include('reports.partials.native-actions', ['nativeReport' => 'showroom-sweets'])
 <div class="ssr-report-page">
     <div class="page-header">
         <div>

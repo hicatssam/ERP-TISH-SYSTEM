@@ -24,9 +24,14 @@ class PayrollReportController extends Controller
 
     public function index(Request $request): View
     {
+        return view('admin.payroll.reports.index', $this->reportData($request));
+    }
+
+    public function reportData(Request $request, bool $paginate = true): array
+    {
         $query = $this->filteredQuery($request);
 
-        $rows = (clone $query)
+        $rowsQuery = (clone $query)
             ->with([
                 'employee',
                 'period',
@@ -40,9 +45,8 @@ class PayrollReportController extends Controller
                 ],
                 'amount'
             )
-            ->latest('payroll_period_id')
-            ->paginate(40)
-            ->withQueryString();
+            ->latest('payroll_period_id')->orderBy('employee_id');
+        $rows = $paginate ? $rowsQuery->paginate(40)->withQueryString() : $rowsQuery->get();
 
         $summaryQuery = $this->filteredQuery($request);
         $grouped = DB::query()->fromSub(
@@ -56,7 +60,7 @@ class PayrollReportController extends Controller
         $centerNames = HrCostCenter::query()->whereIn('id', $grouped->pluck('cost_center_id')->filter())
             ->pluck('name', 'id');
 
-        return view('admin.payroll.reports.index', [
+        return [
             'rows' => $rows,
             'costCenterSummary' => $grouped,
             'costCenterNames' => $centerNames,
@@ -94,7 +98,7 @@ class PayrollReportController extends Controller
                     ->where(fn (Builder $scope) => $scope->whereNull('location_id')
                         ->orWhere('location_id', $request->user()->primaryLocation()?->id)))
                 ->orderBy('name')->get(),
-        ]);
+        ];
     }
 
     public function csv(Request $request): StreamedResponse

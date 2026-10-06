@@ -18,6 +18,11 @@ class TakeawayDailyReportController extends Controller
 
     public function index(Request $request)
     {
+        return view('restaurant.takeaway-report.index', $this->reportData($request));
+    }
+
+    public function reportData(Request $request): array
+    {
         $location = $this->context->resolveLocation(
             $request->user(),
             $request->integer('location_id') ?: null
@@ -76,7 +81,9 @@ class TakeawayDailyReportController extends Controller
                             ->where('orders.created_at', '<', $end);
                     });
             })
-            ->groupBy(
+            ;
+        $ordersCount = (clone $sales)->distinct()->count('orders.id');
+        $sales = $sales->groupBy(
                 'order_items.product_id',
                 'products.name',
                 'products.name_ar',
@@ -153,15 +160,15 @@ class TakeawayDailyReportController extends Controller
             'products' => $rows->count(),
             'sold_quantity' => $rows->sum('sold_quantity'),
             'sales_total' => $rows->sum('sales_total'),
-            'orders_count' => $rows->sum('orders_count'),
+            'orders_count' => $ordersCount,
         ];
 
-        return view('restaurant.takeaway-report.index', compact(
+        return compact(
             'location',
             'locations',
             'date',
             'rows',
             'totals',
-        ));
+        );
     }
 }

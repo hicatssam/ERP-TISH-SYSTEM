@@ -3,6 +3,7 @@
 @section('title', 'تقارير الرواتب')
 
 @section('content')
+@include('reports.partials.native-actions', ['nativeReport' => 'payroll'])
 <style>
 .pr-page{max-width:1280px;margin:0 auto}.pr-head{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:1rem}.pr-filters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.8rem}.pr-stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:.8rem;margin:1rem 0}.pr-stat{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1rem}.pr-stat small{display:block;color:var(--text-muted)}.pr-stat strong{display:block;margin-top:.35rem;font-size:1.25rem}.pr-table{width:100%;border-collapse:collapse}.pr-table th,.pr-table td{padding:.8rem;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}.pr-table th{font-size:.72rem;color:var(--text-muted);background:color-mix(in srgb,var(--surface) 88%,var(--background))}.pr-table td{font-size:.8rem}@media(max-width:900px){.pr-filters,.pr-stats{grid-template-columns:repeat(2,1fr)}}@media(max-width:600px){.pr-head{flex-direction:column}.pr-filters,.pr-stats{grid-template-columns:1fr}}
 </style>

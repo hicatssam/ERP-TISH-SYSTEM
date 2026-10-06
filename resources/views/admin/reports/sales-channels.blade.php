@@ -2,6 +2,7 @@
 @php($currencySymbol = app(\App\Services\PrintThemeService::class)->settings()['currency_symbol'])
 @section('title','تقرير قنوات البيع')
 @section('content')
+@include('reports.partials.native-actions', ['nativeReport' => 'channels'])
 <div class="page-header"><div><h1 class="page-heading">تقرير قنوات البيع</h1><p class="page-subheading">المبيعات والخصومات والعمولات وصافي إيراد المطعم</p></div><a class="btn btn-ghost" href="{{ route('settings.sales-channels.index') }}">قنوات البيع</a></div>
 <div class="card" style="margin-bottom:1rem"><div class="card-body"><form method="GET" class="scr-filters">
     <input type="date" name="date_from" class="form-input" value="{{ $filters['date_from']??'' }}">

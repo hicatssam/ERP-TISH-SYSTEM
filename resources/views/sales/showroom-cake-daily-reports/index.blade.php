@@ -4,6 +4,9 @@
 @section('page-title', 'تقرير قسم الكيك')
 
 @section('content')
+@if($report)
+    @include('reports.partials.native-actions', ['nativeReport' => 'showroom-cake', 'nativeParams' => ['report_id' => $report->id]])
+@endif
 @php
     $statusLabels = [
         'draft' => 'مسودة لدى الفرع',

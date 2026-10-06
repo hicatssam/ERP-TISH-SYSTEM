@@ -17,14 +17,14 @@ class AccountingLedgerController extends Controller
 {
     public function index(Request $request): View
     {
-        return view('finance.accounting.ledger', $this->ledgerData($request, true));
+        return view('finance.accounting.ledger', $this->reportData($request, true));
     }
 
     public function pdf(
         Request $request,
         AccountingPdfService $pdf
     ): StreamedResponse {
-        $payload = $this->ledgerData($request, false);
+        $payload = $this->reportData($request, false);
 
         return $pdf->download(
             'finance.accounting.ledger-pdf',
@@ -35,7 +35,7 @@ class AccountingLedgerController extends Controller
         );
     }
 
-    private function ledgerData(Request $request, bool $paginate): array
+    public function reportData(Request $request, bool $paginate = true, ?int $cap = 5000): array
     {
         $filters = $request->validate([
             'date_from' => ['nullable', 'date_format:Y-m-d'],
@@ -97,12 +97,11 @@ class AccountingLedgerController extends Controller
             ->orderByDesc('id');
 
         $total = (clone $query)->count();
-        $cap = 5000;
-        $truncated = ! $paginate && $total > $cap;
+        $truncated = ! $paginate && $cap !== null && $total > $cap;
 
         $entries = $paginate
             ? $baseEntries->paginate(30)->withQueryString()
-            : $baseEntries->limit($cap)->get();
+            : ($cap === null ? $baseEntries->get() : $baseEntries->limit($cap)->get());
 
         return [
             'entries' => $entries,

@@ -2,6 +2,7 @@
 @section('title', 'تقارير المشتريات')
 @php($baseCurrencySymbol = app(\App\Services\PrintThemeService::class)->settings()['currency_symbol'])
 @section('content')
+@include('reports.partials.native-actions', ['nativeReport' => 'procurement'])
     <div class="page-actions">
         <div class="page-actions-title">تقارير المشتريات والموردين</div><a class="btn btn-ghost"
             href="{{ route('procurement.dashboard') }}">لوحة المشتريات</a>

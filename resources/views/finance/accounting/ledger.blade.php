@@ -3,6 +3,7 @@
 @section('page-title', 'سجل الترحيلات المالية')
 
 @section('content')
+@include('reports.partials.native-actions', ['nativeReport' => 'ledger'])
 <div class="page-header">
     <div class="page-header-text">
         <h1 class="page-heading">سجل الترحيلات المالية</h1>

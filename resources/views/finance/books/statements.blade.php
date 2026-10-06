@@ -2,6 +2,7 @@
 @section('title', 'ميزان المراجعة والقوائم')
 @section('page-title', 'ميزان المراجعة والقوائم')
 @section('content')
+@include('reports.partials.native-actions', ['nativeReport' => 'statements'])
 <div class="page-header">
     <div>
         <h1 class="page-heading">ميزان المراجعة والقوائم</h1>

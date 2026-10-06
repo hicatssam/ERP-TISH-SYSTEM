@@ -25,6 +25,20 @@ class ProcurementReportController extends Controller
 
     public function index(Request $request): View
     {
+        return view('procurement.reports.index', $this->reportData($request));
+    }
+
+    public function reportData(Request $request): array
+    {
+        $request->merge([
+            'from' => $request->input('from') ?: now()->startOfMonth()->toDateString(),
+            'to' => $request->input('to') ?: today()->toDateString(),
+        ]);
+        $request->validate([
+            'from' => ['required', 'date_format:Y-m-d'],
+            'to' => ['required', 'date_format:Y-m-d', 'after_or_equal:from'],
+            'location_id' => ['nullable', 'integer', 'exists:locations,id'],
+        ]);
         $user = $request->user();
         abort_unless($user->isAdmin() || $user->can('procurement.reports.view'), 403);
 
@@ -85,7 +99,7 @@ class ProcurementReportController extends Controller
             ->get()
             ->map(function (SupplierInvoice $invoice): array {
                 $daysOverdue = $invoice->due_date->isBefore(today())
-                    ? $invoice->due_date->diffInDays(today())
+                    ? (int) $invoice->due_date->diffInDays(today())
                     : 0;
 
                 return [
@@ -113,7 +127,7 @@ class ProcurementReportController extends Controller
             ->filter(fn (array $row): bool => abs($row['summary']['outstanding_balance']) > 0.004)
             ->values();
 
-        return view('procurement.reports.index', [
+        return [
             'receiptByLocation' => $receiptByLocation,
             'purchasesBySupplier' => $purchasesBySupplier,
             'returns' => $returns,
@@ -122,6 +136,6 @@ class ProcurementReportController extends Controller
             'locations' => $this->permittedLocations($user),
             'from' => $from,
             'to' => $to,
-        ]);
+        ];
     }
 }

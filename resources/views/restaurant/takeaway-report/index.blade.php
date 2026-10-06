@@ -4,6 +4,7 @@
 @section('page-title', 'تقرير Take Away')
 
 @section('content')
+@include('reports.partials.native-actions', ['nativeReport' => 'takeaway'])
 <div class="ta-page">
     <div class="page-header">
         <div>

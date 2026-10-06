@@ -3,6 +3,7 @@
 @section('title', 'صلاحية المخزون')
 
 @section('content')
+@include('reports.partials.native-actions', ['nativeReport' => 'expiry'])
 <style>
     .expiry-page{max-width:1400px;margin:0 auto}
     .expiry-header{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:1rem}

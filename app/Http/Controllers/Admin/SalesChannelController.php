@@ -211,6 +211,11 @@ class SalesChannelController extends Controller
 
     public function report(Request $request): View
     {
+        return view('admin.reports.sales-channels', $this->reportData($request));
+    }
+
+    public function reportData(Request $request, bool $paginate = true): array
+    {
         $this->authorize('reports', SalesChannel::class);
 
         $filters = $request->validate([
@@ -221,15 +226,18 @@ class SalesChannelController extends Controller
         ]);
 
         $groupBy = $filters['group_by'] ?? 'monthly';
+        $sqlite = DB::connection()->getDriverName() === 'sqlite';
         $periodExpression = match ($groupBy) {
             'daily' => "DATE(orders.created_at)",
-            'yearly' => "DATE_FORMAT(orders.created_at, '%Y')",
-            default => "DATE_FORMAT(orders.created_at, '%Y-%m')",
+            'yearly' => ($sqlite ? "strftime('%Y', orders.created_at)" : "DATE_FORMAT(orders.created_at, '%Y')"),
+            default => ($sqlite ? "strftime('%Y-%m', orders.created_at)" : "DATE_FORMAT(orders.created_at, '%Y-%m')"),
         };
 
-        $rows = Order::query()
+        $query = Order::query()
             ->join('sales_channels', 'sales_channels.id', '=', 'orders.sales_channel_id')
-            ->whereNotIn('orders.status', ['cancelled'])
+            ->whereIn('orders.status', ['confirmed', 'completed'])
+            ->when(! $request->user()->isAdmin() && ! $request->user()->can('financial.global.view'),
+                fn ($q) => $q->where('orders.location_id', $request->user()->primaryLocation()?->id ?? 0))
             ->when($filters['date_from'] ?? null, fn ($q, $date) => $q->whereDate('orders.created_at', '>=', $date))
             ->when($filters['date_to'] ?? null, fn ($q, $date) => $q->whereDate('orders.created_at', '<=', $date))
             ->when($filters['sales_channel_id'] ?? null, fn ($q, $id) => $q->where('orders.sales_channel_id', $id))
@@ -246,12 +254,12 @@ class SalesChannelController extends Controller
             ->groupBy('sales_channels.id', 'sales_channels.name', DB::raw($periodExpression))
             ->orderByDesc('period')
             ->orderBy('sales_channels.name')
-            ->paginate(40)
-            ->withQueryString();
+            ;
+        $rows = $paginate ? $query->paginate(40)->withQueryString() : $query->get();
 
         $channels = SalesChannel::withTrashed()->orderBy('name')->get(['id', 'name']);
 
-        return view('admin.reports.sales-channels', compact('rows', 'channels', 'filters', 'groupBy'));
+        return compact('rows', 'channels', 'filters', 'groupBy');
     }
 
     private function notifyAdmins(SalesChannel $channel, string $event): void

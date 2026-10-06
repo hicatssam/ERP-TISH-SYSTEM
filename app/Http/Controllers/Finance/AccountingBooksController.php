@@ -256,14 +256,14 @@ class AccountingBooksController extends Controller
 
     public function statements(Request $request): View
     {
-        return view('finance.books.statements', $this->statementData($request));
+        return view('finance.books.statements', $this->reportData($request));
     }
 
     public function statementsPdf(
         Request $request,
         AccountingPdfService $pdf
     ): StreamedResponse {
-        $payload = $this->statementData($request);
+        $payload = $this->reportData($request);
 
         return $pdf->download(
             'finance.books.statements-pdf',
@@ -274,7 +274,7 @@ class AccountingBooksController extends Controller
         );
     }
 
-    private function statementData(Request $request): array
+    public function reportData(Request $request): array
     {
         $data = $request->validate([
             'location_id' => ['nullable', 'integer', 'exists:locations,id'],

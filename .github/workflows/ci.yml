@@ -6,6 +6,7 @@ on:
       - main
       - codex/order-bank-transfer-entry
       - codex/restore-product-variants
+      - codex/complete-report-center
   pull_request:
 
 concurrency:
@@ -62,6 +63,9 @@ jobs:
 
       - name: Verify product variant creation
         run: php artisan test tests/Feature/ProductVariantCreationTest.php tests/Feature/ProductArchitectureV2Test.php
+
+      - name: Verify complete report center
+        run: php artisan test tests/Feature/Reports tests/Feature/ReportExportTest.php
 
       - name: Run test suite
         run: php artisan test
