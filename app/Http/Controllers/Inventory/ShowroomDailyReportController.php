@@ -318,6 +318,7 @@ class ShowroomDailyReportController extends Controller
             'deferred_payment_amount' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
             'special_reservations_amount' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
             'debt_repayment_amount' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
+            'cashier_balance_total' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
             'submit_after_save' => ['nullable', 'boolean'],
             'items' => ['required', 'array'],
             'items.*.actual_closing_kg' => [
@@ -390,6 +391,10 @@ class ShowroomDailyReportController extends Controller
                     $deferredPayment
                     + $specialReservations
                     - $debtRepayment,
+                    2
+                ),
+                'cashier_balance_total' => round(
+                    (float) ($data['cashier_balance_total'] ?? 0),
                     2
                 ),
             ]);
@@ -1000,8 +1005,8 @@ class ShowroomDailyReportController extends Controller
      *
      * - Previous package balance is carried from the latest earlier report.
      * - Report sales total comes from active regular-order invoices for the day.
-     * - Cashier balance uses the cashier session closing actual amount when
-     *   available, otherwise the session expected balance.
+     * - Cashier balance is currently entered manually by the branch accountant
+     *   until the cashier-session workflow is activated.
      * - Financial report total follows the requested accounting equation:
      *   sales + reservations/settlements total - discounts.
      * - Net booking = cashier balance - financial report total.
@@ -1034,15 +1039,6 @@ class ShowroomDailyReportController extends Controller
             ->where('issued_at', '<', $end)
             ->sum('total_amount');
 
-        $cashierBalanceTotal = (float) DB::table('cash_sessions')
-            ->where('location_id', $report->location_id)
-            ->where('opened_at', '>=', $start)
-            ->where('opened_at', '<', $end)
-            ->selectRaw(
-                'COALESCE(SUM(COALESCE(actual_cash, expected_cash)), 0) as total'
-            )
-            ->value('total');
-
         $reservationsSettlementsTotal = (float) (
             $report->accounting_total_secondary
             ?? 0
@@ -1060,6 +1056,11 @@ class ShowroomDailyReportController extends Controller
             2
         );
 
+        $cashierBalanceTotal = (float) (
+            $report->cashier_balance_total
+            ?? 0
+        );
+
         $netBookingTotal = round(
             $cashierBalanceTotal
             - $financialReportTotal,
@@ -1073,8 +1074,6 @@ class ShowroomDailyReportController extends Controller
                 round($reportSalesTotal, 2),
             'financial_report_total' =>
                 $financialReportTotal,
-            'cashier_balance_total' =>
-                round($cashierBalanceTotal, 2),
             'net_booking_total' =>
                 $netBookingTotal,
         ])->save();
