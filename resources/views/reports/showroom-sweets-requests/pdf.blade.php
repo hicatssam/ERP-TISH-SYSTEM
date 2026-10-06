@@ -26,9 +26,10 @@
         )
     );
 
-    $primary = $branding['primary_color'] ?? '#d6a925';
-    $secondary = $branding['secondary_color'] ?? '#0b2f4f';
-    $textColor = $branding['text_color'] ?? '#1f2937';
+    $primary = $branding['primary_color'] ?? '#c99a2e';
+    $navy = '#102b46';
+    $text = '#25313d';
+    $muted = '#6b7785';
 @endphp
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -38,200 +39,196 @@
     <style>
         body {
             direction: rtl;
+            margin: 0;
+            background: #ffffff;
+            color: {{ $text }};
             font-family: dejavusans;
             font-size: 8pt;
-            margin: 0;
-            color: {{ $textColor }};
-            background: #ffffff;
         }
 
         table {
-            border-collapse: collapse;
             width: 100%;
-        }
-
-        th,
-        td {
-            padding: 4px;
-            text-align: center;
-            vertical-align: middle;
-        }
-
-        .brand-bar {
-            height: 5px;
-            background: {{ $primary }};
-            margin: 0 0 7px;
-        }
-
-        .header {
-            border-bottom: 2px solid {{ $secondary }};
+            border-collapse: collapse;
         }
 
         .header td {
             border: 0;
-            padding: 4px 3px 8px;
+            vertical-align: middle;
+            padding: 0 0 7px;
         }
 
         .logo-cell {
-            width: 20%;
+            width: 24%;
             text-align: right;
         }
 
         .title-cell {
-            width: 55%;
+            width: 52%;
             text-align: center;
         }
 
         .meta-cell {
-            width: 25%;
+            width: 24%;
             text-align: left;
-            color: #64748b;
-            font-size: 6.8pt;
+            color: {{ $muted }};
+            font-size: 6.5pt;
+            line-height: 1.7;
         }
 
         .logo {
-            max-width: 85px;
-            max-height: 52px;
+            max-width: 72px;
+            max-height: 44px;
         }
 
         .business-name {
-            color: {{ $secondary }};
-            font-size: 10pt;
+            font-size: 9pt;
             font-weight: bold;
+            color: {{ $navy }};
         }
 
-        .business-name-en {
-            color: #8a6d12;
-            font-size: 6.5pt;
-            margin-top: 1px;
-        }
-
-        .report-title {
-            font-size: 15pt;
-            font-weight: bold;
-            color: {{ $secondary }};
-        }
-
-        .report-subtitle {
-            color: #64748b;
-            font-size: 6.8pt;
+        .business-en {
             margin-top: 2px;
-        }
-
-        .business-info {
-            margin-top: 5px;
-            padding: 4px 6px;
-            background: #faf8f1;
-            border-right: 3px solid {{ $primary }};
-            color: #5f6772;
-            font-size: 6.4pt;
-        }
-
-        .summary {
-            margin-top: 7px;
-            margin-bottom: 7px;
-        }
-
-        .summary td {
-            border: 1px solid #d9dee5;
-            background: #f8fafc;
-            font-size: 6.6pt;
-            color: #64748b;
-        }
-
-        .summary strong {
-            display: block;
-            margin-top: 2px;
-            color: {{ $secondary }};
-            font-size: 10pt;
-        }
-
-        .filters-line {
-            margin: 6px 0;
-            padding: 5px 7px;
-            border: 1px solid #e7dcc0;
-            background: #fffaf0;
-            color: #66551c;
-            font-size: 6.7pt;
-        }
-
-        .section {
-            margin: 7px 0 5px;
-            padding: 5px 7px;
-            color: #ffffff;
-            background: {{ $secondary }};
-            border-right: 4px solid {{ $primary }};
-            font-weight: bold;
-            font-size: 8pt;
-        }
-
-        .report {
-            border: 1px solid #cbd5e1;
-        }
-
-        .report th {
-            border: 1px solid {{ $secondary }};
-            background: {{ $secondary }};
-            color: #ffffff;
-            font-size: 6.2pt;
-            font-weight: bold;
-        }
-
-        .report td {
-            border: 1px solid #d9dee5;
+            color: {{ $muted }};
             font-size: 6pt;
         }
 
-        .report tr.alt td {
-            background: #fbfcfd;
-        }
-
-        .muted {
-            color: #64748b;
-            font-size: 5.8pt;
-        }
-
-        .total th {
-            border: 1px solid #d9bd56;
-            background: #fff3cd;
-            color: #6b5200;
+        .report-title {
+            color: {{ $navy }};
+            font-size: 15pt;
             font-weight: bold;
         }
 
-        .signatures {
-            margin-top: 13px;
+        .report-subtitle {
+            margin-top: 3px;
+            color: {{ $muted }};
+            font-size: 6.6pt;
         }
 
-        .signatures td {
-            width: 50%;
-            border: 0;
-            padding: 8px 25px 0;
+        .rule {
+            height: 2px;
+            background: {{ $primary }};
+            margin-bottom: 7px;
+        }
+
+        .scope {
+            padding: 5px 7px;
+            margin-bottom: 7px;
+            background: #f7f8fa;
+            border: 1px solid #e3e7eb;
+            color: #4d5966;
+            font-size: 6.5pt;
+        }
+
+        .summary {
+            margin-bottom: 9px;
+            table-layout: fixed;
+        }
+
+        .summary td {
+            border: 1px solid #e1e5e9;
+            padding: 6px 5px;
+            background: #ffffff;
             text-align: center;
         }
 
-        .signature-line {
-            border-top: 1px solid #94a3b8;
-            padding-top: 4px;
-            color: #475569;
-            font-size: 6.5pt;
+        .summary-label {
+            display: block;
+            color: {{ $muted }};
+            font-size: 6.2pt;
+        }
+
+        .summary-value {
+            display: block;
+            margin-top: 2px;
+            color: {{ $navy }};
+            font-size: 10pt;
+            font-weight: bold;
+        }
+
+        .section-title {
+            margin: 9px 0 5px;
+            color: {{ $navy }};
+            font-size: 8.4pt;
+            font-weight: bold;
+            text-align: right;
+        }
+
+        .section-title span {
+            display: inline-block;
+            padding-bottom: 2px;
+            border-bottom: 2px solid {{ $primary }};
+        }
+
+        .report-table {
+            border: 1px solid #d7dde3;
+        }
+
+        .report-table th {
+            padding: 5px 4px;
+            border: 1px solid #d7dde3;
+            background: {{ $navy }};
+            color: #ffffff;
+            font-size: 6.2pt;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .report-table td {
+            padding: 5px 4px;
+            border: 1px solid #e1e5e9;
+            font-size: 6.1pt;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .report-table tr.alt td {
+            background: #f8fafb;
+        }
+
+        .muted {
+            color: {{ $muted }};
+            font-size: 5.7pt;
+        }
+
+        .qty {
+            color: {{ $navy }};
+            font-weight: bold;
+        }
+
+        .total-row th {
+            padding: 5px 4px;
+            border: 1px solid #e0cf99;
+            background: #fffaf0;
+            color: #70571b;
+            font-weight: bold;
+        }
+
+        .product-total-table th {
+            background: #eef2f5;
+            color: {{ $navy }};
+            border-color: #d7dde3;
+        }
+
+        .branch-line {
+            color: #4d5966;
+            font-size: 5.8pt;
+            line-height: 1.6;
         }
 
         .footer {
             margin-top: 12px;
-            border-top: 1px solid {{ $primary }};
+            border-top: 1px solid #d8dde2;
         }
 
         .footer td {
             border: 0;
-            padding-top: 4px;
+            padding-top: 5px;
             color: #7b8490;
-            font-size: 5.8pt;
+            font-size: 5.6pt;
         }
     </style>
 </head>
 <body>
-
-<div class="brand-bar"></div>
 
 <table class="header">
     <tr>
@@ -241,11 +238,7 @@
                 && !empty($branding['logo_path'])
                 && is_file($branding['logo_path'])
             )
-                <img
-                    src="{{ $branding['logo_path'] }}"
-                    class="logo"
-                    alt=""
-                >
+                <img src="{{ $branding['logo_path'] }}" class="logo" alt="">
             @else
                 <div class="business-name">
                     {{ $branding['business_name'] ?? config('app.name') }}
@@ -253,116 +246,78 @@
             @endif
 
             @if(!empty($branding['business_name_en']))
-                <div class="business-name-en">
+                <div class="business-en">
                     {{ $branding['business_name_en'] }}
                 </div>
             @endif
         </td>
 
         <td class="title-cell">
-            <div class="report-title">
-                تقرير طلبات حلويات الفروع
-            </div>
-
+            <div class="report-title">تقرير طلبات حلويات الفروع</div>
             <div class="report-subtitle">
-                {{ $branchLabel }}
-                · {{ $periodLabel }}
-                · {{ $productLabel }}
+                {{ $branchLabel }} · {{ $productLabel }} · {{ $periodLabel }}
             </div>
         </td>
 
         <td class="meta-cell">
             <strong>SSR-RPT-{{ now()->format('Ymd') }}</strong><br>
-            تاريخ الإنشاء: {{ now()->format('Y-m-d H:i') }}<br>
-            عدد الطلبات: {{ $summary['requests_count'] }}
+            {{ now()->format('Y-m-d H:i') }}<br>
+            {{ $summary['requests_count'] }} طلب
         </td>
     </tr>
 </table>
 
-@if(
-    !empty($branding['business_phone'])
-    || !empty($branding['business_email'])
-    || !empty($branding['business_address'])
-    || !empty($branding['business_tagline'])
-)
-    <div class="business-info">
-        @if(!empty($branding['business_tagline']))
-            {{ $branding['business_tagline'] }}
-        @endif
+<div class="rule"></div>
 
-        @if(!empty($branding['business_address']))
-            · {{ $branding['business_address'] }}
-        @endif
+<div class="scope">
+    <strong>نطاق التقرير:</strong>
+    الفرع: {{ $branchLabel }}
+    &nbsp; | &nbsp;
+    المنتج: {{ $productLabel }}
+    &nbsp; | &nbsp;
+    الفترة: {{ $periodLabel }}
 
-        @if(!empty($branding['business_phone']))
-            · {{ $branding['business_phone'] }}
-        @endif
-
-        @if(!empty($branding['business_email']))
-            · {{ $branding['business_email'] }}
-        @endif
-    </div>
-@endif
+    @if(filled($filters['status'] ?? null))
+        &nbsp; | &nbsp;
+        الحالة:
+        {{ AppEnumsShowroomSweetsRequestStatus::from($filters['status'])->label() }}
+    @endif
+</div>
 
 <table class="summary">
     <tr>
         <td>
-            إجمالي الطلبات
-            <strong>{{ $summary['requests_count'] }}</strong>
+            <span class="summary-label">إجمالي الطلبات</span>
+            <span class="summary-value">{{ $summary['requests_count'] }}</span>
         </td>
         <td>
-            مكتملة
-            <strong>{{ $summary['completed_count'] }}</strong>
+            <span class="summary-label">بنود الأصناف</span>
+            <span class="summary-value">{{ $summary['items_count'] }}</span>
         </td>
         <td>
-            ملغاة
-            <strong>{{ $summary['cancelled_count'] }}</strong>
+            <span class="summary-label">الكمية المطلوبة</span>
+            <span class="summary-value">{{ number_format($summary['requested_quantity'], 3) }}</span>
         </td>
         <td>
-            بنود الأصناف
-            <strong>{{ $summary['items_count'] }}</strong>
-        </td>
-        <td>
-            الكمية المطلوبة
-            <strong>{{ number_format($summary['requested_quantity'], 3) }}</strong>
-        </td>
-        <td>
-            المحجوز
-            <strong>{{ number_format($summary['reserved_quantity'], 3) }}</strong>
+            <span class="summary-label">الكمية المحجوزة</span>
+            <span class="summary-value">{{ number_format($summary['reserved_quantity'], 3) }}</span>
         </td>
     </tr>
 </table>
 
-<div class="filters-line">
-    <strong>نطاق التقرير:</strong>
-    الفرع: {{ $branchLabel }}
-    · المنتج: {{ $productLabel }}
-    · الفترة: {{ $periodLabel }}
-
-    @if(filled($filters['status'] ?? null))
-        · الحالة:
-        {{ \App\Enums\ShowroomSweetsRequestStatus::from($filters['status'])->label() }}
-    @endif
-
-    @if(filled($filters['request_number'] ?? null))
-        · رقم الطلب:
-        {{ $filters['request_number'] }}
-    @endif
+<div class="section-title">
+    <span>تفاصيل الطلبات</span>
 </div>
 
-<div class="section">
-    تفاصيل الطلبات والأصناف
-</div>
-
-<table class="report">
+<table class="report-table">
     <tr>
-        <th>#</th>
-        <th>الطلب / الحالة</th>
-        <th>الفرع / المصنع</th>
-        <th>التواريخ</th>
-        <th>الصنف</th>
-        <th>الكمية / المحجوز</th>
-        <th>منشئ الطلب</th>
+        <th style="width:4%">#</th>
+        <th style="width:13%">الطلب</th>
+        <th style="width:16%">الفرع</th>
+        <th style="width:15%">التاريخ</th>
+        <th style="width:22%">الصنف</th>
+        <th style="width:16%">الكمية</th>
+        <th style="width:14%">منشئ الطلب</th>
     </tr>
 
     @forelse($detailRows as $row)
@@ -370,25 +325,17 @@
             $showroomRequest = $row['request'];
             $item = $row['item'];
         @endphp
-
         <tr class="{{ $loop->even ? 'alt' : '' }}">
             <td>{{ $loop->iteration }}</td>
 
             <td>
-                <strong dir="ltr">
-                    {{ $showroomRequest->request_number }}
-                </strong><br>
-                <span class="muted">
-                    {{ $showroomRequest->status->label() }}
-                </span>
+                <strong dir="ltr">{{ $showroomRequest->request_number }}</strong><br>
+                <span class="muted">{{ $showroomRequest->status->label() }}</span>
             </td>
 
             <td>
-                <strong>
-                    {{ $showroomRequest->requestingLocation?->name ?? '—' }}
-                </strong><br>
+                <strong>{{ $showroomRequest->requestingLocation?->name ?? '—' }}</strong><br>
                 <span class="muted">
-                    مصنع:
                     {{ $showroomRequest->factoryLocation?->name ?? '—' }}
                 </span>
             </td>
@@ -396,32 +343,25 @@
             <td>
                 {{ $showroomRequest->created_at?->format('Y-m-d H:i') ?? '—' }}<br>
                 <span class="muted">
-                    مطلوب:
-                    {{ $showroomRequest->needed_by?->format('Y-m-d') ?? '—' }}
+                    مطلوب: {{ $showroomRequest->needed_by?->format('Y-m-d') ?? '—' }}
                 </span>
             </td>
 
             <td style="text-align:right">
-                <strong>
-                    {{ $item->displayProductName() }}
-                </strong>
-
+                <strong>{{ $item->displayProductName() }}</strong>
                 @if($item->product?->sku)
                     <br>
-                    <span class="muted" dir="ltr">
-                        {{ $item->product->sku }}
-                    </span>
+                    <span class="muted" dir="ltr">{{ $item->product->sku }}</span>
                 @endif
             </td>
 
             <td>
-                <strong>
+                <span class="qty">
                     {{ number_format((float) $item->quantity, 3) }}
                     {{ $item->requested_unit }}
-                </strong><br>
+                </span><br>
                 <span class="muted">
-                    محجوز:
-                    {{ number_format((float) $item->reserved_quantity, 3) }}
+                    محجوز: {{ number_format((float) $item->reserved_quantity, 3) }}
                 </span>
             </td>
 
@@ -438,13 +378,12 @@
     @endforelse
 
     @if($detailRows->isNotEmpty())
-        <tr class="total">
+        <tr class="total-row">
             <th colspan="5">الإجمالي</th>
             <th>
                 {{ number_format($summary['requested_quantity'], 3) }}
                 <br>
-                محجوز:
-                {{ number_format($summary['reserved_quantity'], 3) }}
+                محجوز {{ number_format($summary['reserved_quantity'], 3) }}
             </th>
             <th></th>
         </tr>
@@ -452,65 +391,65 @@
 </table>
 
 @if($productTotals->isNotEmpty())
-<div class="section">
-    إجمالي كل منتج
-</div>
+    <div class="section-title">
+        <span>إجمالي كل منتج</span>
+    </div>
 
-<table class="report">
-    <tr>
-        <th>#</th>
-        <th>المنتج</th>
-        <th>الوحدة</th>
-        <th>عدد الطلبات</th>
-        <th>تفصيل الفروع</th>
-        <th>الإجمالي</th>
-        <th>المحجوز</th>
-    </tr>
-
-    @foreach($productTotals as $total)
-        <tr class="{{ $loop->even ? 'alt' : '' }}">
-            <td>{{ $loop->iteration }}</td>
-            <td style="text-align:right">
-                <strong>{{ $total['product_name'] }}</strong>
-            </td>
-            <td>{{ $total['unit'] }}</td>
-            <td>{{ $total['requests_count'] }}</td>
-            <td style="text-align:right">
-                @foreach($total['branches'] as $branch)
-                    {{ $branch['branch_name'] }}:
-                    {{ number_format($branch['quantity'], 3) }}
-                    @unless($loop->last) · @endunless
-                @endforeach
-            </td>
-            <td>
-                <strong>{{ number_format($total['quantity'], 3) }}</strong>
-            </td>
-            <td>{{ number_format($total['reserved_quantity'], 3) }}</td>
+    <table class="report-table product-total-table">
+        <tr>
+            <th style="width:5%">#</th>
+            <th style="width:25%">المنتج</th>
+            <th style="width:10%">الوحدة</th>
+            <th style="width:10%">عدد الطلبات</th>
+            <th style="width:30%">تفصيل الفروع</th>
+            <th style="width:10%">الإجمالي</th>
+            <th style="width:10%">المحجوز</th>
         </tr>
-    @endforeach
-</table>
-@endif
 
-<table class="signatures">
-    <tr>
-        <td>
-            <div class="signature-line">
-                المحاسب / المراجع
-            </div>
-        </td>
-        <td>
-            <div class="signature-line">
-                اعتماد الإدارة
-            </div>
-        </td>
-    </tr>
-</table>
+        @foreach($productTotals as $total)
+            <tr class="{{ $loop->even ? 'alt' : '' }}">
+                <td>{{ $loop->iteration }}</td>
+
+                <td style="text-align:right">
+                    <strong>{{ $total['product_name'] }}</strong>
+                </td>
+
+                <td>{{ $total['unit'] }}</td>
+
+                <td>{{ $total['requests_count'] }}</td>
+
+                <td style="text-align:right">
+                    @foreach($total['branches'] as $branch)
+                        <span class="branch-line">
+                            {{ $branch['branch_name'] }}:
+                            <strong>{{ number_format($branch['quantity'], 3) }}</strong>
+                        </span>
+                        @unless($loop->last)
+                            &nbsp; | &nbsp;
+                        @endunless
+                    @endforeach
+                </td>
+
+                <td>
+                    <strong class="qty">{{ number_format($total['quantity'], 3) }}</strong>
+                </td>
+
+                <td>
+                    {{ number_format($total['reserved_quantity'], 3) }}
+                </td>
+            </tr>
+        @endforeach
+    </table>
+@endif
 
 <table class="footer">
     <tr>
         <td style="text-align:right">
-            {{ $branding['footer_text']
-                ?: ($branding['business_name'] ?? config('app.name')) }}
+            {{ $branding['business_name'] ?? config('app.name') }}
+        </td>
+
+        <td style="text-align:center">
+            {{ $branding['footer_text'] ?? '' }}
         </td>
 
         <td style="text-align:left" dir="ltr">
