@@ -38,5 +38,23 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->render(function (
+            \Illuminate\Http\Exceptions\PostTooLargeException $exception,
+            \Illuminate\Http\Request $request
+        ) {
+            if (! $request->is('products', 'products/*')) {
+                return null;
+            }
+
+            $message = 'حجم الملف أو بيانات النموذج أكبر من المسموح. اختر صورة أصغر من 2 ميجابايت وأعد المحاولة.';
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $message,
+                    'errors' => ['image' => [$message]],
+                ], 413);
+            }
+
+            return response()->view('errors.product-upload', ['message' => $message], 413);
+        });
     })->create();

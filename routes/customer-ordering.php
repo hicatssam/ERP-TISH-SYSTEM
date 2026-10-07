@@ -13,6 +13,9 @@ Route::get('menu-assets/{path}', [CustomerMenuAssetController::class, 'show'])
     ->name('customer-menu.assets.show');
 
 Route::prefix('menu')->name('customer-menu.')->group(function (): void {
+    Route::get('/', [CustomerMenuController::class, 'index'])->name('index');
+    Route::get('manifest.webmanifest', [\App\Http\Controllers\PwaController::class, 'customerMenuManifest'])->name('manifest');
+
     Route::get('track/{token}', [CustomerMenuController::class, 'track'])
         ->where('token', '[A-Za-z0-9_-]{20,80}')->name('track');
 

@@ -7,5 +7,6 @@
   @if(!empty($pageTitle))
    <div><h1>{{ $pageTitle }}</h1>@if(!empty($pageSubtitle))<p>{{ $pageSubtitle }}</p>@endif</div>
   @endif
+  <a href="{{ route('customer-menu.index', ['choose' => 1]) }}" style="margin-inline-start:auto;color:var(--primary);font-weight:700" aria-label="تغيير الفرع">تغيير الفرع</a>
  </div>
 </div>

@@ -68,32 +68,38 @@ class PwaController extends Controller
     }
 
     /**
+     * Public menu app: opens the branch chooser and remembers the customer choice.
+     * Historical branch manifest URLs remain available for installed apps.
      * A separate, per-branch manifest for the public ordering menu (as
      * opposed to manifest() above, which is for installing the staff/admin
      * dashboard). Scoped to /menu/{code} so installing it never tries to
      * claim admin pages, and named/colored using the customer-menu branding
      * rather than the admin theme.
      */
-    public function customerMenuManifest(Location $location): JsonResponse
+    public function customerMenuManifest(?Location $location = null): JsonResponse
     {
+        if ($location) {
+            abort_unless($location->is_active && $location->isBranch(), 404);
+        }
+
         $nameAr = trim((string) SystemSetting::get('system_name', ''));
         $nameEn = trim((string) SystemSetting::get('system_name_en', ''));
         $brandName = $nameAr !== '' ? $nameAr : ($nameEn !== '' ? $nameEn : config('app.name', 'Menu'));
-        $name = trim($brandName . ' - ' . $location->name);
+        $name = $brandName;
 
         $themeColor = $this->validColor(SystemSetting::get('customer_menu_primary'), '#C40035');
         $backgroundColor = $this->validColor(SystemSetting::get('customer_menu_background'), '#F7F2E8');
         $version = $this->brandVersion();
-        $scope = '/menu/' . $location->code;
+        $scope = '/menu';
 
         return response()->json([
-            'id' => $scope,
+            'id' => $location ? '/menu/' . $location->code : '/customer-menu-app',
             'name' => $name,
             'short_name' => mb_substr($brandName, 0, 12),
-            'description' => 'اطلب من ' . $location->name . ' مباشرة من هاتفك.',
+            'description' => 'اختر فرعك واطلب من المنيو مباشرة من هاتفك.',
             'lang' => 'ar',
             'dir' => 'rtl',
-            'start_url' => $scope . '?source=pwa',
+            'start_url' => route('customer-menu.index', ['source' => 'pwa'], false),
             'scope' => $scope,
             'display' => 'standalone',
             'orientation' => 'portrait',

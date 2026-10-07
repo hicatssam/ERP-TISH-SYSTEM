@@ -17,6 +17,8 @@ use App\Services\ProductCodeService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use League\Flysystem\FilesystemException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -196,7 +198,7 @@ class ProductController extends Controller
         unset($data['location_id']);
 
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('products', 'public');
+            $data['image'] = $this->storeProductImage($request->file('image'));
         }
 
         $product = DB::transaction(function () use ($data, $locationIds) {
@@ -325,11 +327,11 @@ class ProductController extends Controller
         $this->normalizeCatalogFields($data, $request);
         unset($data['remove_image'], $data['location_id']);
 
+        $oldImage = $product->image;
+
         if ($request->hasFile('image')) {
-            $this->deleteProductImage($product);
-            $data['image'] = $request->file('image')->store('products', 'public');
+            $data['image'] = $this->storeProductImage($request->file('image'));
         } elseif ($request->boolean('remove_image')) {
-            $this->deleteProductImage($product);
             $data['image'] = null;
         } else {
             unset($data['image']);
@@ -342,6 +344,13 @@ class ProductController extends Controller
             $product->save();
             if ($isAdmin) $this->syncProductLocations($product, $locationIds ?? [], true);
         });
+
+        // Delete the old image only after the replacement and DB save succeed.
+        if ($oldImage && $oldImage !== $product->image) {
+            $oldProduct = new Product();
+            $oldProduct->image = $oldImage;
+            $this->deleteProductImage($oldProduct);
+        }
 
         return redirect()->route('products.show', $product)->with('success', 'تم تحديث المنتج بنجاح.');
     }
@@ -570,6 +579,24 @@ class ProductController extends Controller
         $isActiveBranch = $primaryLocation && $primaryLocation->isBranch() && Location::active()->whereKey($primaryLocation->id)->exists();
         abort_unless($isActiveBranch, 403, 'لا يوجد فرع رئيسي فعال مرتبط بحسابك.');
         return $primaryLocation;
+    }
+
+    private function storeProductImage(UploadedFile $file): string
+    {
+        try {
+            $path = $file->store('products', 'public');
+        } catch (FilesystemException $exception) {
+            report($exception);
+            $path = false;
+        }
+
+        if (! is_string($path) || $path === '') {
+            throw ValidationException::withMessages([
+                'image' => 'تعذر حفظ صورة المنتج على الخادم. لم يتم حفظ التغييرات. حاول مجدداً، وإذا استمرت المشكلة تواصل مع مسؤول النظام.',
+            ]);
+        }
+
+        return $path;
     }
 
     private function deleteProductImage(Product $product): void

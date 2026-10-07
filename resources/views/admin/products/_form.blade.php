@@ -106,7 +106,7 @@
 @endpush
 
 @if($errors->any())
-    <div style="margin-bottom:1rem;padding:1rem;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;color:#991b1b">
+    <div data-product-errors role="alert" tabindex="-1" style="margin-bottom:1rem;padding:1rem;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;color:#991b1b">
         <strong>تعذر حفظ المنتج:</strong>
         <ul style="margin:.5rem 0 0;padding-inline-start:1.2rem">
             @foreach($errors->all() as $error)
@@ -380,10 +380,16 @@
                 <input
                     type="file"
                     name="image"
+                    data-product-image
+                    aria-describedby="product-image-help product-image-error"
+                    aria-invalid="{{ $errors->has('image') ? 'true' : 'false' }}"
                     class="form-input"
                     accept="image/jpeg,image/png,image/webp"
                 >
-                <small class="product-form-help">JPEG / PNG / WebP — حتى 2MB</small>
+                <small id="product-image-help" class="product-form-help">JPEG / PNG / WebP — حتى 2MB. إذا تعذر الحفظ أعد اختيار الصورة.</small>
+                <div id="product-image-error" data-product-image-error role="alert"
+                     style="color:#b42318;margin-top:.5rem"
+                     @if(!$errors->has('image')) hidden @endif>{{ $errors->first('image') }}</div>
 
                 @if($editing && $product->image)
                     <label style="display:flex;gap:.5rem;align-items:center;margin-top:.5rem">
@@ -424,4 +430,8 @@ function toggleProductLocations(checked) {
     });
 }
 </script>
+@endpush
+
+@push('scripts')
+<script src="{{ asset('assets/js/product-form.js') }}?v=1"></script>
 @endpush

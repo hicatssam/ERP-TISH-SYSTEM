@@ -8,6 +8,9 @@
 @if(!empty($branding['favicon']))<link rel="icon" href="{{ $branding['favicon'] }}">@endif
 @include('customer-menu.partials.styles')
 @include('customer-menu.partials.pwa-head')
+<script src="{{ asset('assets/js/customer-menu/branch-entry.js') }}?v=1"
+        data-branch-code="{{ $location->code }}"
+        data-branch-entry-url="{{ route('customer-menu.index', ['choose' => 1]) }}"></script>
 @php
     $cmSetting = static fn (string $key, mixed $default = null): mixed =>
         \App\Models\SystemSetting::get($key, $default);
@@ -202,7 +205,7 @@
      @else
       <span class="reference-logo-fallback">{{ mb_substr($branding['name'] ?? 'د', 0, 1) }}</span>
      @endif
-     <span class="reference-branch">{{ $location->name }} <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></span>
+     <a class="reference-branch" href="{{ route('customer-menu.index', ['choose' => 1]) }}" aria-label="تغيير الفرع">{{ $location->name }} <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></a>
     </div>
     <div class="reference-actions">
      <a class="icon-btn" href="{{ route('customer-menu.cart', $location->code) }}" aria-label="السلة"><i class="fa-solid fa-bag-shopping"></i><span class="badge" id="cartBadgeTop">0</span></a>

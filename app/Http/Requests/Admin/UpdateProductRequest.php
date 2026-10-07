@@ -89,6 +89,7 @@ class UpdateProductRequest extends FormRequest
             'location_ids.*.distinct' => 'لا يمكن اختيار نفس الفرع أكثر من مرة.',
             'location_ids.*.exists' => 'أحد الفروع أو المصانع المحددة غير موجود.',
 
+            'image.uploaded' => 'تعذر رفع صورة المنتج. أعد اختيار صورة بحجم لا يتجاوز 2 ميجابايت وحاول مجدداً.',
             'image.image' => 'الملف المحدد يجب أن يكون صورة.',
             'image.mimes' => 'صيغة الصورة يجب أن تكون JPEG أو JPG أو PNG أو WebP.',
             'image.max' => 'حجم صورة المنتج يجب ألا يتجاوز 2 ميجابايت.',

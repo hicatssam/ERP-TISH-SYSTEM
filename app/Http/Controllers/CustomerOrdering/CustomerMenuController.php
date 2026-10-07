@@ -32,6 +32,18 @@ class CustomerMenuController extends Controller
     ) {
     }
 
+    public function index(): View
+    {
+        $branches = Location::query()->branches()->active()
+            ->orderBy('id')->get(['id', 'code', 'name', 'address']);
+
+        return view('customer-menu.branches', [
+            'branches' => $branches,
+            'branding' => $this->branding(),
+            'theme' => $this->theme(),
+        ]);
+    }
+
     /**
      * The main scroll-story menu page: hero, categories, popular combos,
      * promo strip. Cart / checkout / product details / favorites now link

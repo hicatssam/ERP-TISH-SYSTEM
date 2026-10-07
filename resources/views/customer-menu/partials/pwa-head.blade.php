@@ -1,5 +1,5 @@
-{{-- Per-branch PWA manifest + iOS home-screen meta tags. --}}
-<link rel="manifest" href="{{ route('pwa.customer-manifest', $location->code) }}">
+{{-- Shared customer app starts with branch selection. --}}
+<link rel="manifest" href="{{ route('customer-menu.manifest') }}">
 <meta name="theme-color" content="{{ $theme['primary'] ?? '#C40035' }}">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
