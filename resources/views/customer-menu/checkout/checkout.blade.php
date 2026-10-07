@@ -1,4 +1,6 @@
-@php($menuCurrencySymbol = app(\App\Services\PrintThemeService::class)->settings()['currency_symbol'])
+@php
+    $menuCurrencySymbol = app(\App\Services\PrintThemeService::class)->settings()['currency_symbol'];
+@endphp
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
@@ -45,7 +47,9 @@
      </div>
      <div class="table-grid" id="tableGrid">
       @forelse(($tables ?? []) as $table)
-       @php $isAvailable = (bool) ($table['available'] ?? true); @endphp
+       @php
+           $isAvailable = (bool) ($table['available'] ?? true);
+       @endphp
        <button type="button"
                class="table-card {{ $isAvailable ? 'available' : 'occupied' }}"
                data-table-id="{{ $table['id'] }}"

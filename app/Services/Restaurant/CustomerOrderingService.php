@@ -61,6 +61,14 @@ class CustomerOrderingService
             ->first();
 
         if ($existing) {
+            // Request tokens are unique across branches. A retry must never
+            // expose or modify an order belonging to another route location.
+            if ((int) $existing->location_id !== (int) $location->id) {
+                throw ValidationException::withMessages([
+                    'request_token' => 'رمز الطلب مرتبط بفرع آخر. افتح إتمام الطلب من هذا الفرع وحاول مجدداً.',
+                ]);
+            }
+
             $this->syncPublicPayment(
                 $existing,
                 $location,
@@ -565,10 +573,15 @@ class CustomerOrderingService
             RestaurantServiceType::DineIn => 'customer_menu_allow_dine_in',
             RestaurantServiceType::Takeaway => 'customer_menu_allow_takeaway',
             RestaurantServiceType::Delivery => 'customer_menu_allow_delivery',
-            default => null,
+            RestaurantServiceType::Outdoor => 'customer_menu_allow_outdoor',
         };
 
-        if (! $setting || ! (bool) SystemSetting::get($setting, false)) {
+        $enabledByDefault = in_array($serviceType, [
+            RestaurantServiceType::DineIn,
+            RestaurantServiceType::Takeaway,
+        ], true);
+
+        if (! (bool) SystemSetting::get($setting, $enabledByDefault)) {
             throw ValidationException::withMessages([
                 'service_type' => 'نوع الطلب المحدد غير متاح حالياً.',
             ]);

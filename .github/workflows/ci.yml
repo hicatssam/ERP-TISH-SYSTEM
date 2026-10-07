@@ -67,5 +67,8 @@ jobs:
       - name: Verify complete report center
         run: php artisan test tests/Feature/Reports tests/Feature/ReportExportTest.php
 
+      - name: Verify customer menu routes and branch isolation
+        run: php artisan test tests/Feature/CustomerOrdering tests/Feature/Restaurant/CustomerMenuArchitectureTest.php tests/Feature/Restaurant/CustomerMenuAssetDeliveryTest.php tests/Feature/Restaurant/CafeCustomizationFoundationTest.php
+
       - name: Run test suite
         run: php artisan test

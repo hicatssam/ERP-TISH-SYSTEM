@@ -50,9 +50,9 @@ main{padding:22px 0}.titleRow{margin-bottom:18px}.titleRow h1{margin:0 0 4px;fon
 </main>
 <nav class="mobileNav">
 <a href="{{ route('customer-menu.show',$location->code) }}"><span class="ico">⌂</span><span>الرئيسية</span></a>
-<a href="{{ route('customer-menu.show',$location->code) }}#grid"><span class="ico">⌕</span><span>استكشف</span></a>
+<a href="{{ route('customer-menu.products',$location->code) }}"><span class="ico">⌕</span><span>استكشف</span></a>
 <a class="active" href="#"><span class="ico">▣</span><span>طلباتي</span></a>
-<a href="{{ route('customer-menu.show',$location->code) }}"><span class="ico">🛒</span><span>السلة</span></a>
+<a href="{{ route('customer-menu.cart',$location->code) }}"><span class="ico">🛒</span><span>السلة</span></a>
 </nav>
 <script>
 const root=document.querySelector('#orders');

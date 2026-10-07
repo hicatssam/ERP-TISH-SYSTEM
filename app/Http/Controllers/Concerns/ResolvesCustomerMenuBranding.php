@@ -179,7 +179,6 @@ trait ResolvesCustomerMenuBranding
         }
 
         return $menuQuery
-            ->limit(250)
             ->get()
             ->map(function (RestaurantMenuItem $menuItem) use ($location): array {
                 $product = $menuItem->product;
