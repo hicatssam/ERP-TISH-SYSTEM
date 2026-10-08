@@ -46,3 +46,17 @@
         </a>
     @endcan
 @endif
+
+@if($attendanceFeatures->attendanceEnabled() && $attendanceFeatures->biometricEnabled())
+    @can('attendance.manage')
+        @if(app(\App\Services\FaceAttendanceService::class)->configured())
+            <a href="{{ route('attendance.face.kiosk') }}" class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/>
+                    <circle cx="12" cy="10" r="3"/><path d="M7 18c0-4 10-4 10 0"/>
+                </svg>
+                <span>كشك الحضور بالوجه</span>
+            </a>
+        @endif
+    @endcan
+@endif

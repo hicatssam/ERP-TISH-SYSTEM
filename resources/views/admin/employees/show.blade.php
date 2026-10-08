@@ -37,6 +37,15 @@
     </div>
 
     <div class="action-btns">
+        @can('attendance.manage')
+            @if(app(\App\Services\AttendanceFeatureService::class)->attendanceEnabled()
+                && app(\App\Services\AttendanceFeatureService::class)->biometricEnabled()
+                && app(\App\Services\FaceAttendanceService::class)->configured())
+                <a class="btn btn-gold btn-sm" href="{{ route('attendance.face.enroll-page', $employee) }}">
+                    تسجيل وإدارة بصمة الوجه
+                </a>
+            @endif
+        @endcan
         @can('employees.manage')
             <a
                 href="{{ route('employees.edit', $employee) }}"

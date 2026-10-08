@@ -20,6 +20,14 @@
 .face-preview video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
 .face-preview-placeholder{position:absolute;inset:0;display:grid;place-items:center;color:#cbd5e1;font-size:.75rem;text-align:center;padding:1rem}
 .face-preview.live .face-preview-placeholder{display:none}
+.face-frame{display:none;position:absolute;inset:10% 28%;border:2px dashed #ffffffaa;border-radius:50%;pointer-events:none}
+.face-preview.live .face-frame{display:block}
+.face-thumbnails{display:flex;gap:.6rem;margin-top:1rem;flex-wrap:wrap}
+.face-thumbnails figure{margin:0;flex:1;min-width:90px;max-width:160px}
+.face-thumbnails img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px;border:1px solid var(--border)}
+.face-thumbnails figcaption{font-size:.75rem;text-align:center;margin-top:.3rem;color:var(--text-muted)}
+.face-guide h3{font-size:1rem}.face-step strong{font-size:.9rem}.face-step span,.face-consent,.face-result{font-size:.85rem}
+.face-actions .btn{min-height:44px}.face-actions button:focus-visible{outline:3px solid var(--theme-primary);outline-offset:3px}
 .face-guide{padding:1rem;border:1px solid var(--border);border-radius:14px;background:var(--off-white)}
 .face-guide h3{margin:0;font-size:.92rem}
 .face-step{margin-top:.8rem;padding:.8rem;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
@@ -58,7 +66,7 @@
         <div>
             <h1 class="page-heading">تسجيل بصمة الوجه</h1>
             <p class="page-subheading">
-                تسجيل وجه الموظف محليًا داخل CompreFace دون إرسال البيانات إلى بوابة سحابية مدفوعة.
+                تجهيز الموظف مرة واحدة: التقط ثلاث صور، أكد موافقته، ثم احفظ الوجه ليتمكن من تسجيل حضوره وانصرافه.
             </p>
         </div>
 
@@ -100,6 +108,7 @@
                             playsinline
                         ></video>
 
+                        <div class="face-frame" aria-hidden="true"></div>
                         <div class="face-preview-placeholder">
                             افتح الكاميرا ثم التقط ثلاث زوايا واضحة للموظف.
                         </div>
@@ -145,6 +154,7 @@
                     </div>
                 </div>
 
+                <div class="face-thumbnails" id="faceThumbnails" aria-label="الصور الملتقطة"></div>
                 <label class="face-consent">
                     <input type="checkbox" id="faceConsent">
                     <span>
@@ -174,13 +184,13 @@
                 </div>
             @else
                 <div class="face-security">
-                    الوجه مسجل ومفعل بالفعل. لإعادة التسجيل، ألغِ البصمة الحالية أولًا
-                    حتى يتم حذف الـSubject وصوره من CompreFace ثم سجّل الوجه من جديد.
+                    الوجه مسجل بالفعل. يمكنك الآن تجربة الحضور من كشك الفرع. لإعادة التقاط الصور، احذف البصمة الحالية ثم سجّل الوجه من جديد.
                 </div>
             @endif
 
             @if($faceProfile && $profileStatus === 'active')
                 <div class="face-actions">
+                    <a class="btn btn-gold" href="{{ route('attendance.face.kiosk') }}">تجربة الحضور بالوجه</a>
                     <form
                         method="POST"
                         action="{{ route('attendance.face.revoke', $employee) }}"
@@ -194,7 +204,7 @@
                 </div>
             @endif
 
-            <div class="face-result" id="faceResult"></div>
+            <div class="face-result" id="faceResult" role="status" aria-live="polite"></div>
 
             <div class="face-security">
                 النظام لا يحفظ صور الوجه داخل Laravel. الصور ترسل من المتصفح إلى Laravel
@@ -221,6 +231,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const resetButton = document.getElementById('resetCaptureButton');
     const consent = document.getElementById('faceConsent');
     const result = document.getElementById('faceResult');
+    const thumbnails = document.getElementById('faceThumbnails');
     const title = document.getElementById('captureTitle');
     const description = document.getElementById('captureDescription');
 
@@ -270,7 +281,18 @@ document.addEventListener('DOMContentLoaded', function () {
             !stream || images.length >= steps.length;
 
         saveButton.disabled =
-            images.length < steps.length;
+            images.length < steps.length || !consent.checked;
+        thumbnails.replaceChildren();
+        images.forEach((image, index) => {
+            const figure = document.createElement('figure');
+            const img = document.createElement('img');
+            img.src = image;
+            img.alt = 'الصورة ' + (index + 1);
+            const caption = document.createElement('figcaption');
+            caption.textContent = ['أمامية', 'يمين', 'يسار'][index];
+            figure.append(img, caption);
+            thumbnails.append(figure);
+        });
 
         resetButton.disabled =
             images.length === 0;
@@ -281,6 +303,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         stream.getTracks().forEach(track => track.stop());
         stream = null;
+        video.srcObject = null;
         preview.classList.remove('live');
         startButton.disabled = false;
         startButton.textContent = 'فتح الكاميرا';
@@ -296,7 +319,12 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
+        startButton.disabled = true;
+        startButton.textContent = 'جاري فتح الكاميرا...';
         try {
+            if (!navigator.mediaDevices?.getUserMedia) {
+                throw new Error('هذا المتصفح لا يدعم الكاميرا. استخدم متصفحًا حديثًا.');
+            }
             stream = await navigator.mediaDevices.getUserMedia({
                 video: {
                     facingMode: 'user',
@@ -307,14 +335,22 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             video.srcObject = stream;
+            await video.play();
             preview.classList.add('live');
             startButton.disabled = true;
             startButton.textContent = 'الكاميرا مفتوحة';
             showResult('الكاميرا جاهزة. اتبع خطوات الالتقاط.', 'success');
             updateGuide();
         } catch (error) {
+            stopCamera();
+            startButton.disabled = false;
+            startButton.textContent = 'فتح الكاميرا';
             showResult(
-                'تعذر فتح الكاميرا. تحقق من إذن الكاميرا في المتصفح.',
+                error.name === 'NotAllowedError'
+                    ? 'اسمح باستخدام الكاميرا من رمز الموقع بجانب العنوان ثم حاول مجددًا.'
+                    : error.name === 'NotFoundError'
+                        ? 'لا توجد كاميرا متاحة. وصّل كاميرا أو افتح الصفحة من هاتفك.'
+                        : error.message || 'تعذر فتح الكاميرا. تحقق من أنها غير مشغولة في برنامج آخر.',
                 'error'
             );
         }
@@ -363,6 +399,7 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     const resetCapture = () => {
+        stopCamera();
         images = [];
         showResult(
             'تم مسح اللقطات. افتح الكاميرا وابدأ من جديد.',
@@ -437,6 +474,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     };
 
+    consent.addEventListener('change', updateGuide);
     startButton.addEventListener('click', startCamera);
     captureButton.addEventListener('click', captureFrame);
     resetButton.addEventListener('click', resetCapture);

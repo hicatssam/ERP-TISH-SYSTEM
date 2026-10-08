@@ -43,7 +43,7 @@
 
         button,select{font:inherit}
 
-        .kiosk-shell{width:min(860px,100%)}
+        .kiosk-shell{width:min(1100px,100%)}
 
         .kiosk-brand{
             display:flex;
@@ -109,7 +109,7 @@
         .kiosk-camera{
             position:relative;
             overflow:hidden;
-            min-height:420px;
+            aspect-ratio:4/3;
             border-radius:20px;
             background:#111827;
             border:1px solid var(--border);
@@ -118,7 +118,7 @@
         .kiosk-camera video{
             width:100%;
             height:100%;
-            min-height:420px;
+            position:absolute;inset:0;
             object-fit:cover;
             transform:scaleX(-1);
         }
@@ -224,12 +224,24 @@
             font-size:.62rem;
         }
 
+        .kiosk-nav{display:flex;justify-content:space-between;align-items:center;gap:.75rem;flex-wrap:wrap;margin-bottom:1rem}
+        .kiosk-nav a{color:var(--ink);text-decoration:none;font-size:.85rem;padding:.65rem .9rem;border:1px solid var(--border);background:#fff;border-radius:12px}
+        .kiosk-intro{margin:0 0 1rem;line-height:1.8}
+        .kiosk-intro h1{margin:0;font-size:1.5rem}
+        .kiosk-intro p{margin:.3rem 0;color:var(--muted);font-size:.9rem}
+        .kiosk-guide{display:none;position:absolute;inset:12% 28%;border:2px dashed #ffffffaa;border-radius:50%;pointer-events:none}
+        .kiosk-camera.live .kiosk-guide{display:block}
+        .kiosk-side p,.kiosk-result{font-size:.88rem}
+        .kiosk-note{font-size:.8rem;line-height:1.8}
+        button:focus-visible,a:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
         @media(max-width:760px){
             body{padding:10px}
             .kiosk-card{padding:16px;border-radius:20px}
             .kiosk-top{align-items:flex-start;flex-direction:column}
             .kiosk-grid{grid-template-columns:1fr}
-            .kiosk-camera,.kiosk-camera video{min-height:330px}
+            .kiosk-camera{aspect-ratio:4/3}
+            .kiosk-side{padding:1rem}
+            .kiosk-nav a{flex:1;text-align:center}
         }
     </style>
 </head>
@@ -240,14 +252,24 @@
             <div class="kiosk-brand-mark">دهب</div>
             <div class="kiosk-brand-copy">
                 <strong>نظام الحضور</strong>
-                <span>CompreFace محلي</span>
+                <span>حلويات دهب · الحضور والانصراف</span>
             </div>
         </div>
 
+        <nav class="kiosk-nav" aria-label="التنقل في الحضور">
+            @can('attendance.view')
+                <a href="{{ route('attendance.index') }}">← لوحة الحضور وتسجيل الوجوه</a>
+            @endcan
+            <span>كشك الفرع · للموظفين المسجلين</span>
+        </nav>
         <section class="kiosk-card">
+            <div class="kiosk-intro">
+                <h1>سجّل حضورك أو انصرافك بالوجه</h1>
+                <p>قف أمام الكاميرا بإضاءة واضحة. أول تسجيل يثبت الحضور، والتسجيل التالي يثبت الانصراف.</p>
+            </div>
             <div class="kiosk-top">
                 <div class="kiosk-location">
-                    <span class="kiosk-dot"></span>
+                    <span aria-hidden="true">⌖</span>
                     {{ $location->name }}
                 </div>
 
@@ -281,6 +303,13 @@
                 </form>
             @endif
 
+            <div
+                class="kiosk-result"
+                id="kioskResult"
+                role="status"
+                aria-live="polite"
+            ></div>
+
             <div class="kiosk-grid">
                 <div class="kiosk-camera" id="kioskCamera">
                     <video
@@ -290,6 +319,7 @@
                         playsinline
                     ></video>
 
+                    <div class="kiosk-guide" aria-hidden="true"></div>
                     <div class="kiosk-camera-placeholder">
                         اضغط "بدء التحقق" لفتح الكاميرا.
                     </div>
@@ -299,7 +329,7 @@
                     <span class="kiosk-step-number" id="stepNumber">1</span>
 
                     <h1 id="stepTitle">
-                        جاهز لتسجيل الحضور
+                        جاهز للحضور أو الانصراف
                     </h1>
 
                     <p id="stepDescription">
@@ -339,16 +369,14 @@
                 يمكنك التجربة على localhost من نفس الجهاز.
             </div>
 
-            <div
-                class="kiosk-result"
-                id="kioskResult"
-                aria-live="polite"
-            ></div>
+
 
             <div class="kiosk-note">
+                لم تسجل وجهك بعد؟ اطلب من مسؤول الحضور تسجيله من قائمة الموظفين في لوحة الحضور.<br>
+                
                 حد المطابقة الحالي:
                 {{ number_format((float) $similarityThreshold * 100, 0) }}%
-                · التحقق يتضمن حركة الرأس عبر CompreFace pose.
+                · ضع وجهك داخل الإطار ثم اتبع تعليمات حركة الرأس.
             </div>
         </section>
     </main>
@@ -395,6 +423,7 @@
 
         const showResult = (title, message, type = 'warning') => {
             result.className = 'kiosk-result show ' + type;
+            result.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
             result.innerHTML =
                 '<strong>' + escapeHtml(title) + '</strong>'
                 + '<span>' + escapeHtml(message) + '</span>';
@@ -436,6 +465,7 @@
                 'سنلتقط صورة أمامية، ثم نطلب منك لف رأسك إلى أحد الجانبين للتحقق من الحركة.';
             actionButton.disabled = false;
             actionButton.textContent = 'بدء التحقق';
+            resetButton.disabled = false;
             resetButton.style.display = 'none';
             setProgress(0);
         };
@@ -448,6 +478,9 @@
                 );
             }
 
+            if (!navigator.mediaDevices?.getUserMedia) {
+                throw new Error('هذا المتصفح لا يدعم الكاميرا. استخدم متصفحًا حديثًا.');
+            }
             stream = await navigator.mediaDevices.getUserMedia({
                 video: {
                     facingMode: 'user',
@@ -471,6 +504,9 @@
         };
 
         const captureFrame = () => {
+            if (!video.videoWidth || !video.videoHeight) {
+                throw new Error('انتظر حتى تظهر صورة الكاميرا ثم التقط الصورة.');
+            }
             const width = Math.min(720, video.videoWidth);
             const ratio = width / video.videoWidth;
             const height = Math.round(video.videoHeight * ratio);
@@ -555,12 +591,18 @@
 
         actionButton.addEventListener('click', async function () {
             try {
+                if (phase === 'complete') {
+                    reset();
+                    result.className = 'kiosk-result';
+                    return;
+                }
                 if (phase === 'idle') {
                     actionButton.disabled = true;
                     actionButton.textContent = 'جاري فتح الكاميرا...';
 
-                    challengeToken = await requestChallenge();
+                    result.className = 'kiosk-result';
                     await startCamera();
+                    challengeToken = await requestChallenge();
 
                     phase = 'front';
                     stepNumber.textContent = '1';
@@ -603,6 +645,7 @@
                         'يتم الآن التحقق من تطابق الوجه وحركة الرأس.';
                     actionButton.disabled = true;
                     actionButton.textContent = 'جاري التحقق...';
+                    resetButton.disabled = true;
                     setProgress(2);
 
                     const data = await submitPunch();
@@ -637,12 +680,22 @@
                         'success'
                     );
 
-                    setTimeout(reset, 3500);
+                    challengeToken = frontImage = turnedImage = null;
+                    phase = 'complete';
+                    actionButton.disabled = false;
+                    actionButton.textContent = 'تسجيل موظف آخر';
+                    resetButton.style.display = 'none';
                 }
             } catch (error) {
                 showResult(
                     'لم يتم التسجيل',
-                    error.message || 'حدث خطأ أثناء التحقق.',
+                    error.name === 'NotAllowedError'
+                        ? 'اسمح باستخدام الكاميرا من رمز الموقع بجانب العنوان، ثم حاول مجددًا.'
+                        : error.name === 'NotFoundError'
+                            ? 'لم نعثر على كاميرا. وصّل كاميرا أو افتح الكشك من هاتفك.'
+                            : error.name === 'NotReadableError'
+                                ? 'الكاميرا مشغولة في برنامج آخر. أغلقه وحاول مجددًا.'
+                                : error.message || 'حدث خطأ أثناء التحقق.',
                     'error'
                 );
 
@@ -652,14 +705,18 @@
                         ? 'بدء التحقق'
                         : 'إعادة المحاولة';
 
-                if (phase === 'submit') {
+                if (phase === 'submit' || phase === 'idle') {
                     reset();
+                    stepTitle.textContent = 'لم يتم تسجيل الدوام';
+                    stepDescription.textContent = 'راجع سبب الرفض الظاهر أعلاه، ثم ابدأ محاولة جديدة بلقطة أمامية وحركة رأس.';
+                    actionButton.textContent = 'إعادة بدء التحقق';
                 }
             }
         });
 
         resetButton.addEventListener('click', reset);
         window.addEventListener('beforeunload', stopCamera);
+        window.addEventListener('pagehide', stopCamera);
 
         if (!window.isSecureContext) {
             secureWarning.classList.add('show');

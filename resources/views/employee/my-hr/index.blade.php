@@ -52,7 +52,7 @@
                 </div>
                 <div>
                     <strong>بصمة الوجه</strong>
-                    <small>تفتح الكاميرا وتتحقق من وجهك المسجّل قبل تسجيل الحضور أو الانصراف في سجلك.</small>
+                    <small>تسجيل الوجه يتم مرة واحدة لدى مسؤول الحضور. بعدها التقط صورة أمامية وحركة رأس من هنا لتسجيل حضورك أو انصرافك.</small>
                     @if($facePunchEnabled && $faceConfigured && $faceProfileActive
                         && !($selfAttendanceRequest?->status === 'pending' && (!$selfAttendanceRequest->check_out_at || $todaySelfRequest))
                         && (!$todayRecord || (!$todayRecord->approved_at && $todayRecord->source === 'face' && $todayRecord->status === 'present' && !$todayRecord->check_out_at)))
@@ -341,7 +341,11 @@ document.getElementById(@json(old('_form') === 'leave' ? 'myLeaveDialog' : 'myCo
             }
         } catch (error) {
             reset();
-            status.textContent = error.message || 'تعذر التحقق. حاول مجددًا.';
+            status.textContent = error.name === 'NotAllowedError'
+                ? 'اسمح باستخدام الكاميرا من رمز الموقع بجانب العنوان، ثم حاول مجددًا.'
+                : error.name === 'NotFoundError'
+                    ? 'لا توجد كاميرا متاحة. افتح بوابتك من هاتفك أو وصّل كاميرا.'
+                    : error.message || 'تعذر التحقق. حاول مجددًا.';
         } finally {
             if (phase !== 'done') action.disabled = false;
         }

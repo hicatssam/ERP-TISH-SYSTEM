@@ -757,6 +757,22 @@
         </div>
     </div>
 
+    @if($biometricAttendanceEnabled && $faceAttendanceConfigured)
+        @can('attendance.manage')
+            <section class="card" style="margin-bottom:1rem;padding:1.2rem" aria-label="بدء استخدام بصمة الوجه">
+                <h2 style="font-size:1.1rem;margin:0 0 .6rem">بصمة الوجه: من تسجيل الموظف إلى اعتماد الدوام</h2>
+                <ol style="margin:0;padding-inline-start:1.3rem;line-height:1.9">
+                    <li><strong>تسجيل الوجه مرة واحدة:</strong> ابحث عن الموظف في الجدول واضغط «تسجيل الوجه»، ثم التقط الصور واحفظ موافقته.</li>
+                    <li><strong>الحضور والانصراف يوميًا:</strong> افتح كشك بصمة الوجه وحدد الفرع. يتعرف النظام على الموظف المسجل ويحدد الحضور أو الانصراف تلقائيًا.</li>
+                    <li><strong>المراجعة:</strong> راجع سجل الموظف في هذه الصفحة واعتمده وفق سياسة الحضور قبل احتساب الرواتب.</li>
+                </ol>
+                <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.8rem">
+                    <a class="btn btn-outline" href="#attendanceEmployees">تسجيل وجوه الموظفين</a>
+                    <a class="btn btn-gold" href="{{ route('attendance.face.kiosk') }}">فتح كشك الحضور والانصراف</a>
+                </div>
+            </section>
+        @endcan
+    @endif
     @if($biometricAttendanceEnabled && !$faceAttendanceConfigured)
         @can('attendance.manage')
             <div
@@ -979,7 +995,7 @@
                     <tr>
                         <th>الموظف</th>
                         <th>الحالة</th>
-                        <th>الحضور</th>
+                        <th id="attendanceEmployees">الحضور</th>
                         <th>الانصراف</th>
                         <th>التأخير</th>
                         <th>خروج مبكر</th>
