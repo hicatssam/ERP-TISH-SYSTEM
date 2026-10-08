@@ -371,28 +371,14 @@ class ShowroomDailyReportController extends Controller
                 'notes' => filled($data['notes'] ?? null)
                     ? trim((string) $data['notes'])
                     : null,
-                'debts_amount' => $debts = (float) ($data['debts_amount'] ?? 0),
-                'trays_packages_balance' => $traysPackages = (float) ($data['trays_packages_balance'] ?? 0),
-                'customer_treats_amount' => $customerTreats = (float) ($data['customer_treats_amount'] ?? 0),
-                'customer_discount_amount' => $customerDiscount = (float) ($data['customer_discount_amount'] ?? 0),
-                'previous_prepaid_amount' => $previousPrepaid = (float) ($data['previous_prepaid_amount'] ?? 0),
-                'accounting_total_primary' => round(
-                    $debts
-                    + $traysPackages
-                    + $customerTreats
-                    - $customerDiscount
-                    - $previousPrepaid,
-                    2
-                ),
-                'deferred_payment_amount' => $deferredPayment = (float) ($data['deferred_payment_amount'] ?? 0),
-                'special_reservations_amount' => $specialReservations = (float) ($data['special_reservations_amount'] ?? 0),
-                'debt_repayment_amount' => $debtRepayment = (float) ($data['debt_repayment_amount'] ?? 0),
-                'accounting_total_secondary' => round(
-                    $deferredPayment
-                    + $specialReservations
-                    - $debtRepayment,
-                    2
-                ),
+                'debts_amount' => (float) ($data['debts_amount'] ?? 0),
+                'trays_packages_balance' => (float) ($data['trays_packages_balance'] ?? 0),
+                'customer_treats_amount' => (float) ($data['customer_treats_amount'] ?? 0),
+                'customer_discount_amount' => (float) ($data['customer_discount_amount'] ?? 0),
+                'previous_prepaid_amount' => (float) ($data['previous_prepaid_amount'] ?? 0),
+                'deferred_payment_amount' => (float) ($data['deferred_payment_amount'] ?? 0),
+                'special_reservations_amount' => (float) ($data['special_reservations_amount'] ?? 0),
+                'debt_repayment_amount' => (float) ($data['debt_repayment_amount'] ?? 0),
                 'cashier_balance_total' => round(
                     (float) ($data['cashier_balance_total'] ?? 0),
                     2
@@ -1007,9 +993,7 @@ class ShowroomDailyReportController extends Controller
      * - Report sales total comes from active regular-order invoices for the day.
      * - Cashier balance is currently entered manually by the branch accountant
      *   until the cashier-session workflow is activated.
-     * - Financial report total follows the requested accounting equation:
-     *   sales + reservations/settlements total - discounts.
-     * - Net booking = cashier balance - financial report total.
+     * - Manual accounting fields are independent values, without derived totals.
      */
     private function syncFinancialSummary(
         ShowroomDailyReport $report
@@ -1039,43 +1023,11 @@ class ShowroomDailyReportController extends Controller
             ->where('issued_at', '<', $end)
             ->sum('total_amount');
 
-        $reservationsSettlementsTotal = (float) (
-            $report->accounting_total_secondary
-            ?? 0
-        );
-
-        $discountsTotal = (float) (
-            $report->customer_discount_amount
-            ?? 0
-        );
-
-        $financialReportTotal = round(
-            $reportSalesTotal
-            + $reservationsSettlementsTotal
-            - $discountsTotal,
-            2
-        );
-
-        $cashierBalanceTotal = (float) (
-            $report->cashier_balance_total
-            ?? 0
-        );
-
-        $netBookingTotal = round(
-            $cashierBalanceTotal
-            - $financialReportTotal,
-            2
-        );
-
         $report->forceFill([
             'previous_package_balance' =>
                 round($previousPackageBalance, 2),
             'report_sales_total' =>
                 round($reportSalesTotal, 2),
-            'financial_report_total' =>
-                $financialReportTotal,
-            'net_booking_total' =>
-                $netBookingTotal,
         ])->save();
     }
 

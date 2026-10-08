@@ -441,7 +441,7 @@
                     <div>
                         <strong>بيانات محاسب الفرع</strong>
                         <small>
-                            بيانات النظام لا تُعدل هنا. هذه الحقول فقط إدخال محاسب الفرع، والإجماليات تُحسب تلقائيًا.
+                            كل خانة تُحفظ وتُعرض بقيمتها المستقلة، بدون جمع أو طرح بين الحقول.
                         </small>
                     </div>
                     <span class="badge badge-blue">
@@ -463,7 +463,7 @@
                 <div class="showroom-accounting-block">
                     <div class="showroom-accounting-block-title">
                         <span>الحركة المالية اليومية</span>
-                        <small>الإجمالي = المديونيات + الصواني/البكج + التحليات − الخصم − الدفع المسبق</small>
+                        <small>قيم مستقلة بدون إجمالي حسابي</small>
                     </div>
 
                     <div class="showroom-accounting-grid">
@@ -474,7 +474,7 @@
                                 step="0.01"
                                 min="0"
                                 name="debts_amount"
-                                class="form-input js-primary-accounting"
+                                class="form-input"
                                 value="{{ old('debts_amount', $report->debts_amount) }}"
                                 @disabled(!$isDraft || !$canManage)
                             >
@@ -487,7 +487,7 @@
                                 step="0.01"
                                 min="0"
                                 name="trays_packages_balance"
-                                class="form-input js-primary-accounting"
+                                class="form-input"
                                 value="{{ old('trays_packages_balance', $report->trays_packages_balance) }}"
                                 @disabled(!$isDraft || !$canManage)
                             >
@@ -500,7 +500,7 @@
                                 step="0.01"
                                 min="0"
                                 name="customer_treats_amount"
-                                class="form-input js-primary-accounting"
+                                class="form-input"
                                 value="{{ old('customer_treats_amount', $report->customer_treats_amount) }}"
                                 @disabled(!$isDraft || !$canManage)
                             >
@@ -514,7 +514,7 @@
                                 min="0"
                                 name="customer_discount_amount"
                                 id="customerDiscountAmount"
-                                class="form-input js-primary-accounting js-subtract"
+                                class="form-input"
                                 value="{{ old('customer_discount_amount', $report->customer_discount_amount) }}"
                                 @disabled(!$isDraft || !$canManage)
                             >
@@ -527,19 +527,13 @@
                                 step="0.01"
                                 min="0"
                                 name="previous_prepaid_amount"
-                                class="form-input js-primary-accounting js-subtract"
+                                class="form-input"
                                 value="{{ old('previous_prepaid_amount', $report->previous_prepaid_amount) }}"
                                 @disabled(!$isDraft || !$canManage)
                             >
                         </div>
                     </div>
 
-                    <div class="showroom-accounting-total">
-                        <span>الإجمالي</span>
-                        <strong id="primaryAccountingTotal">
-                            {{ number_format((float) $report->accounting_total_primary, 2) }}
-                        </strong>
-                    </div>
                 </div>
 
                 <div class="showroom-accounting-divider"></div>
@@ -547,7 +541,7 @@
                 <div class="showroom-accounting-block">
                     <div class="showroom-accounting-block-title">
                         <span>الحجوزات والسداد</span>
-                        <small>الإجمالي = الدفع الآجل + الحجوزات الخاصة − سداد المديونيات</small>
+                        <small>قيم مستقلة بدون إجمالي حسابي</small>
                     </div>
 
                     <div class="showroom-accounting-grid secondary">
@@ -569,7 +563,7 @@
                                 step="0.01"
                                 min="0"
                                 name="deferred_payment_amount"
-                                class="form-input js-secondary-accounting"
+                                class="form-input"
                                 value="{{ old('deferred_payment_amount', $report->deferred_payment_amount) }}"
                                 @disabled(!$isDraft || !$canManage)
                             >
@@ -582,7 +576,7 @@
                                 step="0.01"
                                 min="0"
                                 name="special_reservations_amount"
-                                class="form-input js-secondary-accounting"
+                                class="form-input"
                                 value="{{ old('special_reservations_amount', $report->special_reservations_amount) }}"
                                 @disabled(!$isDraft || !$canManage)
                             >
@@ -595,111 +589,38 @@
                                 step="0.01"
                                 min="0"
                                 name="debt_repayment_amount"
-                                class="form-input js-secondary-accounting js-subtract"
+                                class="form-input"
                                 value="{{ old('debt_repayment_amount', $report->debt_repayment_amount) }}"
                                 @disabled(!$isDraft || !$canManage)
                             >
                         </div>
                     </div>
 
-                    <div class="showroom-accounting-total secondary-total">
-                        <span>الإجمالي</span>
-                        <strong id="secondaryAccountingTotal">
-                            {{ number_format((float) $report->accounting_total_secondary, 2) }}
-                        </strong>
-                    </div>
                 </div>
 
                 <div class="showroom-accounting-divider"></div>
 
-                <div
-                    class="showroom-financial-summary"
-                    id="financialReportSummary"
-                    data-sales-total="{{ (float) $report->report_sales_total }}"
-                    data-cashier-total="{{ (float) $report->cashier_balance_total }}"
-                >
+                <div class="showroom-financial-summary">
                     <div class="showroom-financial-summary-head">
                         <div>
-                            <strong>الإجمالي المالي للتقرير</strong>
-                            <small>
-                                إجمالي بيع التقرير + إجمالي السداد والحجوزات − إجمالي الخصومات
-                            </small>
+                            <strong>بيانات البيع والكاشير</strong>
+                            <small>قيم مستقلة بدون احتساب إجمالي مالي أو عجز.</small>
                         </div>
-                        <span class="badge badge-blue">محسوب تلقائيًا</span>
                     </div>
-
                     <div class="showroom-financial-table">
                         <div class="showroom-financial-row">
                             <span>إجمالي بيع التقرير</span>
-                            <strong id="financialSalesTotal">
-                                {{ number_format((float) $report->report_sales_total, 2) }}
-                            </strong>
+                            <strong>{{ number_format((float) $report->report_sales_total, 2) }}</strong>
                         </div>
-
-                        <div class="showroom-financial-row">
-                            <span>إجمالي السداد والحجوزات</span>
-                            <strong id="financialReservationsTotal">
-                                {{ number_format((float) $report->accounting_total_secondary, 2) }}
-                            </strong>
-                        </div>
-
-                        <div class="showroom-financial-row">
-                            <span>إجمالي الخصومات</span>
-                            <strong id="financialDiscountsTotal">
-                                {{ number_format((float) $report->customer_discount_amount, 2) }}
-                            </strong>
-                        </div>
-
-                        <div class="showroom-financial-row total">
-                            <span>الإجمالي المالي للتقرير</span>
-                            <strong id="financialReportTotal">
-                                {{ number_format((float) $report->financial_report_total, 2) }}
-                            </strong>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="showroom-booking-net-card">
-                    <div class="showroom-financial-summary-head">
-                        <div>
-                            <strong>إجمالي العجز</strong>
-                            <small>
-                                إجمالي رصيد الكاشير − الإجمالي المالي للتقرير
-                            </small>
-                        </div>
-                        <span class="badge badge-blue">من النظام</span>
-                    </div>
-
-                    <div class="showroom-financial-table">
                         <div class="showroom-financial-row cashier-manual-row">
-                            <span>إجمالي رصيد الكاشير</span>
+                            <span>رصيد الكاشير</span>
                             <div class="cashier-manual-input-wrap">
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    name="cashier_balance_total"
-                                    id="cashierBalanceTotal"
-                                    class="form-input"
+                                <input type="number" step="0.01" min="0"
+                                    name="cashier_balance_total" class="form-input"
                                     value="{{ old('cashier_balance_total', $report->cashier_balance_total) }}"
-                                    @disabled(!$isDraft || !$canManage)
-                                >
-                                <small>إدخال يدوي حاليًا لحين تفعيل نظام الكاشير.</small>
+                                    @disabled(!$isDraft || !$canManage)>
+                                <small>إدخال يدوي مستقل.</small>
                             </div>
-                        </div>
-
-                        <div class="showroom-financial-row">
-                            <span>الإجمالي المالي للتقرير</span>
-                            <strong id="netFinancialTotal">
-                                {{ number_format((float) $report->financial_report_total, 2) }}
-                            </strong>
-                        </div>
-
-                        <div class="showroom-financial-row net-total">
-                            <span>إجمالي العجز</span>
-                            <strong id="netBookingTotal">
-                                {{ number_format((float) $report->net_booking_total, 2) }}
-                            </strong>
                         </div>
                     </div>
                 </div>
@@ -1032,58 +953,6 @@ document.addEventListener('DOMContentLoaded', function () {
         return Number.isFinite(value) ? value : 0;
     }
 
-    function updateAccountingTotals() {
-        let primary = 0;
-        document.querySelectorAll('.js-primary-accounting').forEach(function (input) {
-            const value = numberValue(input);
-            primary += input.classList.contains('js-subtract') ? -value : value;
-        });
-
-        let secondary = 0;
-        document.querySelectorAll('.js-secondary-accounting').forEach(function (input) {
-            const value = numberValue(input);
-            secondary += input.classList.contains('js-subtract') ? -value : value;
-        });
-
-        const primaryOutput = document.getElementById('primaryAccountingTotal');
-        const secondaryOutput = document.getElementById('secondaryAccountingTotal');
-
-        if (primaryOutput) primaryOutput.textContent = primary.toFixed(2);
-        if (secondaryOutput) secondaryOutput.textContent = secondary.toFixed(2);
-
-        const summary = document.getElementById('financialReportSummary');
-
-        if (summary) {
-            const salesTotal = parseFloat(summary.dataset.salesTotal || '0') || 0;
-            const cashierInput = document.getElementById('cashierBalanceTotal');
-            const cashierTotal = numberValue(cashierInput);
-            const discountInput = document.getElementById('customerDiscountAmount');
-            const discountsTotal = numberValue(discountInput);
-            const financialTotal = salesTotal + secondary - discountsTotal;
-            const netBooking = cashierTotal - financialTotal;
-
-            const reservationsOutput = document.getElementById('financialReservationsTotal');
-            const discountsOutput = document.getElementById('financialDiscountsTotal');
-            const financialOutput = document.getElementById('financialReportTotal');
-            const netFinancialOutput = document.getElementById('netFinancialTotal');
-            const netBookingOutput = document.getElementById('netBookingTotal');
-
-            if (reservationsOutput) reservationsOutput.textContent = secondary.toFixed(2);
-            if (discountsOutput) discountsOutput.textContent = discountsTotal.toFixed(2);
-            if (financialOutput) financialOutput.textContent = financialTotal.toFixed(2);
-            if (netFinancialOutput) netFinancialOutput.textContent = financialTotal.toFixed(2);
-            if (netBookingOutput) netBookingOutput.textContent = netBooking.toFixed(2);
-        }
-    }
-
-    document.querySelectorAll(
-        '.js-primary-accounting, .js-secondary-accounting, #cashierBalanceTotal'
-    ).forEach(function (input) {
-        input.addEventListener('input', updateAccountingTotals);
-        input.addEventListener('change', updateAccountingTotals);
-    });
-
-    updateAccountingTotals();
 });
 </script>
 @endpush

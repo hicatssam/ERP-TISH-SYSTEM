@@ -16,7 +16,7 @@ use Tests\TestCase;
 class ShowroomDailyReportExcelExportTest extends TestCase
 {
     #[Test]
-    public function showroom_excel_matches_template_structure_and_formulas(): void
+    public function showroom_excel_exports_independent_values_without_formulas(): void
     {
         $location = new Location([
             'name' => 'فرع النصر',
@@ -24,14 +24,14 @@ class ShowroomDailyReportExcelExportTest extends TestCase
 
         $report = new ShowroomDailyReport([
             'business_date' => '2026-10-06',
-            'debts_amount' => 50,
+            'debts_amount' => 1500,
             'trays_packages_balance' => 12,
-            'customer_treats_amount' => 7,
-            'customer_discount_amount' => 4,
-            'previous_prepaid_amount' => 3,
-            'deferred_payment_amount' => 9,
-            'special_reservations_amount' => 6,
-            'debt_repayment_amount' => 2,
+            'customer_treats_amount' => 200,
+            'customer_discount_amount' => 1500,
+            'previous_prepaid_amount' => 0,
+            'deferred_payment_amount' => 500,
+            'special_reservations_amount' => 1080,
+            'debt_repayment_amount' => 200,
             'previous_package_balance' => 18,
             'report_sales_total' => 1000,
             'cashier_balance_total' => 1200,
@@ -63,6 +63,8 @@ class ShowroomDailyReportExcelExportTest extends TestCase
                     'category_name' => 'كيك صغير',
                     'opening_qty' => 2,
                     'received_qty' => 3,
+                    'total_qty' => 5,
+                    'sold_qty' => 4,
                     'actual_closing_qty' => 1,
                 ]),
             ])
@@ -111,58 +113,43 @@ class ShowroomDailyReportExcelExportTest extends TestCase
                 (float) $sheet->getCell('C5')->getValue()
             );
 
-            $this->assertSame(
-                '=C11+D11',
-                $sheet->getCell('E11')->getValue()
-            );
+            $this->assertEquals(5, $sheet->getCell('E11')->getValue());
+            $this->assertEquals(4, $sheet->getCell('F11')->getValue());
+            $this->assertEquals(2, $sheet->getCell('C12')->getValue());
 
-            $this->assertSame(
-                '=MAX(0,E11-G11)',
-                $sheet->getCell('F11')->getValue()
-            );
-
-            $this->assertSame(
-                '=SUM(C11:C11)',
-                $sheet->getCell('C12')->getValue()
-            );
-
-            $this->assertSame(
-                'FF1F4E78',
-                $sheet->getStyle('A3')
-                    ->getFill()
-                    ->getStartColor()
-                    ->getARGB()
-            );
-
-            $this->assertSame(
-                '=SUM(C15:C17)-SUM(C18:C19)',
-                $sheet->getCell('C20')->getValue()
-            );
-
-            $this->assertEquals(
-                18.0,
-                (float) $sheet->getCell('C23')->getValue()
-            );
-
-            $this->assertSame(
-                '=C24+C25-C26',
-                $sheet->getCell('C27')->getValue()
-            );
-
-            $this->assertSame(
-                '=C30+C31-C32',
-                $sheet->getCell('C33')->getValue()
-            );
-
-            $this->assertSame(
-                'إجمالي العجز',
-                $sheet->getCell('A35')->getValue()
-            );
-
-            $this->assertSame(
-                '=C36-C37',
-                $sheet->getCell('C38')->getValue()
-            );
+            $expected = [
+                'المديونيات' => 1500,
+                'تحليات الزبائن' => 200,
+                'خصم الزبائن' => 1500,
+                'الدفع المسبق (حجوزات سابقة)' => 0,
+                'رصيد باكيج / أمس' => 18,
+                'الدفع الآجل / الحجوزات الآجلة' => 500,
+                'الحجوزات الخاصة / حلويات + كيك' => 1080,
+                'سداد المديونيات' => 200,
+                'إجمالي بيع التقرير' => 1000,
+                'رصيد الكاشير' => 1200,
+            ];
+            $actual = [];
+            foreach ($sheet->getRowIterator() as $row) {
+                foreach ($row->getCellIterator() as $cell) {
+                    $this->assertNotSame(
+                        \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_FORMULA,
+                        $cell->getDataType(),
+                        'The exported workbook must contain fixed values only.'
+                    );
+                }
+                $number = $row->getRowIndex();
+                $label = $sheet->getCell("A{$number}")->getValue();
+                if (array_key_exists((string) $label, $expected)) {
+                    $actual[$label] = $sheet->getCell("C{$number}")->getValue();
+                }
+                $this->assertNotContains($label, [
+                    'إجمالي السداد والحجوزات',
+                    'الإجمالي المالي للتقرير',
+                    'إجمالي العجز',
+                ]);
+            }
+            $this->assertEquals($expected, $actual);
         } finally {
             @unlink($tmp);
         }
