@@ -118,10 +118,6 @@
             <td><div class="showroom-label">خصم الزبائن</div><div class="showroom-value" style="font-weight:bold">{{ number_format((float) $report->customer_discount_amount, 2) }}</div></td>
             <td><div class="showroom-label">الدفع المسبق (حجوزات سابقة)</div><div class="showroom-value" style="font-weight:bold">{{ number_format((float) $report->previous_prepaid_amount, 2) }}</div></td>
         </tr>
-        <tr>
-            <td colspan="4" style="text-align:right;font-weight:bold">الإجمالي</td>
-            <td style="background:#fff8df"><div class="showroom-value" style="font-weight:bold">{{ number_format((float) $report->accounting_total_primary, 2) }}</div></td>
-        </tr>
     </table>
 
     <table class="showroom-accounting-doc" cellpadding="0" cellspacing="0" style="margin-top:8px">
@@ -134,32 +130,13 @@
             <td><div class="showroom-label">الحجوزات الخاصة / حلويات + كيك</div><div class="showroom-value" style="font-weight:bold">{{ number_format((float) $report->special_reservations_amount, 2) }}</div></td>
             <td><div class="showroom-label">سداد المديونيات</div><div class="showroom-value" style="font-weight:bold">{{ number_format((float) $report->debt_repayment_amount, 2) }}</div></td>
         </tr>
-        <tr>
-            <td colspan="3" style="text-align:right;font-weight:bold">الإجمالي</td>
-            <td style="background:#eef7ee"><div class="showroom-value" style="font-weight:bold">{{ number_format((float) $report->accounting_total_secondary, 2) }}</div></td>
-        </tr>
     </table>
 
     <table class="showroom-accounting-doc" cellpadding="0" cellspacing="0" style="margin-top:8px">
+        <tr><td colspan="2" style="font-weight:bold;background:#fff5d9">بيانات البيع والكاشير</td></tr>
         <tr>
-            <td colspan="4" style="font-weight:bold;background:#fff5d9">الإجمالي المالي للتقرير</td>
-        </tr>
-        <tr>
-            <td><div class="showroom-label">إجمالي بيع التقرير</div><div class="showroom-value" style="font-weight:bold">{{ number_format((float) $report->report_sales_total, 2) }}</div></td>
-            <td><div class="showroom-label">إجمالي السداد والحجوزات</div><div class="showroom-value" style="font-weight:bold">{{ number_format((float) $report->accounting_total_secondary, 2) }}</div></td>
-            <td><div class="showroom-label">إجمالي الخصومات</div><div class="showroom-value" style="font-weight:bold">{{ number_format((float) $report->customer_discount_amount, 2) }}</div></td>
-            <td style="background:#fff5d9"><div class="showroom-label">الإجمالي المالي</div><div class="showroom-value" style="font-weight:bold">{{ number_format((float) $report->financial_report_total, 2) }}</div></td>
-        </tr>
-    </table>
-
-    <table class="showroom-accounting-doc" cellpadding="0" cellspacing="0" style="margin-top:8px">
-        <tr>
-            <td colspan="3" style="font-weight:bold;background:#eaf6ea">إجمالي العجز</td>
-        </tr>
-        <tr>
-            <td><div class="showroom-label">إجمالي رصيد الكاشير</div><div class="showroom-value" style="font-weight:bold">{{ number_format((float) $report->cashier_balance_total, 2) }}</div></td>
-            <td><div class="showroom-label">الإجمالي المالي للتقرير</div><div class="showroom-value" style="font-weight:bold">{{ number_format((float) $report->financial_report_total, 2) }}</div></td>
-            <td style="background:#eaf6ea"><div class="showroom-label">إجمالي العجز</div><div class="showroom-value" style="font-weight:bold">{{ number_format((float) $report->net_booking_total, 2) }}</div></td>
+            <td><div class="showroom-label">إجمالي بيع التقرير</div><div class="showroom-value">{{ number_format((float) $report->report_sales_total, 2) }}</div></td>
+            <td><div class="showroom-label">رصيد الكاشير</div><div class="showroom-value">{{ number_format((float) $report->cashier_balance_total, 2) }}</div></td>
         </tr>
     </table>
 
