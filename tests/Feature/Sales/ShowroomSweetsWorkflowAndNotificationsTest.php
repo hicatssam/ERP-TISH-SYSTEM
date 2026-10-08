@@ -18,6 +18,7 @@ use Tests\TestCase;
 class ShowroomSweetsWorkflowAndNotificationsTest extends TestCase
 {
     use RefreshDatabase;
+    use \Tests\Concerns\PreparesBranchShipment;
 
     #[Test]
     public function new_showroom_sweets_request_notifies_factory_task_owner(): void
@@ -167,18 +168,17 @@ class ShowroomSweetsWorkflowAndNotificationsTest extends TestCase
                 === 'ready'
         );
 
-        $this->actingAs($branchReceiver)
-            ->from($showUrl)
-            ->patch(
-                route(
-                    'showroom-sweets-requests.status',
-                    $showroomRequest
-                ),
-                [
-                    'status' => 'completed',
-                ]
-            )
-            ->assertRedirect($showUrl);
+        $this->actingAs($branchReceiver)->from($showUrl)->patch(
+            route('showroom-sweets-requests.status', $showroomRequest),
+            ['status' => 'completed']
+        )->assertRedirect($showUrl)->assertSessionHas('error');
+        $this->assertSame('ready', $showroomRequest->fresh()->status->value);
+
+        $shipment = $this->arrivedShipmentFor($showroomRequest, $readyUser);
+        $this->actingAs($branchReceiver)->post(route('branch-shipments.receive', $shipment), [
+            'items' => $this->fullReceiptItems($shipment),
+        ])->assertRedirect()->assertSessionHas('success');
+        $this->assertSame('confirmed', $shipment->receivingInvoice->fresh()->status);
 
         $showroomRequest->refresh();
 
@@ -288,17 +288,12 @@ class ShowroomSweetsWorkflowAndNotificationsTest extends TestCase
             'ready'
         );
 
-        $this->actingAs($factoryReceiver)
-            ->patch(
-                route(
-                    'showroom-sweets-requests.status',
-                    $request
-                ),
-                [
-                    'status' => 'completed',
-                ]
-            )
-            ->assertForbidden();
+        $shipment = $this->arrivedShipmentFor($request, $factoryReceiver);
+        $this->actingAs($factoryReceiver)->post(route('branch-shipments.receive', $shipment), [
+            'items' => $this->fullReceiptItems($shipment),
+        ])->assertForbidden();
+        $this->assertSame('draft', $shipment->receivingInvoice->fresh()->status);
+        $this->assertNull($shipment->receivingInvoice->fresh()->received_by);
 
         $this->assertSame(
             'ready',

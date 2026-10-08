@@ -64,6 +64,7 @@ class IncomingBankTransferDashboardTest extends TestCase
                 'sender_phone' => '0599000000',
                 'reference_number' => 'REF-SCOPED-1',
                 'amount' => 125.50,
+                'approval_status' => 'pending_verification',
             ])
             ->assertRedirect(route('incoming-bank-transfers.index'))
             ->assertSessionHas('success');

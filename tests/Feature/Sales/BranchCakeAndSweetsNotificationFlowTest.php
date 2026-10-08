@@ -28,6 +28,7 @@ use Tests\TestCase;
 class BranchCakeAndSweetsNotificationFlowTest extends TestCase
 {
     use RefreshDatabase;
+    use \Tests\Concerns\PreparesBranchShipment;
 
     private Location $branch;
     private Location $otherBranch;
@@ -1001,29 +1002,22 @@ class BranchCakeAndSweetsNotificationFlowTest extends TestCase
                 'ready'
             );
 
-        $this->actingAs($cakeReceiver)
-            ->patch(
-                route(
-                    'showroom-cake-requests.status',
-                    $cake
-                ),
-                [
-                    'status' => 'completed',
-                ]
-            )
-            ->assertRedirect();
+        $factoryActor = $this->makeUser($this->factory, []);
+        foreach ([[$cake, $cakeReceiver], [$sweets, $sweetsReceiver]] as [$source, $receiver]) {
+            $this->actingAs($receiver)->patch(
+                route($source instanceof ShowroomCakeRequest
+                    ? 'showroom-cake-requests.status' : 'showroom-sweets-requests.status', $source),
+                ['status' => 'completed']
+            )->assertRedirect()->assertSessionHas('error');
+            $this->assertSame('ready', $source->fresh()->status->value);
 
-        $this->actingAs($sweetsReceiver)
-            ->patch(
-                route(
-                    'showroom-sweets-requests.status',
-                    $sweets
-                ),
-                [
-                    'status' => 'completed',
-                ]
-            )
-            ->assertRedirect();
+            $shipment = $this->arrivedShipmentFor($source, $factoryActor);
+            $this->actingAs($receiver)->post(route('branch-shipments.receive', $shipment), [
+                'items' => $this->fullReceiptItems($shipment),
+            ])->assertRedirect()->assertSessionHas('success');
+            $this->assertSame('confirmed', $shipment->receivingInvoice->fresh()->status);
+            $this->assertSame($receiver->id, $shipment->receivingInvoice->fresh()->received_by);
+        }
 
         $this->assertSame(
             ShowroomCakeRequestStatus::Completed,

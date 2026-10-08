@@ -185,20 +185,8 @@ class AttendancePayrollSettingsController extends Controller
 
         SystemSetting::flushCache();
 
-        /*
-         * Saving valid CompreFace credentials should make the feature ready
-         * without requiring the administrator to discover three separate
-         * attendance switches.
-         */
-        if ($this->faceAttendance->configured()) {
-            SystemSetting::set('attendance_enabled', 1);
-            SystemSetting::set('attendance_biometric_enabled', 1);
-            SystemSetting::set(
-                'attendance_employee_face_punch_enabled',
-                1
-            );
-            SystemSetting::flushCache();
-        }
+        // Credential availability must not override the saved attendance switches.
+        // Explicit activation remains available through activateFaceAttendance().
 
         return redirect()
             ->route('settings.attendance-payroll.edit')

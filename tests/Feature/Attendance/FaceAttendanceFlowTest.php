@@ -62,6 +62,12 @@ class FaceAttendanceFlowTest extends TestCase
             1
         );
 
+        // Persisted settings take precedence over config and migration defaults.
+        SystemSetting::set('compreface_base_url', 'http://compreface.test');
+        SystemSetting::set('compreface_api_key_encrypted', null);
+        SystemSetting::set('attendance_employee_face_punch_enabled', 0);
+        Http::preventStrayRequests();
+
         app(PermissionRegistrar::class)
             ->forgetCachedPermissions();
     }
@@ -1008,6 +1014,32 @@ class FaceAttendanceFlowTest extends TestCase
         $this->actingAs($manager)->put(route('settings.attendance-payroll.update'), $values)
             ->assertSessionHasNoErrors();
         $this->assertSame($stored, SystemSetting::query()->where('key', 'compreface_api_key_encrypted')->value('value'));
+    }
+
+    #[Test]
+    public function saving_valid_face_credentials_preserves_explicitly_disabled_switches(): void
+    {
+        $manager = $this->makeManager($this->makeLocation('DISABLED'), ['settings.manage']);
+        $this->actingAs($manager)->put(route('settings.attendance-payroll.update'), [
+            'attendance_enabled' => 0,
+            'attendance_biometric_enabled' => 0,
+            'attendance_employee_face_punch_enabled' => 0,
+            'payroll_standard_work_days_per_month' => 26,
+            'payroll_standard_hours_per_day' => 8,
+            'payroll_overtime_multiplier' => 1.5,
+            'compreface_api_key' => 'configured-but-disabled-key',
+            'compreface_base_url' => 'http://compreface.test',
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $this->assertTrue(app(\App\Services\CompreFaceClient::class)->configured());
+        $features = app(\App\Services\AttendanceFeatureService::class);
+        $this->assertFalse($features->attendanceEnabled());
+        $this->assertFalse($features->biometricEnabled());
+        $this->assertFalse($features->employeeFacePunchEnabled());
+        foreach (['attendance_enabled', 'attendance_biometric_enabled', 'attendance_employee_face_punch_enabled'] as $key) {
+            $this->assertSame('0', SystemSetting::query()->where('key', $key)->value('value'));
+        }
+        Http::assertNothingSent();
     }
 
     private function recognition(

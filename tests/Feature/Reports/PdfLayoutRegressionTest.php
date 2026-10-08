@@ -108,16 +108,51 @@ class PdfLayoutRegressionTest extends TestCase
         $this->assertMatchesRegularExpression('/\/BaseFont\s*\/[A-Z+]*Cairo/i', $pdf, 'Cairo must be embedded in every report.');
         preg_match_all('/\/Type\s*\/Page\b/', $pdf, $pages);
         $this->assertLessThanOrEqual(2, count($pages[0]), 'A short report should not create blank pages.');
-        preg_match_all('/stream\r?\n(.*?)\r?\nendstream/s', $pdf, $streams);
+        $fontSizes = $this->fontSizesInPdf($pdf);
+        $this->assertNotEmpty($fontSizes, 'PDF must contain actual text.');
+        $this->assertGreaterThanOrEqual(5, min($fontSizes), 'Text must remain legible instead of shrinking to near-zero size.');
+    }
+    public function test_compressed_stream_ending_in_carriage_return_keeps_its_checksum(): void
+    {
+        // Find a valid zlib stream whose checksum ends with CR. A delimiter
+        // regex must not consume that byte as part of the following line ending.
+        $compressed = null;
+        for ($i = 0; $i < 256; $i++) {
+            $candidate = gzcompress('/F1 10 Tf %'.chr($i));
+            if (str_ends_with($candidate, "\r")) {
+                $compressed = $candidate;
+                break;
+            }
+        }
+        $this->assertNotNull($compressed);
+        foreach (["\n", "\r\n"] as $eol) {
+            $pdf = "1 0 obj\n<< /Filter /FlateDecode /Length ".strlen($compressed)." >>\nstream\n"
+                .$compressed.$eol."endstream\nendobj";
+            $this->assertSame([10.0], $this->fontSizesInPdf($pdf));
+        }
+    }
+
+    private function fontSizesInPdf(string $pdf): array
+    {
+        // mPDF emits direct /Length values; read exactly that many bytes.
+        // Binary compressed data can itself end in CR or LF.
+        preg_match_all(
+            '/<<(?:(?!>>).)*\/Length\s+(\d+)\b(?:(?!>>).)*>>\s*stream\r?\n/s',
+            $pdf,
+            $streams,
+            PREG_OFFSET_CAPTURE
+        );
         $fontSizes = [];
-        foreach ($streams[1] as $stream) {
+        foreach ($streams[0] as $index => [$header, $offset]) {
+            $stream = substr($pdf, $offset + strlen($header), (int) $streams[1][$index][0]);
             $content = @gzuncompress($stream);
             if ($content === false) continue;
             preg_match_all('/\/F\w*\s+([0-9.]+)\s+Tf\b/', $content, $fonts);
             foreach ($fonts[1] as $font) $fontSizes[] = (float) $font;
         }
-        $this->assertNotEmpty($fontSizes, 'PDF must contain actual text.');
-        $this->assertGreaterThanOrEqual(5, min($fontSizes), 'Text must remain legible instead of shrinking to near-zero size.');
+
+        return $fontSizes;
     }
+
 }
 
