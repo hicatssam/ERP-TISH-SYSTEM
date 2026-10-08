@@ -91,7 +91,7 @@ class ShowroomDailyReportExcelExport implements
         $this->applyProtection($sheet);
 
         $sheet->getPageSetup()->setPrintArea(
-            "A1:G{$lastRow}"
+            "A1:I{$lastRow}"
         );
     }
 
@@ -105,6 +105,8 @@ class ShowroomDailyReportExcelExport implements
             'E' => 13,
             'F' => 13,
             'G' => 15,
+            'H' => 15,
+            'I' => 19,
         ];
 
         foreach ($widths as $column => $width) {
@@ -155,12 +157,14 @@ class ShowroomDailyReportExcelExport implements
             'وارد/كيلو',
             'مبيعات/كيلو',
             'المتبقي/كيلو',
+            'سعر الكيلو',
+            'قيمة المبيعات',
         ];
 
         $sheet->fromArray($headers, null, 'A4');
         $this->styleHeader(
             $sheet,
-            'A4:G4',
+            'A4:I4',
             'FFF2CC',
             '000000'
         );
@@ -175,6 +179,14 @@ class ShowroomDailyReportExcelExport implements
             ->values();
 
         $startRow = 5;
+        $sheet->setCellValue('H2', 'إجمالي قيمة المبيعات');
+        $sheet->setCellValue('I2', $items->sum(fn ($item) => $item->sales_value ?? 0));
+        $sheet->getStyle('H2:I2')->getFont()->setBold(true);
+        $sheet->getStyle('I2')->getNumberFormat()->setFormatCode('#,##0.00');
+        $sheet->setCellValue('H3', 'قبل الخصومات');
+        $sheet->setCellValue('I3', $items->contains('selling_price_is_reference', true)
+            ? 'الأسعار السابقة مرجعية'
+            : ($items->contains(fn ($item) => $item->selling_price_per_kg === null) ? 'بعض الأصناف بلا سعر' : 'السعر محفوظ للتقرير'));
 
         if ($items->isEmpty()) {
             $sheet->mergeCells(
@@ -220,6 +232,10 @@ class ShowroomDailyReportExcelExport implements
                 "F{$row}",
                 (float) $item->sales_kg
             );
+            $sheet->setCellValue("H{$row}", $item->selling_price_per_kg === null ? '—' : (float) $item->selling_price_per_kg);
+            $sheet->setCellValue("I{$row}", $item->sales_value ?? '—');
+            $sheet->getStyle("H{$row}:I{$row}")->getNumberFormat()->setFormatCode('#,##0.00');
+            $sheet->getStyle("H{$row}:I{$row}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFF2F2F2');
             $sheet->setCellValue(
                 "G{$row}",
                 $item->actual_closing_kg !== null
@@ -236,6 +252,7 @@ class ShowroomDailyReportExcelExport implements
                 "A{$row}:G{$row}",
                 $fill
             );
+            $this->styleDataRow($sheet, "H{$row}:I{$row}", 'F2F2F2');
 
             $sheet->getStyle("C{$row}:G{$row}")
                 ->getNumberFormat()
@@ -393,7 +410,7 @@ class ShowroomDailyReportExcelExport implements
 
             $sheet->setCellValue(
                 "E{$row}",
-                (int) $item->total_qty
+                (int) $item->opening_qty + (int) $item->received_qty
             );
 
             $sheet->setCellValue(
@@ -405,7 +422,7 @@ class ShowroomDailyReportExcelExport implements
 
             $sheet->setCellValue(
                 "F{$row}",
-                (int) $item->sold_qty
+                max(0, (int) $item->opening_qty + (int) $item->received_qty - (int) ($item->actual_closing_qty ?? 0))
             );
 
             $fill = $index % 2 === 0
@@ -508,50 +525,382 @@ class ShowroomDailyReportExcelExport implements
         Worksheet $sheet,
         int $startRow
     ): int {
-        // Manual values are independent data. Never derive a total from them.
-        $sections = [
-            'الحركة المالية اليومية' => [
-                ['المديونيات', $this->report->debts_amount, true],
-                ['باقي صواني / بكج مغلف', $this->report->trays_packages_balance, true],
-                ['تحليات الزبائن', $this->report->customer_treats_amount, true],
-                ['خصم الزبائن', $this->report->customer_discount_amount, true],
-                ['الدفع المسبق (حجوزات سابقة)', $this->report->previous_prepaid_amount, true],
+        // Export numeric snapshots while keeping the original report layout.
+        $primaryTotal = round(
+            (float) $this->report->debts_amount
+            + (float) $this->report->trays_packages_balance
+            + (float) $this->report->customer_treats_amount
+            - (float) $this->report->customer_discount_amount
+            - (float) $this->report->previous_prepaid_amount,
+            2
+        );
+        $secondaryTotal = round(
+            (float) $this->report->deferred_payment_amount
+            + (float) $this->report->special_reservations_amount
+            - (float) $this->report->debt_repayment_amount,
+            2
+        );
+        $financialTotal = round(
+            (float) $this->report->report_sales_total
+            + $secondaryTotal
+            - (float) $this->report->customer_discount_amount,
+            2
+        );
+        $deficitTotal = round(
+            (float) $this->report->cashier_balance_total - $financialTotal,
+            2
+        );
+
+        $primaryHeaderRow = $startRow;
+
+        $sheet->mergeCells(
+            "A{$primaryHeaderRow}:G{$primaryHeaderRow}"
+        );
+        $sheet->setCellValue(
+            "A{$primaryHeaderRow}",
+            'الحركة المالية اليومية'
+        );
+
+        $this->styleHeader(
+            $sheet,
+            "A{$primaryHeaderRow}:G{$primaryHeaderRow}",
+            'F5EDD8',
+            '8C6818'
+        );
+
+        $primaryRows = [
+            [
+                'المديونيات',
+                (float) $this->report->debts_amount,
             ],
-            'الحجوزات والسداد' => [
-                ['رصيد باكيج / أمس', $this->report->previous_package_balance, false],
-                ['الدفع الآجل / الحجوزات الآجلة', $this->report->deferred_payment_amount, true],
-                ['الحجوزات الخاصة / حلويات + كيك', $this->report->special_reservations_amount, true],
-                ['سداد المديونيات', $this->report->debt_repayment_amount, true],
+            [
+                'باقي صواني / بكج مغلف',
+                (float) $this->report->trays_packages_balance,
             ],
-            'بيانات البيع والكاشير' => [
-                ['إجمالي بيع التقرير', $this->report->report_sales_total, false],
-                ['رصيد الكاشير', $this->report->cashier_balance_total, true],
+            [
+                'تحليات الزبائن',
+                (float) $this->report->customer_treats_amount,
+            ],
+            [
+                'خصم الزبائن',
+                (float) $this->report->customer_discount_amount,
+            ],
+            [
+                'الدفع المسبق (حجوزات سابقة)',
+                (float) $this->report->previous_prepaid_amount,
             ],
         ];
 
-        $row = $startRow;
-        foreach ($sections as $title => $values) {
-            $sheet->mergeCells("A{$row}:G{$row}");
-            $sheet->setCellValue("A{$row}", $title);
-            $this->styleHeader($sheet, "A{$row}:G{$row}", 'F5EDD8', '8C6818');
-            $row++;
-            foreach ($values as [$label, $value, $editable]) {
-                $this->buildEditableAccountingRow(
-                    $sheet, $row, $label, (float) $value, $editable
-                );
-                $sheet->getStyle("C{$row}")->getNumberFormat()->setFormatCode('#,##0.00');
-                $row++;
-            }
-            $this->buildSeparatorRow($sheet, $row++);
+        $primaryStartRow = $primaryHeaderRow + 1;
+
+        foreach ($primaryRows as $index => [$label, $value]) {
+            $row = $primaryStartRow + $index;
+
+            $this->buildEditableAccountingRow(
+                $sheet,
+                $row,
+                $label,
+                $value,
+                true
+            );
         }
 
-        $sheet->mergeCells("A{$row}:G{$row}");
-        $sheet->setCellValue(
-            "A{$row}",
-            'قيم ثابتة بدون معادلات — الخلايا الرمادية بيانات نظام — الخلايا الخضراء إدخال مستقل'
+        $primaryEndRow =
+            $primaryStartRow + count($primaryRows) - 1;
+        $primaryTotalRow = $primaryEndRow + 1;
+
+        $sheet->mergeCells(
+            "A{$primaryTotalRow}:B{$primaryTotalRow}"
         );
-        $sheet->getStyle("A{$row}:G{$row}")->getFont()->setSize(8);
-        return $row;
+        $sheet->setCellValue(
+            "A{$primaryTotalRow}",
+            'الإجمالي'
+        );
+        $sheet->setCellValue(
+            "C{$primaryTotalRow}",
+            $primaryTotal
+        );
+        $sheet->mergeCells(
+            "D{$primaryTotalRow}:G{$primaryTotalRow}"
+        );
+
+        $this->styleTotalRow(
+            $sheet,
+            $primaryTotalRow,
+            'FFFFD966',
+            'FF000000'
+        );
+
+        $separator1 = $primaryTotalRow + 1;
+        $this->buildSeparatorRow(
+            $sheet,
+            $separator1
+        );
+
+        $secondaryHeaderRow = $separator1 + 1;
+
+        $sheet->mergeCells(
+            "A{$secondaryHeaderRow}:G{$secondaryHeaderRow}"
+        );
+        $sheet->setCellValue(
+            "A{$secondaryHeaderRow}",
+            'الحجوزات والسداد'
+        );
+
+        $this->styleHeader(
+            $sheet,
+            "A{$secondaryHeaderRow}:G{$secondaryHeaderRow}",
+            'E2F0D9',
+            '2F6F2F'
+        );
+
+        $secondaryRows = [
+            [
+                'رصيد باكيج / أمس',
+                (float) $this->report
+                    ->previous_package_balance,
+                false,
+            ],
+            [
+                'الدفع الآجل / الحجوزات الآجلة',
+                (float) $this->report
+                    ->deferred_payment_amount,
+                true,
+            ],
+            [
+                'الحجوزات الخاصة / حلويات + كيك',
+                (float) $this->report
+                    ->special_reservations_amount,
+                true,
+            ],
+            [
+                'سداد المديونيات',
+                (float) $this->report
+                    ->debt_repayment_amount,
+                true,
+            ],
+        ];
+
+        $secondaryStartRow =
+            $secondaryHeaderRow + 1;
+
+        foreach (
+            $secondaryRows
+            as $index => [$label, $value, $editable]
+        ) {
+            $row = $secondaryStartRow + $index;
+
+            $this->buildEditableAccountingRow(
+                $sheet,
+                $row,
+                $label,
+                $value,
+                $editable
+            );
+        }
+
+        $secondaryTotalRow =
+            $secondaryStartRow
+            + count($secondaryRows);
+
+        $sheet->mergeCells(
+            "A{$secondaryTotalRow}:B{$secondaryTotalRow}"
+        );
+        $sheet->setCellValue(
+            "A{$secondaryTotalRow}",
+            'إجمالي السداد والحجوزات'
+        );
+
+        $sheet->setCellValue(
+            "C{$secondaryTotalRow}",
+            $secondaryTotal
+        );
+        $sheet->mergeCells(
+            "D{$secondaryTotalRow}:G{$secondaryTotalRow}"
+        );
+
+        $this->styleTotalRow(
+            $sheet,
+            $secondaryTotalRow,
+            'FF70AD47',
+            'FFFFFFFF'
+        );
+
+        $separator2 = $secondaryTotalRow + 1;
+        $this->buildSeparatorRow(
+            $sheet,
+            $separator2
+        );
+
+        /*
+         * Financial report total.
+         */
+        $financialHeaderRow = $separator2 + 1;
+
+        $sheet->mergeCells(
+            "A{$financialHeaderRow}:G{$financialHeaderRow}"
+        );
+        $sheet->setCellValue(
+            "A{$financialHeaderRow}",
+            'الإجمالي المالي للتقرير'
+        );
+
+        $this->styleHeader(
+            $sheet,
+            "A{$financialHeaderRow}:G{$financialHeaderRow}",
+            'FFF5D9',
+            '7A5400'
+        );
+
+        $financialSalesRow = $financialHeaderRow + 1;
+        $financialReservationsRow =
+            $financialHeaderRow + 2;
+        $financialDiscountsRow =
+            $financialHeaderRow + 3;
+        $financialTotalRow =
+            $financialHeaderRow + 4;
+
+        $financialRows = [
+            $financialSalesRow => [
+                'إجمالي بيع التقرير',
+                (float) $this->report
+                    ->report_sales_total,
+            ],
+            $financialReservationsRow => [
+                'إجمالي السداد والحجوزات',
+                $secondaryTotal,
+            ],
+            $financialDiscountsRow => [
+                'إجمالي الخصومات',
+                (float) $this->report->customer_discount_amount,
+            ],
+            $financialTotalRow => [
+                'الإجمالي المالي للتقرير',
+                $financialTotal,
+            ],
+        ];
+
+        foreach ($financialRows as $row => [$label, $value]) {
+            $sheet->mergeCells("A{$row}:B{$row}");
+            $sheet->setCellValue("A{$row}", $label);
+            $sheet->setCellValue("C{$row}", $value);
+            $sheet->mergeCells("D{$row}:G{$row}");
+
+            $sheet->getStyle("A{$row}:G{$row}")
+                ->applyFromArray([
+                    'font' => [
+                        'bold' =>
+                            $row === $financialTotalRow,
+                    ],
+                    'fill' => [
+                        'fillType' =>
+                            Fill::FILL_SOLID,
+                        'startColor' => [
+                            'argb' =>
+                                $row === $financialTotalRow
+                                    ? 'FFFFD966'
+                                    : 'FFF8FAFC',
+                        ],
+                    ],
+                    'alignment' => [
+                        'horizontal' =>
+                            Alignment::HORIZONTAL_CENTER,
+                        'vertical' =>
+                            Alignment::VERTICAL_CENTER,
+                    ],
+                    'borders' => $this->borders(),
+                ]);
+        }
+
+        $separator3 = $financialTotalRow + 1;
+        $this->buildSeparatorRow(
+            $sheet,
+            $separator3
+        );
+
+        /*
+         * Requested label: إجمالي العجز.
+         * Snapshot: cashier balance - financial report total.
+         */
+        $deficitHeaderRow = $separator3 + 1;
+
+        $sheet->mergeCells(
+            "A{$deficitHeaderRow}:G{$deficitHeaderRow}"
+        );
+        $sheet->setCellValue(
+            "A{$deficitHeaderRow}",
+            'إجمالي العجز'
+        );
+
+        $this->styleHeader(
+            $sheet,
+            "A{$deficitHeaderRow}:G{$deficitHeaderRow}",
+            'EAF6EA',
+            '256B2B'
+        );
+
+        $cashierRow = $deficitHeaderRow + 1;
+        $financialReferenceRow =
+            $deficitHeaderRow + 2;
+        $deficitTotalRow =
+            $deficitHeaderRow + 3;
+
+        $this->buildEditableAccountingRow(
+            $sheet,
+            $cashierRow,
+            'إجمالي رصيد الكاشير',
+            (float) $this->report
+                ->cashier_balance_total,
+            true
+        );
+
+        $this->buildLockedAccountingRow(
+            $sheet,
+            $financialReferenceRow,
+            'الإجمالي المالي للتقرير',
+            $financialTotal
+        );
+
+        $this->buildLockedAccountingRow(
+            $sheet,
+            $deficitTotalRow,
+            'إجمالي العجز',
+            $deficitTotal,
+            true
+        );
+
+        $sheet->getStyle(
+            "C{$primaryStartRow}:C{$deficitTotalRow}"
+        )
+            ->getNumberFormat()
+            ->setFormatCode('#,##0.00');
+
+        $noteRow = $deficitTotalRow + 2;
+
+        $sheet->mergeCells("A{$noteRow}:G{$noteRow}");
+        $sheet->setCellValue(
+            "A{$noteRow}",
+            'الخلايا الرمادية بيانات نظام — '
+            . 'الخلايا الخضراء إدخال محاسب الفرع — '
+            . 'الإجماليات أرقام ثابتة وقت التصدير بدون معادلات'
+        );
+
+        $sheet->getStyle("A{$noteRow}:G{$noteRow}")
+            ->applyFromArray([
+                'font' => [
+                    'italic' => true,
+                    'size' => 8,
+                    'color' => [
+                        'argb' => 'FF64748B',
+                    ],
+                ],
+                'alignment' => [
+                    'horizontal' =>
+                        Alignment::HORIZONTAL_CENTER,
+                ],
+            ]);
+
+        return $noteRow;
     }
 
     private function buildEditableAccountingRow(
@@ -596,6 +945,41 @@ class ShowroomDailyReportExcelExport implements
         }
     }
 
+    private function buildLockedAccountingRow(
+        Worksheet $sheet,
+        int $row,
+        string $label,
+        float|string $value,
+        bool $highlight = false
+    ): void {
+        $sheet->mergeCells("A{$row}:B{$row}");
+        $sheet->setCellValue("A{$row}", $label);
+        $sheet->setCellValue("C{$row}", $value);
+        $sheet->mergeCells("D{$row}:G{$row}");
+
+        $sheet->getStyle("A{$row}:G{$row}")
+            ->applyFromArray([
+                'font' => [
+                    'bold' => $highlight,
+                ],
+                'fill' => [
+                    'fillType' => Fill::FILL_SOLID,
+                    'startColor' => [
+                        'argb' => $highlight
+                            ? 'FFE2F0D9'
+                            : 'FFF8FAFC',
+                    ],
+                ],
+                'alignment' => [
+                    'horizontal' =>
+                        Alignment::HORIZONTAL_CENTER,
+                    'vertical' =>
+                        Alignment::VERTICAL_CENTER,
+                ],
+                'borders' => $this->borders(),
+            ]);
+    }
+
     private function buildSeparatorRow(
         Worksheet $sheet,
         int $row
@@ -610,6 +994,37 @@ class ShowroomDailyReportExcelExport implements
             ->setFillType(Fill::FILL_SOLID)
             ->getStartColor()
             ->setARGB('FFE5E7EB');
+    }
+
+    private function styleTotalRow(
+        Worksheet $sheet,
+        int $row,
+        string $fillArgb,
+        string $fontArgb
+    ): void {
+        $sheet->getStyle("A{$row}:G{$row}")
+            ->applyFromArray([
+                'font' => [
+                    'bold' => true,
+                    'color' => [
+                        'argb' => $fontArgb,
+                    ],
+                ],
+                'fill' => [
+                    'fillType' =>
+                        Fill::FILL_SOLID,
+                    'startColor' => [
+                        'argb' => $fillArgb,
+                    ],
+                ],
+                'alignment' => [
+                    'horizontal' =>
+                        Alignment::HORIZONTAL_CENTER,
+                    'vertical' =>
+                        Alignment::VERTICAL_CENTER,
+                ],
+                'borders' => $this->borders(),
+            ]);
     }
 
     private function mergeTitleRow(
@@ -732,4 +1147,5 @@ class ShowroomDailyReportExcelExport implements
             ->setFormatRows(false);
     }
 }
+
 

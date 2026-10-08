@@ -16,6 +16,8 @@ class ShowroomDailyReportItem extends Model
         'received_trays',
         'received_kg',
         'sales_kg',
+        'selling_price_per_kg',
+        'selling_price_is_reference',
         'takeaway_sales_kg',
         'damaged_kg',
         'returned_kg',
@@ -33,6 +35,8 @@ class ShowroomDailyReportItem extends Model
             'received_trays' => 'decimal:2',
             'received_kg' => 'decimal:3',
             'sales_kg' => 'decimal:3',
+            'selling_price_per_kg' => 'decimal:2',
+            'selling_price_is_reference' => 'boolean',
             'takeaway_sales_kg' => 'decimal:3',
             'damaged_kg' => 'decimal:3',
             'returned_kg' => 'decimal:3',
@@ -41,6 +45,13 @@ class ShowroomDailyReportItem extends Model
             'actual_closing_kg' => 'decimal:3',
             'variance_kg' => 'decimal:3',
         ];
+    }
+
+    public function getSalesValueAttribute(): ?float
+    {
+        return $this->selling_price_per_kg === null
+            ? null
+            : round((float) $this->sales_kg * (float) $this->selling_price_per_kg, 2);
     }
 
     public function report(): BelongsTo
@@ -53,3 +64,4 @@ class ShowroomDailyReportItem extends Model
         return $this->belongsTo(Product::class);
     }
 }
+

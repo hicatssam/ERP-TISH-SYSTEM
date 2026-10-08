@@ -16,7 +16,7 @@ use Tests\TestCase;
 class ShowroomDailyReportExcelExportTest extends TestCase
 {
     #[Test]
-    public function showroom_excel_exports_independent_values_without_formulas(): void
+    public function showroom_excel_preserves_totals_and_layout_without_live_formulas(): void
     {
         $location = new Location([
             'name' => 'فرع النصر',
@@ -24,14 +24,14 @@ class ShowroomDailyReportExcelExportTest extends TestCase
 
         $report = new ShowroomDailyReport([
             'business_date' => '2026-10-06',
-            'debts_amount' => 1500,
+            'debts_amount' => 50,
             'trays_packages_balance' => 12,
-            'customer_treats_amount' => 200,
-            'customer_discount_amount' => 1500,
-            'previous_prepaid_amount' => 0,
-            'deferred_payment_amount' => 500,
-            'special_reservations_amount' => 1080,
-            'debt_repayment_amount' => 200,
+            'customer_treats_amount' => 7,
+            'customer_discount_amount' => 4,
+            'previous_prepaid_amount' => 3,
+            'deferred_payment_amount' => 9,
+            'special_reservations_amount' => 6,
+            'debt_repayment_amount' => 2,
             'previous_package_balance' => 18,
             'report_sales_total' => 1000,
             'cashier_balance_total' => 1200,
@@ -47,6 +47,7 @@ class ShowroomDailyReportExcelExportTest extends TestCase
                     'received_trays' => 2,
                     'received_kg' => 4,
                     'sales_kg' => 3,
+                    'selling_price_per_kg' => 25.50,
                     'actual_closing_kg' => 6,
                 ]),
             ])
@@ -63,8 +64,6 @@ class ShowroomDailyReportExcelExportTest extends TestCase
                     'category_name' => 'كيك صغير',
                     'opening_qty' => 2,
                     'received_qty' => 3,
-                    'total_qty' => 5,
-                    'sold_qty' => 4,
                     'actual_closing_qty' => 1,
                 ]),
             ])
@@ -112,46 +111,87 @@ class ShowroomDailyReportExcelExportTest extends TestCase
                 5.0,
                 (float) $sheet->getCell('C5')->getValue()
             );
+            $this->assertSame('سعر الكيلو', $sheet->getCell('H4')->getValue());
+            $this->assertSame('قيمة المبيعات', $sheet->getCell('I4')->getValue());
+            $this->assertEquals(25.50, $sheet->getCell('H5')->getValue());
+            $this->assertEquals(76.50, $sheet->getCell('I5')->getValue());
+            $this->assertEquals(76.50, $sheet->getCell('I2')->getValue());
 
-            $this->assertEquals(5, $sheet->getCell('E11')->getValue());
-            $this->assertEquals(4, $sheet->getCell('F11')->getValue());
-            $this->assertEquals(2, $sheet->getCell('C12')->getValue());
+            $this->assertEquals(
+                5,
+                $sheet->getCell('E11')->getValue()
+            );
 
-            $expected = [
-                'المديونيات' => 1500,
-                'تحليات الزبائن' => 200,
-                'خصم الزبائن' => 1500,
-                'الدفع المسبق (حجوزات سابقة)' => 0,
-                'رصيد باكيج / أمس' => 18,
-                'الدفع الآجل / الحجوزات الآجلة' => 500,
-                'الحجوزات الخاصة / حلويات + كيك' => 1080,
-                'سداد المديونيات' => 200,
-                'إجمالي بيع التقرير' => 1000,
-                'رصيد الكاشير' => 1200,
-            ];
-            $actual = [];
+            $this->assertEquals(
+                4,
+                $sheet->getCell('F11')->getValue()
+            );
+
+            $this->assertEquals(
+                2,
+                $sheet->getCell('C12')->getValue()
+            );
+
+            $this->assertSame(
+                'FF1F4E78',
+                $sheet->getStyle('A3')
+                    ->getFill()
+                    ->getStartColor()
+                    ->getARGB()
+            );
+
+            $this->assertEquals(
+                62,
+                $sheet->getCell('C20')->getValue()
+            );
+
+            $this->assertEquals(
+                18.0,
+                (float) $sheet->getCell('C23')->getValue()
+            );
+
+            $this->assertEquals(
+                13,
+                $sheet->getCell('C27')->getValue()
+            );
+
+            $this->assertEquals(
+                1009,
+                $sheet->getCell('C33')->getValue()
+            );
+
+            $this->assertSame(
+                'إجمالي العجز',
+                $sheet->getCell('A35')->getValue()
+            );
+
+            $this->assertEquals(
+                191,
+                $sheet->getCell('C38')->getValue()
+            );
+
             foreach ($sheet->getRowIterator() as $row) {
                 foreach ($row->getCellIterator() as $cell) {
                     $this->assertNotSame(
                         \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_FORMULA,
-                        $cell->getDataType(),
-                        'The exported workbook must contain fixed values only.'
+                        $cell->getDataType()
                     );
                 }
-                $number = $row->getRowIndex();
-                $label = $sheet->getCell("A{$number}")->getValue();
-                if (array_key_exists((string) $label, $expected)) {
-                    $actual[$label] = $sheet->getCell("C{$number}")->getValue();
-                }
-                $this->assertNotContains($label, [
-                    'إجمالي السداد والحجوزات',
-                    'الإجمالي المالي للتقرير',
-                    'إجمالي العجز',
-                ]);
             }
-            $this->assertEquals($expected, $actual);
+
+            // Editing the downloaded inputs must not recalculate its totals.
+            $sheet->setCellValue('C15', 500);
+            $sheet->setCellValue('C24', 900);
+            $sheet->setCellValue('C36', 2500);
+            $sheet->setCellValue('H5', 50);
+            $this->assertEquals(76.50, $sheet->getCell('I5')->getCalculatedValue());
+            $this->assertEquals(62, $sheet->getCell('C20')->getCalculatedValue());
+            $this->assertEquals(13, $sheet->getCell('C27')->getCalculatedValue());
+            $this->assertEquals(1009, $sheet->getCell('C33')->getCalculatedValue());
+            $this->assertEquals(191, $sheet->getCell('C38')->getCalculatedValue());
         } finally {
             @unlink($tmp);
         }
     }
 }
+

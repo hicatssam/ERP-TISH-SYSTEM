@@ -5,6 +5,7 @@
         'trays' => $items->sum(fn($i) => (float) $i->received_trays),
         'received' => $items->sum(fn($i) => (float) $i->received_kg),
         'sales' => $items->sum(fn($i) => (float) $i->sales_kg),
+        'sales_value' => $items->sum(fn($i) => $i->sales_value ?? 0),
         'damaged' => $items->sum(fn($i) => (float) $i->damaged_kg),
         'other' => $items->sum(fn($i) => (float) $i->other_net_kg),
         'actual' => $items->sum(fn($i) => (float) ($i->actual_closing_kg ?? 0)),
@@ -58,6 +59,14 @@
     </table>
 
     <div class="print-section">
+        <p style="font-size:8pt">قيمة المبيعات = المبيعات بالكيلو × سعر الكيلو المحفوظ، قبل الخصومات.
+            @if($items->contains('selling_price_is_reference', true))
+                أسعار التقارير السابقة مرجعية حسب تسعير الفرع وقت التحديث.
+            @endif
+            @if($items->contains(fn($item) => $item->selling_price_per_kg === null))
+                الأصناف بلا سعر لا تدخل في إجمالي قيمة المبيعات.
+            @endif
+        </p>
         <table class="print-table showroom-doc-table" cellpadding="0" cellspacing="0">
             <thead>
                 <tr>
@@ -67,6 +76,8 @@
                     <th>وارد سدر</th>
                     <th>وارد / كجم</th>
                     <th>مبيعات / كجم</th>
+                    <th>سعر الكيلو</th>
+                    <th>قيمة المبيعات</th>
                     <th>تالف / كجم</th>
                     <th>حركات أخرى صافي</th>
                     <th>المتبقي الفعلي</th>
@@ -82,6 +93,8 @@
                         <td>{{ number_format((float) $item->received_trays, 2) }}</td>
                         <td>{{ number_format((float) $item->received_kg, 3) }}</td>
                         <td>{{ number_format((float) $item->sales_kg, 3) }}</td>
+                        <td>{{ $item->selling_price_per_kg === null ? '—' : number_format((float) $item->selling_price_per_kg, 2) }}{{ $item->selling_price_is_reference ? ' (مرجعي)' : '' }}</td>
+                        <td>{{ $item->sales_value === null ? '—' : number_format($item->sales_value, 2) }}</td>
                         <td>{{ number_format((float) $item->damaged_kg, 3) }}</td>
                         <td>{{ number_format((float) $item->other_net_kg, 3) }}</td>
                         <td>{{ $item->actual_closing_kg === null ? '—' : number_format((float) $item->actual_closing_kg, 3) }}</td>
@@ -98,6 +111,8 @@
                     <th>{{ number_format($totals['trays'], 2) }}</th>
                     <th>{{ number_format($totals['received'], 3) }}</th>
                     <th>{{ number_format($totals['sales'], 3) }}</th>
+                    <th>—</th>
+                    <th>{{ number_format($totals['sales_value'], 2) }}</th>
                     <th>{{ number_format($totals['damaged'], 3) }}</th>
                     <th>{{ number_format($totals['other'], 3) }}</th>
                     <th>{{ number_format($totals['actual'], 3) }}</th>
@@ -118,6 +133,10 @@
             <td><div class="showroom-label">خصم الزبائن</div><div class="showroom-value" style="font-weight:bold">{{ number_format((float) $report->customer_discount_amount, 2) }}</div></td>
             <td><div class="showroom-label">الدفع المسبق (حجوزات سابقة)</div><div class="showroom-value" style="font-weight:bold">{{ number_format((float) $report->previous_prepaid_amount, 2) }}</div></td>
         </tr>
+        <tr>
+            <td colspan="4" style="text-align:right;font-weight:bold">الإجمالي</td>
+            <td style="background:#fff8df"><div class="showroom-value" style="font-weight:bold">{{ number_format((float) $report->accounting_total_primary, 2) }}</div></td>
+        </tr>
     </table>
 
     <table class="showroom-accounting-doc" cellpadding="0" cellspacing="0" style="margin-top:8px">
@@ -130,13 +149,32 @@
             <td><div class="showroom-label">الحجوزات الخاصة / حلويات + كيك</div><div class="showroom-value" style="font-weight:bold">{{ number_format((float) $report->special_reservations_amount, 2) }}</div></td>
             <td><div class="showroom-label">سداد المديونيات</div><div class="showroom-value" style="font-weight:bold">{{ number_format((float) $report->debt_repayment_amount, 2) }}</div></td>
         </tr>
+        <tr>
+            <td colspan="3" style="text-align:right;font-weight:bold">الإجمالي</td>
+            <td style="background:#eef7ee"><div class="showroom-value" style="font-weight:bold">{{ number_format((float) $report->accounting_total_secondary, 2) }}</div></td>
+        </tr>
     </table>
 
     <table class="showroom-accounting-doc" cellpadding="0" cellspacing="0" style="margin-top:8px">
-        <tr><td colspan="2" style="font-weight:bold;background:#fff5d9">بيانات البيع والكاشير</td></tr>
         <tr>
-            <td><div class="showroom-label">إجمالي بيع التقرير</div><div class="showroom-value">{{ number_format((float) $report->report_sales_total, 2) }}</div></td>
-            <td><div class="showroom-label">رصيد الكاشير</div><div class="showroom-value">{{ number_format((float) $report->cashier_balance_total, 2) }}</div></td>
+            <td colspan="4" style="font-weight:bold;background:#fff5d9">الإجمالي المالي للتقرير</td>
+        </tr>
+        <tr>
+            <td><div class="showroom-label">إجمالي بيع التقرير</div><div class="showroom-value" style="font-weight:bold">{{ number_format((float) $report->report_sales_total, 2) }}</div></td>
+            <td><div class="showroom-label">إجمالي السداد والحجوزات</div><div class="showroom-value" style="font-weight:bold">{{ number_format((float) $report->accounting_total_secondary, 2) }}</div></td>
+            <td><div class="showroom-label">إجمالي الخصومات</div><div class="showroom-value" style="font-weight:bold">{{ number_format((float) $report->customer_discount_amount, 2) }}</div></td>
+            <td style="background:#fff5d9"><div class="showroom-label">الإجمالي المالي</div><div class="showroom-value" style="font-weight:bold">{{ number_format((float) $report->financial_report_total, 2) }}</div></td>
+        </tr>
+    </table>
+
+    <table class="showroom-accounting-doc" cellpadding="0" cellspacing="0" style="margin-top:8px">
+        <tr>
+            <td colspan="3" style="font-weight:bold;background:#eaf6ea">إجمالي العجز</td>
+        </tr>
+        <tr>
+            <td><div class="showroom-label">إجمالي رصيد الكاشير</div><div class="showroom-value" style="font-weight:bold">{{ number_format((float) $report->cashier_balance_total, 2) }}</div></td>
+            <td><div class="showroom-label">الإجمالي المالي للتقرير</div><div class="showroom-value" style="font-weight:bold">{{ number_format((float) $report->financial_report_total, 2) }}</div></td>
+            <td style="background:#eaf6ea"><div class="showroom-label">إجمالي العجز</div><div class="showroom-value" style="font-weight:bold">{{ number_format((float) $report->net_booking_total, 2) }}</div></td>
         </tr>
     </table>
 
@@ -169,4 +207,5 @@
         </div>
     @endif
 @endsection
+
 
