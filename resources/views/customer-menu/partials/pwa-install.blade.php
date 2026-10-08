@@ -26,14 +26,18 @@
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
     const btn = document.getElementById('pwaInstallBtn');
 
+    // Installed apps also need to check for new deployments.
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
+            .then(registration => registration.update())
+            .catch(() => {});
+    }
+
     if (isStandalone || !btn) return;
 
     const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
     let deferredPrompt = null;
 
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js').catch(() => {});
-    }
 
     window.addEventListener('beforeinstallprompt', e => {
         e.preventDefault();
@@ -67,3 +71,4 @@
     });
 })();
 </script>
+

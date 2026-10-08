@@ -1,4 +1,6 @@
-@php($menuCurrencySymbol = app(\App\Services\PrintThemeService::class)->settings()['currency_symbol'])
+@php
+    $menuCurrencySymbol = app(\App\Services\PrintThemeService::class)->settings()['currency_symbol'];
+@endphp
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
@@ -441,3 +443,4 @@
     </script>
 </body>
 </html>
+

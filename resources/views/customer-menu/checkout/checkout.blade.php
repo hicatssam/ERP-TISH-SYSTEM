@@ -89,7 +89,7 @@
     <div class="upload-preview" id="uploadPreview" hidden></div>
    </div>
 
-   <div class="error" id="checkoutError"></div>
+   <div class="error" id="checkoutError" role="alert" tabindex="-1"></div>
    <button class="submit-order" id="checkoutSubmit" type="submit" disabled>تأكيد وإرسال الطلب</button>
   </form>
  </div>
@@ -110,6 +110,8 @@ const TRACK_BASE = @json(route('customer-menu.show', $location->code));
 const REQUEST_TOKEN = @json($requestToken ?? '');
 const CSRF = document.querySelector('meta[name="csrf-token"]').content;
 let methods = [];
+let checkoutSubmitting = false;
+let checkoutSucceeded = false;
 
 function renderSummary() {
     const rows = CM.cartRows();
@@ -131,6 +133,18 @@ function renderSummary() {
       </div>`;
     }).join('');
     document.getElementById('summaryTotal').textContent = CM.money(CM.cartTotal());
+}
+
+function preselectQrTable() {
+    const table = CM.selectedTable();
+    const service = document.getElementById('serviceType');
+    if (!table?.id || !Array.from(service.options).some(option => option.value === 'dine_in')) return;
+    const card = Array.from(document.querySelectorAll('.table-card'))
+        .find(item => String(item.dataset.tableId) === String(table.id) && !item.disabled);
+    if (!card) return;
+    service.value = 'dine_in';
+    card.classList.add('selected');
+    document.getElementById('tableIdInput').value = table.id;
 }
 
 function serviceFields() {
@@ -190,11 +204,15 @@ function choosePayment(id) {
     const method = methods.find(x => String(x.id) === String(id));
     if (!method) return;
     document.getElementById('paymentMethodId').value = method.id;
+    document.getElementById('paymentAccountId').value = '';
+    document.getElementById('paymentReferenceInput').required = !!method.requires_reference;
     document.querySelectorAll('[data-pay]').forEach(b => b.classList.toggle('active', String(b.dataset.pay) === String(id)));
     const accounts = method.accounts || [];
     document.getElementById('paymentAccountDetails').innerHTML = accounts.length
         ? `<label>الحساب<select id="paymentAccountSelect"><option value="">اختر الحساب</option>${accounts.map(a => `<option value="${a.id}">${CM.esc(a.name || a.provider_name || a.account_number || 'حساب')}</option>`).join('')}</select></label>`
         : '';
+
+    document.getElementById('paymentAccountDetails').insertAdjacentHTML('beforeend', '<div id="selectedPaymentAccount" dir="auto"></div>');
 
     const isPureCash = String(method.type || '').toLowerCase().includes('cash') && !method.requires_reference && !method.requires_verification;
 
@@ -212,6 +230,24 @@ function choosePayment(id) {
     if (isPureCash) { proofInput.value = ''; document.getElementById('uploadPreview').hidden = true; }
 }
 
+function renderSelectedPaymentAccount() {
+    const method = methods.find(item => String(item.id) === String(document.getElementById('paymentMethodId').value));
+    const account = (method?.accounts || []).find(item => String(item.id) === String(document.getElementById('paymentAccountId').value));
+    const target = document.getElementById('selectedPaymentAccount');
+    if (!target) return;
+    const fields = account ? [
+        ['البنك / الجهة', account.provider_name],
+        ['اسم صاحب الحساب', account.account_holder_name],
+        ['رقم الحساب', account.account_number],
+        ['IBAN', account.iban],
+        ['رقم المحفظة', account.phone_number],
+        ['تعليمات التحويل', account.instructions],
+    ] : [];
+    target.innerHTML = fields.filter(([, value]) => value).map(([label, value]) =>
+        `<p><strong>${CM.esc(label)}:</strong> <span style="white-space:pre-wrap">${CM.esc(value)}</span></p>`
+    ).join('');
+}
+
 document.getElementById('paymentProofInput').addEventListener('change', e => {
     const file = e.target.files[0];
     const preview = document.getElementById('uploadPreview');
@@ -227,13 +263,17 @@ document.addEventListener('click', e => {
 });
 
 document.addEventListener('change', e => {
-    if (e.target.id === 'paymentAccountSelect') document.getElementById('paymentAccountId').value = e.target.value;
+    if (e.target.id === 'paymentAccountSelect') {
+        document.getElementById('paymentAccountId').value = e.target.value;
+        renderSelectedPaymentAccount();
+    }
 });
 
 document.getElementById('serviceType').addEventListener('change', serviceFields);
 
 document.getElementById('checkoutForm').addEventListener('submit', async e => {
     e.preventDefault();
+    if (checkoutSubmitting) return;
     const rows = CM.cartRows();
     if (!rows.length) return;
 
@@ -259,14 +299,22 @@ document.getElementById('checkoutForm').addEventListener('submit', async e => {
         return;
     }
 
+    const proof = document.getElementById('paymentProofInput').files[0];
+    if (proof && proof.size > 5 * 1024 * 1024) {
+        error.textContent = 'حجم إثبات الدفع يجب ألا يتجاوز 5 ميجابايت.';
+        error.focus();
+        return;
+    }
+
     error.textContent = '';
+    checkoutSubmitting = true;
     const button = document.getElementById('checkoutSubmit');
     button.disabled = true;
     button.textContent = 'جاري إرسال الطلب...';
 
     try {
         const formData = new FormData(e.currentTarget);
-        formData.append('request_token', REQUEST_TOKEN);
+        formData.append('request_token', CM.checkoutToken(REQUEST_TOKEN));
         rows.forEach((row, i) => {
             formData.append(`items[${i}][product_id]`, row.product_id);
             formData.append(`items[${i}][quantity]`, row.quantity);
@@ -284,8 +332,17 @@ document.getElementById('checkoutForm').addEventListener('submit', async e => {
             headers: { Accept: 'application/json', 'X-CSRF-TOKEN': CSRF },
             body: formData,
         });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.message || Object.values(data.errors || {}).flat()[0] || 'تعذر إرسال الطلب');
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            const fallback = response.status === 413
+                ? 'حجم إثبات الدفع أكبر من المسموح على السيرفر. جرّب ملفاً أصغر.'
+                : response.status === 419
+                    ? 'انتهت صلاحية الصفحة. حدّث الصفحة وحاول مرة أخرى.'
+                    : 'تعذر إرسال الطلب. حاول مرة أخرى.';
+            throw new Error(Object.values(data.errors || {}).flat()[0] || data.message || fallback);
+        }
+        if (!data.track_url) throw new Error('تعذر قراءة نتيجة الطلب. أعد المحاولة بنفس الصفحة.');
+        checkoutSucceeded = true;
 
         CM.pushOrder({
             order_id: data.order_id || null,
@@ -302,15 +359,20 @@ document.getElementById('checkoutForm').addEventListener('submit', async e => {
         CM.toast('تم استلام طلبك بنجاح');
         setTimeout(() => { window.location.href = data.track_url || TRACK_BASE; }, 700);
     } catch (err) {
-        document.getElementById('checkoutError').textContent = err.message;
+        error.textContent = err.message;
+        error.focus();
     } finally {
-        button.disabled = false;
-        button.textContent = 'تأكيد وإرسال الطلب';
+        if (!checkoutSucceeded) {
+            checkoutSubmitting = false;
+            button.disabled = false;
+            button.textContent = 'تأكيد وإرسال الطلب';
+        }
     }
 });
 
 // Start checkout infrastructure first. Even if a malformed legacy cart row
 // slips through, tables and payment methods must never remain stuck loading.
+preselectQrTable();
 serviceFields();
 loadPayments();
 renderSummary();
@@ -335,3 +397,4 @@ renderSummary();
 </script>
 </body>
 </html>
+

@@ -86,16 +86,22 @@ let selectedVariantId = null;
 const selectedModifiers = {}; // modifier_id -> quantity
 
 const variants = PRODUCT.variants || [];
-const modifierGroups = PRODUCT.modifierGroups || [];
+let modifierGroups = PRODUCT.modifierGroups || [];
 
 if (PRODUCT.isVariantProduct && variants.length) {
     const def = variants.find(v => v.is_default) || variants[0];
     selectedVariantId = def.id;
 }
 
-modifierGroups.forEach(group => {
-    (group.modifiers || []).forEach(m => { if (m.is_default) selectedModifiers[m.id] = 1; });
-});
+function resetModifierChoices() {
+    const variant = variants.find(v => String(v.id) === String(selectedVariantId));
+    modifierGroups = variant?.modifier_groups ?? PRODUCT.modifierGroups ?? [];
+    Object.keys(selectedModifiers).forEach(id => delete selectedModifiers[id]);
+    modifierGroups.forEach(group => {
+        (group.modifiers || []).forEach(m => { if (m.is_default) selectedModifiers[m.id] = 1; });
+    });
+}
+resetModifierChoices();
 
 function updateMedia() {
     if (!PRODUCT.isVariantProduct) return;
@@ -196,6 +202,7 @@ document.getElementById('pickerContainer').addEventListener('click', e => {
     const variantRow = e.target.closest('[data-variant]');
     if (variantRow) {
         selectedVariantId = variantRow.dataset.variant;
+        resetModifierChoices();
         renderPicker();
         return;
     }
@@ -271,3 +278,4 @@ paintFav();
 </script>
 </body>
 </html>
+

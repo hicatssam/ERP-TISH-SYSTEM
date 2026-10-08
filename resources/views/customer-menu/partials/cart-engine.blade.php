@@ -36,6 +36,16 @@ window.CustomerMenu = (function () {
     const CART_KEY = 'dahab_cart_' + LOCATION_CODE;
     const FAV_KEY = 'dahab_favorites_' + LOCATION_CODE;
     const ORDERS_KEY = 'customer_menu_orders';
+    const REQUEST_KEY = 'dahab_checkout_request_' + LOCATION_CODE;
+    const TABLE_KEY = 'dahab_menu_table_' + LOCATION_CODE;
+    const INITIAL_TABLE = @json($selectedTable ?? null);
+    try {
+        if (INITIAL_TABLE?.id) sessionStorage.setItem(TABLE_KEY, JSON.stringify(INITIAL_TABLE));
+    } catch (e) {}
+
+    function selectedTable() {
+        try { return JSON.parse(sessionStorage.getItem(TABLE_KEY) || 'null'); } catch (e) { return null; }
+    }
 
     function safeObject(key) {
         try {
@@ -79,7 +89,7 @@ window.CustomerMenu = (function () {
             // submit it as the base product.
             if (p.isVariantProduct && !variant) return;
 
-            const availableModifiers = p.modifierGroups.flatMap(group =>
+            const availableModifiers = (variant?.modifier_groups ?? p.modifierGroups).flatMap(group =>
                 group.modifiers.map(modifier => ({
                     ...modifier,
                     group_id: group.id,
@@ -179,7 +189,7 @@ window.CustomerMenu = (function () {
     function cartTotal() { return cartRows().reduce((sum, x) => sum + Number(x.price) * Number(x.quantity), 0); }
 
     function saveCart() {
-        localStorage.setItem(CART_KEY, JSON.stringify(cart));
+        try { localStorage.setItem(CART_KEY, JSON.stringify(cart)); } catch (e) {}
         syncBadges();
         document.dispatchEvent(new CustomEvent('customer-menu:cart-changed'));
     }
@@ -218,7 +228,8 @@ window.CustomerMenu = (function () {
             unitPrice = Number(variant.price);
         }
 
-        const allModifiers = p.modifierGroups.flatMap(g => g.modifiers.map(m => ({ ...m, group_id: g.id, group_name: g.name })));
+        const variant = p.variants.find(v => String(v.id) === String(variantId));
+        const allModifiers = (variant?.modifier_groups ?? p.modifierGroups).flatMap(g => g.modifiers.map(m => ({ ...m, group_id: g.id, group_name: g.name })));
         const resolvedModifiers = (options.modifiers || [])
             .map(row => {
                 const def = allModifiers.find(m => String(m.id) === String(row.modifier_id));
@@ -258,7 +269,7 @@ window.CustomerMenu = (function () {
 
     function changeCart(key, delta) {
         if (!cart[key]) return;
-        cart[key].quantity += delta;
+        cart[key].quantity = Math.min(50, cart[key].quantity + delta);
         if (cart[key].quantity <= 0) delete cart[key];
         saveCart();
     }
@@ -268,7 +279,20 @@ window.CustomerMenu = (function () {
         saveCart();
     }
 
+    // Keep the same request token across a refresh after an uncertain network response.
+    // A changed cart is a new order; a successful order clears this pending request.
+    function checkoutToken(fallback) {
+        const signature = JSON.stringify(cartRows().map(row => [row.key, row.quantity]).sort());
+        try {
+            const pending = JSON.parse(sessionStorage.getItem(REQUEST_KEY) || 'null');
+            if (pending?.signature === signature && pending.token) return pending.token;
+            sessionStorage.setItem(REQUEST_KEY, JSON.stringify({ signature, token: fallback }));
+        } catch (e) {}
+        return fallback;
+    }
+
     function clearCart() {
+        try { sessionStorage.removeItem(REQUEST_KEY); sessionStorage.removeItem(TABLE_KEY); } catch (e) {}
         cart = {};
         saveCart();
     }
@@ -278,7 +302,7 @@ window.CustomerMenu = (function () {
     function toggleFavorite(id) {
         const key = String(id);
         favorites = isFavorite(key) ? favorites.filter(x => String(x) !== key) : [...favorites, key];
-        localStorage.setItem(FAV_KEY, JSON.stringify(favorites));
+        try { localStorage.setItem(FAV_KEY, JSON.stringify(favorites)); } catch (e) {}
         syncBadges();
         document.dispatchEvent(new CustomEvent('customer-menu:favorites-changed'));
     }
@@ -289,8 +313,8 @@ window.CustomerMenu = (function () {
 
     function pushOrder(order) {
         const orders = safeArray(ORDERS_KEY);
-        orders.push(order);
-        localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+        if (!orders.some(saved => saved.url === order.url)) orders.push(order);
+        try { localStorage.setItem(ORDERS_KEY, JSON.stringify(orders)); } catch (e) {}
     }
 
     function syncBadges() {
@@ -309,9 +333,10 @@ window.CustomerMenu = (function () {
         esc, money, product, image, toast,
         cartRows, cartCount, cartTotal, addToCart, changeCart, removeFromCart, clearCart,
         isFavorite, toggleFavorite, favorites: () => favorites.slice(),
-        ordersHistory, pushOrder,
+        ordersHistory, pushOrder, checkoutToken, selectedTable,
         syncBadges,
     };
 })();
 </script>
 <div class="toast" id="toast"></div>
+

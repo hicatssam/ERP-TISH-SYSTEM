@@ -58,6 +58,16 @@ class StoreCustomerMenuOrderRequest extends FormRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'payment_proof.uploaded' => 'تعذر رفع إثبات الدفع. اختر ملفاً أصغر وحاول مرة أخرى.',
+            'payment_proof.max' => 'حجم إثبات الدفع يجب ألا يتجاوز 5 ميجابايت.',
+            'payment_proof.mimes' => 'إثبات الدفع يجب أن يكون صورة JPG أو PNG أو WEBP أو ملف PDF.',
+            'items.*.quantity.max' => 'الحد الأقصى لكمية الصنف هو 50.',
+        ];
+    }
+
     public function withValidator($validator): void
     {
         $validator->after(function ($validator): void {
@@ -73,3 +83,4 @@ class StoreCustomerMenuOrderRequest extends FormRequest
         });
     }
 }
+

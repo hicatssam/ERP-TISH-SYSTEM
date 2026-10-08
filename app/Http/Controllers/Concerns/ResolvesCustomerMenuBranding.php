@@ -161,7 +161,6 @@ trait ResolvesCustomerMenuBranding
                     ->orderBy('sort_order'),
                 'product.modifierGroupLinks' => fn ($query) => $query
                     ->where('is_active', true)
-                    ->whereNull('product_variant_id')
                     ->with(['group' => fn ($q) => $q->where('is_active', true)->with([
                         'modifiers' => fn ($mq) => $mq->where('is_active', true),
                     ])]),
@@ -213,7 +212,6 @@ trait ResolvesCustomerMenuBranding
 
                 $modifierGroups = collect($product->modifierGroupLinks ?? [])
                     ->filter(fn ($link) => $link->group !== null)
-                    ->unique('modifier_group_id')
                     ->map(function ($link): array {
                         $group = $link->group;
                         $required = $link->is_required_override ?? (bool) $group->is_required;
@@ -229,6 +227,7 @@ trait ResolvesCustomerMenuBranding
                         }
 
                         return [
+                            'variant_id' => $link->product_variant_id ? (int) $link->product_variant_id : null,
                             'id' => (int) $group->id,
                             'name' => $group->name_ar ?: $group->name,
                             'selection_type' => $group->selection_type->value,
@@ -250,6 +249,17 @@ trait ResolvesCustomerMenuBranding
                     })
                     ->values()
                     ->all();
+
+                $allModifierGroups = collect($modifierGroups);
+                $variants = collect($variants)->map(function (array $variant) use ($allModifierGroups): array {
+                    $variant['modifier_groups'] = $allModifierGroups
+                        ->filter(fn (array $group) => $group['variant_id'] === null
+                            || $group['variant_id'] === $variant['id'])
+                        ->sortBy(fn (array $group) => $group['variant_id'] === null ? 1 : 0)
+                        ->unique('id')->values()->all();
+                    return $variant;
+                })->all();
+                $modifierGroups = $allModifierGroups->whereNull('variant_id')->unique('id')->values()->all();
 
                 return [
                     'menu_item_id' => (int) $menuItem->id,
@@ -566,3 +576,4 @@ trait ResolvesCustomerMenuBranding
         return PublicImageUrl::url($path);
     }
 }
+

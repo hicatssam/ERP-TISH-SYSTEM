@@ -1,0 +1,120 @@
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const path = require('node:path');
+const root = path.resolve(__dirname, '../..');
+const products = [{product_id: 1, name: 'Cake', price: 10, available: true, is_variant_product: true,
+    variants: [{id: 2, name: 'Large', price: 18, modifier_groups: [{id: 3, modifiers: [{id: 4, name: 'Extra', price_delta: 2}]}]}], modifier_groups: []}];
+function cart(blocked = false, saved = {}, table = null) {
+    const values = new Map([['dahab_cart_B01', JSON.stringify(saved)]]);
+    let source = fs.readFileSync(path.join(root, 'resources/views/customer-menu/partials/cart-engine.blade.php'), 'utf8');
+    source = source.slice(source.indexOf('<script>') + 8, source.indexOf('</script>'));
+    source = source.replace('@json($menuItems ?? [])', JSON.stringify(products))
+        .replace('@json($location->code)', '"B01"')
+        .replace('@json($selectedTable ?? null)', JSON.stringify(table))
+        .replace(/@json\(app\([^\n]+\)/, '"₪"');
+    const context = {window: {}, document: {addEventListener() {}, dispatchEvent() {}, querySelectorAll() { return []; }, getElementById() { return null; }},
+        localStorage: {getItem(k) {return values.get(k) || null;}, setItem(k, v) {if(blocked) throw Error('blocked'); values.set(k, v);}},
+        sessionStorage: {getItem(k) {return values.get(k) || null;}, setItem(k, v) {values.set(k, v);}, removeItem(k) {values.delete(k);}},
+        CustomEvent: class {}, setTimeout, clearTimeout};
+    vm.runInNewContext(source, context);
+    return context.window.CustomerMenu;
+}
+test('variant-only add-ons keep the same price through cart reload', () => {
+    const cm = cart();
+    assert.equal(cm.addToCart(1, 2, {variantId: 2, modifiers: [{modifier_id: 4, quantity: 1}]}), true);
+    assert.equal(cm.cartTotal(), 40);
+    const reloaded = cart(false, Object.fromEntries(cm.cartRows().map(row => [row.key, row])));
+    assert.equal(reloaded.cartTotal(), 40);
+    assert.equal(reloaded.cartRows()[0].modifiers[0].modifier_id, 4);
+});
+test('cart quantity stops at the server limit and can be removed', () => {
+    const cm = cart(); cm.addToCart(1, 50, {variantId: 2});
+    const key = cm.cartRows()[0].key;
+    cm.changeCart(key, 1); assert.equal(cm.cartCount(), 50);
+    cm.changeCart(key, -50); assert.equal(cm.cartCount(), 0);
+});
+test('blocked storage does not interrupt successful checkout housekeeping', () => {
+    const cm = cart(true); cm.addToCart(1, 1, {variantId: 2});
+    assert.doesNotThrow(() => cm.pushOrder({url: '/menu/order/token'}));
+    assert.doesNotThrow(() => cm.clearCart()); assert.equal(cm.cartCount(), 0);
+});
+test('retried order is stored once in history', () => {
+    const cm = cart(); cm.pushOrder({url: '/track/1', location: 'B01'}); cm.pushOrder({url: '/track/1', location: 'B01'});
+    assert.equal(cm.ordersHistory().length, 1);
+});
+async function worker(networkFails) {
+    const handlers = {}; let options;
+    const fresh = {ok: true, clone() { return this; }, tag: 'fresh'};
+    const cached = {tag: 'old'};
+    const context = {URL, Response, self: {location: {origin: 'https://example.test'}, addEventListener(type, fn) { handlers[type] = fn; }},
+        caches: {async match() {return cached;}, async open() {return {async put() {}};}},
+        async fetch(request, opts) {options = opts; if (networkFails) throw Error('offline'); return fresh;}};
+    vm.runInNewContext(fs.readFileSync(path.join(root, 'public/sw.js'), 'utf8'), context);
+    let response;
+    handlers.fetch({request: {method: 'GET', mode: 'cors', url: 'https://example.test/assets/app.js', destination: 'script'}, respondWith(p) {response = p;}});
+    return {response: await response, options};
+}
+test('installed app uses the new script immediately when online', async () => {
+    const result = await worker(false); assert.equal(result.response.tag, 'fresh'); assert.equal(result.options.cache, 'no-cache');
+});
+test('installed app retains cached assets when offline', async () => {
+    assert.equal((await worker(true)).response.tag, 'old');
+});
+
+test('standalone app checks service worker updates too', async () => {
+    let registered = false, updated = false;
+    const source = fs.readFileSync(path.join(root, 'resources/views/customer-menu/partials/pwa-install.blade.php'), 'utf8').split('<script>')[1].split('</script>')[0];
+    const navigator = {serviceWorker: {register(url, options) {
+        assert.equal(url, '/sw.js'); assert.equal(options.updateViaCache, 'none'); registered = true;
+        return Promise.resolve({update() {updated = true; return Promise.resolve();}});
+    }}};
+    vm.runInNewContext(source, {window: {matchMedia() {return {matches: true};}, navigator}, navigator,
+        document: {getElementById() {return null;}}});
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(registered, true); assert.equal(updated, true);
+});
+
+test('refresh token is reused for the same cart but changes for a changed cart', () => {
+    const cm = cart(); cm.addToCart(1, 1, {variantId: 2});
+    assert.equal(cm.checkoutToken('first'), 'first');
+    assert.equal(cm.checkoutToken('new-page'), 'first');
+    cm.changeCart(cm.cartRows()[0].key, 1);
+    assert.equal(cm.checkoutToken('changed-cart'), 'changed-cart');
+});
+test('successful checkout clears the pending request token', () => {
+    const cm = cart(); cm.addToCart(1, 1, {variantId: 2}); cm.checkoutToken('first');
+    cm.clearCart(); cm.addToCart(1, 1, {variantId: 2});
+    assert.equal(cm.checkoutToken('second-order'), 'second-order');
+});
+
+test('selected bank account exposes receiving details and escapes instructions', () => {
+    const source = fs.readFileSync(path.join(root, 'resources/views/customer-menu/checkout/checkout.blade.php'), 'utf8');
+    const fn = source.slice(source.indexOf('function renderSelectedPaymentAccount()'), source.indexOf("document.getElementById('paymentProofInput').addEventListener"));
+    const target = {innerHTML: ''};
+    const context = {methods: [{id: 1, accounts: [{id: 2, account_number: 'ACC-123', account_holder_name: 'Dahab', iban: 'PS-123', instructions: '<img src=x>'}]}],
+        CM: cart(), document: {getElementById(id) {return id === 'selectedPaymentAccount' ? target : {value: id === 'paymentMethodId' ? '1' : '2'};}}};
+    vm.runInNewContext(fn + '\nrenderSelectedPaymentAccount();', context);
+    assert.match(target.innerHTML, /ACC-123/); assert.match(target.innerHTML, /Dahab/); assert.match(target.innerHTML, /PS-123/);
+    assert.match(target.innerHTML, /&lt;img/); assert.doesNotMatch(target.innerHTML, /<img/);
+});
+
+test('QR table is carried across menu pages and cleared after checkout', () => {
+    const cm = cart(false, {}, {id: 7, code: 'T7'});
+    assert.equal(cm.selectedTable().id, 7);
+    cm.clearCart(); assert.equal(cm.selectedTable(), null);
+});
+test('QR checkout preselects only a currently available table', () => {
+    const source = fs.readFileSync(path.join(root, 'resources/views/customer-menu/checkout/checkout.blade.php'), 'utf8');
+    const fn = source.slice(source.indexOf('function preselectQrTable()'), source.indexOf('function serviceFields()'));
+    for (const disabled of [false, true]) {
+        const service = {options: [{value: 'dine_in'}, {value: 'takeaway'}], value: 'takeaway'};
+        const input = {value: ''};
+        const card = {dataset: {tableId: '7'}, disabled, classList: {add() {}}};
+        vm.runInNewContext(fn + '\npreselectQrTable();', {CM: {selectedTable() {return {id: 7};}},
+            document: {getElementById(id) {return id === 'serviceType' ? service : input;}, querySelectorAll() {return [card];}}});
+        assert.equal(service.value, disabled ? 'takeaway' : 'dine_in');
+        assert.equal(String(input.value), disabled ? '' : '7');
+    }
+});

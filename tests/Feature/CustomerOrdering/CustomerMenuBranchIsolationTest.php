@@ -197,6 +197,197 @@ class CustomerMenuBranchIsolationTest extends TestCase
             ->assertCreated();
     }
 
+    private function orderFixture(): array
+    {
+        $branch = $this->branch();
+        $product = $this->product($branch, 12);
+        $cash = $this->cash($branch);
+        $actor = User::factory()->create(['is_active' => true]);
+        SalesChannel::create(['name' => 'Website', 'slug' => 'website',
+            'type' => 'website', 'is_active' => true]);
+        \App\Models\Inventory::create(['location_id' => $branch->id,
+            'product_id' => $product->id, 'quantity' => 20, 'unit_cost' => 3]);
+        return [$branch, $product, $cash, $actor, $this->payload($product, $cash)];
+    }
+
+    public function test_full_takeaway_flow_preserves_inventory_invoice_and_kitchen_states(): void
+    {
+        [$branch, $product, $cash, $actor, $payload] = $this->orderFixture();
+        app(\App\Services\Kitchen\KitchenRoutingService::class)->createDefaultStationIfMissing($branch->id, $actor);
+        $payload['items'][0]['quantity'] = 2;
+        $result = $this->postJson(route('customer-menu.orders.store', $branch->code), $payload)
+            ->assertCreated()->assertJsonPath('state', 'received')->json();
+        $order = Order::findOrFail($result['order_id']);
+        $inventory = \App\Models\Inventory::where('product_id', $product->id)->firstOrFail();
+        $this->assertSame(20.0, (float) $inventory->quantity);
+        $this->assertNull($order->invoice);
+        $orders = app(\App\Services\Orders\OrderService::class);
+        $orders->confirmOrder($order, $actor);
+        $this->assertSame(18.0, (float) $inventory->fresh()->quantity);
+        $this->assertSame(24.0, (float) $order->fresh()->invoice->total_amount);
+        $kitchen = app(\App\Services\Kitchen\KitchenTicketService::class);
+        $ticket = $kitchen->dispatchConfirmedOrder($order->fresh(), $actor)->first();
+        $this->getJson($result['status_url'])->assertOk()->assertJsonPath('state', 'accepted');
+        $kitchen->start($ticket, $actor);
+        $this->getJson($result['status_url'])->assertOk()->assertJsonPath('state', 'preparing');
+        $kitchen->markReady($ticket->fresh(), $actor);
+        $this->getJson($result['status_url'])->assertOk()->assertJsonPath('state', 'ready');
+        try {
+            $orders->completeOrder($order->fresh(), $actor);
+            $this->fail('An unserved kitchen order must not complete.');
+        } catch (\Illuminate\Validation\ValidationException $exception) {
+            $this->assertArrayHasKey('order', $exception->errors());
+        }
+        $kitchen->serve($ticket->fresh(), $actor);
+        $orders->completeOrder($order->fresh(), $actor);
+        $this->getJson($result['status_url'])->assertOk()->assertJsonPath('state', 'completed');
+        $this->get($result['track_url'])->assertOk()->assertSee($order->order_number);
+        $this->get(route('customer-menu.invoice', $order->public_token))->assertOk();
+        $this->assertSame(18.0, (float) $inventory->fresh()->quantity);
+        $this->assertDatabaseCount('invoices', 1);
+    }
+
+    public function test_cancellation_restores_stock_and_cancels_invoice_and_kitchen(): void
+    {
+        [$branch, $product, $cash, $actor, $payload] = $this->orderFixture();
+        app(\App\Services\Kitchen\KitchenRoutingService::class)->createDefaultStationIfMissing($branch->id, $actor);
+        $result = $this->postJson(route('customer-menu.orders.store', $branch->code), $payload)->assertCreated()->json();
+        $order = Order::findOrFail($result['order_id']);
+        $orders = app(\App\Services\Orders\OrderService::class);
+        $orders->confirmOrder($order, $actor);
+        app(\App\Services\Kitchen\KitchenTicketService::class)->dispatchConfirmedOrder($order->fresh(), $actor);
+        $orders->cancelOrder($order->fresh(), 'Customer cancelled', $actor);
+        $this->assertSame(20.0, (float) \App\Models\Inventory::where('product_id', $product->id)->value('quantity'));
+        $this->assertSame('cancelled', $order->fresh()->invoice->statusValue());
+        $this->assertDatabaseHas('kitchen_tickets', ['order_id' => $order->id, 'status' => 'cancelled']);
+        $this->getJson($result['status_url'])->assertOk()->assertJsonPath('state', 'cancelled');
+        $this->postJson(route('customer-menu.orders.store', $branch->code), $payload)->assertCreated()->assertJsonPath('state', 'cancelled');
+        $this->assertDatabaseCount('orders', 1);
+    }
+
+    public function test_retry_cannot_downgrade_a_verified_payment_or_change_its_reference(): void
+    {
+        [$branch, $product, $cash, $actor, $payload] = $this->orderFixture();
+        $result = $this->postJson(route('customer-menu.orders.store', $branch->code), $payload)->assertCreated()->json();
+        $payment = \App\Models\Payment::create(['order_type' => 'order', 'order_id' => $result['order_id'],
+            'location_id' => $branch->id, 'payment_method_id' => $cash->id, 'received_by' => $actor->id,
+            'amount' => 12, 'status' => 'confirmed', 'reference_number' => 'verified-reference', 'paid_at' => now()]);
+        \Illuminate\Support\Facades\DB::table('orders')->where('id', $result['order_id'])->update(['payment_status' => 'paid']);
+        $payload['payment_reference'] = 'replacement';
+        $this->postJson(route('customer-menu.orders.store', $branch->code), $payload)->assertCreated();
+        $this->assertSame('paid', Order::findOrFail($result['order_id'])->payment_status->value);
+        $this->assertSame('verified-reference', $payment->fresh()->reference_number);
+        $this->assertSame('confirmed', $payment->fresh()->statusValue());
+        $this->assertDatabaseCount('orders', 1);
+        $this->assertDatabaseCount('payments', 1);
+    }
+
+    public function test_failed_proof_upload_rolls_back_order_customer_and_table_reservation(): void
+    {
+        [$branch, $product, $cash, $actor, $payload] = $this->orderFixture();
+        $bank = PaymentMethod::create(['name' => 'Bank', 'name_ar' => 'تحويل بنكي', 'code' => 'bank', 'type' => 'bank_transfer',
+            'is_active' => true, 'requires_verification' => true]);
+        LocationPaymentMethod::create(['location_id' => $branch->id, 'payment_method_id' => $bank->id, 'is_active' => true]);
+        $table = $this->table($branch);
+        $payload = array_replace($payload, ['payment_method_id' => $bank->id, 'service_type' => 'dine_in',
+            'restaurant_table_id' => $table->id, 'payment_proof' => \Illuminate\Http\UploadedFile::fake()->image('proof.jpg')]);
+        $disk = \Mockery::mock(\Illuminate\Contracts\Filesystem\Filesystem::class);
+        $disk->shouldReceive('putFileAs')->once()->andReturn(false);
+        \Illuminate\Support\Facades\Storage::shouldReceive('disk')->with('local')->once()->andReturn($disk);
+        $this->postJson(route('customer-menu.orders.store', $branch->code), $payload)
+            ->assertUnprocessable()->assertJsonValidationErrors('payment_proof');
+        $this->assertDatabaseCount('orders', 0);
+        $this->assertDatabaseCount('payments', 0);
+        $this->assertDatabaseCount('customers', 0);
+        $this->assertDatabaseCount('restaurant_table_sessions', 0);
+    }
+
+    public function test_duplicate_lines_over_quantity_limit_are_rejected_without_silent_truncation(): void
+    {
+        [$branch, $product, $cash, $actor, $payload] = $this->orderFixture();
+        $payload['items'] = array_fill(0, 2, ['product_id' => $product->id, 'quantity' => 30]);
+        $this->postJson(route('customer-menu.orders.store', $branch->code), $payload)
+            ->assertUnprocessable()->assertJsonValidationErrors('items');
+        $this->assertDatabaseCount('orders', 0);
+    }
+
+    public function test_variant_specific_required_choices_render_and_price_correctly_at_checkout(): void
+    {
+        [$branch, $product, $cash, $actor, $payload] = $this->orderFixture();
+        $product->update(['product_type' => 'variant']);
+        $variant = \App\Models\ProductVariant::create(['product_id' => $product->id, 'name' => 'Large',
+            'sku' => 'LARGE', 'selling_price' => 18, 'is_active' => true]);
+        $group = \App\Models\ModifierGroup::create(['code' => 'topping', 'name' => 'Topping',
+            'selection_type' => 'single', 'is_active' => true]);
+        $modifier = \App\Models\Modifier::create(['modifier_group_id' => $group->id,
+            'code' => 'extra', 'name' => 'Extra', 'price_delta' => 2, 'is_active' => true]);
+        \App\Models\ProductModifierGroup::create(['product_id' => $product->id, 'product_variant_id' => $variant->id,
+            'modifier_group_id' => $group->id, 'is_active' => true, 'is_required_override' => true]);
+        $response = $this->get(route('customer-menu.product.show', [$branch->code, $product->id]))->assertOk();
+        $catalog = $response->viewData('product');
+        $this->assertSame([], $catalog['modifier_groups']);
+        $this->assertTrue((bool) $catalog['variants'][0]['modifier_groups'][0]['required']);
+        $payload['items'][0]['product_variant_id'] = $variant->id;
+        $this->postJson(route('customer-menu.orders.store', $branch->code), $payload)->assertUnprocessable()->assertJsonValidationErrors('items');
+        $payload['items'][0]['modifiers'] = [['modifier_id' => $modifier->id, 'quantity' => 1]];
+        $result = $this->postJson(route('customer-menu.orders.store', $branch->code), $payload)->assertCreated()->json();
+        $this->assertSame(20.0, (float) Order::findOrFail($result['order_id'])->total_amount);
+    }
+
+    public function test_dine_in_reserves_table_and_staff_can_close_it_after_cancellation(): void
+    {
+        [$branch, $product, $cash, $actor, $payload] = $this->orderFixture();
+        $table = $this->table($branch);
+        $payload = array_replace($payload, ['service_type' => 'dine_in', 'restaurant_table_id' => $table->id]);
+        $result = $this->postJson(route('customer-menu.orders.store', $branch->code), $payload)->assertCreated()->json();
+        $order = Order::findOrFail($result['order_id']);
+        $this->assertNotNull($order->restaurant_table_session_id);
+        $this->postJson(route('customer-menu.orders.store', $branch->code), array_replace($payload, ['request_token' => (string) Str::uuid()]))
+            ->assertUnprocessable()->assertJsonValidationErrors('restaurant_table_id');
+        $this->assertDatabaseCount('orders', 1);
+        app(\App\Services\Orders\OrderService::class)->cancelOrder($order, 'Cancelled reservation', $actor);
+        app(\App\Services\Restaurant\RestaurantTableService::class)->close($table, $actor);
+        $this->assertFalse($table->fresh()->isOccupied());
+        $this->getJson($result['status_url'])->assertOk()->assertJsonPath('state', 'cancelled');
+    }
+
+    public function test_delivery_address_and_channel_availability_are_enforced(): void
+    {
+        [$branch, $product, $cash, $actor, $payload] = $this->orderFixture();
+        SystemSetting::set('customer_menu_allow_delivery', true);
+        $payload['service_type'] = 'delivery';
+        $this->postJson(route('customer-menu.orders.store', $branch->code), $payload)
+            ->assertUnprocessable()->assertJsonValidationErrors('address');
+        $payload['address'] = 'Gaza, Main Street';
+        RestaurantMenuItem::where('product_id', $product->id)->update(['show_in_delivery' => false]);
+        $this->postJson(route('customer-menu.orders.store', $branch->code), $payload)
+            ->assertUnprocessable()->assertJsonValidationErrors('items');
+        RestaurantMenuItem::where('product_id', $product->id)->update(['show_in_delivery' => true]);
+        $result = $this->postJson(route('customer-menu.orders.store', $branch->code), $payload)->assertCreated()->json();
+        $this->assertDatabaseHas('orders', ['id' => $result['order_id'], 'delivery_address' => $payload['address']]);
+        $this->getJson($result['status_url'])->assertOk()->assertJsonPath('service_type', 'delivery');
+    }
+
+    public function test_bank_proof_remains_pending_and_retry_does_not_replace_it(): void
+    {
+        [$branch, $product, $cash, $actor, $payload] = $this->orderFixture();
+        \Illuminate\Support\Facades\Storage::fake('local');
+        $bank = PaymentMethod::create(['name' => 'Bank', 'name_ar' => 'تحويل بنكي', 'code' => 'bank', 'type' => 'bank_transfer',
+            'is_active' => true, 'requires_verification' => true, 'requires_reference' => true]);
+        LocationPaymentMethod::create(['location_id' => $branch->id, 'payment_method_id' => $bank->id, 'is_active' => true]);
+        $payload = array_replace($payload, ['payment_method_id' => $bank->id,
+            'payment_reference' => 'TX-1', 'payment_proof' => \Illuminate\Http\UploadedFile::fake()->image('proof.jpg')]);
+        $result = $this->postJson(route('customer-menu.orders.store', $branch->code), $payload)->assertCreated()->json();
+        $payment = \App\Models\Payment::sole();
+        $this->assertSame('pending_verification', $payment->statusValue());
+        \Illuminate\Support\Facades\Storage::disk('local')->assertExists($payment->payment_proof);
+        $this->getJson($result['status_url'])->assertOk()->assertJsonPath('payment_status', 'pending_payment_verification');
+        $payload['payment_reference'] = 'changed';
+        $this->postJson(route('customer-menu.orders.store', $branch->code), $payload)->assertCreated();
+        $this->assertSame('TX-1', $payment->fresh()->reference_number);
+        $this->assertDatabaseCount('payments', 1);
+    }
+
     private function branch(): Location
     {
         return Location::create(['name' => 'Branch ' . Str::random(8),
@@ -238,3 +429,4 @@ class CustomerMenuBranchIsolationTest extends TestCase
             'items' => [['product_id' => $product->id, 'quantity' => 1]]];
     }
 }
+

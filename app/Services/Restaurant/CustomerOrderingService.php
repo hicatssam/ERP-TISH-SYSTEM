@@ -69,13 +69,7 @@ class CustomerOrderingService
                 ]);
             }
 
-            $this->syncPublicPayment(
-                $existing,
-                $location,
-                $data,
-                $this->resolveInternalActor()
-            );
-
+            // A retry returns the original result without rewriting reviewed payments.
             return $existing->fresh([
                 'items',
                 'customer',
@@ -222,6 +216,8 @@ class CustomerOrderingService
                 false
             );
 
+            $this->syncPublicPayment($order, $location, $data, $actor, $paymentContext);
+
             return $order->fresh([
                 'items',
                 'customer',
@@ -230,8 +226,6 @@ class CustomerOrderingService
                 'restaurantTableSession',
             ]);
         });
-
-        $this->syncPublicPayment($order, $location, $data, $actor, $paymentContext);
 
         if ($openedSession) {
             $this->tables->notifyOpened(
@@ -366,11 +360,24 @@ class CustomerOrderingService
         if (($data['payment_proof'] ?? null) instanceof UploadedFile) {
             $file = $data['payment_proof'];
             $extension = strtolower($file->getClientOriginalExtension() ?: 'bin');
-            $proofPath = $file->storeAs(
-                'payment-proofs/customer-menu/' . $order->id,
-                'proof-' . ($order->public_request_id ?: $order->public_request_token) . '.' . $extension,
-                'local'
-            );
+            try {
+                $proofPath = $file->storeAs(
+                    'payment-proofs/customer-menu/' . $order->id,
+                    'proof-' . ($order->public_request_id ?: $order->public_request_token) . '.' . $extension,
+                    'local'
+                );
+            } catch (\League\Flysystem\FilesystemException $exception) {
+                report($exception);
+                throw ValidationException::withMessages([
+                    'payment_proof' => 'تعذر حفظ إثبات الدفع. حاول مرة أخرى أو اختر الدفع عند الاستلام.',
+                ]);
+            }
+
+            if (! $proofPath) {
+                throw ValidationException::withMessages([
+                    'payment_proof' => 'تعذر حفظ إثبات الدفع. حاول مرة أخرى أو اختر الدفع عند الاستلام.',
+                ]);
+            }
         }
 
         DB::transaction(function () use (
@@ -479,9 +486,16 @@ class CustomerOrderingService
             ->map(function ($rows): array {
                 $first = $rows->first();
 
+                $quantity = (int) $rows->sum('quantity');
+                if ($quantity > 50) {
+                    throw ValidationException::withMessages([
+                        'items' => 'الحد الأقصى لكل صنف بنفس الخيارات هو 50. عدّل الكمية وحاول مجدداً.',
+                    ]);
+                }
+
                 return [
                     'product_id' => $first['product_id'],
-                    'quantity' => min(50, (int) $rows->sum('quantity')),
+                    'quantity' => $quantity,
                     'kitchen_notes' => $rows
                         ->pluck('kitchen_notes')
                         ->filter()
@@ -709,3 +723,4 @@ class CustomerOrderingService
         return $customer;
     }
 }
+
