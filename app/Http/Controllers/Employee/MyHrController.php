@@ -49,6 +49,10 @@ class MyHrController extends Controller
             'todayRecord' => AttendanceRecord::query()->where('employee_id', $employee->id)
                 ->whereDate('work_date', $today)->first(),
             'selfPunchEnabled' => $features->employeeSelfPunchEnabled(),
+            'webauthnPunchEnabled' => $features->employeeWebauthnPunchEnabled(),
+            'webauthnCredentials' => \App\Models\EmployeeWebauthnCredential::query()
+                ->where('employee_id', $employee->id)->where('user_id', $request->user()->id)
+                ->latest()->get(),
             'selfAttendanceRequest' => $openSelfRequest ?? $todaySelfRequest,
             'todaySelfRequest' => $todaySelfRequest,
             'facePunchEnabled' => $features->employeeFacePunchEnabled(),
@@ -153,3 +157,4 @@ class MyHrController extends Controller
         return $employee;
     }
 }
+

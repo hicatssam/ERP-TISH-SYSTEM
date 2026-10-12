@@ -5,6 +5,8 @@ use App\Http\Controllers\Admin\EmployeeHrFileController;
 use App\Http\Controllers\Admin\HrDashboardController;
 use App\Http\Controllers\Admin\HrOrganizationController;
 use App\Http\Controllers\Admin\AttendanceCorrectionController;
+use App\Http\Controllers\Admin\AttendanceWebauthnController;
+use App\Http\Controllers\Employee\EmployeeWebauthnAttendanceController;
 use App\Http\Controllers\Employee\MyHrController;
 use App\Http\Controllers\Employee\EmployeeFaceAttendanceController;
 use App\Http\Controllers\Employee\EmployeeSelfAttendanceController;
@@ -64,6 +66,14 @@ Route::middleware([
             ->middleware(EnsureAttendanceEnabled::class)->name('corrections.store');
         Route::post('/punch', [EmployeeSelfAttendanceController::class, 'punch'])
             ->middleware([EnsureAttendanceEnabled::class, 'throttle:6,1'])->name('punch');
+        Route::prefix('webauthn')->name('webauthn.')
+            ->middleware([EnsureBiometricAttendanceEnabled::class, 'throttle:10,1'])
+            ->group(function (): void {
+                Route::post('/registration-options', [EmployeeWebauthnAttendanceController::class, 'registrationOptions'])->name('registration-options');
+                Route::post('/register', [EmployeeWebauthnAttendanceController::class, 'register'])->name('register');
+                Route::post('/punch-options', [EmployeeWebauthnAttendanceController::class, 'punchOptions'])->name('punch-options');
+                Route::post('/punch', [EmployeeWebauthnAttendanceController::class, 'punch'])->name('punch');
+            });
         Route::post('/face/challenge', [EmployeeFaceAttendanceController::class, 'challenge'])
             ->middleware([EnsureBiometricAttendanceEnabled::class, 'throttle:10,1'])
             ->name('face.challenge');
@@ -71,6 +81,14 @@ Route::middleware([
             ->middleware([EnsureBiometricAttendanceEnabled::class, 'throttle:5,1'])
             ->name('face.punch');
     });
+
+    Route::prefix('attendance/webauthn')->name('attendance.webauthn.')
+        ->middleware([EnsureAttendanceEnabled::class, 'can:attendance.manage'])
+        ->group(function (): void {
+            Route::get('/', [AttendanceWebauthnController::class, 'index'])->name('index');
+            Route::post('/{credential}/approve', [AttendanceWebauthnController::class, 'approve'])->name('approve');
+            Route::post('/{credential}/revoke', [AttendanceWebauthnController::class, 'revoke'])->name('revoke');
+        });
 
     Route::get('/hr', [HrDashboardController::class, 'index'])
         ->middleware('can:hr.dashboard.view')->name('hr.dashboard');
@@ -159,7 +177,15 @@ Route::middleware([
                 ])
                 ->name('face.revoke');
 
-            Route::post('/face/challenge', [FaceAttendanceController::class, 'challenge'])
+            Route::prefix('webauthn')->name('webauthn.')
+            ->middleware([EnsureBiometricAttendanceEnabled::class, 'throttle:10,1'])
+            ->group(function (): void {
+                Route::post('/registration-options', [EmployeeWebauthnAttendanceController::class, 'registrationOptions'])->name('registration-options');
+                Route::post('/register', [EmployeeWebauthnAttendanceController::class, 'register'])->name('register');
+                Route::post('/punch-options', [EmployeeWebauthnAttendanceController::class, 'punchOptions'])->name('punch-options');
+                Route::post('/punch', [EmployeeWebauthnAttendanceController::class, 'punch'])->name('punch');
+            });
+        Route::post('/face/challenge', [FaceAttendanceController::class, 'challenge'])
                 ->middleware([
                     EnsureBiometricAttendanceEnabled::class,
                     'can:attendance.manage',
@@ -308,3 +334,4 @@ Route::prefix('attendance/integrations')
             [AttendanceDevicePushController::class, 'punches']
         )->name('attendance.integrations.devices.punches');
     });
+

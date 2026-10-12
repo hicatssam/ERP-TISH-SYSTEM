@@ -60,3 +60,13 @@
         @endif
     @endcan
 @endif
+
+
+@if($attendanceFeatures->attendanceEnabled())
+    @can('attendance.manage')
+        <a href="{{ route('attendance.webauthn.index') }}" class="nav-item {{ request()->routeIs('attendance.webauthn.*') ? 'active' : '' }}">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 18h4M9 10l2 2 4-4"/></svg>
+            <span>مفاتيح التحقق بالجوال</span>
+        </a>
+    @endcan
+@endif

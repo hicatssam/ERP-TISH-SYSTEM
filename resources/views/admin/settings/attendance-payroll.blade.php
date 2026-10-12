@@ -174,6 +174,18 @@
                 <div class="att-setting-body">
                     <div class="att-toggle-row">
                         <div class="att-toggle-copy">
+                            <strong>التحقق بالجوال للحضور والانصراف</strong>
+                            <small>يؤكد الموظف الدوام بقفل جواله بعد اعتماد المفتاح من المسؤول. قد يستخدم الجهاز الإصبع أو الوجه أو الرمز. لا يثبت وجود الموظف في الفرع.</small>
+                            <a href="{{ route('attendance.webauthn.index') }}">إدارة مفاتيح الموظفين</a>
+                        </div>
+                        <label class="att-switch">
+                            <input type="checkbox" name="attendance_employee_webauthn_punch_enabled" value="1"
+                                @checked(old('attendance_employee_webauthn_punch_enabled', $settings['attendance_employee_webauthn_punch_enabled']))>
+                            <span class="att-slider"></span>
+                        </label>
+                    </div>
+                    <div class="att-toggle-row">
+                        <div class="att-toggle-copy">
                             <strong>تفعيل الحضور البيومتري</strong>
                             <small>
                                 يعطل أجهزة البصمة وكشك الوجه وجميع نقاط التكامل البيومترية عند إيقافه.
@@ -551,3 +563,4 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 @endpush
 @endsection
+

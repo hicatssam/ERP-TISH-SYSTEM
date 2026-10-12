@@ -78,6 +78,8 @@
         </div>
     </section>
 
+    @include('employee.my-hr.webauthn')
+
     @if($facePunchEnabled && $faceConfigured && $faceProfileActive)
         <dialog class="myhr-dialog myhr-face-dialog" id="myFaceDialog" aria-labelledby="myFaceTitle">
             <div class="myhr-dialog-head"><h2 id="myFaceTitle">تسجيل الدوام بالوجه</h2><button type="button" data-myhr-close aria-label="إغلاق">×</button></div>
@@ -356,3 +358,4 @@ document.getElementById(@json(old('_form') === 'leave' ? 'myLeaveDialog' : 'myCo
 </script>
 @endif
 @endsection
+
