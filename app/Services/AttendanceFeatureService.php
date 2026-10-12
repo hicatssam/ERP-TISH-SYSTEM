@@ -29,6 +29,12 @@ class AttendanceFeatureService
             && (bool) SystemSetting::get('attendance_employee_face_punch_enabled', false);
     }
 
+    public function employeeWebauthnPunchEnabled(): bool
+    {
+        return $this->biometricEnabled()
+            && (bool) SystemSetting::get('attendance_employee_webauthn_punch_enabled', false);
+    }
+
     public function employeeSelfPunchEnabled(): bool
     {
         return $this->attendanceEnabled()
@@ -106,6 +112,7 @@ class AttendanceFeatureService
             'attendance_enabled' => $this->attendanceEnabled(),
             'attendance_biometric_enabled' => $this->biometricEnabled(),
             'attendance_employee_face_punch_enabled' => $this->employeeFacePunchEnabled(),
+            'attendance_employee_webauthn_punch_enabled' => $this->employeeWebauthnPunchEnabled(),
             'attendance_employee_self_punch_enabled' => $this->employeeSelfPunchEnabled(),
             'attendance_device_require_approval' => $this->deviceApprovalRequired(),
             'payroll_late_deduction_enabled' => $this->lateDeductionEnabled(),
@@ -117,3 +124,4 @@ class AttendanceFeatureService
         ];
     }
 }
+
