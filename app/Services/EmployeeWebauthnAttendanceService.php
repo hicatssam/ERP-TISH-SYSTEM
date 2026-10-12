@@ -156,6 +156,7 @@ class EmployeeWebauthnAttendanceService
     private function readyEmployee(Request $request): array
     {
         abort_unless($this->features->employeeWebauthnPunchEnabled(), 403, 'التحقق بالجوال غير مفعّل.');
+        abort_unless($request->user()->is_active, 403, 'حساب الموظف غير نشط.');
         $employee = $request->user()->employee()->first();
         abort_unless($employee && $employee->isActive(), 403, 'الحساب غير مرتبط بموظف نشط.');
         $today = now()->toDateString();

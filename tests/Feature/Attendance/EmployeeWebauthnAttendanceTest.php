@@ -196,6 +196,32 @@ class EmployeeWebauthnAttendanceTest extends TestCase
         $this->postJson(route('my-hr.webauthn.registration-options'), ['label' => 'Phone'])->assertForbidden();
     }
 
+    #[Test]
+    public function challenge_cannot_be_used_from_another_browser_session(): void
+    {
+        [$user, $employee] = $this->worker($this->branch());
+        $auth = $this->activeKey($user, $employee);
+        $options = $this->actingAs($user)->postJson(route('my-hr.webauthn.punch-options'))->assertOk()->json();
+        $this->withCookie(config('session.cookie'), Str::random(40));
+        $this->postJson(route('my-hr.webauthn.punch'), $this->assertion($auth, $options))
+            ->assertUnprocessable()->assertJsonValidationErrors('token');
+        $this->assertDatabaseCount('attendance_records', 0);
+    }
+
+    #[Test]
+    public function account_and_feature_are_rechecked_after_starting_verification(): void
+    {
+        [$user, $employee] = $this->worker($this->branch());
+        $auth = $this->activeKey($user, $employee);
+        $options = $this->actingAs($user)->postJson(route('my-hr.webauthn.punch-options'))->assertOk()->json();
+        SystemSetting::set('attendance_employee_webauthn_punch_enabled', 0);
+        $this->postJson(route('my-hr.webauthn.punch'), $this->assertion($auth, $options))->assertForbidden();
+        SystemSetting::set('attendance_employee_webauthn_punch_enabled', 1);
+        $user->update(['is_active' => false]);
+        $this->actingAs($user)->postJson(route('my-hr.webauthn.punch'), $this->assertion($auth, $options))->assertForbidden();
+        $this->assertDatabaseCount('attendance_records', 0);
+    }
+
     private function branch(): Location
     {
         return Location::query()->create(['name' => 'Branch '.Str::random(5), 'code' => 'WEB-'.Str::random(8),

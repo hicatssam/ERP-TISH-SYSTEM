@@ -16,7 +16,7 @@ class AttendanceWebauthnController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = EmployeeWebauthnCredential::query()->with('employee')->latest();
+        $query = EmployeeWebauthnCredential::query()->whereHas('employee')->with('employee')->latest();
         if (! $request->user()->isAdmin()) {
             $locationId = $request->user()->primaryLocation()?->id;
             abort_unless($locationId, 403);
