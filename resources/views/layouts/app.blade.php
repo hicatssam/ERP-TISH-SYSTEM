@@ -2582,7 +2582,7 @@ a.app-page-btn:hover {
 
                         <p class="pwa-install-dialog__message" id="pwaInstallHelpMessage"></p>
 
-                        <div class="pwa-install-dialog__hint">
+                        <div class="pwa-install-dialog__hint" id="pwaInstallHelpHint" hidden>
                             التثبيت يحتاج اتصال HTTPS آمن، أو فتح النظام من localhost على نفس الجهاز.
                         </div>
                     </div>
@@ -3445,6 +3445,7 @@ a.app-page-btn:hover {
             const helpTitle = document.getElementById('pwaInstallHelpTitle');
             const helpMessage = document.getElementById('pwaInstallHelpMessage');
             const helpClose = document.getElementById('pwaInstallHelpClose');
+            const helpHint = document.getElementById('pwaInstallHelpHint');
 
             let deferredInstallPrompt = null;
 
@@ -3454,12 +3455,17 @@ a.app-page-btn:hover {
 
             const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
             const isAndroid = /android/i.test(navigator.userAgent);
+            const isSamsungInternet = /SamsungBrowser\//i.test(navigator.userAgent);
             const isLocalHost = ['localhost', '127.0.0.1', '::1'].includes(location.hostname);
             const isSecureInstallContext = window.isSecureContext || isLocalHost;
 
             const openHelp = () => {
                 if (! helpDialog || ! helpMessage || ! helpTitle) {
                     return;
+                }
+
+                if (helpHint) {
+                    helpHint.hidden = isSecureInstallContext;
                 }
 
                 if (! isSecureInstallContext) {
@@ -3470,10 +3476,14 @@ a.app-page-btn:hover {
                     helpTitle.textContent = 'تثبيت التطبيق على iPhone أو iPad';
                     helpMessage.textContent =
                         'افتح الصفحة في Safari، اضغط زر المشاركة، ثم اختر «إضافة إلى الشاشة الرئيسية».';
+                } else if (isAndroid && isSamsungInternet) {
+                    helpTitle.textContent = 'تثبيت التطبيق من Samsung Internet';
+                    helpMessage.textContent =
+                        'افتح قائمة المتصفح واختر «إضافة الصفحة إلى» ثم «الشاشة الرئيسية»، أو استخدم أيقونة الإضافة في شريط العنوان إن ظهرت. إذا لم يتوفر الخيار، جرّب Chrome على جوالك.';
                 } else if (isAndroid) {
                     helpTitle.textContent = 'تثبيت التطبيق على Android';
                     helpMessage.textContent =
-                        'إذا لم تظهر نافذة التثبيت، افتح قائمة Chrome واختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».';
+                        'إذا لم تظهر نافذة التثبيت، افتح قائمة المتصفح واختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية». إذا لم يتوفر الخيار، افتح الرابط مباشرة في Chrome على جوالك.';
                 } else {
                     helpTitle.textContent = 'تثبيت التطبيق على الكمبيوتر';
                     helpMessage.textContent =
