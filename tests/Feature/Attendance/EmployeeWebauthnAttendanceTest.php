@@ -26,6 +26,7 @@ class EmployeeWebauthnAttendanceTest extends TestCase
         parent::setUp();
         Carbon::setTestNow('2026-10-12 08:00:00');
         config()->set('attendance-webauthn.origin', 'https://attendance.test');
+        $this->withCredentials();
         $this->withSession(['webauthn_test' => true]);
         $this->withCookie(config('session.cookie'), app('session')->getId());
         foreach (['attendance_enabled', 'attendance_biometric_enabled', 'attendance_employee_webauthn_punch_enabled'] as $key) {
@@ -100,7 +101,7 @@ class EmployeeWebauthnAttendanceTest extends TestCase
         $payload = $this->assertion($auth, $options);
         $bad = $payload;
         $bad['response']['signature'] = $this->b64(random_bytes(64));
-        $this->postJson(route('my-hr.webauthn.punch'), $bad)->assertUnprocessable();
+        $this->postJson(route('my-hr.webauthn.punch'), $bad)->assertUnprocessable()->assertJsonValidationErrors('credential');
         $this->postJson(route('my-hr.webauthn.punch'), $payload)->assertUnprocessable()->assertJsonValidationErrors('token');
         $options = $this->postJson(route('my-hr.webauthn.punch-options'))->assertOk()->json();
         Carbon::setTestNow(now()->addMinutes(3));
