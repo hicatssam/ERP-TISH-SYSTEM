@@ -21,7 +21,9 @@ class AttendanceWebauthnVerifierTest extends TestCase
     use WebauthnAuthenticator;
 
     private Application $app;
+
     private AttendanceWebauthnVerifier $verifier;
+
     private Employee $employee;
 
     protected function setUp(): void
@@ -72,7 +74,9 @@ class AttendanceWebauthnVerifierTest extends TestCase
     {
         $auth = $this->authenticator();
         $get = ['publicKey' => $this->verifier->assertionOptions([$auth['id']])];
-        $payload = $this->assertion($auth, $get, flags: match ($case) { 'no_uv' => 1, 'no_up' => 4, 'bad_backup' => 0x15, default => 5 },
+        $payload = $this->assertion($auth, $get, flags: match ($case) {
+            'no_uv' => 1, 'no_up' => 4, 'bad_backup' => 0x15, default => 5
+        },
             origin: $case === 'wrong_origin' ? 'https://evilattendance.test' : 'https://attendance.test',
             handle: $case === 'wrong_employee' ? $this->b64(random_bytes(32)) : null);
         if ($case === 'cross_origin') {
@@ -91,12 +95,12 @@ class AttendanceWebauthnVerifierTest extends TestCase
     {
         $auth = $this->authenticator();
         $options = ['publicKey' => $this->verifier->registrationOptions($this->employee, [])];
-        $data = $this->verifier->register($this->registration($auth, $options, flags: 0x5d), $options['publicKey']['challenge']);
+        $data = $this->verifier->register($this->registration($auth, $options, flags: 0x5D), $options['publicKey']['challenge']);
         $this->assertTrue($data->isBackupEligible);
         $credential = (new EmployeeWebauthnCredential)->forceFill(['public_key' => $data->credentialPublicKey,
             'sign_count' => 0, 'backup_eligible' => true]);
         $get = ['publicKey' => $this->verifier->assertionOptions([$auth['id']])];
-        $verified = $this->verifier->verify($this->assertion($auth, $get, 0, 0x1d), $get['publicKey']['challenge'], $credential, $this->employee);
+        $verified = $this->verifier->verify($this->assertion($auth, $get, 0, 0x1D), $get['publicKey']['challenge'], $credential, $this->employee);
         $this->assertSame(0, $verified['sign_count']);
         $this->assertTrue($verified['backed_up']);
     }

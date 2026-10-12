@@ -11,7 +11,6 @@ use App\Models\SystemSetting;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\Models\Permission;
@@ -27,6 +26,8 @@ class EmployeeWebauthnAttendanceTest extends TestCase
         parent::setUp();
         Carbon::setTestNow('2026-10-12 08:00:00');
         config()->set('attendance-webauthn.origin', 'https://attendance.test');
+        $this->withSession(['webauthn_test' => true]);
+        $this->withCookie(config('session.cookie'), app('session')->getId());
         foreach (['attendance_enabled', 'attendance_biometric_enabled', 'attendance_employee_webauthn_punch_enabled'] as $key) {
             SystemSetting::set($key, 1);
         }
@@ -142,7 +143,8 @@ class EmployeeWebauthnAttendanceTest extends TestCase
         PayrollPeriod::query()->create(['code' => 'WEB-LOCK', 'name' => 'Locked', 'start_date' => '2026-10-01',
             'end_date' => '2026-10-31', 'status' => 'approved', 'location_id' => $branch->id]);
         $options = $this->actingAs($user)->postJson(route('my-hr.webauthn.punch-options'))->assertOk()->json();
-        $this->postJson(route('my-hr.webauthn.punch'), $this->assertion($auth, $options))->assertUnprocessable();
+        $this->postJson(route('my-hr.webauthn.punch'), $this->assertion($auth, $options))
+            ->assertUnprocessable()->assertJsonValidationErrors('start_date');
         $this->assertDatabaseCount('attendance_records', 0);
         AttendanceRecord::query()->create(['employee_id' => $employee->id, 'work_date' => now()->toDateString(),
             'check_in_at' => now(), 'status' => 'present', 'source' => 'face']);
