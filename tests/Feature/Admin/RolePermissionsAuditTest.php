@@ -76,6 +76,7 @@ class RolePermissionsAuditTest extends TestCase
         $unknown = Permission::findOrCreate('custom_area.future_power', 'web');
         $global = Permission::findOrCreate('chat.view_all_branches', 'web');
         $testRole->givePermissionTo([$unknown, $global]);
+        $beforeAudit = $testRole->fresh()->permissions->pluck('name')->sort()->values()->all();
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
@@ -86,9 +87,9 @@ class RolePermissionsAuditTest extends TestCase
             ->assertSee('صلاحية غير موثقة: custom_area.future_power')
             ->assertSee('chat.view_all_branches');
 
-        $this->assertEqualsCanonicalizing(
-            ['custom_area.future_power', 'chat.view_all_branches'],
-            $testRole->fresh()->permissions->pluck('name')->all()
+        $this->assertSame(
+            $beforeAudit,
+            $testRole->fresh()->permissions->pluck('name')->sort()->values()->all()
         );
     }
 
