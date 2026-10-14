@@ -20,6 +20,7 @@
     ];
 
     $cakeSizes = [
+        'standard' => 'ستاندر',
         'small' => 'صغير',
         'medium' => 'متوسط',
         'large' => 'كبير',
