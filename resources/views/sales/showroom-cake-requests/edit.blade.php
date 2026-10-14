@@ -147,7 +147,6 @@
             <label class="form-label">الحجم</label>
             <select name="items[__IDX__][cake_size]" class="form-select">
                 <option value="">—</option>
-                <option value="standard">ستاندر</option>
                 <option value="small">صغير</option>
                 <option value="medium">وسط</option>
                 <option value="large">كبير</option>
@@ -155,19 +154,6 @@
                 <option value="40x30">40 × 30</option>
                 <option value="60x40">60 × 40</option>
             </select>
-        </div>
-        <div class="form-group">
-            <label class="form-label">عدد الطبقات</label>
-            <input
-                type="number"
-                name="items[__IDX__][layer_count]"
-                class="form-input layer-count-input"
-                min="1"
-                max="20"
-                step="1"
-                placeholder="مثال: 3"
-            >
-            <small class="form-help">اختياري — من طبقة واحدة إلى 20 طبقة لكل صنف.</small>
         </div>
         <div class="form-group">
             <label class="form-label">النكهة</label>
@@ -180,7 +166,6 @@
                 <option value="round">دائري</option>
                 <option value="slab">بلاطة</option>
                 <option value="wedding_tiers">طوابق أفراح</option>
-                <option value="standard_tiers">طوابق ستاندر</option>
             </select>
         </div>
         <div class="form-group">
@@ -243,7 +228,6 @@
         $showroomCakeRequest->items->map(fn ($item) => [
             'cake_type' => $item->cake_type,
             'cake_size' => $item->cake_size,
-            'layer_count' => $item->layer_count,
             'flavor' => $item->flavor,
             'shape' => $item->shape,
             'quantity' => $item->quantity,
@@ -279,7 +263,6 @@ document.addEventListener('DOMContentLoaded', () => {
             field('[name$="[cake_size]"]').value = data.cake_size;
         }
 
-        field('.layer-count-input').value = data.layer_count ?? '';
         field('[name$="[flavor]"]').value = data.flavor ?? '';
         field('[name$="[shape]"]').value = data.shape ?? '';
         field('.quantity-input').value = data.quantity ?? 1;
