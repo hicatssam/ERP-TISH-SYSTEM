@@ -19,7 +19,7 @@ class ShowroomCakeRequestLayerCountTest extends TestCase
     use RefreshDatabase;
 
     #[Test]
-    public function branch_can_create_and_edit_layer_counts_for_individual_cake_items(): void
+    public function branch_cake_requests_have_neither_standard_size_nor_layer_count(): void
     {
         Notification::fake();
         [$branch, $factory, $user] = $this->prepareBranchUser();
@@ -27,16 +27,17 @@ class ShowroomCakeRequestLayerCountTest extends TestCase
         $this->actingAs($user)
             ->get(route('showroom-cake-requests.create'))
             ->assertOk()
-            ->assertSee('عدد الطبقات')
-            ->assertSee('value="standard"', false);
+            ->assertDontSee('value="standard"', false)
+            ->assertDontSee('value="standard_tiers"', false)
+            ->assertDontSee('عدد الطبقات');
 
         $this->actingAs($user)->post(route('showroom-cake-requests.store'), [
             'factory_location_id' => $factory->id,
             'items' => [
                 [
                     'cake_type' => 'chocolate',
-                    'cake_size' => 'standard',
-                    'shape' => 'standard_tiers',
+                    'cake_size' => 'large',
+                    'shape' => 'round',
                     'layer_count' => 4,
                     'quantity' => 3,
                 ],
@@ -53,61 +54,63 @@ class ShowroomCakeRequestLayerCountTest extends TestCase
         $items = $request->items()->orderBy('id')->get();
 
         $this->assertCount(2, $items);
-        $this->assertSame(4, $items[0]->layer_count);
-        $this->assertSame('standard', $items[0]->cake_size);
-        $this->assertNull($items[1]->layer_count);
+        $this->assertSame('large', $items[0]->cake_size);
+        $this->assertNull($items[0]->layer_count);
         $this->assertSame($branch->id, $request->requesting_location_id);
 
         $this->actingAs($user)
             ->get(route('showroom-cake-requests.show', $request))
             ->assertOk()
-            ->assertSee('عدد الطبقات')
-            ->assertSee('4 طبقات')
-            ->assertSee('ستاندر');
+            ->assertDontSee('عدد الطبقات');
 
         $this->actingAs($user)
             ->get(route('showroom-cake-requests.edit', $request))
             ->assertOk()
-            ->assertSee('layer_count')
-            ->assertSee('value="standard"', false);
+            ->assertDontSee('layer_count')
+            ->assertDontSee('value="standard"', false)
+            ->assertDontSee('value="standard_tiers"', false);
 
         $this->actingAs($user)->put(route('showroom-cake-requests.update', $request), [
             'factory_location_id' => $factory->id,
             'items' => [
                 [
                     'cake_type' => 'chocolate',
-                    'cake_size' => 'standard',
-                    'shape' => 'standard_tiers',
+                    'cake_size' => 'medium',
+                    'shape' => 'round',
                     'layer_count' => 5,
                     'quantity' => 3,
                 ],
             ],
         ])->assertSessionHasNoErrors();
 
-        $this->assertSame(5, $request->fresh()->items()->sole()->layer_count);
-        $this->assertSame('standard', $request->fresh()->items()->sole()->cake_size);
+        $this->assertNull($request->fresh()->items()->sole()->layer_count);
+        $this->assertSame('medium', $request->fresh()->items()->sole()->cake_size);
         $this->assertSame(1, ShowroomCakeRequestItem::query()->count());
     }
 
     #[Test]
-    public function invalid_layer_counts_are_rejected_without_creating_a_request(): void
+    public function showroom_cake_rejects_standard_size_and_standard_tiers_shape(): void
     {
         Notification::fake();
         [, $factory, $user] = $this->prepareBranchUser();
 
-        foreach ([0, 21, 'abc', 1.5] as $invalidCount) {
+        foreach ([
+            ['cake_size' => 'standard', 'shape' => 'round', 'error' => 'items.0.cake_size'],
+            ['cake_size' => 'large', 'shape' => 'standard_tiers', 'error' => 'items.0.shape'],
+        ] as $invalid) {
             $this->actingAs($user)
                 ->post(route('showroom-cake-requests.store'), [
                     'factory_location_id' => $factory->id,
                     'items' => [
                         [
                             'cake_type' => 'chocolate',
+                            'cake_size' => $invalid['cake_size'],
+                            'shape' => $invalid['shape'],
                             'quantity' => 1,
-                            'layer_count' => $invalidCount,
                         ],
                     ],
                 ])
-                ->assertSessionHasErrors(['items.0.layer_count']);
+                ->assertSessionHasErrors([$invalid['error']]);
         }
 
         $this->assertSame(0, ShowroomCakeRequest::query()->count());
