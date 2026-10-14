@@ -128,8 +128,8 @@ class ThreeStageBranchReceivingTest extends TestCase
         $this->assertSame('تم التحميل', BranchOrderMilestones::label($cake->fresh()));
 
         $this->assertCount(2, $shipment->receivingInvoice->items);
-        $this->assertStringContainsString('small', $shipment->receivingInvoice->items[0]->description);
-        $this->assertStringContainsString('large', $shipment->receivingInvoice->items[1]->description);
+        $this->assertStringContainsString('صغير', $shipment->receivingInvoice->items[0]->description);
+        $this->assertStringContainsString('كبير', $shipment->receivingInvoice->items[1]->description);
 
         $this->actingAs($receiver)->post(route('branch-shipments.receive', $shipment), [
             'items' => $this->receivedItems($shipment, [1, 0]),
