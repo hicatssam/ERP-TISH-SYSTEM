@@ -131,7 +131,18 @@ class PwaController extends Controller
 
         $sourcePath = $this->resolveBrandImage();
 
-        abort_unless($sourcePath !== null, 404, 'Brand logo was not found.');
+        // An installable PWA must always serve valid icons. Use the shipped
+        // application icon if the logo is missing or GD is not installed on
+        // this host; this must not block one-tap Android installation.
+        if ($sourcePath === null || ! extension_loaded('gd')) {
+            $fallback = public_path("images/app/icon-{$size}.png");
+            abort_unless(is_file($fallback), 404, 'PWA icon was not found.');
+
+            return response()->file($fallback, [
+                'Content-Type' => 'image/png',
+                'Cache-Control' => 'public, max-age=86400',
+            ]);
+        }
 
         $version = $this->brandVersion();
         $cacheDirectory = storage_path('app/pwa-icons');
