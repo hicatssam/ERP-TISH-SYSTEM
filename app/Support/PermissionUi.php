@@ -31,6 +31,7 @@ class PermissionUi
             'dashboard' => 'لوحة التحكم',
             'orders' => 'طلبات البيع',
             'cake_orders' => 'طلبات الكيك الخاصة',
+            'showroom_cake_requests' => 'طلبات كيك المعرض',
             'showroom_sweets_requests' => 'طلبات حلويات الفروع',
             'customer_display' => 'شاشة طلبات العملاء',
             'customers' => 'العملاء',
@@ -134,6 +135,13 @@ class PermissionUi
             'cake_orders.dispatch' => 'إرسال الكيك إلى الفرع',
             'cake_orders.receive' => 'تأكيد استلام الكيك في الفرع',
             'cake_orders.manage' => 'إدارة شاملة لطلبات الكيك — صلاحية قديمة',
+
+            // طلبات كيك المعرض — مستقلة عن طلبات الكيك الخاصة
+            'showroom_cake_requests.view' => 'عرض طلبات كيك المعرض',
+            'showroom_cake_requests.view_all' => 'عرض طلبات كيك جميع الفروع',
+            'showroom_cake_requests.create' => 'إنشاء وتعديل طلب كيك المعرض للفرع',
+            'showroom_cake_requests.update_status' => 'تحديث حالة طلب كيك المعرض (حسب الموقع)',
+            'showroom_cake_requests.delete' => 'حذف طلب كيك المعرض الملغي',
 
             // طلبات حلويات الفروع
             'showroom_sweets_requests.view' => 'عرض طلبات حلويات الفروع',

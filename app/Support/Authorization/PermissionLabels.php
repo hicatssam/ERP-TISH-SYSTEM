@@ -149,8 +149,11 @@ final class PermissionLabels
             'sales_channels.activate' => 'تفعيل أو إيقاف قناة بيع',
             'sales_channels.reports' => 'عرض تقارير قنوات البيع',
 
-            'showroom_cake_requests.view' => 'عرض طلبات كيك الفروع',
-            'showroom_cake_requests.update_status' => 'تحديث حالة طلب كيك الفرع',
+            'showroom_cake_requests.view' => 'عرض طلبات كيك المعرض',
+            'showroom_cake_requests.view_all' => 'عرض طلبات كيك جميع الفروع',
+            'showroom_cake_requests.create' => 'إنشاء وتعديل طلب كيك المعرض للفرع',
+            'showroom_cake_requests.update_status' => 'تحديث حالة طلب كيك المعرض (حسب الموقع)',
+            'showroom_cake_requests.delete' => 'حذف طلب كيك المعرض الملغي',
 
             'showroom_sweets_requests.view' => 'عرض طلبات حلويات الفروع',
             'showroom_sweets_requests.view_all' => 'عرض طلبات حلويات جميع الفروع',
