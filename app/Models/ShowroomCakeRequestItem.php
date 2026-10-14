@@ -10,6 +10,7 @@ class ShowroomCakeRequestItem extends Model
         'showroom_cake_request_id',
         'cake_type',
         'cake_size',
+        'layer_count',
         'flavor',
         'shape',
         'quantity',
@@ -17,6 +18,13 @@ class ShowroomCakeRequestItem extends Model
         'reservation_notes',
         'notes',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'layer_count' => 'integer',
+        ];
+    }
 
     public function availableQuantity(): int
     {
