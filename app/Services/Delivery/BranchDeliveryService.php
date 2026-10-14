@@ -251,11 +251,20 @@ class BranchDeliveryService
                 ->lockForUpdate()
                 ->findOrFail($shipment->id);
 
-            if ($lockedShipment->status !== BranchShipment::ARRIVED) {
+            // Receiving is the branch's physical confirmation of arrival.
+            // The legacy dispatch/arrived states remain supported for old shipments,
+            // but are no longer mandatory steps between loading and receiving.
+            if (! in_array($lockedShipment->status, [
+                BranchShipment::LOADED,
+                BranchShipment::OUT_FOR_DELIVERY,
+                BranchShipment::ARRIVED,
+            ], true)) {
                 throw ValidationException::withMessages([
-                    'status' => 'يجب أن تكون الطلبية واصلة للفرع قبل تأكيد الاستلام.',
+                    'status' => 'يجب تأكيد تحميل الطلبية أولاً قبل تسجيل استلامها.',
                 ]);
             }
+
+            $previousShipmentStatus = $lockedShipment->status;
 
             $invoice = $lockedShipment->receivingInvoice;
 
@@ -330,7 +339,7 @@ class BranchDeliveryService
                 module: 'delivery',
                 recordType: 'branch_shipments',
                 recordId: $lockedShipment->id,
-                oldValues: ['status' => BranchShipment::ARRIVED],
+                oldValues: ['status' => $previousShipmentStatus],
                 newValues: ['status' => BranchShipment::RECEIVED],
                 metadata: [
                     'invoice_number' => $invoice->invoice_number,
