@@ -156,6 +156,19 @@
             </select>
         </div>
         <div class="form-group">
+            <label class="form-label">عدد الطبقات</label>
+            <input
+                type="number"
+                name="items[__IDX__][layer_count]"
+                class="form-input layer-count-input"
+                min="1"
+                max="20"
+                step="1"
+                placeholder="مثال: 3"
+            >
+            <small class="form-help">اختياري — من طبقة واحدة إلى 20 طبقة لكل صنف.</small>
+        </div>
+        <div class="form-group">
             <label class="form-label">النكهة</label>
             <input type="text" name="items[__IDX__][flavor]" class="form-input" placeholder="مثال: نوتيلا، فراولة...">
         </div>
@@ -235,6 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
         $showroomCakeRequest->items->map(fn ($item) => [
             'cake_type' => $item->cake_type,
             'cake_size' => $item->cake_size,
+            'layer_count' => $item->layer_count,
             'flavor' => $item->flavor,
             'shape' => $item->shape,
             'quantity' => $item->quantity,
@@ -260,6 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
             field('[name$="[cake_size]"]').value = data.cake_size;
         }
 
+        field('.layer-count-input').value = data.layer_count ?? '';
         field('[name$="[flavor]"]').value = data.flavor ?? '';
         field('[name$="[shape]"]').value = data.shape ?? '';
         field('.quantity-input').value = data.quantity ?? 1;
