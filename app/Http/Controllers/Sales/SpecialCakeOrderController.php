@@ -318,22 +318,9 @@ class SpecialCakeOrderController extends Controller
         $paymentAccounts = collect();
 
         if ($branch) {
-            $paymentMethods = PaymentMethod::query()
-                ->where('is_active', true)
-                ->whereHas(
-                    'locationPaymentMethods',
-                    function ($query) use ($branch): void {
-                        $query
-                            ->where(
-                                'location_id',
-                                $branch->id
-                            )
-                            ->where(
-                                'is_active',
-                                true
-                            );
-                    }
-                )
+            // Branch payment methods can be configured through the legacy pivot
+            // or by adding an active payment account for the branch.
+            $paymentMethods = $this->availablePaymentMethodsForBranch($branch)
                 ->orderBy('sort_order')
                 ->orderBy('name_ar')
                 ->get();
@@ -627,14 +614,8 @@ class SpecialCakeOrderController extends Controller
                 ->withInput();
         }
 
-        $paymentMethod = PaymentMethod::query()
+        $paymentMethod = $this->availablePaymentMethodsForBranch($branch)
             ->whereKey((int) $request->payment_method_id)
-            ->where('is_active', true)
-            ->whereHas('locationPaymentMethods', function ($query) use ($branch): void {
-                $query
-                    ->where('location_id', $branch->id)
-                    ->where('is_active', true);
-            })
             ->first();
 
         if (! $paymentMethod) {
@@ -1081,6 +1062,26 @@ if (
 
         return back()->with('success', 'تم رفع المرفق بنجاح.');
     }
+    /**
+     * Read active branch payment options from both supported configurations.
+     * An active branch payment account must be usable even if no legacy
+     * location_payment_methods row was created for it.
+     */
+    private function availablePaymentMethodsForBranch(Location $branch): \Illuminate\Database\Eloquent\Builder
+    {
+        return PaymentMethod::query()
+            ->where('is_active', true)
+            ->where(function ($query) use ($branch): void {
+                $query->whereHas('locationPaymentMethods', function ($association) use ($branch): void {
+                    $association->where('location_id', $branch->id)
+                        ->where('is_active', true);
+                })->orWhereIn('payment_methods.id', LocationPaymentAccount::query()
+                    ->select('payment_method_id')
+                    ->where('location_id', $branch->id)
+                    ->where('is_active', true));
+            });
+    }
+
     private function resolveCreationBranch(
         User $user,
         mixed $requestedBranchId = null
