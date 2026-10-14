@@ -709,12 +709,20 @@
                             @if(in_array($field, $translatedSpecFields, true))
 
                                 <strong>
-                                    {{
-                                        $formatSystemValue(
-                                            $field,
-                                            $cakeOrder->$field
-                                        )
-                                    }}
+                                    @if($field === 'cake_size' && is_array($cakeOrder->cake_sizes) && count($cakeOrder->cake_sizes))
+                                        {{
+                                            collect($cakeOrder->cake_sizes)
+                                                ->map(fn ($value) => $formatSystemValue('cake_size', $value))
+                                                ->implode('، ')
+                                        }}
+                                    @else
+                                        {{
+                                            $formatSystemValue(
+                                                $field,
+                                                $cakeOrder->$field
+                                            )
+                                        }}
+                                    @endif
                                 </strong>
 
                             @else
