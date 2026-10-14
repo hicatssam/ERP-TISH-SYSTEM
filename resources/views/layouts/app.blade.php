@@ -3605,6 +3605,7 @@ a.app-page-btn:hover {
                         : result;
 
                     if (choice?.outcome === 'accepted') {
+                        installState.installed = true;
                         installButton.hidden = true;
                     }
                 } catch (error) {
