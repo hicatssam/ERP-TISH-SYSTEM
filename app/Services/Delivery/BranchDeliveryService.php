@@ -418,10 +418,18 @@ class BranchDeliveryService
             }
 
             return $sizes->map(function ($size) use ($source): array {
+                $sizeLabel = match ($size) {
+                    'small' => 'صغير',
+                    'medium' => 'وسط',
+                    'large' => 'كبير',
+                    'standard' => 'ستاندر',
+                    default => $size,
+                };
+
                 $description = collect([
                     'كيك خاص',
                     $source->cake_type,
-                    $size,
+                    $sizeLabel,
                     $source->flavor,
                     $source->shape,
                 ])->filter()->implode(' — ');
