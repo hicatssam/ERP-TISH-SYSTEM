@@ -13,6 +13,7 @@
 
     <div class="action-btns">
         @can('roles.manage')
+            <a href="{{ route('roles.audit') }}" class="btn btn-outline">تدقيق الصلاحيات</a>
             <a href="{{ route('roles.create') }}" class="btn btn-gold">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="12" y1="5" x2="12" y2="19"/>
@@ -38,7 +39,7 @@
         <tbody>
             @forelse($roles as $role)
                 @php
-                    $isAdminRole = strcasecmp($role->name, 'Admin') === 0;
+                    $isAdminRole = in_array(strtolower($role->name), ['admin', 'super-admin'], true);
                 @endphp
 
                 <tr>
