@@ -1046,9 +1046,7 @@
                     ? $req->status->value
                     : (string) $req->status;
 
-                $statusLabel = $req->status instanceof \App\Enums\ShowroomSweetsRequestStatus
-                    ? $req->status->label()
-                    : ($req->status?->label() ?? (string) $req->status);
+                $statusLabel = \App\Support\BranchOrderMilestones::label($req);
 
                 $cardTone = match ($statusValue) {
                     'pending',
