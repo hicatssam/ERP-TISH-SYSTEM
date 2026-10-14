@@ -251,7 +251,6 @@
         @if(in_array('ready', $allowed, true))
             <form method="POST" action="{{ route('cake-orders.transition', $cakeOrder) }}">
                 @csrf
-                @method('PATCH')
                 <input type="hidden" name="to_status" value="ready">
                 <button type="submit" class="btn btn-gold btn-sm"
                     onclick="return confirm('تأكيد اكتمال التنفيذ وجاهزية الكيك للتحميل؟')">
