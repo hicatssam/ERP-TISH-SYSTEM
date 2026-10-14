@@ -34,25 +34,28 @@
 
 <div class="card" style="margin-bottom:1rem">
     <div class="card-header">
-        <span class="card-title">مسار التوصيل</span>
-        <span class="badge badge-blue">{{ $shipment->statusLabel() }}</span>
+        <span class="card-title">مراحل الطلبية</span>
+        <span class="badge badge-blue">{{ \App\Support\BranchOrderMilestones::label($shipment->source) }}</span>
     </div>
     <div class="card-body">
         <div class="delivery-track">
             @php
                 $steps = [
-                    ['key'=>'loaded_at','label'=>'تم التحميل','user'=>$shipment->loadedBy],
-                    ['key'=>'dispatched_at','label'=>'خرج للتوصيل','user'=>$shipment->dispatchedBy],
-                    ['key'=>'arrived_at','label'=>'وصل الفرع','user'=>$shipment->arrivedBy],
-                    ['key'=>'received_at','label'=>'استلم الفرع','user'=>$shipment->receivedBy],
+                    ['key'=>'executed','label'=>'تم التنفيذ','user'=>null,
+                     'at'=>$shipment->created_at,'done'=>true],
+                    ['key'=>'loaded','label'=>'تم التحميل','user'=>$shipment->loadedBy,
+                     'at'=>$shipment->loaded_at,
+                     'done'=>in_array($shipment->status, ['loaded','out_for_delivery','arrived','received'], true)],
+                    ['key'=>'received','label'=>'تم الاستلام','user'=>$shipment->receivedBy,
+                     'at'=>$shipment->received_at,'done'=>(bool) $invoice?->isConfirmed()],
                 ];
             @endphp
             @foreach($steps as $step)
-                @php $done = (bool) $shipment->{$step['key']}; @endphp
+                @php $done = $step['done']; @endphp
                 <div class="delivery-step {{ $done ? 'is-done' : '' }}">
                     <div class="delivery-node">{{ $done ? '✓' : $loop->iteration }}</div>
                     <strong>{{ $step['label'] }}</strong>
-                    <small>{{ $shipment->{$step['key']}?->format('Y-m-d H:i') ?? 'بانتظار التنفيذ' }}</small>
+                    <small>{{ $step['at']?->format('Y-m-d H:i') ?? 'بانتظار التنفيذ' }}</small>
                     @if($step['user'])
                         <small>{{ $step['user']->display_name }}</small>
                     @endif
@@ -61,6 +64,25 @@
         </div>
     </div>
 </div>
+
+@if($invoice?->isConfirmed())
+    <div class="card" style="margin-bottom:1rem">
+        <div class="card-header">
+            <span class="card-title">فاتورة الاستلام المعتمدة</span>
+            <a href="{{ route('branch-receiving-invoices.show', $invoice) }}" class="btn btn-outline btn-sm">
+                عرض فاتورة {{ $invoice->invoice_number }}
+            </a>
+        </div>
+        <div class="card-body" style="display:flex;gap:1.5rem;flex-wrap:wrap">
+            <div>المرسل: <strong>{{ number_format((float) $invoice->total_items_sent, 3) }}</strong></div>
+            <div>المستلم: <strong>{{ number_format((float) $invoice->total_items_received, 3) }}</strong></div>
+            <div>الفرق: <strong>{{ number_format((float) $invoice->total_difference, 3) }}</strong></div>
+            @if($invoice->notes)
+                <div>ملاحظات: {{ $invoice->notes }}</div>
+            @endif
+        </div>
+    </div>
+@endif
 
 <div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-bottom:1rem">
     <div class="stat-card"><div class="stat-info"><div class="stat-label">من</div><div class="stat-value" style="font-size:.95rem">{{ $shipment->fromLocation?->name }}</div></div></div>
@@ -99,45 +121,21 @@
 </div>
 @endif
 
-@if($shipment->status === \App\Models\BranchShipment::LOADED && ($canFactoryOperate || $canDriverOperate))
-<div class="card" style="margin-bottom:1rem">
-    <div class="card-body" style="display:flex;justify-content:space-between;align-items:center;gap:1rem">
-        <div>
-            <strong>الطلبية محملة وجاهزة للخروج</strong>
-            <div class="text-muted">الموصّل: {{ $shipment->driver?->display_name ?? '—' }}</div>
-        </div>
-        <form method="POST" action="{{ route('branch-shipments.dispatch', $shipment) }}">
-            @csrf
-            <button class="btn btn-gold" type="submit">خرجت للتوصيل</button>
-        </form>
-    </div>
-</div>
-@endif
-
-@if($shipment->status === \App\Models\BranchShipment::OUT_FOR_DELIVERY && $canDriverOperate)
-<div class="card" style="margin-bottom:1rem">
-    <div class="card-body" style="display:flex;justify-content:space-between;align-items:center;gap:1rem">
-        <div>
-            <strong>الطلبية في الطريق إلى الفرع</strong>
-            <div class="text-muted">عند الوصول أكد وصولها للفرع.</div>
-        </div>
-        <form method="POST" action="{{ route('branch-shipments.arrive', $shipment) }}">
-            @csrf
-            <button class="btn btn-gold" type="submit">وصلت إلى الفرع</button>
-        </form>
-    </div>
-</div>
-@endif
-
+{{-- The previous "dispatched" and "arrived" buttons remain in the
+     backend for historic shipments; day-to-day receiving starts after loading. --}}
 <div class="card">
     <div class="card-header">
         <div>
             <div class="card-title">محتويات الطلبية</div>
-            <small class="text-muted">هذه نسخة ثابتة من محتويات الطلب وقت فتح الشحنة.</small>
+            <small class="text-muted">سجّل المستلم فعليًا لكل صنف، حتى لو كان أقل من المرسل أو صفرًا. يظهر الفرق والملاحظات في فاتورة الاستلام.</small>
         </div>
     </div>
 
-    @if($shipment->status === \App\Models\BranchShipment::ARRIVED && $canReceive)
+    @if(in_array($shipment->status, [
+        \App\Models\BranchShipment::LOADED,
+        \App\Models\BranchShipment::OUT_FOR_DELIVERY,
+        \App\Models\BranchShipment::ARRIVED,
+    ], true) && $canReceive && ! $invoice?->isConfirmed())
         <form method="POST" action="{{ route('branch-shipments.receive', $shipment) }}">
             @csrf
             <div class="table-wrap">
@@ -217,7 +215,7 @@
 </div>
 
 <style>
-.delivery-track{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.75rem}
+.delivery-track{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.75rem}
 .delivery-step{display:grid;justify-items:center;gap:.25rem;padding:.75rem;border:1px solid var(--border);border-radius:12px;background:var(--off-white);text-align:center}
 .delivery-node{width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#e5e7eb;color:#64748b;font-weight:900}
 .delivery-step.is-done .delivery-node{background:#16a34a;color:#fff}
