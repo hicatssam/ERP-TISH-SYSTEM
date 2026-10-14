@@ -27,14 +27,15 @@ class ShowroomCakeRequestLayerCountTest extends TestCase
         $this->actingAs($user)
             ->get(route('showroom-cake-requests.create'))
             ->assertOk()
-            ->assertSee('عدد الطبقات');
+            ->assertSee('عدد الطبقات')
+            ->assertSee('value="standard"', false);
 
         $this->actingAs($user)->post(route('showroom-cake-requests.store'), [
             'factory_location_id' => $factory->id,
             'items' => [
                 [
                     'cake_type' => 'chocolate',
-                    'cake_size' => 'large',
+                    'cake_size' => 'standard',
                     'shape' => 'standard_tiers',
                     'layer_count' => 4,
                     'quantity' => 3,
@@ -53,6 +54,7 @@ class ShowroomCakeRequestLayerCountTest extends TestCase
 
         $this->assertCount(2, $items);
         $this->assertSame(4, $items[0]->layer_count);
+        $this->assertSame('standard', $items[0]->cake_size);
         $this->assertNull($items[1]->layer_count);
         $this->assertSame($branch->id, $request->requesting_location_id);
 
@@ -60,19 +62,21 @@ class ShowroomCakeRequestLayerCountTest extends TestCase
             ->get(route('showroom-cake-requests.show', $request))
             ->assertOk()
             ->assertSee('عدد الطبقات')
-            ->assertSee('4 طبقات');
+            ->assertSee('4 طبقات')
+            ->assertSee('ستاندر');
 
         $this->actingAs($user)
             ->get(route('showroom-cake-requests.edit', $request))
             ->assertOk()
-            ->assertSee('layer_count');
+            ->assertSee('layer_count')
+            ->assertSee('value="standard"', false);
 
         $this->actingAs($user)->put(route('showroom-cake-requests.update', $request), [
             'factory_location_id' => $factory->id,
             'items' => [
                 [
                     'cake_type' => 'chocolate',
-                    'cake_size' => 'large',
+                    'cake_size' => 'standard',
                     'shape' => 'standard_tiers',
                     'layer_count' => 5,
                     'quantity' => 3,
@@ -81,6 +85,7 @@ class ShowroomCakeRequestLayerCountTest extends TestCase
         ])->assertSessionHasNoErrors();
 
         $this->assertSame(5, $request->fresh()->items()->sole()->layer_count);
+        $this->assertSame('standard', $request->fresh()->items()->sole()->cake_size);
         $this->assertSame(1, ShowroomCakeRequestItem::query()->count());
     }
 
