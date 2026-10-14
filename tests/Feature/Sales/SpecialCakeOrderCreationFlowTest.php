@@ -4,6 +4,7 @@ namespace Tests\Feature\Sales;
 
 use App\Models\Customer;
 use App\Models\Location;
+use App\Models\LocationPaymentAccount;
 use App\Models\LocationPaymentMethod;
 use App\Models\Payment;
 use App\Models\PaymentMethod;
@@ -152,6 +153,119 @@ class SpecialCakeOrderCreationFlowTest extends TestCase
             $creator,
             SpecialCakeOrderTransitionedNotification::class
         );
+    }
+
+    #[Test]
+    public function active_branch_payment_accounts_show_and_work_without_a_legacy_method_link(): void
+    {
+        Notification::fake();
+
+        $branch = Location::query()->create([
+            'name' => 'Branch with configured accounts',
+            'code' => 'CKBA-' . Str::upper(Str::random(5)),
+            'type' => 'branch',
+            'is_active' => true,
+        ]);
+        $otherBranch = Location::query()->create([
+            'name' => 'Other branch accounts',
+            'code' => 'CKBO-' . Str::upper(Str::random(5)),
+            'type' => 'branch',
+            'is_active' => true,
+        ]);
+        Location::query()->create([
+            'name' => 'Cake factory',
+            'code' => 'CKBF-' . Str::upper(Str::random(5)),
+            'type' => 'factory',
+            'is_active' => true,
+        ]);
+
+        $creator = $this->userAt($branch, [
+            'cake_orders.create',
+            'cake_orders.view',
+        ]);
+        $customer = Customer::query()->create([
+            'location_id' => $branch->id,
+            'customer_type' => Customer::TYPE_INDIVIDUAL,
+            'scope' => Customer::SCOPE_BRANCH,
+            'name' => 'Cake account customer',
+            'phone' => '0592345678',
+            'allow_credit' => false,
+            'billing_cycle' => 'immediate',
+            'payment_terms_days' => 0,
+        ]);
+
+        $makeMethod = static fn (string $name): PaymentMethod => PaymentMethod::query()->create([
+            'name' => $name,
+            'name_ar' => $name,
+            'code' => 'cake-' . Str::lower(Str::random(10)),
+            'type' => 'bank_transfer',
+            'requires_verification' => false,
+            'requires_reference' => false,
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+        $available = $makeMethod('Available branch bank');
+        $foreign = $makeMethod('Another branch bank');
+        $inactive = $makeMethod('Inactive branch bank');
+
+        LocationPaymentAccount::query()->create([
+            'location_id' => $branch->id,
+            'payment_method_id' => $available->id,
+            'name' => 'Configured local account',
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+        LocationPaymentAccount::query()->create([
+            'location_id' => $otherBranch->id,
+            'payment_method_id' => $foreign->id,
+            'name' => 'Foreign account',
+            'is_active' => true,
+        ]);
+        LocationPaymentAccount::query()->create([
+            'location_id' => $branch->id,
+            'payment_method_id' => $inactive->id,
+            'name' => 'Disabled account',
+            'is_active' => false,
+        ]);
+
+        $page = $this->actingAs($creator)->get(route('cake-orders.create'));
+        $page->assertOk()
+            ->assertSee('Available branch bank')
+            ->assertSee('Configured local account')
+            ->assertDontSee('Another branch bank')
+            ->assertDontSee('Inactive branch bank');
+
+        $payload = [
+            'customer_id' => $customer->id,
+            'required_date' => now()->addDays(3)->toDateString(),
+            'required_time' => '15:30',
+            'cake_type' => 'Birthday',
+            'cake_size' => 'Large',
+            'total_price' => 120,
+            'payment_arrangement' => 'pay_on_pickup',
+            'payment_method_id' => $available->id,
+            'discount_type' => 'none',
+            'discount_value' => 0,
+            'image_cover_type' => 'none',
+        ];
+
+        $this->actingAs($creator)
+            ->post(route('cake-orders.store'), $payload)
+            ->assertRedirect(route('cake-orders.show', SpecialCakeOrder::query()->sole()));
+
+        $this->actingAs($creator)
+            ->post(route('cake-orders.store'), array_replace($payload, [
+                'payment_method_id' => $inactive->id,
+            ]))
+            ->assertSessionHasErrors('payment_method_id');
+
+        $this->actingAs($creator)
+            ->post(route('cake-orders.store'), array_replace($payload, [
+                'payment_method_id' => $foreign->id,
+            ]))
+            ->assertSessionHasErrors('payment_method_id');
+
+        $this->assertSame(1, SpecialCakeOrder::query()->count());
     }
 
     private function userAt(
