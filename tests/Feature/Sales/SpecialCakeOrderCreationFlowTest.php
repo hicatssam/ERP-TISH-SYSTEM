@@ -331,6 +331,23 @@ class SpecialCakeOrderCreationFlowTest extends TestCase
                 'cake_type' => 'chocolate',
                 'shape' => 'round',
                 'cake_sizes_submitted' => 1,
+                'cake_sizes' => [],
+                'total_price' => 150,
+                'payment_arrangement' => 'pay_on_pickup',
+                'payment_method_id' => $cash->id,
+                'discount_type' => 'none',
+                'discount_value' => 0,
+                'image_cover_type' => 'none',
+            ])->assertSessionHasErrors(['cake_sizes']);
+
+        $this->actingAs($creator)
+            ->post(route('cake-orders.store'), [
+                'customer_id' => $customer->id,
+                'required_date' => now()->addDays(3)->toDateString(),
+                'required_time' => '15:30',
+                'cake_type' => 'chocolate',
+                'shape' => 'round',
+                'cake_sizes_submitted' => 1,
                 'cake_sizes' => ['small', 'large'],
                 'cake_size' => 'large',
                 'total_price' => 150,
@@ -371,22 +388,6 @@ class SpecialCakeOrderCreationFlowTest extends TestCase
 
         $this->assertSame(['medium', 'large'], $order->fresh()->cake_sizes);
         $this->assertSame('medium', $order->fresh()->cake_size);
-    }
-
-    #[Test]
-    public function submitted_multiple_size_form_requires_sizes_for_round_cakes(): void
-    {
-        $user = User::factory()->create();
-        $user->givePermissionTo(Permission::findOrCreate('cake_orders.create', 'web'));
-        app(PermissionRegistrar::class)->forgetCachedPermissions();
-
-        $this->actingAs($user)
-            ->post(route('cake-orders.store'), [
-                'shape' => 'round',
-                'cake_sizes_submitted' => 1,
-                'cake_sizes' => [],
-            ])
-            ->assertSessionHasErrors(['cake_sizes']);
     }
 
     private function userAt(
