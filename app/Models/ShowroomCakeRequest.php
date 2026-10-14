@@ -15,6 +15,7 @@ class ShowroomCakeRequest extends Model
         'request_number', 'requesting_location_id', 'factory_location_id',
         'status', 'needed_by', 'notes', 'factory_notes',
         'created_by', 'handled_by', 'submitted_at', 'fulfilled_at',
+        'cancellation_reason', 'cancelled_by', 'cancelled_at',
     ];
 
     protected function casts(): array
@@ -24,6 +25,7 @@ class ShowroomCakeRequest extends Model
             'needed_by'    => 'date',
             'submitted_at' => 'datetime',
             'fulfilled_at' => 'datetime',
+            'cancelled_at' => 'datetime',
         ];
     }
 
