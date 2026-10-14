@@ -31,11 +31,11 @@
         <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;gap:1rem">
             <div>
                 <div class="card-title">التوصيل والاستلام</div>
-                <small class="text-muted">تتبع تحميل الطلبية والموصّل واستلام الفرع وفاتورة الاستلام.</small>
+                <small class="text-muted">تم التنفيذ ثم التحميل ثم الاستلام، مع حفظ فاتورة الاستلام والكميات الفعلية.</small>
             </div>
 
             @if($shipment)
-                <span class="badge badge-blue">{{ $shipment->statusLabel() }}</span>
+                <span class="badge badge-blue">{{ \App\Support\BranchOrderMilestones::label($source) }}</span>
             @endif
         </div>
 
@@ -50,10 +50,7 @@
                         <small class="text-muted">وقت التحميل</small>
                         <div style="font-weight:800">{{ $shipment->loaded_at?->format('Y-m-d H:i') ?? '—' }}</div>
                     </div>
-                    <div>
-                        <small class="text-muted">وقت الخروج</small>
-                        <div style="font-weight:800">{{ $shipment->dispatched_at?->format('Y-m-d H:i') ?? '—' }}</div>
-                    </div>
+
                     <div>
                         <small class="text-muted">وقت الاستلام</small>
                         <div style="font-weight:800">{{ $shipment->received_at?->format('Y-m-d H:i') ?? '—' }}</div>
@@ -76,7 +73,7 @@
                 >
                     @csrf
                     <button type="submit" class="btn btn-gold btn-sm">
-                        تجهيز الطلبية للتحميل والتوصيل
+                        تجهيز الطلبية للتحميل
                     </button>
                 </form>
             @else
