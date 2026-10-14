@@ -429,6 +429,8 @@ class PermissionUi
 
             // الوصفات والإنتاج والجودة
             'recipes.view' => 'عرض الوصفات',
+            'recipes.create' => 'إنشاء وصفة جديدة',
+            'recipes.update' => 'تعديل وصفة موجودة',
             'recipes.manage' => 'إنشاء وتعديل مسودات الوصفات وإصداراتها',
             'recipes.approve' => 'اعتماد وأرشفة الوصفات',
             'recipes.cost.view' => 'عرض تكلفة مواد الوصفات',
