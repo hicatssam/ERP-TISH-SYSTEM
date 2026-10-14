@@ -2886,6 +2886,25 @@ a.app-page-btn:hover {
                 هل أنت متأكد من تنفيذ هذه العملية؟
             </p>
 
+            {{-- Receipt-only summary; hidden for all other system confirmations. --}}
+            <div class="dahab-confirm-receipt" id="confirmReceiptSummary" hidden>
+                <div class="dahab-confirm-receipt__invoice">
+                    <span>فاتورة الاستلام</span>
+                    <strong id="confirmReceiptInvoiceNumber">—</strong>
+                </div>
+                <div class="dahab-confirm-receipt__stats">
+                    <div>
+                        <span>أصناف الطلبية</span>
+                        <strong id="confirmReceiptItemsCount">0</strong>
+                    </div>
+                    <div>
+                        <span>أصناف فيها فرق</span>
+                        <strong id="confirmReceiptDifferencesCount">0</strong>
+                    </div>
+                </div>
+                <p class="dahab-confirm-receipt__hint" id="confirmReceiptHint"></p>
+            </div>
+
             <div class="modal-actions dahab-confirm-actions">
                 <button
                     type="button"
