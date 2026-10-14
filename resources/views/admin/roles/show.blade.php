@@ -9,13 +9,11 @@
     $permissionLabels = \App\Support\PermissionUi::permissionLabels();
 
     $grouped = $role->permissions
-        ->reject(fn($p) => \App\Support\PermissionUi::isLegacyPermission($p->name))
         ->groupBy(fn($p) => explode('.', $p->name)[0]);
 
     $allPermissions = \Spatie\Permission\Models\Permission::query()
         ->where('guard_name', 'web')
         ->get()
-        ->reject(fn($p) => \App\Support\PermissionUi::isLegacyPermission($p->name))
         ->groupBy(fn($p) => explode('.', $p->name)[0]);
 @endphp
 
@@ -143,7 +141,7 @@
                     <div style="border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
                         <div style="background:var(--surface);padding:.625rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
                             <span style="font-size:.75rem;font-weight:800;color:var(--text-mid)">
-                                {{ $groupLabels[$group] ?? 'صلاحيات أخرى' }}
+                                {{ \App\Support\PermissionUi::groupLabel($group) }}
                             </span>
 
                             <span style="font-size:.7rem;color:var(--text-muted)">
@@ -164,7 +162,7 @@
                                         </svg>
 
                                         <span style="color:var(--text)">
-                                            {{ $permissionLabels[$perm->name] ?? 'صلاحية غير معرفة' }}
+                                            {{ \App\Support\PermissionUi::permissionLabel($perm->name) }}
                                         </span>
                                     @else
                                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" stroke-width="2">
@@ -174,7 +172,7 @@
                                         </svg>
 
                                         <span style="color:var(--text-subtle)">
-                                            {{ $permissionLabels[$perm->name] ?? 'صلاحية غير معرفة' }}
+                                            {{ \App\Support\PermissionUi::permissionLabel($perm->name) }}
                                         </span>
                                     @endif
                                 </div>
