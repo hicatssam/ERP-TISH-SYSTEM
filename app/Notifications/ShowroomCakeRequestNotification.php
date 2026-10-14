@@ -103,7 +103,10 @@ class ShowroomCakeRequestNotification extends Notification
 
                 'cancelled' => [
                     'تم إلغاء طلب كيك الفرع',
-                    "تم إلغاء الطلب {$this->request->request_number} الخاص بـ {$branch}.",
+                    "تم إلغاء الطلب {$this->request->request_number} الخاص بـ {$branch}. "
+                    . ($this->request->cancellation_reason
+                        ? "السبب: {$this->request->cancellation_reason}"
+                        : ''),
                 ],
 
                 default => [
@@ -140,6 +143,16 @@ class ShowroomCakeRequestNotification extends Notification
 
             'to_status' =>
                 $this->toStatus,
+
+            'cancellation_reason' =>
+                $this->toStatus === 'cancelled'
+                    ? $this->request->cancellation_reason
+                    : null,
+
+            'cancelled_by' =>
+                $this->toStatus === 'cancelled'
+                    ? $this->request->cancelled_by
+                    : null,
 
             'url' =>
                 '/showroom-cake-requests/'
