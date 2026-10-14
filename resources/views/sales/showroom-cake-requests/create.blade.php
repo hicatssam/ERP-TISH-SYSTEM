@@ -146,6 +146,7 @@
             <label class="form-label">الحجم</label>
             <select name="items[__IDX__][cake_size]" class="form-select">
                 <option value="">—</option>
+                <option value="standard">ستاندر</option>
                 <option value="small">صغير</option>
                 <option value="medium">وسط</option>
                 <option value="large">كبير</option>
