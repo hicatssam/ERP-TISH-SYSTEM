@@ -236,14 +236,8 @@
 @media(max-width:800px){.scr-grid-2,.scr-grid-item{grid-template-columns:1fr}}
 </style>
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    let idx = 0;
-    const container = document.getElementById('itemsContainer');
-    const noMsg     = document.getElementById('noItemsMsg');
-    const tpl       = document.getElementById('itemTemplate');
-
-    const oldItems = @json(old(
+@php
+    $initialItems = old(
         'items',
         $showroomCakeRequest->items->map(fn ($item) => [
             'cake_type' => $item->cake_type,
@@ -256,7 +250,17 @@ document.addEventListener('DOMContentLoaded', () => {
             'reservation_notes' => $item->reservation_notes,
             'notes' => $item->notes,
         ])->values()->all()
-    ));
+);
+@endphp
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    let idx = 0;
+    const container = document.getElementById('itemsContainer');
+    const noMsg     = document.getElementById('noItemsMsg');
+    const tpl       = document.getElementById('itemTemplate');
+
+    const oldItems = @json($initialItems);
 
     function addItem(data = {}) {
         const html = tpl.innerHTML.replaceAll('__IDX__', idx++);
