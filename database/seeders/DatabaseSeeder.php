@@ -2206,7 +2206,7 @@ SVG;
             'cake_orders.request_modification','cake_orders.schedule','cake_orders.prepare',
             'cake_orders.decorate','cake_orders.quality_check','cake_orders.dispatch','cake_orders.receive',
             'showroom_cake_requests.view','showroom_cake_requests.view_all',
-            'showroom_cake_requests.create','showroom_cake_requests.update_status',
+            'showroom_cake_requests.create','showroom_cake_requests.cancel','showroom_cake_requests.update_status',
             'showroom_cake_requests.delete',
             'showroom_sweets_requests.view','showroom_sweets_requests.view_all',
             'showroom_sweets_requests.create','showroom_sweets_requests.start',
@@ -2269,7 +2269,7 @@ SVG;
             'inventory.','stock_','reports.','invoices.','payments.','restaurant.','kitchen.','kds.',
             'attendance.','chat.','crm.','loyalty.','delivery.','customer_display.','cash_sessions.',
         ], ['users.manage','financial.cash.view','accounting.employee_accounts.view','accounting.employee_accounts.create','accounting.employee_accounts.receive','accounting.books.view','accounting.vouchers.create',
-            'showroom_cake_requests.view','showroom_cake_requests.create'], ['orders.confirm','orders.cancel','customers.view_all','employees.view_all','hr.documents.manage','hr.organization.manage']);
+            'showroom_cake_requests.view','showroom_cake_requests.create','showroom_cake_requests.cancel'], ['orders.confirm','orders.cancel','customers.view_all','employees.view_all','hr.documents.manage','hr.organization.manage']);
         $grantByPrefixes('Cashier', ['orders.','customers.','payments.','invoices.','restaurant.pos.'], [
             'products.view','categories.view','payment_methods.view',
         ], ['orders.confirm','orders.cancel','orders.delete','customers.view_all']);

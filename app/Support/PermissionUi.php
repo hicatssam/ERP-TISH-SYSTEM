@@ -217,6 +217,7 @@ class PermissionUi
             'showroom_cake_requests.view_all' => 'عرض طلبات كيك جميع الفروع',
             'showroom_cake_requests.create' => 'إنشاء وتعديل طلب كيك المعرض للفرع',
             'showroom_cake_requests.update_status' => 'تحديث حالة طلب كيك المعرض (حسب الموقع)',
+            'showroom_cake_requests.cancel' => 'إلغاء طلب كيك المعرض للفرع مع توضيح السبب',
             'showroom_cake_requests.delete' => 'حذف طلب كيك المعرض الملغي',
 
             // طلبات حلويات الفروع

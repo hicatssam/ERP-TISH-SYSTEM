@@ -549,6 +549,13 @@ Route::post(
             ->name('showroom-cake-requests.status')
             ->middleware('can:showroom_cake_requests.update_status');
 
+        Route::patch(
+            'showroom-cake-requests/{showroomCakeRequest}/cancel',
+            [ShowroomCakeRequestController::class, 'cancel']
+        )
+            ->name('showroom-cake-requests.cancel')
+            ->middleware('can:showroom_cake_requests.cancel');
+
         Route::delete(
             'showroom-cake-requests/{showroomCakeRequest}',
             [ShowroomCakeRequestController::class, 'destroy']

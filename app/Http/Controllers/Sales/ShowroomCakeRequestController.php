@@ -33,6 +33,7 @@ class ShowroomCakeRequestController extends Controller
                 'factoryLocation',
                 'creator',
                 'items',
+                'branchShipment',
             ]);
 
         if (! $canViewAll) {
@@ -82,6 +83,16 @@ class ShowroomCakeRequestController extends Controller
             ->paginate(20)
             ->withQueryString();
 
+        $editableIds = $requests->getCollection()
+            ->filter(fn (ShowroomCakeRequest $item) => $this->canEditRequest($user, $item))
+            ->pluck('id')
+            ->all();
+
+        $cancelableIds = $requests->getCollection()
+            ->filter(fn (ShowroomCakeRequest $item) => $this->canCancelRequest($user, $item))
+            ->pluck('id')
+            ->all();
+
         $locations = $canViewAll
             ? Location::query()
                 ->where('type', 'branch')
@@ -99,7 +110,9 @@ class ShowroomCakeRequestController extends Controller
                 'requests',
                 'locations',
                 'statusEnum',
-                'canViewAll'
+                'canViewAll',
+                'editableIds',
+                'cancelableIds'
             )
         );
     }
@@ -547,6 +560,11 @@ class ShowroomCakeRequestController extends Controller
             $showroomCakeRequest
         );
 
+        $canCancelRequest = $this->canCancelRequest(
+            $user,
+            $showroomCakeRequest
+        );
+
         $canManageReservations =
             $user->isAdmin()
             || (
@@ -567,6 +585,7 @@ class ShowroomCakeRequestController extends Controller
                 'showroomCakeRequest',
                 'allowedTransitions',
                 'canEditRequest',
+                'canCancelRequest',
                 'canManageReservations'
             )
         );
@@ -683,6 +702,13 @@ class ShowroomCakeRequestController extends Controller
                 'string',
                 'max:2000',
             ],
+            'cancellation_reason' => [
+                Rule::requiredIf($request->input('status') === 'cancelled'),
+                'nullable',
+                'string',
+                'min:5',
+                'max:2000',
+            ],
         ]);
 
         $newStatus =
@@ -730,6 +756,20 @@ class ShowroomCakeRequestController extends Controller
             403,
             'هذه المرحلة تخص موقعًا آخر.'
         );
+
+        if ($newStatus === ShowroomCakeRequestStatus::Cancelled) {
+            if (! $this->canBeCancelled($showroomCakeRequest)) {
+                return back()->with('error', 'لا يمكن إلغاء الطلب بعد تجهيزه للشحن أو إكماله.');
+            }
+
+            $this->cancelWithReason(
+                $showroomCakeRequest,
+                $user,
+                $validated['cancellation_reason']
+            );
+
+            return back()->with('success', 'تم إلغاء طلب كيك الفرع وتسجيل السبب.');
+        }
 
         $oldStatus =
             $showroomCakeRequest
@@ -788,6 +828,78 @@ class ShowroomCakeRequestController extends Controller
         );
     }
 
+    /**
+     * Branch cancellation uses a separate permission from factory production
+     * transitions. A branch user may act only on requests for their branch.
+     */
+    public function cancel(
+        Request $request,
+        ShowroomCakeRequest $showroomCakeRequest
+    ) {
+        /** @var User $user */
+        $user = Auth::user();
+
+        $this->ensureCanAccess($user, $showroomCakeRequest);
+
+        abort_unless(
+            $this->canCancelRequest($user, $showroomCakeRequest),
+            403,
+            'لا تملك صلاحية إلغاء هذا الطلب.'
+        );
+
+        $validated = $request->validate([
+            'cancellation_reason' => ['required', 'string', 'min:5', 'max:2000'],
+        ]);
+
+        $this->cancelWithReason(
+            $showroomCakeRequest,
+            $user,
+            $validated['cancellation_reason']
+        );
+
+        return redirect()
+            ->route('showroom-cake-requests.show', $showroomCakeRequest)
+            ->with('success', 'تم إلغاء طلب كيك الفرع وتسجيل السبب.');
+    }
+
+    private function cancelWithReason(
+        ShowroomCakeRequest $request,
+        User $actor,
+        string $reason
+    ): void {
+        $oldStatus = DB::transaction(function () use ($request, $actor, $reason): string {
+            $locked = ShowroomCakeRequest::query()
+                ->lockForUpdate()
+                ->findOrFail($request->id);
+
+            abort_unless(
+                $this->canBeCancelled($locked),
+                409,
+                'تغيّرت حالة الطلب ولا يمكن إلغاؤه.'
+            );
+
+            $fromStatus = $locked->status->workflowValue();
+
+            $locked->update([
+                'status' => ShowroomCakeRequestStatus::Cancelled,
+                'cancellation_reason' => trim($reason),
+                'cancelled_by' => $actor->id,
+                'cancelled_at' => now(),
+            ]);
+
+            return $fromStatus;
+        });
+
+        $request->refresh();
+
+        ShowroomCakeRequestNotifier::statusChanged(
+            $request,
+            $oldStatus,
+            ShowroomCakeRequestStatus::Cancelled->value,
+            $actor
+        );
+    }
+
     public function destroy(
         ShowroomCakeRequest $showroomCakeRequest
     ) {
@@ -832,6 +944,10 @@ class ShowroomCakeRequestController extends Controller
                     ShowroomCakeRequestStatus $status
                 ): bool =>
                     $status !== ShowroomCakeRequestStatus::Completed
+                    && (
+                        $status !== ShowroomCakeRequestStatus::Cancelled
+                        || $this->canBeCancelled($request)
+                    )
                     && (
                         $user->isAdmin()
                         || $user->can(
@@ -947,6 +1063,33 @@ class ShowroomCakeRequestController extends Controller
             ->all()
             ?? [];
     }
+    private function canBeCancelled(ShowroomCakeRequest $request): bool
+    {
+        return in_array(
+            $request->status->workflowValue(),
+            ['pending', 'in_progress'],
+            true
+        ) && ! $request->branchShipment()->exists();
+    }
+
+    private function canCancelRequest(User $user, ShowroomCakeRequest $request): bool
+    {
+        if (! $this->canBeCancelled($request)) {
+            return false;
+        }
+
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        return $user->can('showroom_cake_requests.cancel')
+            && in_array(
+                (int) $request->requesting_location_id,
+                $this->userLocationIds($user),
+                true
+            );
+    }
+
     private function canEditRequest(
         User $user,
         ShowroomCakeRequest $request
