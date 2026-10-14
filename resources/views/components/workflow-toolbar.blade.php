@@ -12,6 +12,10 @@
     $currentStep = collect($workflowSteps)->first(
         fn ($step) => in_array($step['state'], ['current', 'danger'], true)
     );
+    $milestoneRecord = in_array($type, ['special_cake', 'showroom_cake', 'showroom_sweets'], true);
+    $milestoneLabel = $milestoneRecord
+        ? \App\Support\BranchOrderMilestones::label($record)
+        : null;
 
     $deliveryActive = collect($workflowSteps)->contains(
         fn ($step) => $step['is_delivery'] && in_array($step['state'], ['done', 'current'], true)
@@ -30,10 +34,10 @@
             <div class="dahab-workflow__subtitle">{{ $workflowSubtitle }}</div>
         </div>
 
-        @if($currentStep)
-            <div class="dahab-workflow__current {{ $currentStep['state'] === 'danger' ? 'is-danger' : '' }}">
+        @if($currentStep || $milestoneLabel)
+            <div class="dahab-workflow__current {{ $milestoneLabel === 'ملغى' || ($currentStep && $currentStep['state'] === 'danger') ? 'is-danger' : '' }}">
                 <span>الحالة الحالية</span>
-                <strong>{{ $currentStep['label'] }}</strong>
+                <strong>{{ $milestoneLabel ?? $currentStep['label'] }}</strong>
             </div>
         @endif
     </div>

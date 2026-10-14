@@ -33,7 +33,9 @@ class ShowroomCakeRequestController extends Controller
                 'factoryLocation',
                 'creator',
                 'items',
-                'branchShipment',
+                'branchShipment.loadedBy.employee',
+                'branchShipment.receivedBy.employee',
+                'branchShipment.receivingInvoice',
             ]);
 
         if (! $canViewAll) {

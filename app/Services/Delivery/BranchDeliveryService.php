@@ -251,11 +251,20 @@ class BranchDeliveryService
                 ->lockForUpdate()
                 ->findOrFail($shipment->id);
 
-            if ($lockedShipment->status !== BranchShipment::ARRIVED) {
+            // Receiving is the branch's physical confirmation of arrival.
+            // The legacy dispatch/arrived states remain supported for old shipments,
+            // but are no longer mandatory steps between loading and receiving.
+            if (! in_array($lockedShipment->status, [
+                BranchShipment::LOADED,
+                BranchShipment::OUT_FOR_DELIVERY,
+                BranchShipment::ARRIVED,
+            ], true)) {
                 throw ValidationException::withMessages([
-                    'status' => 'يجب أن تكون الطلبية واصلة للفرع قبل تأكيد الاستلام.',
+                    'status' => 'يجب تأكيد تحميل الطلبية أولاً قبل تسجيل استلامها.',
                 ]);
             }
+
+            $previousShipmentStatus = $lockedShipment->status;
 
             $invoice = $lockedShipment->receivingInvoice;
 
@@ -330,7 +339,7 @@ class BranchDeliveryService
                 module: 'delivery',
                 recordType: 'branch_shipments',
                 recordId: $lockedShipment->id,
-                oldValues: ['status' => BranchShipment::ARRIVED],
+                oldValues: ['status' => $previousShipmentStatus],
                 newValues: ['status' => BranchShipment::RECEIVED],
                 metadata: [
                     'invoice_number' => $invoice->invoice_number,
@@ -398,27 +407,48 @@ class BranchDeliveryService
     private function snapshotItems(Model $source): array
     {
         if ($source instanceof SpecialCakeOrder) {
-            $description = collect([
-                'كيك خاص',
-                $source->cake_type,
-                $source->cake_size,
-                $source->flavor,
-                $source->shape,
-            ])->filter()->implode(' — ');
+            // Multi-size special cakes are itemized per selected size so the
+            // branch can confirm which actual sizes arrived, not just 1 order.
+            $sizes = collect($source->cake_sizes ?: [$source->cake_size])
+                ->filter()
+                ->values();
 
-            return [[
-                'source_item_id' => null,
-                'description' => $description !== '' ? $description : 'كيك خاص',
-                'unit' => 'طلب',
-                'sent_quantity' => 1,
-                'metadata' => [
-                    'order_number' => $source->order_number,
-                    'cake_weight' => $source->cake_weight,
-                    'persons_count' => $source->persons_count,
-                    'cake_text' => $source->cake_text,
-                    'customer_id' => $source->customer_id,
-                ],
-            ]];
+            if ($sizes->isEmpty()) {
+                $sizes = collect([null]);
+            }
+
+            return $sizes->map(function ($size) use ($source): array {
+                $sizeLabel = match ($size) {
+                    'small' => 'صغير',
+                    'medium' => 'وسط',
+                    'large' => 'كبير',
+                    'standard' => 'ستاندر',
+                    default => $size,
+                };
+
+                $description = collect([
+                    'كيك خاص',
+                    $source->cake_type,
+                    $sizeLabel,
+                    $source->flavor,
+                    $source->shape,
+                ])->filter()->implode(' — ');
+
+                return [
+                    'source_item_id' => null,
+                    'description' => $description !== '' ? $description : 'كيك خاص',
+                    'unit' => 'كيك',
+                    'sent_quantity' => 1,
+                    'metadata' => [
+                        'order_number' => $source->order_number,
+                        'cake_size' => $size,
+                        'cake_weight' => $source->cake_weight,
+                        'persons_count' => $source->persons_count,
+                        'cake_text' => $source->cake_text,
+                        'customer_id' => $source->customer_id,
+                    ],
+                ];
+            })->all();
         }
 
         if ($source instanceof ShowroomCakeRequest) {

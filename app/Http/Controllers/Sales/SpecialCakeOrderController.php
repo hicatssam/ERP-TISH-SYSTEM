@@ -39,6 +39,9 @@ class SpecialCakeOrderController extends Controller
                 'factory',
                 'creator',
                 'attachments' => fn ($query) => $query->latest('id'),
+                'branchShipment.loadedBy.employee',
+                'branchShipment.receivedBy.employee',
+                'branchShipment.receivingInvoice',
             ]);
 
         if (! $user->isAdmin() && ! $user->can('cake_orders.view_all')) {

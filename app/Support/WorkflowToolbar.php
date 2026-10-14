@@ -11,6 +11,10 @@ class WorkflowToolbar
 {
     public static function build(string $type, Model $record): array
     {
+        if (in_array($type, ['special_cake', 'showroom_cake', 'showroom_sweets'], true)) {
+            return BranchOrderMilestones::steps($record);
+        }
+
         $currentStatus = self::normalizeStatus($type, self::statusValue($record->getAttribute('status')));
         $steps = self::stepsFor($type);
 
@@ -67,9 +71,8 @@ class WorkflowToolbar
     public static function subtitle(string $type): string
     {
         return match ($type) {
-            'special_cake' => 'أربع مراحل واضحة من المراجعة حتى اكتمال الطلب',
-            'showroom_sweets' => 'أربع مراحل واضحة من المراجعة حتى استلام الفرع',
-            'showroom_cake' => 'أربع مراحل واضحة من المراجعة حتى استلام الفرع',
+            'special_cake', 'showroom_sweets', 'showroom_cake' =>
+                'ثلاث مراحل تشغيلية: تم التنفيذ، ثم التحميل، ثم الاستلام بفاتورة تفصيلية',
             'order' => 'متابعة حالة الطلب من الإنشاء حتى الإكمال',
             default => 'متابعة حالة العملية خطوة بخطوة',
         };

@@ -32,6 +32,9 @@ class ShowroomSweetsRequestController extends Controller
                 'factoryLocation',
                 'creator',
                 'items.product',
+                'branchShipment.loadedBy.employee',
+                'branchShipment.receivedBy.employee',
+                'branchShipment.receivingInvoice',
             ]);
 
         if (! $canViewAll) {

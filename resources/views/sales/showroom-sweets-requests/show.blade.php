@@ -1088,7 +1088,7 @@
         ? $showroomSweetsRequest->status->value
         : (string) $showroomSweetsRequest->status;
 
-    $statusLabel = $showroomSweetsRequest->status->label();
+    $statusLabel = \App\Support\BranchOrderMilestones::label($showroomSweetsRequest);
 
     $cardTone = match ($statusValue) {
         'pending',
@@ -1237,13 +1237,25 @@
                 </a>
             @endif
 
+            @if(collect($allowedTransitions)->contains(\App\Enums\ShowroomSweetsRequestStatus::Ready))
+                <form method="POST" action="{{ route('showroom-sweets-requests.status', $showroomSweetsRequest) }}">
+                    @csrf
+                    @method('PATCH')
+                    <input type="hidden" name="status" value="ready">
+                    <button type="submit" class="btn btn-gold btn-sm"
+                        onclick="return confirm('تأكيد اكتمال تنفيذ طلب الحلويات وجاهزيته للتحميل؟')">
+                        تم التنفيذ
+                    </button>
+                </form>
+            @endif
+
             @if(count($allowedTransitions) > 0)
                 <button
                     type="button"
                     class="btn btn-gold btn-sm"
                     onclick="openShowroomSweetsStatusModal()"
                 >
-                    تحديث الحالة
+                    خيارات أخرى
                 </button>
             @endif
 
