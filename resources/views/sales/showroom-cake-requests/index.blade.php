@@ -83,7 +83,7 @@
                 <td>{{ $req->needed_by?->format('Y-m-d') ?? '—' }}</td>
                 <td>
                     <span class="badge {{ $req->status->badgeClass() }}" style="font-size:.65rem">
-                        {{ $req->status->label() }}
+                        {{ \App\Support\BranchOrderMilestones::label($req) }}
                     </span>
                 </td>
                 <td>{{ $req->created_at->format('Y-m-d') }}</td>
