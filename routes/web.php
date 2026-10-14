@@ -147,6 +147,7 @@ Route::middleware(['auth', 'location.scope'])->group(function () {
 
         // ─── Roles & Permissions ───────────────────────────────────────────
         Route::middleware('can:roles.manage')->group(function () {
+            Route::get('roles/audit', [RoleController::class, 'audit'])->name('roles.audit');
             Route::resource('roles', RoleController::class);
         });
 
