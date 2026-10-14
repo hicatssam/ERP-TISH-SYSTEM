@@ -1088,7 +1088,7 @@
         ? $showroomSweetsRequest->status->value
         : (string) $showroomSweetsRequest->status;
 
-    $statusLabel = $showroomSweetsRequest->status->label();
+    $statusLabel = \App\Support\BranchOrderMilestones::label($showroomSweetsRequest);
 
     $cardTone = match ($statusValue) {
         'pending',
