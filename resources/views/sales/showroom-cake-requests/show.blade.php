@@ -226,7 +226,7 @@
 
                     <td>
                         <span class="badge {{ $showroomCakeRequest->status->badgeClass() }}">
-                            {{ $showroomCakeRequest->status->label() }}
+                            {{ \App\Support\BranchOrderMilestones::label($showroomCakeRequest) }}
                         </span>
                     </td>
                 </tr>
@@ -613,7 +613,7 @@
                 </span>
 
                 <strong>
-                    {{ $showroomCakeRequest->status->label() }}
+                    {{ \App\Support\BranchOrderMilestones::label($showroomCakeRequest) }}
                 </strong>
 
             </div>
