@@ -59,6 +59,11 @@ class ThreeStageBranchReceivingTest extends TestCase
             ->assertSee('تم التنفيذ')
             ->assertSee('تم التحميل')
             ->assertSee('تم الاستلام')
+            ->assertSee('data-confirm-receipt="1"', false)
+            ->assertSee('data-confirm-title="اعتماد استلام الطلبية"', false)
+            ->assertSee('data-confirm-invoice-number="'.$shipment->receivingInvoice->invoice_number.'"', false)
+            ->assertSee('id="confirmReceiptSummary"', false)
+            ->assertDontSee('onclick="return confirm(', false)
             ->assertDontSee('خرجت للتوصيل')
             ->assertDontSee('وصلت إلى الفرع');
 
