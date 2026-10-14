@@ -94,6 +94,7 @@ class SpecialCakeOrderService
                     : null,
                 'cake_type'              => $data['cake_type'] ?? null,
                 'cake_size'              => $data['cake_size'] ?? null,
+                'cake_sizes'             => $data['cake_sizes'] ?? null,
                 'cake_weight'            => $data['cake_weight'] ?? null,
                 'persons_count'          => $data['persons_count'] ?? null,
                 'flavor'                 => $data['flavor'] ?? null,
