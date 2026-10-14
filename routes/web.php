@@ -520,13 +520,8 @@ Route::post(
 )->name('cake-orders.attachment')
     ->middleware('can:cake_orders.view');
         // ─── Showroom Cake Requests (طلبات كيك الفروع) ─────────────────────
-        Route::middleware('can:showroom_cake_requests.view')->group(function () {
-            Route::resource(
-                'showroom-cake-requests',
-                ShowroomCakeRequestController::class
-            )->only(['index', 'show']);
-        });
-
+        // The static /create route must be registered before /{showroomCakeRequest}.
+        // Otherwise Laravel captures "create" as a model ID and returns 404.
         Route::middleware('can:showroom_cake_requests.create')->group(function () {
             Route::resource(
                 'showroom-cake-requests',
@@ -537,6 +532,13 @@ Route::post(
                 'showroom-cake-requests/{showroomCakeRequest}/items/{item}/reservation',
                 [ShowroomCakeRequestController::class, 'updateItemReservation']
             )->name('showroom-cake-requests.items.reservation');
+        });
+
+        Route::middleware('can:showroom_cake_requests.view')->group(function () {
+            Route::resource(
+                'showroom-cake-requests',
+                ShowroomCakeRequestController::class
+            )->only(['index', 'show']);
         });
 
         Route::patch(
