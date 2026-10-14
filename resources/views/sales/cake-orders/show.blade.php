@@ -248,6 +248,18 @@
 
     <div class="action-btns">
 
+        @if(in_array('ready', $allowed, true))
+            <form method="POST" action="{{ route('cake-orders.transition', $cakeOrder) }}">
+                @csrf
+                @method('PATCH')
+                <input type="hidden" name="to_status" value="ready">
+                <button type="submit" class="btn btn-gold btn-sm"
+                    onclick="return confirm('تأكيد اكتمال التنفيذ وجاهزية الكيك للتحميل؟')">
+                    تم التنفيذ
+                </button>
+            </form>
+        @endif
+
         @if(count($allowed) > 0)
 
             <button
@@ -255,7 +267,7 @@
                 type="button"
                 onclick="openStatusModal()"
             >
-                تحديث حالة الطلب
+                خيارات أخرى
             </button>
 
         @endif
