@@ -136,7 +136,16 @@
         \App\Models\BranchShipment::OUT_FOR_DELIVERY,
         \App\Models\BranchShipment::ARRIVED,
     ], true) && $canReceive && ! $invoice?->isConfirmed())
-        <form method="POST" action="{{ route('branch-shipments.receive', $shipment) }}">
+        <form
+            method="POST"
+            action="{{ route('branch-shipments.receive', $shipment) }}"
+            data-confirm-type="success"
+            data-confirm-receipt="1"
+            data-confirm-invoice-number="{{ $invoice->invoice_number }}"
+            data-confirm-title="اعتماد استلام الطلبية"
+            data-confirm-text="اعتماد الاستلام وإصدار الفاتورة"
+            data-confirm="سيتم اعتماد الكميات التي سجّلتها لكل صنف، وتوثيق أي نقص أو فروقات وملاحظات في فاتورة الاستلام الرسمية. يُرجى مراجعة التفاصيل قبل الاعتماد."
+        >
             @csrf
             <div class="table-wrap">
                 <table class="data-table">
@@ -186,7 +195,7 @@
             </div>
 
             <div class="card-footer" style="display:flex;justify-content:flex-end">
-                <button class="btn btn-success" type="submit" onclick="return confirm('تأكيد استلام هذه الطلبية وإصدار فاتورة الاستلام؟')">
+                <button class="btn btn-success" type="submit">
                     تأكيد الاستلام وإصدار الفاتورة
                 </button>
             </div>

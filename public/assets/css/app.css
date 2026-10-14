@@ -799,11 +799,12 @@ input, select, textarea, button { font-family: inherit; }
 
 .dahab-confirm-box {
   position: relative;
-  max-width: 440px;
-  padding: 1.5rem;
+  max-width: 500px;
+  padding: 1.65rem 1.75rem 1.4rem;
   border: 1px solid rgba(181, 138, 34, .22);
-  border-radius: 18px;
-  box-shadow: 0 24px 70px rgba(9, 20, 35, .26);
+  border-radius: 20px;
+  background: linear-gradient(160deg, #fff 70%, #fffcf4);
+  box-shadow: 0 28px 75px rgba(9, 20, 35, .28);
   text-align: right;
   overflow: hidden;
 }
@@ -915,7 +916,89 @@ input, select, textarea, button { font-family: inherit; }
 }
 
 .dahab-confirm-actions .btn {
-  min-width: 112px;
+  min-width: 132px;
+  min-height: 43px;
+  border-radius: 10px;
+  font-weight: 800;
+}
+
+.dahab-confirm-actions .btn:focus-visible,
+.dahab-confirm-close:focus-visible {
+  outline: 3px solid rgba(212, 160, 23, .42);
+  outline-offset: 3px;
+}
+
+.dahab-confirm-receipt {
+  margin-top: 1.05rem;
+  padding: .8rem .95rem;
+  border: 1px solid #dfe8e6;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #f5faf8, #fff);
+  text-align: right;
+}
+
+.dahab-confirm-receipt[hidden] {
+  display: none;
+}
+
+.dahab-confirm-receipt__invoice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .8rem;
+  padding-bottom: .7rem;
+  border-bottom: 1px solid #e3eeea;
+}
+
+.dahab-confirm-receipt__invoice span,
+.dahab-confirm-receipt__stats span {
+  display: block;
+  color: var(--text-muted);
+  font-size: .73rem;
+}
+
+.dahab-confirm-receipt__invoice strong {
+  color: #0f5132;
+  font-size: .87rem;
+  letter-spacing: .02em;
+  direction: ltr;
+}
+
+.dahab-confirm-receipt__stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .65rem;
+  margin-top: .75rem;
+}
+
+.dahab-confirm-receipt__stats > div {
+  padding: .65rem .75rem;
+  background: #fff;
+  border: 1px solid #e7eeeb;
+  border-radius: 10px;
+}
+
+.dahab-confirm-receipt__stats strong {
+  display: block;
+  margin-top: .17rem;
+  color: #113c31;
+  font-size: 1.18rem;
+  font-weight: 900;
+}
+
+.dahab-confirm-receipt.has-differences #confirmReceiptDifferencesCount {
+  color: #b45309;
+}
+
+.dahab-confirm-receipt__hint {
+  margin: .7rem 0 0;
+  color: #406a5c;
+  font-size: .76rem;
+  line-height: 1.75;
+}
+
+.dahab-confirm-receipt.has-differences .dahab-confirm-receipt__hint {
+  color: #9a620e;
 }
 
 @media (max-width: 520px) {
