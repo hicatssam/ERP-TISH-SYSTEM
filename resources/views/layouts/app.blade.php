@@ -111,6 +111,20 @@ $brandName =
 
     <link rel="manifest" href="{{ route('pwa.manifest') }}">
 
+    {{-- Capture installability as early as possible; the header button is mounted later. --}}
+    <script>
+        window.dahabPwaInstall = window.dahabPwaInstall || { prompt: null, installed: false };
+        window.addEventListener('beforeinstallprompt', event => {
+            event.preventDefault();
+            window.dahabPwaInstall.prompt = event;
+            window.dispatchEvent(new Event('dahab:pwa-install-ready'));
+        });
+        window.addEventListener('appinstalled', () => {
+            window.dahabPwaInstall.installed = true;
+            window.dahabPwaInstall.prompt = null;
+        });
+    </script>
+
     <meta name="theme-color" content="{{ $pwaThemePrimary }}">
 
     <meta name="mobile-web-app-capable" content="yes">
@@ -849,7 +863,17 @@ a.app-page-btn:hover {
         transform .2s ease;
 }
 
-.install-app-btn:hover {
+.install-app-btn[hidden] {
+    display: none !important;
+}
+
+.install-app-btn:disabled {
+    opacity: .55;
+    cursor: wait;
+    transform: none;
+}
+
+.install-app-btn:hover:not(:disabled) {
     color: var(--theme-sidebar-active, var(--gold, #d4af37));
     border-color: var(--theme-sidebar-active, var(--gold, #d4af37));
     transform: translateY(-1px);
@@ -3466,7 +3490,8 @@ a.app-page-btn:hover {
             const helpClose = document.getElementById('pwaInstallHelpClose');
             const helpHint = document.getElementById('pwaInstallHelpHint');
 
-            let deferredInstallPrompt = null;
+            const installState = window.dahabPwaInstall || { prompt: null, installed: false };
+            let deferredInstallPrompt = installState.prompt;
 
             const isStandalone =
                 window.matchMedia('(display-mode: standalone)').matches
@@ -3477,6 +3502,35 @@ a.app-page-btn:hover {
             const isSamsungInternet = /SamsungBrowser\//i.test(navigator.userAgent);
             const isLocalHost = ['localhost', '127.0.0.1', '::1'].includes(location.hostname);
             const isSecureInstallContext = window.isSecureContext || isLocalHost;
+            const installedDisplay = window.matchMedia('(display-mode: standalone)');
+
+            // On Android, show the direct install button only when Chrome (or
+            // another Chromium browser) has actually supplied a native prompt.
+            // Never send Android users to device settings or an extra guide.
+            const updateInstallButton = () => {
+                if (! installButton) return;
+
+                if (isStandalone || installedDisplay.matches || installState.installed) {
+                    installButton.hidden = true;
+                    return;
+                }
+
+                const ready = Boolean(installState.prompt || deferredInstallPrompt);
+                if (isAndroid) {
+                    installButton.hidden = false;
+                    installButton.disabled = !ready;
+                    installButton.title = ready
+                        ? 'تثبيت التطبيق على الشاشة الرئيسية'
+                        : 'بانتظار جاهزية التثبيت المباشر من المتصفح';
+                    installButton.setAttribute('aria-busy', ready ? 'false' : 'true');
+                    installButton.setAttribute('aria-label', ready
+                        ? 'تثبيت التطبيق على الشاشة الرئيسية'
+                        : 'جاري تجهيز تثبيت التطبيق');
+                } else {
+                    installButton.hidden = !isIos && !ready;
+                    installButton.disabled = false;
+                }
+            };
 
             const openHelp = () => {
                 if (! helpDialog || ! helpMessage || ! helpTitle) {
@@ -3516,34 +3570,54 @@ a.app-page-btn:hover {
                 }
             };
 
-            if (installButton) {
-                installButton.hidden = isStandalone;
-            }
+            updateInstallButton();
+
+            window.addEventListener('dahab:pwa-install-ready', () => {
+                deferredInstallPrompt = installState.prompt;
+                updateInstallButton();
+            });
 
             window.addEventListener('beforeinstallprompt', event => {
                 event.preventDefault();
+                installState.prompt = event;
                 deferredInstallPrompt = event;
-
-                if (installButton && ! isStandalone) {
-                    installButton.hidden = false;
-                }
+                updateInstallButton();
             });
 
             installButton?.addEventListener('click', async () => {
-                if (deferredInstallPrompt) {
-                    await deferredInstallPrompt.prompt();
-                    const choice = await deferredInstallPrompt.userChoice;
+                const promptEvent = installState.prompt || deferredInstallPrompt;
 
-                    if (choice.outcome === 'accepted') {
-                        installButton.hidden = true;
-                    }
-
-                    deferredInstallPrompt = null;
+                if (!promptEvent) {
+                    if (!isAndroid) openHelp();
                     return;
                 }
 
-                openHelp();
+                // prompt() is triggered directly by the tap, without another
+                // system/custom dialog and without opening Android settings.
+                installState.prompt = null;
+                deferredInstallPrompt = null;
+                updateInstallButton();
+
+                try {
+                    const result = await promptEvent.prompt();
+                    const choice = promptEvent.userChoice
+                        ? await promptEvent.userChoice
+                        : result;
+
+                    if (choice?.outcome === 'accepted') {
+                        installState.installed = true;
+                        installButton.hidden = true;
+                    }
+                } catch (error) {
+                    console.warn('Native app installation is unavailable:', error);
+                }
+
+                // A dismissed prompt cannot be reused. Chrome may dispatch a
+                // new beforeinstallprompt event on a later visit.
+                updateInstallButton();
             });
+
+            installedDisplay.addEventListener?.('change', updateInstallButton);
 
             helpClose?.addEventListener('click', () => {
                 if (typeof helpDialog?.close === 'function') {
@@ -3560,11 +3634,10 @@ a.app-page-btn:hover {
             });
 
             window.addEventListener('appinstalled', () => {
+                installState.installed = true;
+                installState.prompt = null;
                 deferredInstallPrompt = null;
-
-                if (installButton) {
-                    installButton.hidden = true;
-                }
+                updateInstallButton();
 
                 if (helpDialog?.open && typeof helpDialog.close === 'function') {
                     helpDialog.close();
