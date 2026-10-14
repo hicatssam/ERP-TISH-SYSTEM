@@ -91,11 +91,13 @@
                     <div class="actions">
                         <a href="{{ route('showroom-cake-requests.show', $req) }}" class="btn btn-ghost btn-sm">عرض</a>
 
-                        @can('showroom_cake_requests.create')
-                            @if(in_array($req->status->workflowValue(), ['pending', 'in_progress'], true))
-                                <a href="{{ route('showroom-cake-requests.edit', $req) }}" class="btn btn-outline btn-sm">تعديل</a>
-                            @endif
-                        @endcan
+                        @if(in_array($req->id, $editableIds, true))
+                            <a href="{{ route('showroom-cake-requests.edit', $req) }}" class="btn btn-outline btn-sm">تعديل</a>
+                        @endif
+                        @if(in_array($req->id, $cancelableIds, true))
+                            <a href="{{ route('showroom-cake-requests.show', $req) }}#cancel-branch-request" class="btn btn-danger btn-sm">إلغاء مع السبب</a>
+                        @endif
+                        @can('showroom_cake_requests.delete')
                         @if(in_array($req->status->value, ['draft', 'cancelled']))
                         <form action="{{ route('showroom-cake-requests.destroy', $req) }}" method="POST"
                               onsubmit="return confirm('هل تريد حذف هذا الطلب؟')">
@@ -103,6 +105,7 @@
                             <button class="btn btn-danger btn-sm" type="submit">حذف</button>
                         </form>
                         @endif
+                        @endcan
                     </div>
                 </td>
             </tr>
