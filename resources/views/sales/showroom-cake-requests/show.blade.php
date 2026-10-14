@@ -86,13 +86,25 @@
             </a>
         @endif
 
+        @if(collect($allowedTransitions)->contains(\App\Enums\ShowroomCakeRequestStatus::Ready))
+            <form method="POST" action="{{ route('showroom-cake-requests.status', $showroomCakeRequest) }}">
+                @csrf
+                @method('PATCH')
+                <input type="hidden" name="status" value="ready">
+                <button type="submit" class="btn btn-gold btn-sm"
+                    onclick="return confirm('تأكيد تنفيذ طلب كيك الفرع وجاهزيته للتحميل؟')">
+                    تم التنفيذ
+                </button>
+            </form>
+        @endif
+
         @if(count($allowedTransitions) > 0)
             <button
                 type="button"
                 class="btn btn-gold btn-sm"
                 onclick="openShowroomCakeStatusModal()"
             >
-                تحديث حالة الطلب
+                خيارات أخرى
             </button>
         @endif
 
