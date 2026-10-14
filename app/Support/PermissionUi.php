@@ -8,6 +8,7 @@ class PermissionUi
     {
         return [
             'Admin' => 'مدير النظام',
+            'super-admin' => 'مدير النظام الأعلى',
             'General Manager' => 'المدير العام',
             'Branch Manager' => 'مدير الفرع',
             'Branch Employee' => 'موظف فرع',
@@ -28,6 +29,17 @@ class PermissionUi
     public static function groupLabels(): array
     {
         return [
+            'attendance' => 'الحضور والانصراف والبصمة',
+            'payroll' => 'الرواتب والأجور',
+            'employee_ledger' => 'كشف حساب الموظف',
+            'expenses' => 'المصروفات',
+            'expense_categories' => 'تصنيفات المصروفات',
+            'showroom_daily_reports' => 'تقرير المعرض اليومي',
+            'showroom_cake_daily_reports' => 'تقرير كيك المعرض اليومي',
+            'restaurant_menu' => 'قائمة المطعم',
+            'stock_receiving_invoices' => 'فواتير استلام المخزون',
+            'categories' => 'تصنيفات المنتجات',
+            'supplier_returns' => 'مرتجعات الموردين',
             'dashboard' => 'لوحة التحكم',
             'orders' => 'طلبات البيع',
             'cake_orders' => 'طلبات الكيك الخاصة',
@@ -85,6 +97,70 @@ class PermissionUi
     public static function permissionLabels(): array
     {
         return [
+            'attendance.approve' => 'اعتماد أو رفض تصحيح الحضور والانصراف',
+            'attendance.devices.manage' => 'إدارة أجهزة البصمة وربطها بالموظفين',
+            'attendance.devices.view' => 'عرض أجهزة البصمة وسجلاتها',
+            'attendance.leaves.approve' => 'اعتماد أو رفض الإجازات',
+            'attendance.leaves.manage' => 'إدارة طلبات الإجازة والأرصدة',
+            'attendance.leaves.view' => 'عرض الإجازات',
+            'attendance.manage' => 'إدارة سجلات الحضور والانصراف',
+            'attendance.shifts.manage' => 'إدارة الورديات وجداول الدوام',
+            'attendance.view' => 'عرض سجلات الحضور والانصراف',
+            'cake_orders.cancel' => 'إلغاء طلب كيك خاص',
+            'cake_orders.complete' => 'إكمال طلب كيك خاص',
+            'cake_orders.view_all' => 'عرض طلبات الكيك الخاص لجميع الفروع',
+            'customer_display.view' => 'عرض شاشة طلبات العملاء',
+            'employee_ledger.view' => 'عرض كشف الحساب المالي للموظف',
+            'expense_categories.manage' => 'إدارة تصنيفات المصروفات',
+            'expenses.approve' => 'اعتماد أو رفض المصروفات',
+            'expenses.approve_own' => 'اعتماد المصروفات الخاصة بصاحب الصلاحية',
+            'expenses.create' => 'إنشاء مصروف',
+            'expenses.post' => 'ترحيل المصروفات للحسابات',
+            'expenses.submit' => 'إرسال المصروف للاعتماد',
+            'expenses.update' => 'تعديل بيانات المصروف',
+            'expenses.view' => 'عرض المصروفات',
+            'expenses.view_all_locations' => 'عرض مصروفات جميع الفروع',
+            'expenses.void' => 'إلغاء قيد مصروف معتمد',
+            'financial.cash.close' => 'إقفال الصندوق المالي',
+            'financial.cash.movements.manage' => 'إدارة حركات الصندوق المالية',
+            'financial.cash.view' => 'عرض لوحة الصندوق المالي',
+            'inventory.expiry-alerts.receive' => 'استلام أصناف منتهية أو قريبة الانتهاء',
+            'inventory.expiry-alerts.receive_all' => 'استلام أصناف الانتهاء لجميع الفروع',
+            'inventory.expiry-alerts.run' => 'تشغيل تحديث تنبيهات انتهاء الصلاحية',
+            'inventory.expiry-alerts.settings' => 'تعديل إعدادات تنبيهات انتهاء الصلاحية',
+            'inventory.expiry-alerts.view' => 'عرض تنبيهات انتهاء صلاحية المخزون',
+            'kitchen.manage' => 'إدارة إعدادات تشغيل المطبخ',
+            'kitchen.tickets.update' => 'تحديث تذاكر المطبخ',
+            'orders.complete' => 'إكمال طلب بيع',
+            'orders.delete' => 'حذف طلب بيع',
+            'orders.update' => 'تعديل طلب بيع',
+            'payroll.adjustments.manage' => 'إدارة خصومات وإضافات الرواتب',
+            'payroll.advances.manage' => 'إدارة السلف المالية للموظفين',
+            'payroll.approve' => 'اعتماد كشوف الرواتب',
+            'payroll.attendance.sync' => 'مزامنة سجلات الحضور مع الرواتب',
+            'payroll.documents.print' => 'طباعة مستندات وكشوف الرواتب',
+            'payroll.manage' => 'إدارة بيانات الرواتب',
+            'payroll.pay' => 'صرف الرواتب',
+            'payroll.payments.verify' => 'التحقق من دفعات الرواتب',
+            'payroll.payments.void' => 'إلغاء دفعة راتب موثقة',
+            'payroll.reports.view' => 'عرض تقارير الرواتب',
+            'payroll.view' => 'عرض كشوف الرواتب',
+            'quality_control.inspect' => 'فحص جودة دفعات الإنتاج',
+            'restaurant.pos.create_order' => 'إنشاء طلب من نقطة البيع',
+            'restaurant.pos.view' => 'عرض صفحة نقطة البيع',
+            'restaurant.tables.manage' => 'إدارة طاولات المطعم',
+            'restaurant.tables.view' => 'عرض طاولات المطعم',
+            'restaurant_menu.manage' => 'إدارة قائمة المطعم',
+            'restaurant_menu.view' => 'عرض قائمة المطعم',
+            'showroom_cake_daily_reports.export' => 'تصدير التقرير اليومي لكيك المعرض',
+            'showroom_cake_daily_reports.manage_branch' => 'إنشاء وإدارة تقرير كيك المعرض للفرع',
+            'showroom_cake_daily_reports.review' => 'مراجعة تقرير كيك المعرض اليومي',
+            'showroom_cake_daily_reports.view' => 'عرض تقرير كيك المعرض اليومي',
+            'showroom_daily_reports.export' => 'تصدير التقرير اليومي للمعرض',
+            'showroom_daily_reports.manage_branch' => 'إنشاء وإدارة التقرير اليومي للمعرض للفرع',
+            'showroom_daily_reports.review' => 'مراجعة التقرير اليومي للمعرض',
+            'showroom_daily_reports.view' => 'عرض التقرير اليومي للمعرض',
+            'production.complete' => 'إنهاء دفعة الإنتاج',
             'accounting.employee_accounts.view' => 'عرض مشتريات الموظفين وأقساطهم',
             'accounting.employee_accounts.create' => 'صرف منتجات على حساب الموظف',
             'accounting.employee_accounts.receive' => 'تسجيل سداد مشتريات الموظف',
@@ -378,12 +454,12 @@ class PermissionUi
 
     public static function groupLabel(string $group): string
     {
-        return self::groupLabels()[$group] ?? 'صلاحيات أخرى';
+        return self::groupLabels()[$group] ?? 'مجموعة غير موثقة: ' . $group;
     }
 
     public static function permissionLabel(string $permission): string
     {
-        return self::permissionLabels()[$permission] ?? 'صلاحية غير معرفة';
+        return self::permissionLabels()[$permission] ?? 'صلاحية غير موثقة: ' . $permission;
     }
 
     public static function isLegacyPermission(string $permission): bool
