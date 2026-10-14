@@ -80,6 +80,12 @@
             </a>
         @endif
 
+        @if($canCancelRequest)
+            <a href="#cancel-branch-request" class="btn btn-danger btn-sm">
+                إلغاء الطلب
+            </a>
+        @endif
+
         @if(count($allowedTransitions) > 0)
             <button
                 type="button"
@@ -101,6 +107,41 @@
 
 </div>
 
+
+@if($canCancelRequest)
+    <details id="cancel-branch-request" class="card" style="margin:1rem 0">
+        <summary style="padding:1rem;cursor:pointer;font-weight:800;color:#b91c1c">
+            إلغاء طلب كيك الفرع — يجب توضيح السبب
+        </summary>
+        <div class="card-body">
+            <p style="margin-bottom:.75rem;color:var(--text-muted)">
+                سيصل إشعار بالإلغاء للمصنع والفرع. لا يمكن إلغاء طلب تم تجهيزه للشحن أو إكماله.
+            </p>
+            <form action="{{ route('showroom-cake-requests.cancel', $showroomCakeRequest) }}" method="POST">
+                @csrf
+                @method('PATCH')
+                <div class="form-group">
+                    <label class="form-label" for="branchCakeCancellationReason">سبب إلغاء الطلب *</label>
+                    <textarea
+                        id="branchCakeCancellationReason"
+                        name="cancellation_reason"
+                        class="form-textarea @error('cancellation_reason') is-invalid @enderror"
+                        rows="3"
+                        minlength="5"
+                        maxlength="2000"
+                        required
+                        placeholder="اكتب سبب الإلغاء لتوثيقه وإبلاغ المصنع..."
+                    >{{ old('cancellation_reason') }}</textarea>
+                    @error('cancellation_reason')<span class="form-error">{{ $message }}</span>@enderror
+                </div>
+                <button class="btn btn-danger btn-sm" type="submit"
+                        onclick="return confirm('هل أنت متأكد من إلغاء الطلب مع تسجيل السبب؟')">
+                    تأكيد إلغاء الطلب
+                </button>
+            </form>
+        </div>
+    </details>
+@endif
 
 {{-- =========================================================
      مسار حالة طلب كيك الفرع - يظهر مرة واحدة للطلب كاملًا
@@ -189,6 +230,19 @@
                         </span>
                     </td>
                 </tr>
+
+                @if($showroomCakeRequest->status->workflowValue() === 'cancelled')
+                    <tr>
+                        <td style="color:var(--text-muted)">سبب الإلغاء</td>
+                        <td style="white-space:pre-wrap">{{ $showroomCakeRequest->cancellation_reason ?: 'لم يسجل سبب للطلب القديم' }}</td>
+                    </tr>
+                    @if($showroomCakeRequest->cancelled_at)
+                        <tr>
+                            <td style="color:var(--text-muted)">تاريخ الإلغاء</td>
+                            <td>{{ \App\Support\ArabicDate::compactDateTime($showroomCakeRequest->cancelled_at) }}</td>
+                        </tr>
+                    @endif
+                @endif
 
                 <tr>
                     <td style="color:var(--text-muted)">
@@ -584,6 +638,7 @@
 
                         <select
                             name="status"
+                            id="showroomCakeStatusChoice"
                             class="form-select"
                             required
                         >
@@ -600,6 +655,19 @@
 
                     </div>
 
+
+                    <div id="showroomCakeStatusCancellationReason" class="form-group" hidden>
+                        <label class="form-label" for="showroomCakeStatusCancelText">سبب الإلغاء *</label>
+                        <textarea
+                            name="cancellation_reason"
+                            id="showroomCakeStatusCancelText"
+                            class="form-textarea"
+                            rows="3"
+                            minlength="5"
+                            maxlength="2000"
+                            placeholder="يجب تسجيل سبب إلغاء الطلب..."
+                        >{{ old('cancellation_reason') }}</textarea>
+                    </div>
 
                     <div class="form-group">
 
@@ -969,6 +1037,21 @@
 
 <script>
 
+    document.addEventListener('DOMContentLoaded', function () {
+        const select = document.getElementById('showroomCakeStatusChoice');
+        const reasonGroup = document.getElementById('showroomCakeStatusCancellationReason');
+        const reason = document.getElementById('showroomCakeStatusCancelText');
+
+        function updateCancelReasonRequirement() {
+            const isCancellation = select?.value === 'cancelled';
+            if (reasonGroup) reasonGroup.hidden = !isCancellation;
+            if (reason) reason.required = isCancellation;
+        }
+
+        select?.addEventListener('change', updateCancelReasonRequirement);
+        updateCancelReasonRequirement();
+    });
+
     function openShowroomCakeStatusModal() {
 
         const modal =
@@ -1042,4 +1125,12 @@
 
 @endif
 
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.location.hash === '#cancel-branch-request') {
+            const section = document.getElementById('cancel-branch-request');
+            if (section) section.open = true;
+        }
+    });
+</script>
 @endsection
