@@ -26,7 +26,7 @@
 
     <div class="page-header-actions">
         @can('roles.manage')
-            @if($role->name !== 'Admin')
+            @if(!in_array(strtolower($role->name), ['admin', 'super-admin'], true))
                 <a href="{{ route('roles.edit', $role) }}" class="btn btn-outline btn-sm">
                     تعديل الدور
                 </a>
@@ -71,7 +71,7 @@
                     <span class="detail-value">{{ $role->created_at->format('Y/m/d') }}</span>
                 </div>
 
-                @if($role->name === 'Admin')
+                @if(in_array(strtolower($role->name), ['admin', 'super-admin'], true))
                     <div class="detail-row">
                         <span class="detail-label">النوع</span>
                         <span class="detail-value">
