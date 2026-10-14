@@ -362,13 +362,55 @@ function actionMetaFromElement(element, form = null) {
     };
 }
 
+// Receipt details are calculated from the form's currently entered values.
+// Other confirmation dialogs stay unchanged.
+function updateReceiptConfirmationSummary(form) {
+    const panel = document.getElementById('confirmReceiptSummary');
+    if (!panel) return;
+
+    const isReceipt = form?.dataset?.confirmReceipt === '1';
+    panel.hidden = !isReceipt;
+    if (!isReceipt) return;
+
+    const inputs = Array.from(
+        form.querySelectorAll('input[name$="[received_quantity]"]')
+    );
+
+    const differences = inputs.filter(input => {
+        const sent = Number(input.max);
+        const received = Number(input.value);
+
+        return Number.isFinite(sent)
+            && Number.isFinite(received)
+            && Math.abs(sent - received) > 0.0005;
+    }).length;
+
+    const invoice = document.getElementById('confirmReceiptInvoiceNumber');
+    const count = document.getElementById('confirmReceiptItemsCount');
+    const differenceCount = document.getElementById('confirmReceiptDifferencesCount');
+    const hint = document.getElementById('confirmReceiptHint');
+
+    if (invoice) invoice.textContent = form.dataset.confirmInvoiceNumber || '—';
+    if (count) count.textContent = String(inputs.length);
+    if (differenceCount) differenceCount.textContent = String(differences);
+    panel.classList.toggle('has-differences', differences > 0);
+
+    if (hint) {
+        hint.textContent = differences > 0
+            ? 'يوجد فرق بين المرسل والمستلم في ' + differences
+                + ' صنف. ستُثبت الكميات والفروقات في الفاتورة.'
+            : 'الكميات المسجلة مطابقة للمرسلة. سيتم توثيق الاستلام وإصدار الفاتورة.';
+    }
+}
+
 function openConfirmModal({
     title,
     body,
     confirmText,
     type = 'info',
     onConfirm,
-    trigger = null
+    trigger = null,
+    form = null
 }) {
     const modal = document.getElementById('confirmModal');
     if (!modal) {
@@ -413,6 +455,8 @@ function openConfirmModal({
                     : 'btn-gold');
 
     btn.textContent = confirmText || 'تأكيد';
+
+    updateReceiptConfirmationSummary(form);
 
     _confirmAction = onConfirm;
     _confirmTrigger = trigger || document.activeElement;
@@ -550,6 +594,7 @@ document.addEventListener(
         openConfirmModal({
             ...meta,
             trigger: submitter,
+            form,
             onConfirm: () => {
                 form.dataset.confirmedOnce = '1';
 
