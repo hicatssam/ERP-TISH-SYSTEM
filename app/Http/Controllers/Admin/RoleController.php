@@ -75,7 +75,7 @@ class RoleController extends Controller
 
         $roleName = trim($validated['name']);
 
-        if (strcasecmp($roleName, self::ADMIN_ROLE) === 0) {
+        if (in_array(strtolower($roleName), ['admin', 'super-admin'], true)) {
             return back()
                 ->withInput()
                 ->withErrors([
@@ -172,7 +172,7 @@ class RoleController extends Controller
 
         if (
             !$isAdminRole &&
-            strcasecmp(trim($validated['name']), self::ADMIN_ROLE) === 0
+            in_array(strtolower(trim($validated['name'])), ['admin', 'super-admin'], true)
         ) {
             return back()
                 ->withInput()
@@ -263,7 +263,7 @@ class RoleController extends Controller
 
     private function isAdminRole(Role $role): bool
     {
-        return strcasecmp($role->name, self::ADMIN_ROLE) === 0;
+        return in_array(strtolower($role->name), ['admin', 'super-admin'], true);
     }
 
     private function clearPermissionCache(): void
