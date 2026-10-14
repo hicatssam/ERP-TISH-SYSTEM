@@ -282,7 +282,6 @@
                     <th>#</th>
                     <th>نوع الكيك</th>
                     <th>الحجم</th>
-                    <th>عدد الطبقات</th>
                     <th>النكهة</th>
                     <th>الشكل</th>
                     <th>الكمية</th>
@@ -322,14 +321,6 @@
                                         : 'غير محدد'
                                 )
                             }}
-                        </td>
-
-                        <td>
-                            @if($item->layer_count !== null)
-                                {{ $item->layer_count }} {{ $item->layer_count == 1 ? 'طبقة' : 'طبقات' }}
-                            @else
-                                <span style="color:var(--text-muted)">—</span>
-                            @endif
                         </td>
 
                         <td>

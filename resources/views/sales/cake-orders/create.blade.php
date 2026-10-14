@@ -204,9 +204,13 @@
                         @error('shape')<span class="form-error">{{ $message }}</span>@enderror
                     </div>
                     <div class="form-group" id="sizeGroup" hidden>
-                        <label class="form-label" id="sizeLabel">الحجم *</label>
-                        <select name="cake_size" id="cakeSize" class="form-select @error('cake_size') is-invalid @enderror"></select>
-                        @error('cake_size')<span class="form-error">{{ $message }}</span>@enderror
+                        <label class="form-label" id="sizeLabel">الأحجام * (يمكن اختيار أكثر من حجم)</label>
+                        <input type="hidden" name="cake_sizes_submitted" value="1">
+                        <input type="hidden" name="cake_size" id="cakeSize">
+                        <div id="cakeSizeChoices" class="cake-size-choices" role="group" aria-label="الأحجام المطلوبة"></div>
+                        <small class="form-help">اختر حجمًا أو أكثر للطلب نفسه.</small>
+                        @error('cake_sizes')<span class="form-error">{{ $message }}</span>@enderror
+                        @error('cake_sizes.*')<span class="form-error">{{ $message }}</span>@enderror
                     </div>
                     <div class="form-group" id="layersGroup" hidden>
                         <label class="form-label">عدد الطبقات *</label>
@@ -606,7 +610,14 @@
 @media(max-width:520px){.payment-methods-grid,.payment-accounts-grid{grid-template-columns:1fr}}
 .urgent-booking{padding:.85rem;border:1px solid #fed7aa;border-radius:12px;background:#fff7ed}.urgent-toggle{display:flex;align-items:center;gap:.75rem;cursor:pointer}.urgent-toggle input{width:18px;height:18px;accent-color:#ea580c}.urgent-toggle-icon{display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;border-radius:10px;color:#fff;background:#ea580c;font-weight:900}.urgent-toggle>span:last-child{display:grid;gap:.15rem}.urgent-toggle strong{color:#9a3412;font-size:.84rem}.urgent-toggle small{color:#9a3412;font-size:.72rem;line-height:1.6}.urgent-reason{margin-top:.8rem;padding-top:.8rem;border-top:1px dashed #fdba74}
 
+.cake-size-choices{display:flex;flex-wrap:wrap;gap:.6rem;margin:.4rem 0}
+.cake-size-option{display:inline-flex;align-items:center;gap:.45rem;padding:.55rem .85rem;border:1px solid var(--border);border-radius:10px;background:var(--surface);font-size:.84rem;cursor:pointer}
+.cake-size-option input{accent-color:var(--gold);width:17px;height:17px}
 </style>
+
+@php
+    $initialCakeSizes = old('cake_sizes', array_values(array_filter([(string) old('cake_size', '')])));
+@endphp
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -765,39 +776,70 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // ── Shape / Size / Layers ─────────────────────────────────────────────────
-    const shape      = document.getElementById('cakeShape');
-    const sizeGroup  = document.getElementById('sizeGroup');
-    const sizeLabel  = document.getElementById('sizeLabel');
-    const size       = document.getElementById('cakeSize');
+    // ── Shape / Multiple Sizes / Layers ──────────────────────────────────────
+    const shape = document.getElementById('cakeShape');
+    const sizeGroup = document.getElementById('sizeGroup');
+    const sizeLabel = document.getElementById('sizeLabel');
+    const size = document.getElementById('cakeSize');
+    const sizeChoices = document.getElementById('cakeSizeChoices');
     const layersGroup = document.getElementById('layersGroup');
-    const layers     = document.getElementById('layersCount');
-    let oldSize      = @json(old('cake_size'));
-    let oldLayers    = @json(old('layers_count'));
+    const layers = document.getElementById('layersCount');
+    let oldSizes = @json($initialCakeSizes);
+    let oldLayers = @json(old('layers_count'));
 
     const choices = {
-        round:          { showSize:true,  label:'الحجم *', values:{small:'صغير',medium:'وسط',large:'كبير'}, layers:{standard:'ستاندر','4':'4 طبقات','5':'5 طبقات','6':'6 طبقات'} },
-        slab:           { showSize:true,  label:'مقاس البلاطة *', values:{'30x30':'30×30','40x30':'40×30','60x40':'60×40','120x30':'120×30','120x80':'120×80'}, layers:null },
-        wedding_tiers:  { showSize:false, values:{standard:'ستاندر'}, layers:{'3':'3 طوابق','4':'4 طوابق','5':'5 طوابق','6':'6 طوابق'} },
-        standard_tiers: { showSize:true,  label:'حجم طوابق الستاندر *', values:{small:'صغير',medium:'وسط',large:'كبير'}, layers:null },
+        round: { showSize:true, label:'الأحجام *', values:{small:'صغير',medium:'وسط',large:'كبير'}, layers:{standard:'ستاندر','4':'4 طبقات','5':'5 طبقات','6':'6 طبقات'} },
+        slab: { showSize:true, label:'مقاسات البلاطة *', values:{'30x30':'30×30','40x30':'40×30','60x40':'60×40','120x30':'120×30','120x80':'120×80'}, layers:null },
+        wedding_tiers: { showSize:false, values:{standard:'ستاندر'}, layers:{'3':'3 طوابق','4':'4 طوابق','5':'5 طوابق','6':'6 طوابق'} },
+        standard_tiers: { showSize:true, label:'أحجام طوابق الستاندر *', values:{small:'صغير',medium:'وسط',large:'كبير'}, layers:null },
     };
+
+    function syncSizes() {
+        const checked = [...sizeChoices.querySelectorAll('input[type="checkbox"]:checked')];
+        size.value = checked[0]?.value ?? (shape.value === 'wedding_tiers' ? 'standard' : '');
+    }
 
     function updateOptions() {
         const config = choices[shape.value];
-        size.innerHTML = '<option value="">اختر</option>';
-        if (!config) { sizeGroup.hidden = true; layersGroup.hidden = true; size.required = false; layers.required = false; return; }
-        sizeLabel.textContent = config.label || 'الحجم *';
-        Object.entries(config.values).forEach(([v,l]) => size.add(new Option(l,v)));
-        size.value    = oldSize || (config.showSize ? '' : 'standard');
-        sizeGroup.hidden  = !config.showSize;
-        size.required     = true;
-        layers.innerHTML  = '<option value="">اختر</option>';
-        if (config.layers) Object.entries(config.layers).forEach(([v,l]) => layers.add(new Option(l,v)));
+        sizeChoices.replaceChildren();
+
+        if (!config) {
+            sizeGroup.hidden = true;
+            layersGroup.hidden = true;
+            size.value = '';
+            layers.value = '';
+            return;
+        }
+
+        sizeLabel.textContent = (config.label || 'الأحجام *') + ' (يمكن اختيار أكثر من حجم)';
+        const selected = Array.isArray(oldSizes) ? oldSizes.map(String) : [];
+        if (config.showSize) {
+            Object.entries(config.values).forEach(([value, label]) => {
+                const wrapper = document.createElement('label');
+                wrapper.className = 'cake-size-option';
+                const input = document.createElement('input');
+                input.type = 'checkbox';
+                input.name = 'cake_sizes[]';
+                input.value = value;
+                input.checked = selected.includes(value);
+                input.addEventListener('change', syncSizes);
+                wrapper.append(input, document.createTextNode(' ' + label));
+                sizeChoices.append(wrapper);
+            });
+        }
+
+        sizeGroup.hidden = !config.showSize;
+        syncSizes();
+        layers.innerHTML = '<option value="">اختر</option>';
+        if (config.layers) {
+            Object.entries(config.layers).forEach(([v, label]) => layers.add(new Option(label, v)));
+        }
         layersGroup.hidden = !config.layers;
-        layers.required   = Boolean(config.layers);
-        layers.value      = config.layers ? (oldLayers || '') : '';
+        layers.required = Boolean(config.layers);
+        layers.value = config.layers ? (oldLayers || '') : '';
     }
-    shape.addEventListener('change', () => { oldSize = null; oldLayers = null; updateOptions(); });
+
+    shape.addEventListener('change', () => { oldSizes = []; oldLayers = null; updateOptions(); });
     updateOptions();
 
     // ── Discount calculation ──────────────────────────────────────────────────

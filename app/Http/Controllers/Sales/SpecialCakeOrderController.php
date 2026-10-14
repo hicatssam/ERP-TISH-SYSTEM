@@ -499,6 +499,21 @@ class SpecialCakeOrderController extends Controller
         'string',
         'max:50',
     ],
+    'cake_sizes_submitted' => ['sometimes', 'boolean'],
+    'cake_sizes' => [
+        Rule::requiredIf(
+            fn () => $request->boolean('cake_sizes_submitted')
+                && in_array($request->input('shape'), ['round', 'slab', 'standard_tiers'], true)
+        ),
+        'nullable',
+        'array',
+        'max:8',
+    ],
+    'cake_sizes.*' => [
+        'string',
+        'distinct',
+        Rule::in(['small', 'medium', 'large', '30x30', '40x30', '60x40', '120x30', '120x80', 'standard']),
+    ],
 
     'total_price' => [
         'required',
@@ -584,6 +599,8 @@ class SpecialCakeOrderController extends Controller
             $request,
             $validated
         );
+        $validated = $this->applySelectedCakeSizes($request, $validated);
+
 
         /** @var User $user */
         $user = $request->user();
@@ -675,7 +692,7 @@ class SpecialCakeOrderController extends Controller
         $netPrice = max(0, $totalPrice - $discountAmount);
 
         $order = $this->cakeOrderService->createOrder(
-    array_merge($request->all(), [
+    array_merge($request->all(), $validated, [
         'origin_branch_id' => $branch->id,
         'discount_type'   => $discountType,
         'discount_value'  => $discountValue,
@@ -828,6 +845,21 @@ if (
             ],
             'cake_type' => ['nullable', 'string', 'max:100'],
             'cake_size' => ['nullable', 'string', 'max:50'],
+            'cake_sizes_submitted' => ['sometimes', 'boolean'],
+            'cake_sizes' => [
+                Rule::requiredIf(
+                    fn () => $request->boolean('cake_sizes_submitted')
+                        && in_array($request->input('shape'), ['round', 'slab', 'standard_tiers'], true)
+                ),
+                'nullable',
+                'array',
+                'max:8',
+            ],
+            'cake_sizes.*' => [
+                'string',
+                'distinct',
+                Rule::in(['small', 'medium', 'large', '30x30', '40x30', '60x40', '120x30', '120x80', 'standard']),
+            ],
             'cake_weight' => ['nullable', 'numeric', 'min:0', 'max:1000'],
             'persons_count' => ['nullable', 'integer', 'min:1', 'max:10000'],
             'flavor' => ['nullable', 'string', 'max:255'],
@@ -844,10 +876,39 @@ if (
             $request,
             $validated
         );
+        $validated = $this->applySelectedCakeSizes($request, $validated);
+
 
         $cakeOrder->update($validated);
 
         return redirect()->route('cake-orders.show', $cakeOrder)->with('success', 'تم تحديث الطلب.');
+    }
+
+    /**
+     * New UI sends an array of sizes; the legacy singular column remains
+     * populated with the first selected size for older consumers.
+     * Requests using only cake_size continue to work unchanged.
+     *
+     * @param array<string, mixed> $validated
+     * @return array<string, mixed>
+     */
+    private function applySelectedCakeSizes(Request $request, array $validated): array
+    {
+        if (! $request->boolean('cake_sizes_submitted') && ! $request->exists('cake_sizes')) {
+            return $validated;
+        }
+
+        $sizes = array_values(array_unique($validated['cake_sizes'] ?? []));
+
+        // Wedding tiers have a fixed legacy "standard" value without a size picker.
+        if (($validated['shape'] ?? $request->input('shape')) === 'wedding_tiers') {
+            $sizes = ['standard'];
+        }
+
+        $validated['cake_sizes'] = $sizes ?: null;
+        $validated['cake_size'] = $sizes[0] ?? null;
+
+        return $validated;
     }
 
     public function destroy(SpecialCakeOrder $cakeOrder)

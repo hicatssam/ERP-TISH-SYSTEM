@@ -211,11 +211,7 @@ class ShowroomCakeRequestController extends Controller
                 'nullable',
                 'string',
                 'max:50',
-            ],
-            'items.*.layer_count' => [
-                'nullable',
-                'integer',
-                'between:1,20',
+                'not_in:standard',
             ],
             'items.*.flavor' => [
                 'nullable',
@@ -226,6 +222,7 @@ class ShowroomCakeRequestController extends Controller
                 'nullable',
                 'string',
                 'max:50',
+                'not_in:standard_tiers',
             ],
             'items.*.quantity' => [
                 'required',
@@ -337,9 +334,6 @@ class ShowroomCakeRequestController extends Controller
                                     $item['cake_type'],
                                 'cake_size' =>
                                     $item['cake_size']
-                                    ?? null,
-                                'layer_count' =>
-                                    $item['layer_count']
                                     ?? null,
                                 'flavor' =>
                                     $item['flavor']
@@ -466,10 +460,9 @@ class ShowroomCakeRequestController extends Controller
             'notes' => ['nullable', 'string', 'max:2000'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.cake_type' => ['required', 'string', 'max:100'],
-            'items.*.cake_size' => ['nullable', 'string', 'max:50'],
-            'items.*.layer_count' => ['nullable', 'integer', 'between:1,20'],
+            'items.*.cake_size' => ['nullable', 'string', 'max:50', 'not_in:standard'],
             'items.*.flavor' => ['nullable', 'string', 'max:100'],
-            'items.*.shape' => ['nullable', 'string', 'max:50'],
+            'items.*.shape' => ['nullable', 'string', 'max:50', 'not_in:standard_tiers'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'items.*.reserved_quantity' => ['nullable', 'integer', 'min:0'],
             'items.*.reservation_notes' => ['nullable', 'string', 'max:1000'],
@@ -507,7 +500,6 @@ class ShowroomCakeRequestController extends Controller
                 $showroomCakeRequest->items()->create([
                     'cake_type' => $item['cake_type'],
                     'cake_size' => $item['cake_size'] ?? null,
-                    'layer_count' => $item['layer_count'] ?? null,
                     'flavor' => $item['flavor'] ?? null,
                     'shape' => $item['shape'] ?? null,
                     'quantity' => $item['quantity'],
