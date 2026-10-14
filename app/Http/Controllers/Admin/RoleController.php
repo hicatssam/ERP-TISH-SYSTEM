@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Support\PermissionUi;
 use Illuminate\Validation\Rule;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -25,6 +26,106 @@ class RoleController extends Controller
             ->get();
 
         return view('admin.roles.index', compact('roles'));
+    }
+
+    /**
+     * Read-only audit of the actual permissions currently saved in the database.
+     * Never rewrite role grants during an audit.
+     */
+    public function audit()
+    {
+        $permissions = Permission::query()
+            ->where('guard_name', self::GUARD_NAME)
+            ->orderBy('name')
+            ->get();
+
+        $roleReports = Role::query()
+            ->where('guard_name', self::GUARD_NAME)
+            ->with(['permissions' => fn ($query) => $query->orderBy('name')])
+            ->withCount('users')
+            ->orderBy('name')
+            ->get()
+            ->map(function (Role $role): array {
+                $knownLabels = PermissionUi::permissionLabels();
+
+                $unlabelled = $role->permissions
+                    ->filter(fn (Permission $permission) =>
+                        ! array_key_exists($permission->name, $knownLabels))
+                    ->values();
+
+                // Elevated or cross-location rights are surfaced for human
+                // review only; they are never revoked automatically.
+                $reviewCandidates = [
+                    'customers.view_all',
+                    'employees.view_all',
+                    'cake_orders.view_all',
+                    'showroom_cake_requests.view_all',
+                    'showroom_sweets_requests.view_all',
+                    'delivery.view_all_locations',
+                    'chat.view_all_branches',
+                    'chat.direct.start_all',
+                    'restaurant.view_all_locations',
+                    'kitchen.view_all_locations',
+                    'expenses.view_all_locations',
+                    'financial.global.view',
+                    'costing.view_all_locations',
+                    'inventory.expiry-alerts.receive_all',
+                    'roles.manage',
+                    'users.manage',
+                    'settings.manage',
+                    'payroll.pay',
+                    'payments.refund',
+                    'financial.periods.override_close',
+                ];
+
+                $sensitive = in_array($role->name, ['Admin', 'super-admin', 'General Manager'], true)
+                    ? collect()
+                    : $role->permissions
+                        ->filter(fn (Permission $permission) =>
+                            in_array($permission->name, $reviewCandidates, true))
+                        ->values();
+
+                return [
+                    'role' => $role,
+                    'unknown' => $unlabelled,
+                    'review' => $sensitive,
+                    'groups' => $role->permissions->groupBy(
+                        fn (Permission $permission) => explode('.', $permission->name)[0]
+                    ),
+                ];
+            });
+
+        $knownLabels = PermissionUi::permissionLabels();
+        $knownGroups = PermissionUi::groupLabels();
+
+        $unlabelled = $permissions
+            ->filter(fn (Permission $permission) =>
+                ! array_key_exists($permission->name, $knownLabels))
+            ->values();
+
+        $ungrouped = $permissions
+            ->map(fn (Permission $permission) => explode('.', $permission->name)[0])
+            ->unique()
+            ->filter(fn (string $group) => ! array_key_exists($group, $knownGroups))
+            ->values();
+
+        $routePermissionNames = collect(app('router')->getRoutes()->getRoutes())
+            ->flatMap(fn ($route) => $route->gatherMiddleware())
+            ->filter(fn ($middleware) =>
+                is_string($middleware) && str_starts_with($middleware, 'can:'))
+            ->map(fn (string $middleware) => trim(explode(',', substr($middleware, 4))[0]))
+            ->filter(fn (string $name) => str_contains($name, '.'))
+            ->unique()
+            ->values();
+
+        $missingRegistered = $routePermissionNames
+            ->diff($permissions->pluck('name'))
+            ->values();
+
+        return view('admin.roles.audit', compact(
+            'permissions', 'roleReports', 'unlabelled',
+            'ungrouped', 'missingRegistered'
+        ));
     }
 
     public function create()
