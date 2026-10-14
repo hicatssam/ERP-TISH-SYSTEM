@@ -114,7 +114,8 @@ class ThreeStageBranchReceivingTest extends TestCase
             'required_date' => now()->addDays(2)->toDateString(),
             'status' => CakeOrderStatus::Ready,
             'cake_type' => 'chocolate',
-            'cake_size' => 'large',
+            'cake_size' => 'small',
+            'cake_sizes' => ['small', 'large'],
             'total_price' => 100,
             'payment_arrangement' => 'pay_on_pickup',
             'payment_status' => 'payment_pending',
@@ -126,11 +127,19 @@ class ThreeStageBranchReceivingTest extends TestCase
 
         $this->assertSame('تم التحميل', BranchOrderMilestones::label($cake->fresh()));
 
+        $this->assertCount(2, $shipment->receivingInvoice->items);
+        $this->assertStringContainsString('small', $shipment->receivingInvoice->items[0]->description);
+        $this->assertStringContainsString('large', $shipment->receivingInvoice->items[1]->description);
+
         $this->actingAs($receiver)->post(route('branch-shipments.receive', $shipment), [
-            'items' => $this->receivedItems($shipment, [1]),
+            'items' => $this->receivedItems($shipment, [1, 0]),
+            'notes' => 'تم استلام الحجم الصغير فقط',
         ])->assertRedirect();
 
         $this->assertSame('confirmed', $shipment->fresh()->receivingInvoice->status);
+        $this->assertEquals(2.0, (float) $shipment->fresh()->receivingInvoice->total_items_sent);
+        $this->assertEquals(1.0, (float) $shipment->fresh()->receivingInvoice->total_items_received);
+        $this->assertEquals(1.0, (float) $shipment->fresh()->receivingInvoice->total_difference);
         $this->assertSame(CakeOrderStatus::Completed, $cake->fresh()->status);
         $this->assertSame('تم الاستلام', BranchOrderMilestones::label($cake->fresh()));
     }
