@@ -488,7 +488,7 @@
                 $statusValue = $order->status instanceof \BackedEnum
                     ? $order->status->value
                     : (string) $order->status;
-                $statusLabel = $statusLabels[$statusValue] ?? 'حالة غير معروفة';
+                $statusLabel = \App\Support\BranchOrderMilestones::label($order);
                 $statusTone = $statusClasses[$statusValue] ?? 'neutral';
 
                 $imageExtensions = ['jpg', 'jpeg', 'png', 'webp'];
