@@ -94,6 +94,42 @@ class RolePermissionsAuditTest extends TestCase
     }
 
     #[Test]
+    public function role_forms_display_all_grants_including_legacy_and_undocumented_permissions(): void
+    {
+        $admin = User::factory()->create();
+        $adminRole = Role::findOrCreate('Admin', 'web');
+        $manage = Permission::findOrCreate('roles.manage', 'web');
+        $adminRole->givePermissionTo($manage);
+        $admin->assignRole($adminRole);
+
+        $role = Role::findOrCreate('Shift Supervisor', 'web');
+        $legacy = Permission::findOrCreate('cake_orders.manage', 'web');
+        $custom = Permission::findOrCreate('custom_area.future_power', 'web');
+        $role->givePermissionTo([$legacy, $custom]);
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        $this->actingAs($admin)
+            ->get(route('roles.create'))
+            ->assertOk()
+            ->assertSee('cake_orders.manage')
+            ->assertSee('صلاحية قديمة')
+            ->assertSee('custom_area.future_power');
+
+        $this->actingAs($admin)
+            ->get(route('roles.edit', $role))
+            ->assertOk()
+            ->assertSee('cake_orders.manage')
+            ->assertSee('صلاحية قديمة')
+            ->assertSee('صلاحية غير موثقة: custom_area.future_power');
+
+        $this->actingAs($admin)
+            ->get(route('roles.show', $role))
+            ->assertOk()
+            ->assertSee('custom_area.future_power');
+    }
+
+    #[Test]
     public function super_admin_role_cannot_be_renamed_or_deleted(): void
     {
         $admin = User::factory()->create();
