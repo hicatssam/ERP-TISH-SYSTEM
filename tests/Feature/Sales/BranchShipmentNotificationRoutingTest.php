@@ -4,7 +4,9 @@ namespace Tests\Feature\Sales;
 
 use App\Enums\ShowroomCakeRequestStatus;
 use App\Enums\ShowroomSweetsRequestStatus;
+use App\Models\Category;
 use App\Models\Location;
+use App\Models\Product;
 use App\Models\ShowroomCakeRequest;
 use App\Models\ShowroomSweetsRequest;
 use App\Models\User;
@@ -144,7 +146,23 @@ class BranchShipmentNotificationRoutingTest extends TestCase
             'status' => ShowroomSweetsRequestStatus::Ready,
             'created_by' => $creator->id,
         ]);
-        $request->items()->create(['product_name_snapshot' => 'حلوى', 'quantity' => 3]);
+        $category = Category::query()->create([
+            'name' => 'حلويات',
+            'slug' => 'notification-sweets-'.Str::lower(Str::random(6)),
+            'is_active' => true,
+        ]);
+        $product = Product::query()->create([
+            'category_id' => $category->id,
+            'name' => 'حلوى',
+            'sku' => 'SWT-NOTIF-'.Str::upper(Str::random(8)),
+            'barcode' => 'SWT-NOTIF-'.Str::upper(Str::random(8)),
+            'is_active' => true,
+        ]);
+        $request->items()->create([
+            'product_id' => $product->id,
+            'product_name_snapshot' => 'حلوى',
+            'quantity' => 3,
+        ]);
 
         $service = app(BranchDeliveryService::class);
         $shipment = $service->createShipment($request, $factoryActor);
