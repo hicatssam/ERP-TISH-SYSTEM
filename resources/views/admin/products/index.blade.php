@@ -153,7 +153,7 @@
 @endpush
 
 @section('content')
-<div class="page-actions">
+<div class="page-actions" id="productsPageHeader">
     <div class="page-actions-title">المنتجات</div>
     <div class="action-btns">
         @can('products.update')
@@ -429,7 +429,7 @@
                 <p>أدخل بيانات المنتج واربطه بالفروع أو المصنع، وسيتم إنشاء SKU والباركود تلقائيًا.</p>
             </div>
 
-            <button type="button" class="product-create-close" id="closeProductCreateModalButton" aria-label="إغلاق" onclick="closeProductCreateModal(); return false;">×</button>
+            <a href="#productsPageHeader" class="product-create-close" id="closeProductCreateModalButton" aria-label="إغلاق" onclick="return closeProductCreateModal();">×</a>
         </div>
 
         <form action="{{ route('products.store') }}" method="POST" enctype="multipart/form-data" class="product-create-form">
@@ -449,7 +449,7 @@
             </div>
 
             <div class="product-create-footer">
-                <button type="button" class="btn btn-ghost" id="cancelProductCreateModalButton" onclick="closeProductCreateModal(); return false;">إلغاء</button>
+                <a href="#productsPageHeader" class="btn btn-ghost" id="cancelProductCreateModalButton" onclick="return closeProductCreateModal();">إلغاء</a>
                 <button type="submit" class="btn btn-gold">حفظ المنتج</button>
             </div>
         </form>
@@ -536,6 +536,7 @@
     font-size:.75rem;
 }
 .product-create-close{
+    text-decoration:none;
     width:40px;
     height:40px;
     flex:0 0 40px;
@@ -694,13 +695,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (closeButton) {
-        closeButton.addEventListener('click', function() {
+        closeButton.addEventListener('click', function(event) {
+            event.preventDefault();
             closeProductCreateModal();
         });
     }
 
     if (cancelButton) {
-        cancelButton.addEventListener('click', function() {
+        cancelButton.addEventListener('click', function(event) {
+            event.preventDefault();
             closeProductCreateModal();
         });
     }
