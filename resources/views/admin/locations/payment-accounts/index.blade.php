@@ -202,7 +202,7 @@
                     <form
                         method="POST"
                         action="{{ route('locations.payment-accounts.destroy', [$location, $account]) }}"
-                        onsubmit="return confirm('هل تريد حذف هذا الحساب؟')"
+                        data-confirm="سيتم حذف حساب الدفع هذا من الفرع." data-confirm-title="تأكيد حذف حساب الدفع" data-confirm-type="danger"
                         style="display:inline"
                     >
 
@@ -240,11 +240,11 @@
 
 <div id="paAddModalBackdrop" class="pa-modal-backdrop" style="display:none">
 
-    <div class="pa-modal">
+    <div class="pa-modal" role="dialog" aria-modal="true" aria-labelledby="paAddModalTitle" tabindex="-1">
 
         <div class="pa-modal-header">
-            <span class="card-title">إضافة حساب دفع</span>
-            <button type="button" class="pa-modal-close" onclick="paCloseAddModal()">×</button>
+            <span class="card-title" id="paAddModalTitle">إضافة حساب دفع</span>
+            <button type="button" class="pa-modal-close" onclick="paCloseAddModal()" aria-label="إغلاق">×</button>
         </div>
 
         <form
@@ -497,11 +497,11 @@
 
 <div id="paEditModalBackdrop" class="pa-modal-backdrop" style="display:none">
 
-    <div class="pa-modal">
+    <div class="pa-modal" role="dialog" aria-modal="true" aria-labelledby="paEditModalTitle" tabindex="-1">
 
         <div class="pa-modal-header">
-            <span class="card-title">تعديل حساب الدفع</span>
-            <button type="button" class="pa-modal-close" onclick="paCloseEditModal()">×</button>
+            <span class="card-title" id="paEditModalTitle">تعديل حساب الدفع</span>
+            <button type="button" class="pa-modal-close" onclick="paCloseEditModal()" aria-label="إغلاق">×</button>
         </div>
 
         <form
@@ -915,8 +915,9 @@
     .pa-modal {
         background: var(--card-bg, #fff);
         width: min(560px, 92vw);
-        max-height: 88vh;
+        max-height: calc(100dvh - 2rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
         overflow-y: auto;
+        overscroll-behavior: contain;
         border-radius: 10px;
         box-shadow: 0 10px 30px rgba(0,0,0,0.25);
     }
@@ -942,6 +943,8 @@
     }
 
     .pa-modal-close {
+        min-width: 44px;
+        min-height: 44px;
         background: none;
         border: none;
         font-size: 1.4rem;
@@ -952,6 +955,29 @@
 
     .pa-modal-close:hover {
         opacity: 1;
+    }
+
+    @media(max-width:600px) {
+        .pa-modal-backdrop {
+            padding:max(.4rem,env(safe-area-inset-top,0px)) max(.4rem,env(safe-area-inset-right,0px)) max(.4rem,env(safe-area-inset-bottom,0px)) max(.4rem,env(safe-area-inset-left,0px));
+            align-items:flex-end;
+        }
+        .pa-modal {
+            width:100%;
+            max-height:calc(100dvh - .8rem - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
+            border-radius:16px 16px 10px 10px;
+        }
+        .pa-modal :is(input:not([type=checkbox]):not([type=radio]),select,textarea) {
+            font-size:16px;
+            min-height:44px;
+        }
+        .pa-modal-footer {
+            flex-wrap:wrap;
+            position:sticky;
+            bottom:0;
+            background:var(--card-bg,#fff);
+        }
+        .pa-modal-footer .btn {min-height:44px;flex:1 1 120px;}
     }
 </style>
 

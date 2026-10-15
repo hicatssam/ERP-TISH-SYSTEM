@@ -92,7 +92,7 @@
                 @method('PATCH')
                 <input type="hidden" name="status" value="ready">
                 <button type="submit" class="btn btn-gold btn-sm"
-                    onclick="return confirm('تأكيد تنفيذ طلب كيك الفرع وجاهزيته للتحميل؟')">
+                    data-confirm="سيتم اعتماد تنفيذ طلب كيك الفرع وجاهزيته للتحميل." data-confirm-title="تم تنفيذ طلب كيك الفرع" data-confirm-type="success">
                     تم التنفيذ
                 </button>
             </form>
@@ -147,7 +147,7 @@
                     @error('cancellation_reason')<span class="form-error">{{ $message }}</span>@enderror
                 </div>
                 <button class="btn btn-danger btn-sm" type="submit"
-                        onclick="return confirm('هل أنت متأكد من إلغاء الطلب مع تسجيل السبب؟')">
+                        data-confirm="سيتم إلغاء الطلب مع حفظ سبب الإلغاء وسجل العملية." data-confirm-title="تأكيد إلغاء طلب الفرع" data-confirm-type="warning">
                     تأكيد إلغاء الطلب
                 </button>
             </form>
@@ -857,7 +857,9 @@
 
         box-shadow:0 24px 60px rgba(0,0,0,.22);
 
-        overflow:hidden;
+        overflow:auto;
+        max-height:calc(100dvh - 2rem - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
+        overscroll-behavior:contain;
 
         transform:translateY(18px) scale(.98);
 
@@ -1025,12 +1027,17 @@
     @media(max-width:600px) {
 
         .status-modal {
-            padding:.75rem;
+            padding:max(.5rem,env(safe-area-inset-top,0px)) max(.5rem,env(safe-area-inset-right,0px)) max(.5rem,env(safe-area-inset-bottom,0px)) max(.5rem,env(safe-area-inset-left,0px));
+            align-items:flex-end;
         }
-
         .status-modal-dialog {
             max-width:none;
+            max-height:calc(100dvh - 1rem - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
+            border-radius:18px 18px 12px 12px;
         }
+        .status-modal-close {min-width:44px;min-height:44px;flex-basis:44px;}
+        .status-modal :is(input:not([type=checkbox]):not([type=radio]),select,textarea) {font-size:16px!important;min-height:44px;}
+        .status-modal-footer {position:sticky;bottom:0;}
 
         .status-modal-footer {
             flex-direction:column-reverse;

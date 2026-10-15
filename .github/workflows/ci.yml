@@ -51,6 +51,9 @@ jobs:
       - name: Verify customer branch selection in browser scripts
         run: node --test tests/Frontend/*.test.cjs
 
+      - name: Audit all mobile pages and popups
+        run: node scripts/audit-mobile-ux.cjs
+
       - name: Build frontend
         run: npm run build
 
