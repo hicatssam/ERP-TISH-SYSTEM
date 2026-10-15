@@ -168,11 +168,11 @@
 {{-- Modal: إضافة إعلان --}}
 
 <div id="bnAddModalBackdrop" class="bn-modal-backdrop" style="display:none">
-    <div class="bn-modal">
+    <div class="bn-modal" role="dialog" aria-modal="true" aria-labelledby="bnAddModalTitle" tabindex="-1">
 
         <div class="bn-modal-header">
-            <span class="card-title">إضافة إعلان جديد</span>
-            <button type="button" class="bn-modal-close" onclick="bnCloseAddModal()">×</button>
+            <span id="bnAddModalTitle" class="card-title">إضافة إعلان جديد</span>
+            <button type="button" class="bn-modal-close" onclick="bnCloseAddModal()" aria-label="إغلاق">×</button>
         </div>
 
         <form
@@ -199,11 +199,11 @@
 {{-- Modal: تعديل إعلان --}}
 
 <div id="bnEditModalBackdrop" class="bn-modal-backdrop" style="display:none">
-    <div class="bn-modal">
+    <div class="bn-modal" role="dialog" aria-modal="true" aria-labelledby="bnEditModalTitle" tabindex="-1">
 
         <div class="bn-modal-header">
-            <span class="card-title">تعديل الإعلان</span>
-            <button type="button" class="bn-modal-close" onclick="bnCloseEditModal()">×</button>
+            <span id="bnEditModalTitle" class="card-title">تعديل الإعلان</span>
+            <button type="button" class="bn-modal-close" onclick="bnCloseEditModal()" aria-label="إغلاق">×</button>
         </div>
 
         <form
