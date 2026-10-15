@@ -877,7 +877,7 @@
     .status-modal-dialog {
         width:100%;
         max-width:560px;
-        max-height:calc(100vh - 2rem);
+        max-height:calc(100dvh - 2rem - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
         overflow:auto;
         background:#fff;
         border:1px solid var(--border);
@@ -1061,10 +1061,13 @@
         }
 
         .status-modal {
-            padding:.75rem;
+            padding:max(.5rem,env(safe-area-inset-top,0px)) max(.5rem,env(safe-area-inset-right,0px)) max(.5rem,env(safe-area-inset-bottom,0px)) max(.5rem,env(safe-area-inset-left,0px));
+            align-items:flex-end;
         }
-
-        .status-modal-footer {
+        .status-modal-dialog {max-height:calc(100dvh - 1rem - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));border-radius:18px 18px 12px 12px;}
+        .status-modal-close {min-width:44px;min-height:44px;}
+        .status-modal :is(input:not([type=checkbox]):not([type=radio]),select,textarea) {font-size:16px!important;min-height:44px;}
+        .status-modal-footer {position:sticky;bottom:0;
             flex-direction:column-reverse;
         }
 
@@ -1243,7 +1246,7 @@
                     @method('PATCH')
                     <input type="hidden" name="status" value="ready">
                     <button type="submit" class="btn btn-gold btn-sm"
-                        onclick="return confirm('تأكيد اكتمال تنفيذ طلب الحلويات وجاهزيته للتحميل؟')">
+                        data-confirm="سيتم اعتماد اكتمال تنفيذ طلب الحلويات وتجهيزه للتحميل." data-confirm-title="اعتماد تنفيذ الحلويات" data-confirm-type="success">
                         تم التنفيذ
                     </button>
                 </form>
@@ -1265,7 +1268,7 @@
                 <form
                     action="{{ route('showroom-sweets-requests.cancel', $showroomSweetsRequest) }}"
                     method="POST"
-                    onsubmit="return confirm('هل تريد إلغاء هذا الطلب؟')"
+                    data-confirm="سيتم إلغاء طلب الحلويات وحفظ الإجراء في النظام." data-confirm-title="تأكيد إلغاء الطلب" data-confirm-type="warning"
                 >
 
                     @csrf
