@@ -567,6 +567,26 @@
             </div>
         </div>
     </div>
+
+    {{-- Separate POS confirmation: the fullscreen cashier UI sits above the
+         ERP shell, so the shell's global confirm overlay cannot be reused. --}}
+    <div class="rb-modal" id="rbNewOrderConfirm" hidden aria-hidden="true">
+        <div class="rb-modal-backdrop" data-cancel-new-order></div>
+        <div class="rb-modal-dialog rb-confirm-dialog" role="dialog" aria-modal="true"
+             aria-labelledby="rbNewOrderConfirmTitle" aria-describedby="rbNewOrderConfirmText">
+            <div class="rb-modal-head">
+                <h2 id="rbNewOrderConfirmTitle">بدء طلب جديد</h2>
+                <button type="button" class="rb-modal-close" data-cancel-new-order aria-label="إغلاق">×</button>
+            </div>
+            <div class="rb-modal-body">
+                <p id="rbNewOrderConfirmText">الطلب الحالي يحتوي على منتجات. بدء طلب جديد سيمسح المنتجات غير المحفوظة. هل تريد المتابعة؟</p>
+            </div>
+            <div class="rb-modal-foot">
+                <button type="button" class="rb-btn rb-btn-light" data-cancel-new-order>رجوع للطلب</button>
+                <button type="button" class="rb-btn rb-btn-primary" id="rbConfirmNewOrderButton">بدء طلب جديد</button>
+            </div>
+        </div>
+    </div>
     </main>
 </div>
 
@@ -1812,8 +1832,10 @@ body.rb-pos-mode {
     position: relative;
     z-index: 1;
     width: min(720px, 96vw);
-    max-height: 90vh;
+    max-height: min(90dvh, 900px);
     overflow: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     background: var(--rb-white);
     border: 1px solid var(--rb-border);
     border-radius: 10px;
@@ -1847,8 +1869,8 @@ body.rb-pos-mode {
 }
 
 .rb-modal-close {
-    width: 31px;
-    height: 31px;
+    width: 44px;
+    height: 44px;
     display: grid;
     place-items: center;
     padding: 0;
@@ -1862,6 +1884,22 @@ body.rb-pos-mode {
 
 .rb-modal-body {
     padding: 15px 16px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.rb-confirm-dialog {
+    width: min(430px, 96vw);
+}
+
+.rb-confirm-dialog .rb-modal-body {
+    font-size: .91rem;
+    line-height: 1.85;
+}
+
+.rb-modal :focus-visible {
+    outline: 2px solid var(--rb-orange);
+    outline-offset: 2px;
 }
 
 .rb-modal-grid {
@@ -2285,6 +2323,34 @@ body.rb-pos-mode {
         flex-direction: column;
     }
 
+    .rb-modal {
+        align-items: end;
+        padding: max(.5rem, env(safe-area-inset-top, 0px))
+            max(.5rem, env(safe-area-inset-right, 0px))
+            max(.5rem, env(safe-area-inset-bottom, 0px))
+            max(.5rem, env(safe-area-inset-left, 0px));
+    }
+
+    .rb-modal-dialog {
+        width: 100%;
+        max-height: calc(100dvh - 1rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+        border-radius: 18px 18px 12px 12px;
+    }
+
+    .rb-modal-foot .rb-btn {
+        min-height: 44px;
+    }
+
+    .rb-modal :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+        min-height: 44px;
+        font-size: 16px;
+    }
+
+    .rb-drawer-head button {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
     .rb-modal-total {
         margin-left: 0;
         margin-bottom: 4px;
@@ -2377,6 +2443,60 @@ document.addEventListener('DOMContentLoaded', () => {
     const checkoutContinueBtn = document.getElementById('rbCheckoutContinueBtn');
 
     const newOrderBtn = document.getElementById('rbNewOrderBtn');
+    const newOrderConfirm = document.getElementById('rbNewOrderConfirm');
+    let resolveNewOrderConfirmation = null;
+
+    function confirmNewOrder() {
+        if (!newOrderConfirm) return Promise.resolve(false);
+
+        return new Promise(resolve => {
+            // A second tap must not open another unresolved confirmation.
+            if (resolveNewOrderConfirmation) {
+                resolve(false);
+                return;
+            }
+
+            resolveNewOrderConfirmation = resolve;
+            newOrderConfirm.hidden = false;
+            newOrderConfirm.setAttribute('aria-hidden', 'false');
+            newOrderConfirm.querySelector('[data-cancel-new-order]')?.focus();
+        });
+    }
+
+    function finishNewOrderConfirmation(accepted) {
+        const resolve = resolveNewOrderConfirmation;
+        if (!resolve) return;
+
+        resolveNewOrderConfirmation = null;
+        newOrderConfirm.hidden = true;
+        newOrderConfirm.setAttribute('aria-hidden', 'true');
+        newOrderBtn?.focus({preventScroll: true});
+        resolve(accepted);
+    }
+
+    newOrderConfirm?.querySelectorAll('[data-cancel-new-order]').forEach(button => {
+        button.addEventListener('click', () => finishNewOrderConfirmation(false));
+    });
+    document.getElementById('rbConfirmNewOrderButton')?.addEventListener('click', () => {
+        finishNewOrderConfirmation(true);
+    });
+    newOrderConfirm?.addEventListener('keydown', event => {
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            finishNewOrderConfirmation(false);
+        }
+        if (event.key === 'Tab') {
+            const buttons = [...newOrderConfirm.querySelectorAll('button')];
+            const first = buttons[0], last = buttons[buttons.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        }
+    });
     const tableOrderBtn = document.getElementById('rbTableOrderBtn');
     const openCheckoutBtn = document.getElementById('rbOpenCheckoutBtn');
     const saveDraftBtn = document.getElementById('rbSaveDraftBtn');
@@ -3076,10 +3196,10 @@ document.addEventListener('DOMContentLoaded', () => {
         addCartItem(makeCartItem(product));
     }
 
-    function clearOrder(ask = true) {
+    async function clearOrder(ask = true) {
         if (!cart.size && !ask) return;
 
-        if (ask && cart.size && !window.confirm('هل تريد بدء طلب جديد ومسح الطلب الحالي؟')) {
+        if (ask && cart.size && !await confirmNewOrder()) {
             return;
         }
 
@@ -3210,12 +3330,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function validateOrderBasics() {
         if (!cart.size) {
-            window.alert('أضف منتجًا واحدًا على الأقل للطلب.');
+            statusMessage('أضف منتجًا واحدًا على الأقل للطلب.', 'error');
             return false;
         }
 
         if (serviceType.value === 'dine_in' && !tableSelect.value) {
-            window.alert('اختر الطاولة لطلب الصالة.');
+            statusMessage('اختر الطاولة لطلب الصالة.', 'error');
             tableSelect.focus();
             return false;
         }
@@ -3332,7 +3452,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function saveLocalDraft() {
         if (!cart.size) {
-            window.alert('لا يوجد طلب لحفظه كمسودة.');
+            statusMessage('لا يوجد طلب لحفظه كمسودة.', 'error');
             return;
         }
 
@@ -3355,7 +3475,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function restoreLocalDraft() {
         const draft = loadLocalDraft();
         if (!draft || !Array.isArray(draft.items)) {
-            window.alert('المسودة غير متاحة أو تالفة.');
+            statusMessage('المسودة غير متاحة أو تالفة.', 'error');
             return;
         }
 
@@ -4035,6 +4155,10 @@ async function submitOrder(action) {
     // -----------------------------
     document.addEventListener('keydown', event => {
         if (event.key === 'Escape') {
+            if (newOrderConfirm && !newOrderConfirm.hidden) {
+                finishNewOrderConfirmation(false);
+                return;
+            }
             if (!productOptionsModal.hidden) {
                 closeProductOptions();
                 return;
