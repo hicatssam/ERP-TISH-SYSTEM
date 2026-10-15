@@ -60,3 +60,27 @@ test('special cake and product forms have responsive, focus-restoring popups', (
     assert.match(products, /productCreateTrigger\.focus/);
     assert.match(products, /100dvh/);
 });
+
+test('branch request details avoid browser confirmations and keep status popups in mobile viewport', () => {
+    const cake = read('resources/views/sales/showroom-cake-requests/show.blade.php');
+    const sweets = read('resources/views/sales/showroom-sweets-requests/show.blade.php');
+
+    assert.doesNotMatch(cake, /onclick="return confirm\(/);
+    assert.doesNotMatch(sweets, /onclick="return confirm\(/);
+    assert.doesNotMatch(sweets, /onsubmit="return confirm\(/);
+    assert.match(cake, /status-modal-dialog[\s\S]*?100dvh/);
+    assert.match(sweets, /status-modal-dialog[\s\S]*?100dvh/);
+});
+
+test('marketing banner and payment account dialogs fit mobile screens without browser delete prompts', () => {
+    for (const file of [
+        'resources/views/admin/banners/index.blade.php',
+        'resources/views/admin/locations/payment-accounts/index.blade.php',
+    ]) {
+        const source = read(file);
+        assert.doesNotMatch(source, /onsubmit="return confirm\(/);
+        assert.match(source, /max-height:[^;]*100dvh/);
+        assert.match(source, /safe-area-inset-bottom/);
+        assert.match(source, /min-height:\s*44px|\.bn-modal-close\{[^}]*44px/);
+    }
+});
