@@ -253,7 +253,7 @@
                 @csrf
                 <input type="hidden" name="to_status" value="ready">
                 <button type="submit" class="btn btn-gold btn-sm"
-                    onclick="return confirm('تأكيد اكتمال التنفيذ وجاهزية الكيك للتحميل؟')">
+                    data-confirm="سيتم اعتماد اكتمال تنفيذ الكيك وتجهيز الطلبية للتحميل." data-confirm-title="اعتماد تنفيذ الكيك" data-confirm-type="success">
                     تم التنفيذ
                 </button>
             </form>
@@ -1316,7 +1316,10 @@
         border:1px solid var(--border);
         border-radius:18px;
         box-shadow:0 24px 60px rgba(0,0,0,.22);
-        overflow:hidden;
+        overflow:auto;
+        max-height:calc(100dvh - 2rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+        overscroll-behavior:contain;
+        -webkit-overflow-scrolling:touch;
         transform:translateY(18px) scale(.98);
         transition:transform .18s ease;
     }
@@ -1481,11 +1484,35 @@
 
     @media(max-width:600px) {
         .status-modal {
-            padding:.75rem;
+            padding:max(.5rem, env(safe-area-inset-top, 0px))
+                max(.5rem, env(safe-area-inset-right, 0px))
+                max(.5rem, env(safe-area-inset-bottom, 0px))
+                max(.5rem, env(safe-area-inset-left, 0px));
+            align-items:flex-end;
         }
 
         .status-modal-dialog {
             max-width:none;
+            width:100%;
+            max-height:calc(100dvh - 1rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+            border-radius:18px 18px 12px 12px;
+        }
+
+        .status-modal-close {
+            width:44px;
+            height:44px;
+            flex-basis:44px;
+        }
+
+        .status-modal select,
+        .status-modal textarea {
+            min-height:44px;
+            font-size:16px !important;
+        }
+
+        .status-modal-footer {
+            position:sticky;
+            bottom:0;
         }
 
         .status-modal-footer {
@@ -1501,6 +1528,8 @@
 
 
 <script>
+    let statusModalTrigger = null;
+
     function openStatusModal() {
         const modal = document.getElementById('statusUpdateModal');
 
@@ -1508,6 +1537,7 @@
             return;
         }
 
+        statusModalTrigger = document.activeElement;
         modal.classList.add('is-open');
         modal.setAttribute('aria-hidden', 'false');
         document.body.style.overflow = 'hidden';
@@ -1529,6 +1559,8 @@
         modal.classList.remove('is-open');
         modal.setAttribute('aria-hidden', 'true');
         document.body.style.overflow = '';
+        if (statusModalTrigger?.isConnected) statusModalTrigger.focus({preventScroll:true});
+        statusModalTrigger = null;
     }
 
     function closeStatusModalFromBackdrop(event) {
