@@ -136,7 +136,7 @@
                     <form
                         method="POST"
                         action="{{ route('banners.destroy', $banner) }}"
-                        onsubmit="return confirm('هل تريد حذف هذا الإعلان؟')"
+                        data-confirm="سيتم حذف هذا الإعلان من النظام." data-confirm-title="تأكيد حذف الإعلان" data-confirm-type="danger"
                         style="display:inline"
                     >
                         @csrf
@@ -249,11 +249,11 @@
     .bn-actions{display:flex;gap:.4rem;white-space:nowrap}
     .bn-empty-state{grid-column:1/-1;text-align:center;padding:3rem 1rem;display:flex;flex-direction:column;align-items:center;gap:1rem;opacity:.85}
     .bn-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem}
-    .bn-modal{background:var(--card-bg,#fff);width:min(560px,92vw);max-height:88vh;overflow-y:auto;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    .bn-modal{background:var(--card-bg,#fff);width:min(560px,92vw);max-height:calc(100dvh - 2rem - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));overflow-y:auto;overscroll-behavior:contain;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
     .bn-modal-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid var(--border-color,#e5e5e5)}
     .bn-modal-body{padding:1rem 1.25rem}
     .bn-modal-footer{display:flex;justify-content:flex-end;gap:.5rem;padding:1rem 1.25rem;border-top:1px solid var(--border-color,#e5e5e5)}
-    .bn-modal-close{background:none;border:none;font-size:1.4rem;line-height:1;cursor:pointer;opacity:.6}
+    .bn-modal-close{background:none;border:none;font-size:1.4rem;line-height:1;cursor:pointer;opacity:.6;min-width:44px;min-height:44px}
     .bn-modal-close:hover{opacity:1}
     .bn-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.9rem}
     .bn-form-grid .full{grid-column:1/-1}
@@ -262,6 +262,14 @@
     .bn-current-image{margin-top:.4rem;display:flex;align-items:center;gap:.6rem}
     .bn-current-image img{width:64px;height:44px;object-fit:cover;border-radius:8px;border:1px solid var(--border-color,#eee)}
     .bn-checkbox-label{display:flex;align-items:center;gap:.4rem;cursor:pointer;margin-top:1.6rem}
+@media(max-width:600px){
+        .bn-modal-backdrop{padding:max(.4rem,env(safe-area-inset-top,0px)) max(.4rem,env(safe-area-inset-right,0px)) max(.4rem,env(safe-area-inset-bottom,0px)) max(.4rem,env(safe-area-inset-left,0px));align-items:flex-end}
+        .bn-modal{width:100%;max-height:calc(100dvh - .8rem - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));border-radius:16px 16px 10px 10px}
+        .bn-form-grid{grid-template-columns:minmax(0,1fr)}
+        .bn-modal input:not([type=checkbox]),.bn-modal select,.bn-modal textarea{font-size:16px;min-height:44px}
+        .bn-modal-footer{flex-wrap:wrap;position:sticky;bottom:0;background:var(--card-bg,#fff)}
+        .bn-modal-footer .btn{min-height:44px;flex:1 1 120px}
+    }
 </style>
 
 
