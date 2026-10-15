@@ -240,11 +240,11 @@
 
 <div id="paAddModalBackdrop" class="pa-modal-backdrop" style="display:none">
 
-    <div class="pa-modal">
+    <div class="pa-modal" role="dialog" aria-modal="true" aria-labelledby="paAddModalTitle" tabindex="-1">
 
         <div class="pa-modal-header">
-            <span class="card-title">إضافة حساب دفع</span>
-            <button type="button" class="pa-modal-close" onclick="paCloseAddModal()">×</button>
+            <span class="card-title" id="paAddModalTitle">إضافة حساب دفع</span>
+            <button type="button" class="pa-modal-close" onclick="paCloseAddModal()" aria-label="إغلاق">×</button>
         </div>
 
         <form
@@ -497,11 +497,11 @@
 
 <div id="paEditModalBackdrop" class="pa-modal-backdrop" style="display:none">
 
-    <div class="pa-modal">
+    <div class="pa-modal" role="dialog" aria-modal="true" aria-labelledby="paEditModalTitle" tabindex="-1">
 
         <div class="pa-modal-header">
-            <span class="card-title">تعديل حساب الدفع</span>
-            <button type="button" class="pa-modal-close" onclick="paCloseEditModal()">×</button>
+            <span class="card-title" id="paEditModalTitle">تعديل حساب الدفع</span>
+            <button type="button" class="pa-modal-close" onclick="paCloseEditModal()" aria-label="إغلاق">×</button>
         </div>
 
         <form
