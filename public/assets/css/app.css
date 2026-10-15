@@ -2190,3 +2190,151 @@ summary.btn {
     }
   }
 }
+
+
+/* ================================================================
+   Mobile UX audit: shared ERP controls, tables, and modal behaviour.
+   Keep data tables horizontally scrollable; never compress financial
+   columns or hide an action at the edge of the viewport.
+   ================================================================ */
+.dahab-content > *,
+.dahab-content .card,
+.dahab-content .card-body,
+.dahab-content .page-header > *,
+.dahab-content .filter-grid > *,
+.dahab-content .form-grid > *,
+.dahab-content [class*="grid"] > * {
+  min-width: 0;
+}
+
+.dahab-content .table-wrap,
+.dahab-content .table-responsive,
+.dahab-content .ssr-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+.dahab-content .table-wrap:focus-visible,
+.dahab-content .table-responsive:focus-visible {
+  outline: 2px solid var(--gold, #b8892e);
+  outline-offset: -2px;
+}
+
+.dahab-content .form-input:focus-visible,
+.dahab-content .form-select:focus-visible,
+.dahab-content .form-textarea:focus-visible,
+.dahab-content .btn:focus-visible {
+  outline: 2px solid var(--theme-sidebar-active, var(--gold, #b8892e));
+  outline-offset: 2px;
+}
+
+.dahab-confirm-box {
+  max-height: min(90dvh, 800px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.confirm-modal-open {
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .dahab-content {
+    overflow-wrap: anywhere;
+  }
+
+  .dahab-content .table-wrap,
+  .dahab-content .table-responsive,
+  .dahab-content .ssr-table-wrap {
+    overflow-wrap: normal;
+  }
+
+  .dahab-content .table-wrap table,
+  .dahab-content .table-responsive table,
+  .dahab-content .ssr-table-wrap table {
+    width: max-content;
+    min-width: 100%;
+  }
+
+  .dahab-content .table-wrap .data-table,
+  .dahab-content .table-responsive .data-table {
+    width: max-content;
+    min-width: max(100%, 640px);
+  }
+
+  .dahab-content .form-grid,
+  .dahab-content .form-grid-2,
+  .dahab-content .form-grid-3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sidebar-toggle,
+  .notif-btn,
+  .dahab-confirm-close,
+  .toast-close {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .dahab-confirm-overlay {
+    padding: max(.55rem, env(safe-area-inset-top, 0px))
+      max(.55rem, env(safe-area-inset-right, 0px))
+      max(.55rem, env(safe-area-inset-bottom, 0px))
+      max(.55rem, env(safe-area-inset-left, 0px));
+  }
+
+  .dahab-confirm-box {
+    width: 100%;
+    max-width: 500px;
+    max-height: calc(100dvh - 1.1rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  }
+
+  .dahab-confirm-actions {
+    position: sticky;
+    bottom: -.05rem;
+    z-index: 1;
+    padding-bottom: max(.4rem, env(safe-area-inset-bottom, 0px));
+    background: var(--theme-surface, var(--white, #fff));
+  }
+}
+
+@media (max-width: 480px) {
+  .dahab-content .table-wrap .data-table,
+  .dahab-content .table-responsive .data-table {
+    min-width: max(100%, 620px);
+  }
+
+  .dahab-confirm-box {
+    border-radius: 18px 18px 12px 12px;
+    padding: 1.15rem .95rem 1rem;
+  }
+
+  .dahab-confirm-actions {
+    gap: .5rem;
+  }
+
+  .dahab-confirm-actions .btn {
+    min-width: 0;
+    min-height: 44px;
+    white-space: normal;
+  }
+
+  .dahab-confirm-receipt__invoice {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .dahab-confirm-receipt__invoice strong {
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dahab-confirm-box,
+  .modal-box {
+    animation: none;
+  }
+}
