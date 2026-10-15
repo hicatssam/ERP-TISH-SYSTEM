@@ -589,13 +589,16 @@
 }
 @media(max-width:720px){
     .product-create-modal{
-        padding:.35rem;
+        padding:max(.35rem, env(safe-area-inset-top, 0px))
+            max(.35rem, env(safe-area-inset-right, 0px))
+            max(.35rem, env(safe-area-inset-bottom, 0px))
+            max(.35rem, env(safe-area-inset-left, 0px));
         align-items:stretch;
     }
     .product-create-dialog{
         width:100%;
-        height:calc(100dvh - .7rem);
-        max-height:calc(100dvh - .7rem);
+        height:calc(100dvh - .7rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+        max-height:calc(100dvh - .7rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
         border-radius:14px;
     }
     .product-create-header{
@@ -603,6 +606,10 @@
     }
     .product-create-body{
         padding:1rem 1rem 1.5rem;
+    }
+    .product-create-body :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+        font-size:16px !important;
+        min-height:44px;
     }
     .product-create-footer{
         flex-direction:column-reverse;
@@ -627,10 +634,13 @@ document.addEventListener('DOMContentLoaded', function () {
     @endif
 });
 
+let productCreateTrigger = null;
+
 function openProductCreateModal() {
     const modal = document.getElementById('productCreateModal');
     if (!modal) return;
 
+    productCreateTrigger = document.activeElement;
     modal.classList.add('is-open');
     modal.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
@@ -651,6 +661,9 @@ function closeProductCreateModal() {
     }
 
     document.body.style.overflow = '';
+
+    if (productCreateTrigger?.isConnected) productCreateTrigger.focus({preventScroll:true});
+    productCreateTrigger = null;
 
     if (window.location.hash === '#productCreateModal') {
         if (window.history && window.history.replaceState) {
@@ -702,8 +715,30 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 document.addEventListener('keydown', function(event) {
+    const modal = document.getElementById('productCreateModal');
+    if (!modal?.classList.contains('is-open')) return;
+
     if (event.key === 'Escape') {
+        event.preventDefault();
         closeProductCreateModal();
+        return;
+    }
+
+    if (event.key !== 'Tab') return;
+
+    const focusable = Array.from(modal.querySelectorAll(
+        'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )).filter(el => el.getClientRects().length > 0);
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length-1];
+
+    if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
     }
 });
 
