@@ -334,6 +334,10 @@
 
     <section class="product-form-section">
         <div class="product-form-section-title">التتبع والتشغيل</div>
+        <label class="product-location-option" style="margin:.8rem 0">
+            <input type="checkbox" name="is_raw_material" value="1" @checked(old('is_raw_material', $product->is_raw_material ?? false))>
+            <span><strong>مادة خام للمخزون</strong><small>تظهر في طلبات المواد الخام من الفروع، ولا تُعامل كمنتج حلويات جاهز.</small></span>
+        </label>
 
         <div style="display:flex;gap:1.25rem;flex-wrap:wrap;padding:.8rem 1rem;background:var(--card-bg,#fff);border:1px solid var(--border);border-radius:10px">
             <label style="display:flex;gap:.5rem;align-items:center">

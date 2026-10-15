@@ -29,6 +29,7 @@ class StoreProductRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'tracks_batch' => ['nullable', 'boolean'],
             'tracks_expiry' => ['nullable', 'boolean'],
+            'is_raw_material' => ['nullable', 'boolean'],
 
             // المنتج يمكن ربطه بفرع واحد أو عدة فروع/مصانع.
             'location_ids' => [

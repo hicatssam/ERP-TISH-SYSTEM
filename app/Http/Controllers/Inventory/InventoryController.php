@@ -60,6 +60,7 @@ class InventoryController extends Controller
             && $location === null;
 
         $inventoryQuery = Inventory::query()
+            ->whereHas('product', fn ($q) => $q->where('is_raw_material', true))
             ->with([
                 'location',
                 'product.category',
@@ -97,7 +98,7 @@ class InventoryController extends Controller
             )
             ->withQueryString();
 
-        $stockBase = Inventory::query();
+        $stockBase = Inventory::query()->whereHas('product', fn ($q) => $q->where('is_raw_material', true));
         if ($location) {
             $stockBase->where('location_id', $location->id);
         }
@@ -121,6 +122,7 @@ class InventoryController extends Controller
             ->whereNull('stock.id')
             ->where('lp.is_available', true)
             ->where('products.is_active', true)
+            ->where('products.is_raw_material', true)
             ->select('products.name', 'products.name_ar', 'products.sku',
                 'locations.name as location_name', 'lp.product_id', 'lp.location_id');
         $missingInOrders = DB::table('order_items as item')
@@ -131,6 +133,7 @@ class InventoryController extends Controller
                 ->on('stock.product_id', '=', 'item.product_id')
                 ->on('stock.location_id', '=', 'orders.location_id'))
             ->whereNull('stock.id')->where('orders.status', 'draft')
+            ->where('products.is_raw_material', true)
             ->select('products.name', 'products.name_ar', 'products.sku',
                 'locations.name as location_name', 'item.product_id', 'orders.location_id');
         if ($location) {
@@ -159,6 +162,9 @@ class InventoryController extends Controller
         $availableExpiryQuery = DB::table(
             'inventory_batches as batches'
         )
+            ->whereExists(fn ($q) => $q->selectRaw('1')->from('products as product')
+                ->whereColumn('product.id', 'batches.product_id')
+                ->where('product.is_raw_material', true))
             ->whereNotNull('batches.expiry_date')
             ->where(
                 'batches.available_quantity',
@@ -235,6 +241,7 @@ class InventoryController extends Controller
                 '=',
                 'batches.product_id'
             )
+            ->where('products.is_raw_material', true)
             ->leftJoin(
                 'locations',
                 'locations.id',
@@ -323,6 +330,7 @@ class InventoryController extends Controller
                 'location' => $location,
                 'inventories' =>
                     Inventory::query()
+                        ->whereHas('product', fn ($q) => $q->where('is_raw_material', true))
                         ->with([
                             'product.category',
                             'product.locationProducts'

@@ -1152,4 +1152,5 @@
         }
     });
 </script>
+@include('sales.partials.daily-raw-materials-summary', ['stockRequest' => $showroomCakeRequest->rawMaterialStockRequest])
 @endsection

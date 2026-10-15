@@ -29,6 +29,7 @@ class UpdateProductRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'tracks_batch' => ['nullable', 'boolean'],
             'tracks_expiry' => ['nullable', 'boolean'],
+            'is_raw_material' => ['nullable', 'boolean'],
 
             // Multi-location
             'location_ids' => [

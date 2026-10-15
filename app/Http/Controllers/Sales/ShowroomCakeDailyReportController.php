@@ -12,6 +12,7 @@ use App\Models\ShowroomCakeRequestItem;
 use App\Services\ActivityLogger;
 use App\Services\Finance\AccountingPdfService;
 use Carbon\CarbonImmutable;
+use App\Services\Inventory\BranchRawMaterialReportService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -96,6 +97,7 @@ class ShowroomCakeDailyReportController extends Controller
             'prior' => $prior,
             'sourceRequests' => $sourceRequests,
             'visibleItems' => $visibleItems,
+            'rawMaterialReport' => app(BranchRawMaterialReportService::class)->forDay($locationId, $date),
             'canManage' => $this->canManage($request),
             'canReview' => $this->canReview($request),
         ]);
@@ -436,6 +438,7 @@ class ShowroomCakeDailyReportController extends Controller
                 $showroomCakeDailyReport->business_date->toDateString()
             ),
             'pdfMode' => false,
+            'rawMaterialReport' => app(BranchRawMaterialReportService::class)->forDay((int) $showroomCakeDailyReport->location_id, $showroomCakeDailyReport->business_date->toDateString()),
         ]);
     }
 
@@ -458,6 +461,7 @@ class ShowroomCakeDailyReportController extends Controller
             'sales.showroom-cake-daily-reports.document',
             [
                 'report' => $showroomCakeDailyReport,
+                'rawMaterialReport' => app(BranchRawMaterialReportService::class)->forDay((int) $showroomCakeDailyReport->location_id, $showroomCakeDailyReport->business_date->toDateString()),
                 'visibleItems' => $this->visibleReportItems(
                     $showroomCakeDailyReport,
                     (int) $showroomCakeDailyReport->location_id,

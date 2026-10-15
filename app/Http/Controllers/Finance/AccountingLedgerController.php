@@ -8,6 +8,7 @@ use App\Models\Location;
 use App\Models\SalesLedgerEntry;
 use App\Services\Finance\AccountingPdfService;
 use Carbon\CarbonImmutable;
+use App\Services\Inventory\BranchRawMaterialReportService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -104,6 +105,7 @@ class AccountingLedgerController extends Controller
             : ($cap === null ? $baseEntries->get() : $baseEntries->limit($cap)->get());
 
         return [
+            'rawStockSummary' => app(BranchRawMaterialReportService::class)->forPeriod($locationIds->all(), $from, $to),
             'entries' => $entries,
             'summary' => $summary,
             'types' => $types,

@@ -115,6 +115,8 @@
             </div>
         </div>
 
+        @include('sales.partials.daily-raw-materials-form')
+
         <div style="display:flex;gap:.75rem;flex-wrap:wrap">
             <button class="btn btn-gold" type="submit" {{ $factories->isEmpty() ? 'disabled' : '' }}>
                 إرسال الطلب للمصنع

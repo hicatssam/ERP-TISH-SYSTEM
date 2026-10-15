@@ -90,4 +90,5 @@
             @endif
         </div>
     @endif
+@include('inventory.partials.branch-raw-material-document')
 @endsection

@@ -88,6 +88,7 @@ class StockRequestController extends Controller
 
         $products =
             Product::active()
+                ->where('is_raw_material', true)
                 ->with('category')
                 ->orderBy('name')
                 ->get();

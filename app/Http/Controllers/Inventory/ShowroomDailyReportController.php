@@ -20,6 +20,7 @@ use App\Services\ActivityLogger;
 use App\Services\Finance\AccountingPdfService;
 use App\Services\Notifications\NotificationDispatcher;
 use Carbon\CarbonImmutable;
+use App\Services\Inventory\BranchRawMaterialReportService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -147,6 +148,7 @@ class ShowroomDailyReportController extends Controller
             'prior' => $prior,
             'hasLater' => $hasLater,
             'receivingInvoices' => $receivingInvoices,
+            'rawMaterialReport' => app(BranchRawMaterialReportService::class)->forDay($locationId, $date),
             'pendingReviewReports' => $pendingReviewReports,
             'canManage' => $this->canManage($request),
             'canSubmit' => $this->canManage($request),
@@ -744,6 +746,7 @@ class ShowroomDailyReportController extends Controller
         return view('inventory.showroom-daily-reports.document', [
             'report' => $showroomDailyReport,
             'pdfMode' => false,
+            'rawMaterialReport' => app(BranchRawMaterialReportService::class)->forDay((int) $showroomDailyReport->location_id, $showroomDailyReport->business_date->toDateString()),
         ]);
     }
 
@@ -799,7 +802,8 @@ class ShowroomDailyReportController extends Controller
         return Excel::download(
             new ShowroomDailyReportExcelExport(
                 $showroomDailyReport,
-                $cakeReport
+                $cakeReport,
+                app(BranchRawMaterialReportService::class)->forDay((int) $showroomDailyReport->location_id, $showroomDailyReport->business_date->toDateString())
             ),
             $filename
         );
@@ -827,7 +831,8 @@ class ShowroomDailyReportController extends Controller
 
         return $pdf->download(
             'inventory.showroom-daily-reports.document',
-            ['report' => $showroomDailyReport],
+            ['report' => $showroomDailyReport,
+                'rawMaterialReport' => app(BranchRawMaterialReportService::class)->forDay((int) $showroomDailyReport->location_id, $showroomDailyReport->business_date->toDateString())],
             'showroom-daily-report-'
                 . $showroomDailyReport->location_id
                 . '-'

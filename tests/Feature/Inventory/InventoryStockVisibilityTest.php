@@ -32,11 +32,15 @@ class InventoryStockVisibilityTest extends TestCase
             'category_id' => $category->id, 'name' => $name, 'name_ar' => $name,
             'sku' => $name, 'barcode' => app(\App\Services\ProductCodeService::class)->generateEan13(),
             'base_selling_price' => 10, 'is_active' => true, 'unit' => 'piece',
+            'is_raw_material' => true,
         ]);
         $empty = $make('Empty');
         $missing = $make('Missing');
         $foreign = $make('Foreign');
         $fromDraft = $make('Draft Burger');
+        $finished = $make('Finished Cake');
+        $finished->update(['is_raw_material' => false]);
+        Inventory::create(['location_id' => $branch->id, 'product_id' => $finished->id, 'quantity' => 0, 'reserved_quantity' => 0, 'unit_cost' => 0]);
         Inventory::create(['location_id' => $branch->id, 'product_id' => $empty->id, 'quantity' => 0, 'reserved_quantity' => 0, 'unit_cost' => 0]);
         LocationProduct::create(['location_id' => $branch->id, 'product_id' => $missing->id, 'is_available' => true, 'minimum_stock_level' => 0]);
         Inventory::create(['location_id' => $other->id, 'product_id' => $foreign->id, 'quantity' => 0, 'reserved_quantity' => 0, 'unit_cost' => 0]);
@@ -48,6 +52,7 @@ class InventoryStockVisibilityTest extends TestCase
 
         $this->actingAs($user)->get(route('inventory.index', ['stock' => 'out']))
             ->assertOk()->assertSee('منتجات نافدة')->assertSee('Empty')
-            ->assertSee('Missing')->assertSee('Draft Burger')->assertDontSee('Foreign');
+            ->assertSee('Missing')->assertSee('Draft Burger')->assertDontSee('Foreign')
+            ->assertDontSee('Finished Cake');
     }
 }

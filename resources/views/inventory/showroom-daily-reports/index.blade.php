@@ -870,6 +870,7 @@
         </div>
     @endif
 @endif
+@include('inventory.partials.branch-raw-material-report')
 @endsection
 
 @push('styles')

@@ -55,6 +55,17 @@
     </div>
 </div>
 
+@if($stockRequest->showroomSweetsRequest || $stockRequest->showroomCakeRequest)
+    @php
+        $daily = $stockRequest->showroomSweetsRequest ?: $stockRequest->showroomCakeRequest;
+        $dailyRoute = $stockRequest->showroomSweetsRequest ? 'showroom-sweets-requests.show' : 'showroom-cake-requests.show';
+    @endphp
+    <div class="card" style="margin-bottom:1rem"><div class="card-body">
+        تم إرسال طلب المواد الخام مع الطلب اليومي <strong>{{ $daily->request_number }}</strong>
+        <a class="btn btn-outline btn-sm" href="{{ route($dailyRoute, $daily) }}">فتح الطلب اليومي</a>
+    </div></div>
+@endif
+
 @if($errors->any())
     <div class="alert alert-danger" style="margin-bottom:1rem">
         <strong>يرجى تصحيح البيانات التالية:</strong>

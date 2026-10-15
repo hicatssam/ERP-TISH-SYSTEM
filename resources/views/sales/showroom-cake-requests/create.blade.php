@@ -120,6 +120,8 @@
             </div>
         </div>
 
+        @include('sales.partials.daily-raw-materials-form')
+
         <div style="display:flex;gap:.75rem">
             <button class="btn btn-gold" type="submit">إرسال الطلب</button>
             <a href="{{ route('showroom-cake-requests.index') }}" class="btn btn-ghost">إلغاء</a>

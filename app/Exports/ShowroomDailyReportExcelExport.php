@@ -23,6 +23,7 @@ class ShowroomDailyReportExcelExport implements
     public function __construct(
         private readonly ShowroomDailyReport $report,
         private readonly ?ShowroomCakeDailyReport $cakeReport = null,
+        private readonly array $rawMaterialReport = [],
     ) {
     }
 
@@ -83,10 +84,11 @@ class ShowroomDailyReportExcelExport implements
             $sheet,
             $sweetsEndRow + 2
         );
-        $lastRow = $this->buildAccountingSection(
+        $accountingEndRow = $this->buildAccountingSection(
             $sheet,
             $cakeEndRow + 2
         );
+        $lastRow = $this->buildRawMaterialsSection($sheet, $accountingEndRow + 2);
 
         $this->applyProtection($sheet);
 
@@ -1132,6 +1134,67 @@ class ShowroomDailyReportExcelExport implements
                 ],
             ],
         ];
+    }
+
+
+    /**
+     * Dedicated, read-only operational raw-material reconciliation.
+     * Do not include this cost in the financial sales or cashier formulas.
+     */
+    private function buildRawMaterialsSection(Worksheet $sheet, int $startRow): int
+    {
+        $summary = $this->rawMaterialReport['totals'] ?? [
+            'requests_shipped' => 0, 'receipts' => 0,
+            'dispatched_value' => 0, 'received_value' => 0,
+            'damaged_value' => 0, 'shortage_value' => 0,
+        ];
+        $this->mergeTitleRow($sheet, $startRow, 'حركة المواد الخام — تسوية مخزون داخلية (ليست مبيعات أو مصروفات)', '1F4E78', 'FFFFFF');
+
+        $summaryRow = $startRow + 1;
+        $sheet->fromArray([
+            'تحويلات مرسلة', 'قيمة المرسل', 'استلامات',
+            'قيمة المستلم', 'قيمة التالف', 'قيمة النقص',
+        ], null, "A{$summaryRow}");
+        $this->styleHeader($sheet, "A{$summaryRow}:F{$summaryRow}", 'FFF2CC', '000000');
+
+        $valuesRow = $summaryRow + 1;
+        $sheet->fromArray([
+            $summary['requests_shipped'], $summary['dispatched_value'],
+            $summary['receipts'], $summary['received_value'],
+            $summary['damaged_value'], $summary['shortage_value'],
+        ], null, "A{$valuesRow}");
+        $sheet->getStyle("A{$valuesRow}:F{$valuesRow}")
+            ->getNumberFormat()->setFormatCode('#,##0.00');
+
+        $headerRow = $valuesRow + 2;
+        $sheet->fromArray([
+            'رقم التحويل', 'المادة الخام', 'المرسل', 'المستلم',
+            'التالف', 'النقص', 'تكلفة الوحدة', 'قيمة المستلم',
+        ], null, "A{$headerRow}");
+        $this->styleHeader($sheet, "A{$headerRow}:H{$headerRow}", 'E2F0D9', '000000');
+
+        $row = $headerRow + 1;
+        foreach ($this->rawMaterialReport['receipts'] ?? [] as $line) {
+            $sheet->fromArray([
+                $line['transfer']->transfer_number,
+                $line['product']?->name_ar ?: ($line['product']?->name ?? '—'),
+                $line['sent'], $line['received'], $line['damaged'],
+                $line['shortage'], $line['unit_cost'], $line['value'],
+            ], null, "A{$row}");
+            $sheet->getStyle("C{$row}:H{$row}")
+                ->getNumberFormat()->setFormatCode('#,##0.000');
+            $row++;
+        }
+        if ($row === $headerRow + 1) {
+            $sheet->mergeCells("A{$row}:H{$row}");
+            $sheet->setCellValue("A{$row}", 'لا توجد تحويلات مواد خام مستلمة في هذا اليوم');
+            $row++;
+        }
+
+        $noteRow = $row + 1;
+        $sheet->mergeCells("A{$noteRow}:I{$noteRow}");
+        $sheet->setCellValue("A{$noteRow}", 'قيم الاستلام من تكاليف التحويل المحفوظة، منفصلة عن إجماليات النقد والمبيعات.');
+        return $noteRow;
     }
 
     private function applyProtection(

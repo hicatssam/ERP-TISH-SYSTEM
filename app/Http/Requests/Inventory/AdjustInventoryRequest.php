@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Inventory;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class AdjustInventoryRequest extends FormRequest
 {
@@ -12,7 +13,7 @@ class AdjustInventoryRequest extends FormRequest
     {
         return [
             'location_id' => ['required', 'exists:locations,id'],
-            'product_id'  => ['required', 'exists:products,id'],
+            'product_id'  => ['required', Rule::exists('products', 'id')->where(fn ($q) => $q->where('is_raw_material', true))],
             'quantity'    => ['required', 'numeric', 'not_in:0'],
             'reason'      => ['required', 'string', 'min:3', 'max:255'],
         ];

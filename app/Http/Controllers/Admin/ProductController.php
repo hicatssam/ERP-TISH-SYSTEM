@@ -193,6 +193,7 @@ class ProductController extends Controller
         $this->ensureCategoryAvailableToUser((int) $data['category_id'], $user);
 
         $data['brand_id'] = null;
+        $data['is_raw_material'] = $request->boolean('is_raw_material');
 
         $this->normalizeCatalogFields($data, $request);
         unset($data['location_id']);
@@ -323,6 +324,7 @@ class ProductController extends Controller
             ]);
         }
         $data['brand_id'] = null;
+        $data['is_raw_material'] = $request->boolean('is_raw_material');
 
         $this->normalizeCatalogFields($data, $request);
         unset($data['remove_image'], $data['location_id']);

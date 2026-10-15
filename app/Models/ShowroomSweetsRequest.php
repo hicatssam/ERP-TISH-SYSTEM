@@ -144,6 +144,11 @@ class ShowroomSweetsRequest extends Model
         );
     }
 
+    public function rawMaterialStockRequest(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(StockRequest::class, 'showroom_sweets_request_id');
+    }
+
     public function branchShipment(): \Illuminate\Database\Eloquent\Relations\MorphOne
     {
         return $this->morphOne(BranchShipment::class, 'source');

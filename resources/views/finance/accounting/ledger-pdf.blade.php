@@ -60,4 +60,5 @@
             يعرض ملف PDF أول {{ number_format($cap) }} حركة من أصل {{ number_format($total) }} حركة. قلّل نطاق التاريخ للحصول على تقرير كامل.
         </div>
     @endif
+@include('finance.accounting.partials.raw-material-ledger-summary', ['printMode' => true])
 @endsection

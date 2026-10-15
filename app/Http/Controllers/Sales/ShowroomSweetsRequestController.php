@@ -11,6 +11,7 @@ use App\Models\ShowroomSweetsRequestItem;
 use App\Models\User;
 use App\Services\Notifications\ShowroomSweetsRequestNotifier;
 use Illuminate\Http\Request;
+use App\Services\Inventory\DailyRawMaterialRequestService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -140,13 +141,16 @@ class ShowroomSweetsRequestController extends Controller
             ->orderBy('name')
             ->get();
 
+        $rawMaterials = app(DailyRawMaterialRequestService::class)->availableMaterials();
+
         return view(
             'sales.showroom-sweets-requests.create',
             compact(
                 'branch',
                 'branches',
                 'factories',
-                'canChooseBranch'
+                'canChooseBranch',
+                'rawMaterials'
             )
         );
     }
@@ -160,6 +164,7 @@ class ShowroomSweetsRequestController extends Controller
 
         $query = Product::query()
             ->active()
+            ->where('is_raw_material', false)
             ->whereHas('category', fn ($category) => $category->whereNotIn('slug', [
                 'cakes', 'drinks', 'gifts',
             ]));
@@ -200,6 +205,7 @@ class ShowroomSweetsRequestController extends Controller
             $user->isAdmin();
 
         $validated = $request->validate([
+            ...app(DailyRawMaterialRequestService::class)->validationRules(),
 
             'requesting_location_id' => [
                 Rule::requiredIf(
@@ -366,6 +372,7 @@ class ShowroomSweetsRequestController extends Controller
 
         $products = Product::query()
             ->active()
+            ->where('is_raw_material', false)
             ->whereIn(
                 'id',
                 $productIds
@@ -499,6 +506,12 @@ class ShowroomSweetsRequestController extends Controller
                         ]);
                     }
 
+                    app(DailyRawMaterialRequestService::class)->createForDailyRequest(
+                        $showroomRequest,
+                        $validated['raw_materials'] ?? [],
+                        $user
+                    );
+
                     return $showroomRequest;
                 }
             );
@@ -513,6 +526,10 @@ class ShowroomSweetsRequestController extends Controller
         | أصحاب المهمة في المصنع.
         |
         */
+
+        if ($rawStockRequest = $showroomRequest->rawMaterialStockRequest()->first()) {
+            app(DailyRawMaterialRequestService::class)->notifyFactory($rawStockRequest, $user);
+        }
 
         ShowroomSweetsRequestNotifier::requestCreated(
             $showroomRequest->fresh([
@@ -722,6 +739,7 @@ class ShowroomSweetsRequestController extends Controller
             'items.product.category',
             'branchShipment.driver.employee',
             'branchShipment.receivingInvoice',
+            'rawMaterialStockRequest.items.product.unitDefinition',
         ]);
 
         $allowedTransitions =

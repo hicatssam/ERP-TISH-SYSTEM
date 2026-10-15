@@ -2141,4 +2141,5 @@
             });
         </script>
 @endif
+@include('sales.partials.daily-raw-materials-summary', ['stockRequest' => $showroomSweetsRequest->rawMaterialStockRequest])
 @endsection

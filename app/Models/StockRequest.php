@@ -11,6 +11,7 @@ class StockRequest extends Model
         'request_number', 'branch_location_id', 'factory_location_id',
         'status', 'notes', 'rejection_reason',
         'created_by', 'reviewed_by', 'reviewed_at',
+        'showroom_sweets_request_id', 'showroom_cake_request_id',
     ];
 
     protected function casts(): array
@@ -19,6 +20,16 @@ class StockRequest extends Model
             'reviewed_at' => 'datetime',
             'status'      => StockRequestStatus::class,
         ];
+    }
+
+    public function showroomSweetsRequest(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(ShowroomSweetsRequest::class, 'showroom_sweets_request_id');
+    }
+
+    public function showroomCakeRequest(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(ShowroomCakeRequest::class, 'showroom_cake_request_id');
     }
 
     public function branch(): \Illuminate\Database\Eloquent\Relations\BelongsTo

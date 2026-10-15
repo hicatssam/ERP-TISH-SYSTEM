@@ -56,6 +56,11 @@ class ShowroomCakeRequest extends Model
         return $this->hasMany(ShowroomCakeRequestItem::class);
     }
 
+    public function rawMaterialStockRequest(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(StockRequest::class, 'showroom_cake_request_id');
+    }
+
     public function branchShipment(): \Illuminate\Database\Eloquent\Relations\MorphOne
     {
         return $this->morphOne(BranchShipment::class, 'source');

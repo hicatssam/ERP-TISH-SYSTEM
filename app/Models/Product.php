@@ -20,7 +20,7 @@ class Product extends Model
     protected $fillable = [
         'category_id', 'brand_id', 'name', 'name_ar', 'sku', 'barcode',
         'description', 'image', 'prep_time_minutes', 'unit', 'unit_id', 'product_type',
-        'base_selling_price', 'is_active', 'tracks_batch', 'tracks_expiry',
+        'base_selling_price', 'is_active', 'tracks_batch', 'tracks_expiry', 'is_raw_material',
     ];
 
     protected function casts(): array
@@ -31,6 +31,7 @@ class Product extends Model
             'is_active' => 'boolean',
             'tracks_batch' => 'boolean',
             'tracks_expiry' => 'boolean',
+            'is_raw_material' => 'boolean',
         ];
     }
 

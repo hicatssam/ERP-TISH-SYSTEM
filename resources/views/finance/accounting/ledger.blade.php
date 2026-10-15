@@ -110,4 +110,5 @@
         <div style="margin-top:1rem">{{ $entries->links() }}</div>
     </div>
 </div>
+@include('finance.accounting.partials.raw-material-ledger-summary')
 @endsection

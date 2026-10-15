@@ -10,6 +10,7 @@ use App\Models\ShowroomCakeRequestItem;
 use App\Models\User;
 use App\Services\Notifications\ShowroomCakeRequestNotifier;
 use Illuminate\Http\Request;
+use App\Services\Inventory\DailyRawMaterialRequestService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -154,13 +155,16 @@ class ShowroomCakeRequestController extends Controller
             ->orderBy('name')
             ->get();
 
+        $rawMaterials = app(DailyRawMaterialRequestService::class)->availableMaterials();
+
         return view(
             'sales.showroom-cake-requests.create',
             compact(
                 'branch',
                 'branches',
                 'factories',
-                'canChooseBranch'
+                'canChooseBranch',
+                'rawMaterials'
             )
         );
     }
@@ -174,6 +178,7 @@ class ShowroomCakeRequestController extends Controller
             $user->isAdmin();
 
         $validated = $request->validate([
+            ...app(DailyRawMaterialRequestService::class)->validationRules(),
             'requesting_location_id' => [
                 Rule::requiredIf(
                     $canChooseBranch
@@ -372,9 +377,19 @@ class ShowroomCakeRequestController extends Controller
                             ]);
                     }
 
+                    app(DailyRawMaterialRequestService::class)->createForDailyRequest(
+                        $showroomRequest,
+                        $validated['raw_materials'] ?? [],
+                        $user
+                    );
+
                     return $showroomRequest;
                 }
             );
+
+        if ($rawStockRequest = $showroomRequest->rawMaterialStockRequest()->first()) {
+            app(DailyRawMaterialRequestService::class)->notifyFactory($rawStockRequest, $user);
+        }
 
         ShowroomCakeRequestNotifier::requestCreated(
             $showroomRequest->fresh([
@@ -549,6 +564,7 @@ class ShowroomCakeRequestController extends Controller
             'items',
             'branchShipment.driver.employee',
             'branchShipment.receivingInvoice',
+            'rawMaterialStockRequest.items.product.unitDefinition',
         ]);
 
         $allowedTransitions =
