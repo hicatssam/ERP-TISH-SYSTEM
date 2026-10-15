@@ -14,6 +14,7 @@ use App\Models\ShowroomSweetsRequestItem;
 use App\Models\SpecialCakeOrder;
 use App\Models\User;
 use App\Services\ActivityLogger;
+use App\Services\Notifications\BranchShipmentNotifier;
 use App\Services\Notifications\ShowroomCakeRequestNotifier;
 use App\Services\Notifications\ShowroomSweetsRequestNotifier;
 use App\Services\SpecialCakes\SpecialCakeStatusTransitionService;
@@ -193,13 +194,17 @@ class BranchDeliveryService
             'driver_id' => $driver->id,
         ]);
 
-        return $shipment->fresh([
+        $loadedShipment = $shipment->fresh([
             'source',
             'driver.employee',
             'fromLocation',
             'toLocation',
             'receivingInvoice.items',
         ]);
+
+        BranchShipmentNotifier::loaded($loadedShipment, $actor);
+
+        return $loadedShipment;
     }
 
     public function dispatch(BranchShipment $shipment, User $actor): BranchShipment
@@ -245,7 +250,7 @@ class BranchDeliveryService
         User $actor,
         ?string $notes = null
     ): BranchReceivingInvoice {
-        return DB::transaction(function () use ($shipment, $submittedItems, $actor, $notes): BranchReceivingInvoice {
+        $invoice = DB::transaction(function () use ($shipment, $submittedItems, $actor, $notes): BranchReceivingInvoice {
             $lockedShipment = BranchShipment::query()
                 ->with(['receivingInvoice.items', 'source'])
                 ->lockForUpdate()
@@ -358,6 +363,12 @@ class BranchDeliveryService
                 'source',
             ]);
         });
+
+        // Notify only after the invoice transaction has completed. Failed or
+        // rolled-back receipts must not generate delivery notifications.
+        BranchShipmentNotifier::received($invoice, $actor);
+
+        return $invoice;
     }
 
     public function isReadyForShipment(Model $source): bool
