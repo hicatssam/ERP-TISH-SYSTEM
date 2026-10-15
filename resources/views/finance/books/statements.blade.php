@@ -51,4 +51,5 @@
         <tr><th>الفرق المحاسبي</th><th>{{ number_format($report['position']['difference'] / 100, 2) }}</th></tr>
     </tbody></table></div></div></div>
 </div>
+@include('finance.accounting.partials.raw-material-ledger-summary')
 @endsection

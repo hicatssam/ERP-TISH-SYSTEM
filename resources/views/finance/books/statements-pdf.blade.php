@@ -88,4 +88,5 @@
             تنبيه: يوجد {{ number_format((int) $report['unlinked_operations']) }} حركة تشغيلية سابقة أو غير مرحّلة حتى تاريخ التقرير.
         </div>
     @endif
+@include('finance.accounting.partials.raw-material-ledger-summary', ['printMode' => true])
 @endsection

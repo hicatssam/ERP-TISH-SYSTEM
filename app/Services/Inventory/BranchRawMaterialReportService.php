@@ -98,6 +98,7 @@ class BranchRawMaterialReportService
                         'shortage' => max(0, round($sent - $received - $damaged, 3)),
                         'quantity' => $receipt ? $received : $sent,
                         'unit_cost' => $unitCost,
+                        'cost_recorded' => $item->unit_cost !== null && $unitCost > 0,
                         'value' => round(($receipt ? $received : $sent) * $unitCost, 2),
                     ];
                 });
@@ -113,6 +114,7 @@ class BranchRawMaterialReportService
             'receipts' => $received->count(),
             'dispatched_value' => round($sentLines->sum('value'), 2),
             'received_value' => round($receivedLines->sum('value'), 2),
+            'missing_cost_count' => $receivedLines->filter(fn ($row) => ! $row['cost_recorded'])->count(),
             'damaged_value' => round($receivedLines->sum(fn ($row) => $row['damaged'] * $row['unit_cost']), 2),
             'shortage_value' => round($receivedLines->sum(fn ($row) => $row['shortage'] * $row['unit_cost']), 2),
         ];

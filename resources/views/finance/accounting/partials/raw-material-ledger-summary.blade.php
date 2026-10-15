@@ -2,6 +2,7 @@
     $rawStockSummary = $rawStockSummary ?? ['totals' => [
         'requests_shipped' => 0, 'dispatched_value' => 0, 'receipts' => 0,
         'received_value' => 0, 'damaged_value' => 0, 'shortage_value' => 0,
+        'missing_cost_count' => 0,
     ]];
 @endphp
 <section class="{{ $printMode ?? false ? 'print-section' : 'card' }}" style="margin-top:1rem">
@@ -25,5 +26,8 @@
                 <td>{{ number_format($rawStockSummary['totals']['shortage_value'], 2) }}</td>
             </tr></tbody>
         </table>
+        @if(($rawStockSummary['totals']['missing_cost_count'] ?? 0) > 0)
+            <p class="form-help" style="color:#b45309;font-weight:bold;margin-top:.55rem">تنبيه: يوجد {{ $rawStockSummary['totals']['missing_cost_count'] }} بند استلام مواد خام دون تكلفة وحدة موجبة. قيمة الوارد المعروضة غير مكتملة حتى مراجعة تكلفة المخزون، ولا يتم إنشاء قيد مالي آليًا.</p>
+        @endif
     </div>
 </section>

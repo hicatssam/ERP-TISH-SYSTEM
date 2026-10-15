@@ -12,6 +12,7 @@ use App\Models\PaymentMethod;
 use App\Services\Finance\AccountingBookService;
 use App\Services\Finance\AccountingPdfService;
 use App\Services\Finance\AccountingReportService;
+use App\Services\Inventory\BranchRawMaterialReportService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -288,6 +289,7 @@ class AccountingBooksController extends Controller
 
         return [
             'report' => $this->reports->report($this->locationIds($locationId), $from, $to),
+            'rawStockSummary' => app(BranchRawMaterialReportService::class)->forPeriod($this->locationIds($locationId), $from, $to),
             'locations' => $this->locations($request),
             'locationId' => $locationId,
             'from' => $from,

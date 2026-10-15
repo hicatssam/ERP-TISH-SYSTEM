@@ -208,6 +208,90 @@ class DailyBranchRawMaterialsTest extends TestCase
         $this->assertSame(0, StockRequest::query()->count());
     }
 
+    #[Test]
+    public function raw_material_accounting_statements_expose_the_operational_summary_without_posting_journals(): void
+    {
+        [$branch, $factory, $user] = $this->locationsAndUser();
+        $user->givePermissionTo(Permission::findOrCreate('accounting.reports.view', 'web'));
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        \App\Models\Currency::query()->create([
+            'code' => 'ILS', 'name' => 'Shekel',
+            'is_base' => true, 'is_active' => true,
+        ]);
+        $raw = $this->product('Raw accounting stock', true);
+        $stock = StockRequest::query()->create([
+            'request_number' => 'SR-'.Str::upper(Str::random(10)),
+            'branch_location_id' => $branch->id,
+            'factory_location_id' => $factory->id,
+            'status' => 'received',
+            'created_by' => $user->id,
+        ]);
+        $stock->items()->create(['product_id' => $raw->id, 'requested_quantity' => 2]);
+        $transfer = StockTransfer::query()->create([
+            'transfer_number' => 'TR-'.Str::upper(Str::random(10)),
+            'stock_request_id' => $stock->id,
+            'from_location_id' => $factory->id,
+            'to_location_id' => $branch->id,
+            'status' => 'received',
+            'dispatched_at' => now(),
+            'received_at' => now(),
+        ]);
+        $transfer->items()->create([
+            'product_id' => $raw->id,
+            'sent_quantity' => 2,
+            'received_quantity' => 2,
+            'unit_cost' => '6.5000',
+        ]);
+
+        $date = now()->toDateString();
+        $response = $this->actingAs($user)->get(route('accounting.books.statements', [
+            'location_id' => $branch->id, 'from' => $date, 'to' => $date,
+        ]));
+        $response->assertOk()->assertSee('تسوية المواد الخام');
+        $response->assertSee('13.00');
+        $report = app(\App\Services\Finance\AccountingReportService::class)
+            ->report([$branch->id], $date, $date);
+        $this->assertSame(0, $report['income']['net']);
+        $this->assertSame(0, \App\Models\AccountingJournal::query()->count());
+    }
+
+    #[Test]
+    public function missing_raw_material_cost_is_reported_instead_of_silently_considered_priced(): void
+    {
+        [$branch, $factory, $user] = $this->locationsAndUser();
+        $raw = $this->product('Raw no cost', true);
+        $stock = StockRequest::query()->create([
+            'request_number' => 'SR-'.Str::upper(Str::random(10)),
+            'branch_location_id' => $branch->id,
+            'factory_location_id' => $factory->id,
+            'status' => 'received',
+            'created_by' => $user->id,
+        ]);
+        $stock->items()->create(['product_id' => $raw->id, 'requested_quantity' => 1]);
+        $transfer = StockTransfer::query()->create([
+            'transfer_number' => 'TR-'.Str::upper(Str::random(10)),
+            'stock_request_id' => $stock->id,
+            'from_location_id' => $factory->id,
+            'to_location_id' => $branch->id,
+            'status' => 'received',
+            'dispatched_at' => now(), 'received_at' => now(),
+        ]);
+        $transfer->items()->create([
+            'product_id' => $raw->id,
+            'sent_quantity' => 1,
+            'received_quantity' => 1,
+            'unit_cost' => '0.0000',
+        ]);
+
+        $totals = app(\App\Services\Inventory\BranchRawMaterialReportService::class)
+            ->forDay($branch->id, now()->toDateString())['totals'];
+
+        $this->assertSame(1, $totals['missing_cost_count']);
+        $this->assertSame(0.0, $totals['received_value']);
+        $this->assertSame(0, \App\Models\AccountingJournal::query()->count());
+    }
+
     /** @return array{Location,Location,User} */
     private function locationsAndUser(): array
     {

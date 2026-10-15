@@ -15,6 +15,9 @@
             <div class="stat-card" style="padding:.7rem 1rem"><strong>{{ $rawMaterialReport['totals']['receipts'] }}</strong> تحويلات استُلمت</div>
             <div class="stat-card" style="padding:.7rem 1rem"><strong>{{ number_format($rawMaterialReport['totals']['received_value'], 2) }}</strong> قيمة الخام المستلم (عملة المخزون الأساسية)</div>
         </div>
+        @if(($rawMaterialReport['totals']['missing_cost_count'] ?? 0) > 0)
+            <div class="alert alert-warning">هناك {{ $rawMaterialReport['totals']['missing_cost_count'] }} بند استلام خامات دون تكلفة وحدة موجبة؛ إجمالي القيمة الظاهر غير مكتمل ويحتاج مراجعة محاسبية.</div>
+        @endif
         @if($rawMaterialReport['totals']['damaged_value'] > 0 || $rawMaterialReport['totals']['shortage_value'] > 0)
             <div class="alert alert-warning">
                 قيمة التالف: {{ number_format($rawMaterialReport['totals']['damaged_value'], 2) }} —

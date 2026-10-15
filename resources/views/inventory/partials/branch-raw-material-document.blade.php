@@ -33,5 +33,8 @@
             @endforelse
         </tbody>
     </table>
+    @if(($rawMaterialReport['totals']['missing_cost_count'] ?? 0) > 0)
+        <div class="print-soft-box" style="margin-top:5px">تنبيه: هناك {{ $rawMaterialReport['totals']['missing_cost_count'] }} بند مواد خام مستلمة بدون تكلفة وحدة موجبة، وإجمالي القيمة المعروض غير مكتمل.</div>
+    @endif
     <div class="print-soft-box" style="margin-top:5px">هذه حركة مخزون داخلية بالتكلفة المرجعية المسجلة، وليست إيرادًا أو مصروفًا أو قيدًا في دفتر الأستاذ.</div>
 </section>
