@@ -301,6 +301,48 @@ class ShowroomSweetsWorkflowAndNotificationsTest extends TestCase
         );
     }
 
+    #[Test]
+    public function sweets_request_cards_show_product_name_above_category_and_quantity(): void
+    {
+        [$branch, $factory] = $this->locations();
+        $viewer = $this->userAt($branch, ['showroom_sweets_requests.view']);
+        $dailyRequest = $this->showroomRequest($branch, $factory, $viewer);
+
+        $category = \App\Models\Category::query()->firstOrCreate(
+            ['slug' => 'visible-sweets-name'],
+            ['name' => 'حلويات شرقية', 'is_active' => true]
+        );
+
+        $sku = 'VIS-' . Str::upper(Str::random(8));
+        $product = \App\Models\Product::query()->create([
+            'category_id' => $category->id,
+            'name' => 'Soft Kunafa',
+            'name_ar' => 'كنافة ناعمة',
+            'sku' => $sku,
+            'barcode' => $sku,
+            'unit_id' => \App\Models\Unit::query()->where('code', 'piece')->firstOrFail()->id,
+            'product_type' => 'standard',
+            'is_active' => true,
+        ]);
+
+        $dailyRequest->items()->create([
+            'product_id' => $product->id,
+            'product_name_snapshot' => 'كنافة ناعمة',
+            'quantity' => 25,
+            'requested_unit' => 'صدر',
+        ]);
+
+        $this->actingAs($viewer)
+            ->get(route('showroom-sweets-requests.show', $dailyRequest))
+            ->assertOk()
+            ->assertSeeInOrder([
+                '<h3 class="product-name">',
+                'كنافة ناعمة',
+                '</h3>',
+                'حلويات شرقية',
+            ], false);
+    }
+
     private function locations(): array
     {
         $branch = Location::query()->create([

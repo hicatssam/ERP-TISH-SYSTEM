@@ -462,6 +462,9 @@
     .product-name {
         color: var(--text);
 
+        margin: 0;
+        overflow-wrap: anywhere;
+
         font-size: .88rem;
         font-weight: 900;
 
@@ -1632,16 +1635,7 @@
                                 {{-- التفاصيل --}}
                                 <div class="product-details">
 
-                                                
-  
-
-                                       
-
-
-                                    {{-- طلب الكيك الخاص --}}
-
-                                    
-
+                                    <h3 class="product-name">{{ $item->displayProductName() }}</h3>
 
                                     <div class="product-category">
                                         {{ $item->product?->category?->name_ar
