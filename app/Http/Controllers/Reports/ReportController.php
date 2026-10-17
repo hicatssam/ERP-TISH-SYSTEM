@@ -17,6 +17,7 @@ use App\Models\Location;
 use App\Models\User;
 use App\Models\ActivityLog;
 use App\Support\ArabicDate;
+use App\Support\CakeProductionLabels;
 use App\Services\PrintThemeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -1418,9 +1419,9 @@ class ReportController extends Controller
                 ArabicDate::date($row->created_at, false),
             ],
             'cake-production' => [
-                $row->cake_type ?? 'غير محدد',
-                $row->cake_size ?? 'غير محدد',
-                $row->shape ?? 'غير محدد',
+                CakeProductionLabels::type($row->cake_type ?? null),
+                CakeProductionLabels::size($row->cake_size ?? null),
+                CakeProductionLabels::shape($row->shape ?? null),
                 (int) ($row->special_quantity ?? 0),
                 (int) ($row->showroom_quantity ?? 0),
                 (int) ($row->total_quantity ?? 0),

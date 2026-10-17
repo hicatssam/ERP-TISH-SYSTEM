@@ -224,9 +224,9 @@
                 ],
 
                 'cake-production' => [
-                    $row->cake_type ?? 'غير محدد',
-                    $row->cake_size ?? 'غير محدد',
-                    $row->shape ?? 'غير محدد',
+                    \App\Support\CakeProductionLabels::type($row->cake_type ?? null),
+                    \App\Support\CakeProductionLabels::size($row->cake_size ?? null),
+                    \App\Support\CakeProductionLabels::shape($row->shape ?? null),
                     (int) ($row->special_quantity ?? 0),
                     (int) ($row->showroom_quantity ?? 0),
                     (int) ($row->total_quantity ?? 0),

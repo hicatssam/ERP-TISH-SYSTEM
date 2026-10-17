@@ -381,13 +381,81 @@ class SpecialCakeAutoApprovalAndProductionReportTest extends TestCase
         $this->assertSame(5, (int) $screen->viewData('data')->items()[0]->total_quantity);
         $this->getJson(route('reports.count', $params))->assertOk()->assertJsonPath('count', 1);
         $print = $this->get(route('reports.print', $params))->assertOk();
-        $this->assertSame(['بلاطة', '40x60', 'مستطيل', 1, 4, 5], $print->viewData('formattedRows')->first());
+        $this->assertSame(['بلاطة', '40 × 60', 'مستطيل', 1, 4, 5], $print->viewData('formattedRows')->first());
         $pdf = $this->get(route('reports.export.pdf', $params))->assertOk()->streamedContent();
         $this->assertStringStartsWith('%PDF', $pdf);
         $this->assertMatchesRegularExpression('/\\/Type\\s*\\/Page\\b/', $pdf);
         \Maatwebsite\Excel\Facades\Excel::fake();
         $this->get(route('reports.export.xlsx', $params))->assertOk();
         \Maatwebsite\Excel\Facades\Excel::assertDownloaded('cake-production_'.$date.'_'.$date.'.xlsx');
+    }
+
+    #[Test]
+    public function unified_cake_production_uses_arabic_labels_on_screen_and_print(): void
+    {
+        $date = '2026-09-28';
+        $request = $this->makeShowroomRequest(
+            $this->branch,
+            ShowroomCakeRequestStatus::Ready,
+            $date
+        );
+
+        ShowroomCakeRequestItem::query()->create([
+            'showroom_cake_request_id' => $request->id,
+            'cake_type' => 'chocolate',
+            'cake_size' => 'large',
+            'shape' => 'round',
+            'quantity' => 3,
+        ]);
+
+        $params = [
+            'type' => 'cake-production',
+            'date_from' => $date,
+            'date_to' => $date,
+            'location_id' => $this->branch->id,
+        ];
+
+        $screen = $this->actingAs($this->user)
+            ->get(route('reports.show', $params))
+            ->assertOk()
+            ->assertSee('شوكولاتة')
+            ->assertSee('كبير')
+            ->assertSee('دائري')
+            ->assertDontSee('>chocolate<', false);
+
+        $row = $screen->viewData('data')->items()[0];
+        $formatter = $screen->viewData('rowFormatter');
+        $this->assertSame(
+            ['شوكولاتة', 'كبير', 'دائري', 0, 3, 3],
+            $formatter($row)
+        );
+
+        $print = $this->get(route('reports.print', $params))
+            ->assertOk()
+            ->assertSee('شوكولاتة')
+            ->assertSee('كبير')
+            ->assertSee('دائري');
+
+        $this->assertSame(
+            ['شوكولاتة', 'كبير', 'دائري', 0, 3, 3],
+            $print->viewData('formattedRows')->first()
+        );
+    }
+
+    #[Test]
+    public function unified_cake_labels_cover_codes_dimensions_and_preserve_arabic_names(): void
+    {
+        $labels = \App\Support\CakeProductionLabels::class;
+        $this->assertSame('ريد فيلفيت', $labels::type('red_velvet'));
+        $this->assertSame('فاكهة', $labels::type('fruit'));
+        $this->assertSame('وسط', $labels::size('medium'));
+        $this->assertSame('40 × 30', $labels::size('40x30'));
+        $this->assertSame('60 × 40', $labels::size('60X40'));
+        $this->assertSame('بلاطة', $labels::shape('slab'));
+        $this->assertSame('طوابق أفراح', $labels::shape('wedding_tiers'));
+        $this->assertSame('طوابق ستاندر', $labels::shape('standard_tiers'));
+        $this->assertSame('كيك تراثي', $labels::type('كيك تراثي'));
+        $this->assertSame('غير محدد', $labels::size(null));
     }
 
     private function makeLocation(
