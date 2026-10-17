@@ -4,8 +4,10 @@
 @section('page-title', 'تقرير قسم الكيك')
 
 @section('content')
-@if($report)
-    @include('reports.partials.native-actions', ['nativeReport' => 'showroom-cake', 'nativeParams' => ['report_id' => $report->id]])
+@if($report && auth()->user()->can('reports.export'))
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem">
+        <a class="btn btn-outline" href="{{ route('reports.native.export', ['report' => 'showroom-cake', 'format' => 'xlsx', 'report_id' => $report->id]) }}">Excel — تقرير الكيك والمواد الخام</a>
+    </div>
 @endif
 @php
     $statusLabels = [

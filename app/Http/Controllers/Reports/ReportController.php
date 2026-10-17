@@ -1021,6 +1021,18 @@ class ReportController extends Controller
                     'in_progress',
                     'ready',
                     'completed',
+                    'pending_factory_review',
+                    'modification_requested',
+                    'accepted',
+                    'scheduled',
+                    'in_preparation',
+                    'decorating',
+                    'quality_check',
+                    'sent_to_branch',
+                    'received_by_branch',
+                    'ready_for_customer',
+                    'delayed',
+                    'issue_open',
                 ]
             )
             ->whereNull('deleted_at');
@@ -1060,6 +1072,8 @@ class ReportController extends Controller
                     'in_progress',
                     'ready',
                     'completed',
+                    'submitted',
+                    'fulfilled',
                 ]
             )
             ->whereNull('requests.deleted_at');

@@ -15,6 +15,31 @@
             <td>{{ number_format($rawMaterialReport['totals']['shortage_value'], 2) }}</td>
         </tr></tbody>
     </table>
+    <div class="print-section-title" style="margin-top:8px">تفاصيل طلبات المواد الخام الصادرة من الفرع</div>
+    <table class="print-table" cellpadding="0" cellspacing="0" style="margin-top:5px">
+        <thead>
+            <tr><th>رقم الطلب</th><th>المادة الخام</th><th>الكمية المطلوبة</th><th>المعتمدة</th><th>الوحدة</th><th>الحالة</th></tr>
+        </thead>
+        <tbody>
+            @forelse($rawMaterialReport['requests'] as $rawRequest)
+                @foreach($rawRequest->items as $materialItem)
+                    @if($materialItem->product?->is_raw_material)
+                        <tr>
+                            <td>{{ $rawRequest->request_number }}</td>
+                            <td>{{ $materialItem->product->name_ar ?: $materialItem->product->name }}</td>
+                            <td>{{ number_format((float) $materialItem->requested_quantity, 3) }}</td>
+                            <td>{{ $materialItem->approved_quantity === null ? '—' : number_format((float) $materialItem->approved_quantity, 3) }}</td>
+                            <td>{{ $materialItem->product->unitDefinition?->symbol ?: $materialItem->product->unit }}</td>
+                            <td>{{ $rawRequest->status instanceof \App\Enums\StockRequestStatus ? $rawRequest->status->label() : $rawRequest->status }}</td>
+                        </tr>
+                    @endif
+                @endforeach
+            @empty
+                <tr><td colspan="6">لم تُسجّل طلبات مواد خام لهذا الفرع خلال اليوم المحدد.</td></tr>
+            @endforelse
+        </tbody>
+    </table>
+    <div class="print-section-title" style="margin-top:8px">استلام المواد الخام والفروقات</div>
     <table class="print-table" cellpadding="0" cellspacing="0" style="margin-top:5px">
         <thead><tr><th>رقم التحويل</th><th>المادة الخام</th><th>المرسل</th><th>المستلم</th><th>التالف</th><th>النقص</th><th>القيمة</th></tr></thead>
         <tbody>

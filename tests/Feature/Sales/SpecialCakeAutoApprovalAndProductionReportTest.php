@@ -335,6 +335,61 @@ class SpecialCakeAutoApprovalAndProductionReportTest extends TestCase
             );
     }
 
+    #[Test]
+    public function unified_cake_reports_include_old_active_statuses_and_exclude_cancellations(): void
+    {
+        $date = '2026-09-28';
+        $this->makeSpecialCakeOrder(CakeOrderStatus::Scheduled->value, 'تراثي', 'وسط', 'دائري', $date);
+        $this->makeSpecialCakeOrder(CakeOrderStatus::Cancelled->value, 'تراثي', 'وسط', 'دائري', $date);
+        $branch = $this->makeShowroomRequest($this->branch, ShowroomCakeRequestStatus::Fulfilled, $date);
+        ShowroomCakeRequestItem::create([
+            'showroom_cake_request_id' => $branch->id, 'cake_type' => 'تراثي',
+            'cake_size' => 'وسط', 'shape' => 'دائري', 'quantity' => 3,
+        ]);
+        $response = $this->actingAs($this->user)->get(route('reports.show', [
+            'type' => 'cake-production', 'date_from' => $date, 'date_to' => $date,
+            'location_id' => $this->branch->id,
+        ]))->assertOk();
+        $rows = collect($response->viewData('data')->items());
+        $this->assertCount(1, $rows);
+        $this->assertSame(1, (int) $rows[0]->special_quantity);
+        $this->assertSame(3, (int) $rows[0]->showroom_quantity);
+        $this->assertSame(4, (int) $rows[0]->total_quantity);
+    }
+
+    #[Test]
+    public function unified_cake_pdf_print_excel_and_screen_use_the_same_branch_filtered_data(): void
+    {
+        $this->user->givePermissionTo(Permission::findOrCreate('reports.export', 'web'));
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        $date = '2026-09-28';
+        $this->makeSpecialCakeOrder(CakeOrderStatus::InProgress->value, 'بلاطة', '40x60', 'مستطيل', $date);
+        $branch = $this->makeShowroomRequest($this->branch, ShowroomCakeRequestStatus::Ready, $date);
+        ShowroomCakeRequestItem::create([
+            'showroom_cake_request_id' => $branch->id, 'cake_type' => 'بلاطة',
+            'cake_size' => '40x60', 'shape' => 'مستطيل', 'quantity' => 4,
+        ]);
+        $other = $this->makeShowroomRequest($this->otherBranch, ShowroomCakeRequestStatus::Ready, $date);
+        ShowroomCakeRequestItem::create([
+            'showroom_cake_request_id' => $other->id, 'cake_type' => 'بلاطة',
+            'cake_size' => '40x60', 'shape' => 'مستطيل', 'quantity' => 99,
+        ]);
+        $params = ['type' => 'cake-production', 'date_from' => $date,
+            'date_to' => $date, 'location_id' => $this->branch->id];
+        $this->actingAs($this->user);
+        $screen = $this->get(route('reports.show', $params))->assertOk();
+        $this->assertSame(5, (int) $screen->viewData('data')->items()[0]->total_quantity);
+        $this->getJson(route('reports.count', $params))->assertOk()->assertJsonPath('count', 1);
+        $print = $this->get(route('reports.print', $params))->assertOk();
+        $this->assertSame(['بلاطة', '40x60', 'مستطيل', 1, 4, 5], $print->viewData('formattedRows')->first());
+        $pdf = $this->get(route('reports.export.pdf', $params))->assertOk()->streamedContent();
+        $this->assertStringStartsWith('%PDF', $pdf);
+        $this->assertMatchesRegularExpression('/\\/Type\\s*\\/Page\\b/', $pdf);
+        \Maatwebsite\Excel\Facades\Excel::fake();
+        $this->get(route('reports.export.xlsx', $params))->assertOk();
+        \Maatwebsite\Excel\Facades\Excel::assertDownloaded('cake-production_'.$date.'_'.$date.'.xlsx');
+    }
+
     private function makeLocation(
         string $name,
         string $type

@@ -167,9 +167,32 @@ class NativeReportController extends Controller
                 $request->validate(['report_id' => ['required', 'integer']]);
                 $model = ShowroomCakeDailyReport::findOrFail($request->integer('report_id'));
                 $d = app(ShowroomCakeDailyReportController::class)->print($request, $model)->getData();
-                return [$this->section('تقرير قسم الكيك', ['التصنيف', 'افتتاحي', 'المستلم', 'الإجمالي', 'المباع', 'الجرد الفعلي', 'الفرق', 'ملاحظة'], $d['visibleItems']->map(fn ($r) => [
-                    $r->category_name, $r->opening_qty, $r->received_qty, $r->total_qty, $r->sold_qty, $r->actual_closing_qty, $r->variance_qty, $r->note,
-                ]))];
+                $raw = $d['rawMaterialReport'] ?? ['requests' => collect(), 'dispatches' => collect(), 'receipts' => collect()];
+                $movements = collect($raw['dispatches'])->map(fn ($line) => ['إرسال', $line])
+                    ->concat(collect($raw['receipts'])->map(fn ($line) => ['استلام', $line]));
+                return [
+                    $this->section('تقرير قسم الكيك', ['التصنيف', 'افتتاحي', 'المستلم', 'الإجمالي', 'المباع', 'الجرد الفعلي', 'الفرق', 'ملاحظة'], $d['visibleItems']->map(fn ($row) => [
+                        $row->category_name, $row->opening_qty, $row->received_qty, $row->total_qty, $row->sold_qty, $row->actual_closing_qty, $row->variance_qty, $row->note,
+                    ])),
+                    $this->section('طلبات المواد الخام للفرع', ['رقم طلب الخام', 'المادة الخام', 'الكمية المطلوبة', 'الكمية المعتمدة', 'حالة الطلب'], collect($raw['requests'])->flatMap(fn ($stock) =>
+                        $stock->items->filter(fn ($line) => (bool) $line->product?->is_raw_material)
+                            ->map(fn ($line) => [
+                                $stock->request_number,
+                                $line->product?->name_ar ?: ($line->product?->name ?? '—'),
+                                (float) $line->requested_quantity,
+                                $line->approved_quantity === null ? '—' : (float) $line->approved_quantity,
+                                $stock->status?->label() ?? (string) $stock->status,
+                            ])
+                    )),
+                    $this->section('إرسال واستلام المواد الخام', ['نوع الحركة', 'رقم التحويل', 'المادة الخام', 'الكمية', 'سعر التكلفة المسجل', 'القيمة التكلفية', 'الوحدة'], $movements->map(fn ($pair) => [
+                        $pair[0], $pair[1]['transfer']->transfer_number,
+                        $pair[1]['product']?->name_ar ?: ($pair[1]['product']?->name ?? '—'),
+                        $pair[1]['quantity'],
+                        $pair[1]['cost_recorded'] ? $pair[1]['unit_cost'] : 'غير مسجل',
+                        $pair[1]['cost_recorded'] ? $pair[1]['value'] : 'غير مكتملة',
+                        $pair[1]['product']?->unitDefinition?->symbol ?: $pair[1]['product']?->unit,
+                    ])),
+                ];
 
             case 'attendance':
                 $request->merge(['from' => $request->input('from') ?: now()->startOfMonth()->toDateString(), 'to' => $request->input('to') ?: today()->toDateString()]);
