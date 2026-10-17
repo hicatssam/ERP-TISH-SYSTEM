@@ -61,10 +61,40 @@
     </form>
 </div>
 
+
+@if(auth()->user()->isAdmin())
+<div class="card" style="margin-bottom:1rem">
+    <div class="card-body" style="display:flex;gap:1rem;align-items:end;flex-wrap:wrap">
+        <form id="cakeBulkArchive" method="POST" action="{{ route('showroom-branch-requests.bulk-delete', ['type' => 'cake']) }}"
+              onsubmit="return confirm('أرشفة طلبات الكيك الملغاة التي اخترتها؟ لا يمكن عكس العملية من هذه الشاشة.')">
+            @csrf
+            <input type="hidden" name="mode" value="selected">
+            <button type="submit" class="btn btn-outline btn-sm">حذف الطلبات المحددة</button>
+        </form>
+        <form method="POST" action="{{ route('showroom-branch-requests.bulk-delete', ['type' => 'cake']) }}"
+              onsubmit="return confirm('تحذير: سيتم أرشفة جميع طلبات كيك الفروع الملغاة وغير المرتبطة بحركات مالية أو مخزنية. هل تؤكد؟')"
+              style="display:flex;gap:.5rem;align-items:end;flex-wrap:wrap">
+            @csrf
+            <input type="hidden" name="mode" value="all_eligible">
+            <label style="font-size:.85rem">لتأكيد الحذف الجماعي اكتب: حذف الطلبات الملغاة
+                <input name="confirmation" class="form-input" required placeholder="حذف الطلبات الملغاة" autocomplete="off">
+            </label>
+            <button type="submit" class="btn btn-danger btn-sm">حذف جميع الطلبات الملغاة المؤهلة</button>
+        </form>
+        <small class="form-help" style="width:100%">لا يمكن حذف طلب قيد التنفيذ أو مكتمل أو مرتبط بشحنة أو بطلب مواد خام. تبقى السجلات محفوظة للتدقيق.</small>
+    </div>
+</div>
+@endif
+@if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
+@if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
+
 <div class="table-wrap">
     <table class="data-table">
         <thead>
             <tr>
+                @if(auth()->user()->isAdmin())
+                    <th><input type="checkbox" aria-label="تحديد جميع الطلبات المؤهلة في الصفحة" onclick="document.querySelectorAll('.cake-bulk-checkbox').forEach(el => el.checked = this.checked)"></th>
+                @endif
                 <th>رقم الطلب</th>
                 <th>المعرض / الفرع</th>
                 <th>عدد الأصناف</th>
@@ -77,6 +107,13 @@
         <tbody>
         @forelse($requests as $req)
             <tr>
+                @if(auth()->user()->isAdmin())
+                    <td>
+                        @if($req->status->workflowValue() === 'cancelled' && ! $req->branchShipment && ! $req->rawMaterialStockRequest)
+                            <input class="cake-bulk-checkbox" type="checkbox" form="cakeBulkArchive" name="ids[]" value="{{ $req->id }}" aria-label="تحديد {{ $req->request_number }}">
+                        @endif
+                    </td>
+                @endif
                 <td><strong>{{ $req->request_number }}</strong></td>
                 <td>{{ $req->requestingLocation?->name ?? '—' }}</td>
                 <td>{{ $req->items->count() }} صنف</td>
@@ -97,21 +134,18 @@
                         @if(in_array($req->id, $cancelableIds, true))
                             <a href="{{ route('showroom-cake-requests.show', $req) }}#cancel-branch-request" class="btn btn-danger btn-sm">إلغاء مع السبب</a>
                         @endif
-                        @can('showroom_cake_requests.delete')
-                        @if(in_array($req->status->value, ['draft', 'cancelled']))
-                        <form action="{{ route('showroom-cake-requests.destroy', $req) }}" method="POST"
-                              onsubmit="return confirm('هل تريد حذف هذا الطلب؟')">
-                            @csrf @method('DELETE')
-                            <button class="btn btn-danger btn-sm" type="submit">حذف</button>
-                        </form>
+                        @if(auth()->user()->isAdmin() && $req->status->workflowValue() === 'cancelled' && ! $req->branchShipment && ! $req->rawMaterialStockRequest)
+                            <form action="{{ route('showroom-cake-requests.destroy', $req) }}" method="POST" onsubmit="return confirm('أرشفة هذا الطلب الملغى؟')">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="btn btn-danger btn-sm">حذف</button>
+                            </form>
                         @endif
-                        @endcan
                     </div>
                 </td>
             </tr>
         @empty
             <tr>
-                <td colspan="7">
+                <td colspan="{{ auth()->user()->isAdmin() ? 8 : 7 }}">
                     <div class="empty-state-sm">لا توجد طلبات معرض بعد.</div>
                 </td>
             </tr>

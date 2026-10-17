@@ -22,6 +22,7 @@ use App\Http\Controllers\Sales\CustomerController;
 use App\Http\Controllers\Sales\OrderController;
 use App\Http\Controllers\Sales\SpecialCakeOrderController;
 use App\Http\Controllers\Sales\ShowroomCakeRequestController;
+use App\Http\Controllers\Sales\BranchOrderBulkDeletionController;
 use App\Http\Controllers\Sales\ShowroomCakeDailyReportController;
 use App\Http\Controllers\Sales\ShowroomSweetsRequestController;
 use App\Http\Controllers\Sales\BranchShipmentController;
@@ -520,6 +521,10 @@ Route::post(
     [SpecialCakeOrderController::class, 'addAttachment']
 )->name('cake-orders.attachment')
     ->middleware('can:cake_orders.view');
+        Route::post('showroom-branch-requests/{type}/bulk-delete', BranchOrderBulkDeletionController::class)
+            ->whereIn('type', ['cake', 'sweets'])
+            ->name('showroom-branch-requests.bulk-delete');
+
         // ─── Showroom Cake Requests (طلبات كيك الفروع) ─────────────────────
         // The static /create route must be registered before /{showroomCakeRequest}.
         // Otherwise Laravel captures "create" as a model ID and returns 404.

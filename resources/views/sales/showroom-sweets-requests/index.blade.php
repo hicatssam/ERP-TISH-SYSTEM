@@ -1031,6 +1031,37 @@
      الطلبات
 ========================================================= --}}
 
+
+@if(auth()->user()->isAdmin())
+    <div class="card" style="margin:1rem 0">
+        <div class="card-body" style="display:flex;gap:1rem;align-items:end;flex-wrap:wrap">
+            <form id="sweetsBulkArchive" method="POST" action="{{ route('showroom-branch-requests.bulk-delete', ['type' => 'sweets']) }}"
+                  onsubmit="return confirm('أرشفة طلبات الحلويات الملغاة التي اخترتها؟')">
+                @csrf
+                <input type="hidden" name="mode" value="selected">
+                <button type="submit" class="btn btn-outline btn-sm">حذف الطلبات المحددة</button>
+            </form>
+            <label style="display:flex;gap:.5rem;align-items:center;font-size:.85rem">
+                <input type="checkbox" onchange="document.querySelectorAll('.sweets-bulk-checkbox').forEach(el => el.checked = this.checked)">
+                تحديد كل الطلبات المؤهلة في الصفحة
+            </label>
+            <form method="POST" action="{{ route('showroom-branch-requests.bulk-delete', ['type' => 'sweets']) }}"
+                  onsubmit="return confirm('تحذير: أرشفة جميع طلبات حلويات الفروع الملغاة وغير المرتبطة بالمحاسبة والمخزون. هل تؤكد؟')"
+                  style="display:flex;gap:.5rem;align-items:end;flex-wrap:wrap">
+                @csrf
+                <input type="hidden" name="mode" value="all_eligible">
+                <label style="font-size:.85rem">لتأكيد الحذف الجماعي اكتب: حذف الطلبات الملغاة
+                    <input name="confirmation" class="form-input" required placeholder="حذف الطلبات الملغاة" autocomplete="off">
+                </label>
+                <button type="submit" class="btn btn-danger btn-sm">حذف جميع الطلبات الملغاة المؤهلة</button>
+            </form>
+            <small class="form-help" style="width:100%">الحذف منطقي فقط للطلبات الملغاة بلا شحنات أو طلبات مخزون مرتبطة، ولا يؤثر على المحاسبة والتقارير.</small>
+        </div>
+    </div>
+@endif
+@if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
+@if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
+
 @if($requests->count())
 
     <div class="sweets-requests-list">
@@ -1073,6 +1104,13 @@
 
 
             <div class="sweets-request-card tone-{{ $cardTone }}">
+                @if(auth()->user()->isAdmin() && $req->status->workflowValue() === 'cancelled' && ! $req->branchShipment && ! $req->rawMaterialStockRequest)
+                    <label style="display:flex;gap:.5rem;align-items:center;padding:.65rem 1rem;font-size:.85rem">
+                        <input class="sweets-bulk-checkbox" type="checkbox" form="sweetsBulkArchive" name="ids[]" value="{{ $req->id }}">
+                        تحديد هذا الطلب الملغى للحذف
+                    </label>
+                @endif
+
 
                 {{-- =====================================================
                      رأس الطلب
@@ -1511,38 +1549,14 @@
                         @endcan
 
 
-                        @can('showroom_sweets_requests.delete')
+                        @if(auth()->user()->isAdmin() && $req->status->workflowValue() === 'cancelled' && ! $req->branchShipment && ! $req->rawMaterialStockRequest)
+                            <form action="{{ route('showroom-sweets-requests.destroy', $req) }}" method="POST" onsubmit="return confirm('أرشفة هذا الطلب الملغى؟')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-danger btn-sm">حذف</button>
+                            </form>
+                        @endif
 
-                            @if(
-                                in_array(
-                                    $statusValue,
-                                    ['cancelled', 'canceled'],
-                                    true
-                                )
-                            )
-
-                                <form
-                                    action="{{ route('showroom-sweets-requests.destroy', $req) }}"
-                                    method="POST"
-                                    onsubmit="return confirm('هل تريد حذف هذا الطلب الملغى؟')"
-                                >
-
-                                    @csrf
-                                    @method('DELETE')
-
-
-                                    <button
-                                        type="submit"
-                                        class="btn btn-danger btn-sm"
-                                    >
-                                        حذف
-                                    </button>
-
-                                </form>
-
-                            @endif
-
-                        @endcan
 
                     </div>
 

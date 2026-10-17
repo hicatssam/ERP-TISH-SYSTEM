@@ -15,6 +15,7 @@ use App\Services\Inventory\DailyRawMaterialRequestService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use App\Services\Sales\BranchOrderDeletionService;
 
 class ShowroomSweetsRequestController extends Controller
 {
@@ -1091,50 +1092,18 @@ class ShowroomSweetsRequestController extends Controller
             );
     }
 
-    public function destroy(
-        ShowroomSweetsRequest
-        $showroomSweetsRequest
-    ) {
-        /** @var User $user */
-        $user = Auth::user();
+    public function destroy(ShowroomSweetsRequest $showroomSweetsRequest)
+    {
+        /** @var User $actor */
+        $actor = Auth::user();
+        abort_unless($actor->isAdmin(), 403);
 
-        $this->ensureCanAccess(
-            $user,
-            $showroomSweetsRequest
+        app(BranchOrderDeletionService::class)->deleteMany(
+            ShowroomSweetsRequest::class, [$showroomSweetsRequest->id], $actor
         );
 
-        abort_unless(
-            $user->isAdmin()
-            ||
-            $user->can(
-                'showroom_sweets_requests.delete'
-            ),
-            403
-        );
-
-        if (
-            $showroomSweetsRequest->status
-            !==
-            ShowroomSweetsRequestStatus::Cancelled
-        ) {
-            return back()
-                ->with(
-                    'error',
-                    'يمكن حذف الطلب الملغى فقط.'
-                );
-        }
-
-        $showroomSweetsRequest
-            ->delete();
-
-        return redirect()
-            ->route(
-                'showroom-sweets-requests.index'
-            )
-            ->with(
-                'success',
-                'تم حذف طلب الحلويات.'
-            );
+        return redirect()->route('showroom-sweets-requests.index')
+            ->with('success', 'تمت أرشفة الطلب الملغى دون المساس بالسجلات المالية والمخزنية.');
     }
 
     /**

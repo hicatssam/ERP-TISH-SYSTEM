@@ -14,6 +14,7 @@ use App\Services\Inventory\DailyRawMaterialRequestService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use App\Services\Sales\BranchOrderDeletionService;
 
 class ShowroomCakeRequestController extends Controller
 {
@@ -918,31 +919,18 @@ class ShowroomCakeRequestController extends Controller
         );
     }
 
-    public function destroy(
-        ShowroomCakeRequest $showroomCakeRequest
-    ) {
-        $this->ensureCanAccess(Auth::user(), $showroomCakeRequest);
+    public function destroy(ShowroomCakeRequest $showroomCakeRequest)
+    {
+        /** @var User $actor */
+        $actor = Auth::user();
+        abort_unless($actor->isAdmin(), 403);
 
-        if (
-            $showroomCakeRequest->status
-            !== ShowroomCakeRequestStatus::Cancelled
-        ) {
-            return back()->with(
-                'error',
-                'يمكن حذف الطلب الملغي فقط.'
-            );
-        }
+        app(BranchOrderDeletionService::class)->deleteMany(
+            ShowroomCakeRequest::class, [$showroomCakeRequest->id], $actor
+        );
 
-        $showroomCakeRequest->delete();
-
-        return redirect()
-            ->route(
-                'showroom-cake-requests.index'
-            )
-            ->with(
-                'success',
-                'تم حذف طلب كيك الفرع.'
-            );
+        return redirect()->route('showroom-cake-requests.index')
+            ->with('success', 'تمت أرشفة الطلب الملغى دون المساس بالسجلات المالية والمخزنية.');
     }
 
     /**
