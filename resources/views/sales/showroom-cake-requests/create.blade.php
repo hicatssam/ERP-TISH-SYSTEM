@@ -230,7 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const noMsg     = document.getElementById('noItemsMsg');
     const tpl       = document.getElementById('itemTemplate');
 
-    const oldItems = @json(old('items', []));
+    const oldItems = {{ \Illuminate\Support\Js::from(old('items', [])) }};
 
     function addItem(data = {}) {
         const html = tpl.innerHTML.replaceAll('__IDX__', idx++);

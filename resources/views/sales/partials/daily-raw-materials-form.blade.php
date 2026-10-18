@@ -42,7 +42,7 @@
     const button = document.getElementById('addRawMaterial');
     const empty = document.getElementById('rawMaterialEmpty');
     const tpl = document.getElementById('rawMaterialTemplate');
-    const saved = @json(old('raw_materials', []));
+    const saved = {{ \Illuminate\Support\Js::from(old('raw_materials', [])) }};
     let next = 0;
     function refresh() {
         empty.hidden = host.children.length !== 0;

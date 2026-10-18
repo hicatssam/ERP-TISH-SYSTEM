@@ -231,7 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('itemsContainer');
     const noItemsMsg = document.getElementById('noItemsMsg');
     const template = document.getElementById('itemTemplate');
-    const oldItems = @json(old('items', [['quantity' => 1, 'requested_unit' => 'صدر']]));
+    const oldItems = {{ \Illuminate\Support\Js::from(old('items', [['quantity' => 1, 'requested_unit' => 'صدر']])) }};
     const productsUrl = @json(route('showroom-sweets-requests.products'));
 
     function refreshEmptyState() {

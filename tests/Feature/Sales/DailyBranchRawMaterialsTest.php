@@ -24,6 +24,26 @@ class DailyBranchRawMaterialsTest extends TestCase
 {
     use RefreshDatabase;
 
+
+    #[Test]
+    public function daily_sweets_and_cake_creation_pages_render_the_material_form_without_blade_json_syntax_errors(): void
+    {
+        [$branch, $factory, $user] = $this->locationsAndUser();
+        $material = $this->product('Raw vanilla', true);
+
+        $this->actingAs($user)
+            ->get(route('showroom-sweets-requests.create'))
+            ->assertOk()
+            ->assertSee('طلب المواد الخام مع الطلب اليومي')
+            ->assertSee('Raw vanilla');
+
+        $this->actingAs($user)
+            ->get(route('showroom-cake-requests.create'))
+            ->assertOk()
+            ->assertSee('طلب المواد الخام مع الطلب اليومي')
+            ->assertSee('Raw vanilla');
+    }
+
     #[Test]
     public function cake_daily_order_and_raw_materials_are_created_together_without_changing_stock(): void
     {
