@@ -343,6 +343,55 @@ class ShowroomSweetsWorkflowAndNotificationsTest extends TestCase
             ], false);
     }
 
+    #[Test]
+    public function showroom_sweets_edit_form_renders_existing_items_and_old_input_without_blade_parse_error(): void
+    {
+        [$branch, $factory] = $this->locations();
+        $editor = $this->userAt($branch, [
+            'showroom_sweets_requests.view',
+            'showroom_sweets_requests.create',
+        ]);
+        $dailyRequest = $this->showroomRequest($branch, $factory, $editor);
+
+        $category = \App\Models\Category::query()->firstOrCreate(
+            ['slug' => 'edit-form-regression'],
+            ['name' => 'حلويات', 'is_active' => true]
+        );
+        $sku = 'EDIT-' . Str::upper(Str::random(8));
+        $product = \App\Models\Product::query()->create([
+            'category_id' => $category->id,
+            'name' => 'Baklava edit regression',
+            'sku' => $sku,
+            'barcode' => $sku,
+            'unit_id' => \App\Models\Unit::query()->where('code', 'piece')->firstOrFail()->id,
+            'product_type' => 'standard',
+            'is_active' => true,
+        ]);
+        $dailyRequest->items()->create([
+            'product_id' => $product->id,
+            'product_name_snapshot' => $product->name,
+            'quantity' => 12,
+            'reserved_quantity' => 2,
+            'requested_unit' => 'صدر',
+            'notes' => 'اختبار التعديل',
+        ]);
+
+        $url = route('showroom-sweets-requests.edit', $dailyRequest);
+
+        $this->actingAs($editor)->get($url)
+            ->assertOk()
+            ->assertSee('const oldItems =', false)
+            ->assertSee('product_id', false);
+
+        $this->actingAs($editor)
+            ->withSession(['_old_input' => [
+                'items' => [['product_id' => $product->id, 'quantity' => 9, 'requested_unit' => 'صينية']],
+            ]])
+            ->get($url)
+            ->assertOk()
+            ->assertSee('const oldItems =', false);
+    }
+
     private function locations(): array
     {
         $branch = Location::query()->create([

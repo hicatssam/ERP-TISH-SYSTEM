@@ -224,23 +224,24 @@
 }
 </style>
 
+@php
+    $editItems = old('items', $showroomSweetsRequest->items->map(fn ($item) => [
+        'product_id' => $item->product_id,
+        'quantity' => $item->quantity,
+        'reserved_quantity' => $item->reserved_quantity,
+        'reservation_notes' => $item->reservation_notes,
+        'requested_unit' => $item->requested_unit,
+        'notes' => $item->notes,
+    ])->values()->all());
+@endphp
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     let index = 0;
     const container = document.getElementById('itemsContainer');
     const noItemsMsg = document.getElementById('noItemsMsg');
     const template = document.getElementById('itemTemplate');
-    const oldItems = @json(old(
-        'items',
-        $showroomSweetsRequest->items->map(fn ($item) => [
-            'product_id' => $item->product_id,
-            'quantity' => $item->quantity,
-            'reserved_quantity' => $item->reserved_quantity,
-            'reservation_notes' => $item->reservation_notes,
-            'requested_unit' => $item->requested_unit,
-            'notes' => $item->notes,
-        ])->values()->all()
-    ));
+    const oldItems = {{ \Illuminate\Support\Js::from($editItems) }};
     const productsUrl = @json(route('showroom-sweets-requests.products'));
 
     function refreshEmptyState() {
