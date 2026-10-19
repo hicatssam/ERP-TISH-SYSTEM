@@ -577,6 +577,15 @@ Route::post(
             ->whereNumber('sourceId')
             ->name('branch-shipments.create');
 
+        Route::get('branch-shipments', [BranchShipmentController::class, 'index'])
+            ->name('branch-shipments.index');
+
+        Route::post('branch-shipments/{branchShipment}/trips', [BranchShipmentController::class, 'loadTrip'])
+            ->name('branch-shipments.trips.store');
+
+        Route::post('branch-shipments/{branchShipment}/trips/{trip}/receive', [BranchShipmentController::class, 'receiveTrip'])
+            ->name('branch-shipments.trips.receive');
+
         Route::get(
             'branch-shipments/{branchShipment}',
             [BranchShipmentController::class, 'show']

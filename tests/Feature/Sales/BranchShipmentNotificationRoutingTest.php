@@ -54,6 +54,8 @@ class BranchShipmentNotificationRoutingTest extends TestCase
         $request = $this->cake($branch, $factory, $receiver);
         $service = app(BranchDeliveryService::class);
         $shipment = $service->createShipment($request, $factoryActor);
+        // Preserve legacy one-step receiving contract in these notification tests.
+        $shipment->update(['multi_trip_enabled' => false]);
         $this->assertSame('pending_loading', $shipment->status);
 
         $service->markLoaded($shipment, $factoryActor, $driver, 'الطلبية تم تجهيزها للتحميل');
@@ -88,6 +90,8 @@ class BranchShipmentNotificationRoutingTest extends TestCase
         $request = $this->cake($branch, $factory, $receiver);
         $service = app(BranchDeliveryService::class);
         $shipment = $service->createShipment($request, $factoryActor);
+        // Preserve legacy one-step receiving contract in these notification tests.
+        $shipment->update(['multi_trip_enabled' => false]);
         $service->markLoaded($shipment, $factoryActor, $driver);
 
         $items = [];
@@ -166,6 +170,8 @@ class BranchShipmentNotificationRoutingTest extends TestCase
 
         $service = app(BranchDeliveryService::class);
         $shipment = $service->createShipment($request, $factoryActor);
+        // Preserve legacy one-step receiving contract in these notification tests.
+        $shipment->update(['multi_trip_enabled' => false]);
         $service->markLoaded($shipment, $factoryActor, $driver);
 
         Notification::assertSentTo($sweetsReceiver, BranchShipmentActivityNotification::class);

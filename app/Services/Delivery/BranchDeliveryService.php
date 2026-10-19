@@ -96,6 +96,14 @@ class BranchDeliveryService
                 ->first();
 
             if ($existing) {
+                // Upgrade only an untouched draft. Previously loaded or received
+                // shipments retain their original one-step receipt workflow.
+                if (! $existing->multi_trip_enabled
+                    && $existing->status === BranchShipment::PENDING_LOADING
+                    && ($source instanceof ShowroomCakeRequest || $source instanceof ShowroomSweetsRequest)
+                    && ! $existing->receivingInvoice?->isConfirmed()) {
+                    $existing->update(['multi_trip_enabled' => true]);
+                }
                 return $existing->load('receivingInvoice.items');
             }
 
@@ -107,6 +115,7 @@ class BranchDeliveryService
                 'from_location_id' => $fromLocationId,
                 'to_location_id' => $toLocationId,
                 'status' => BranchShipment::PENDING_LOADING,
+                'multi_trip_enabled' => $source instanceof ShowroomCakeRequest || $source instanceof ShowroomSweetsRequest,
             ]);
 
             $invoice = BranchReceivingInvoice::query()->create([
@@ -118,9 +127,11 @@ class BranchDeliveryService
                 'status' => 'draft',
             ]);
 
-            $invoice->update([
-                'invoice_number' => 'BRI-' . now()->format('Y') . '-' . str_pad((string) $invoice->id, 5, '0', STR_PAD_LEFT),
-            ]);
+            if (! $shipment->multi_trip_enabled) {
+                $invoice->update([
+                    'invoice_number' => 'BRI-' . now()->format('Y') . '-' . str_pad((string) $invoice->id, 5, '0', STR_PAD_LEFT),
+                ]);
+            }
 
             $totalSent = 0.0;
 
@@ -176,6 +187,9 @@ class BranchDeliveryService
         User $driver,
         ?string $notes = null
     ): BranchShipment {
+        if ($shipment->multi_trip_enabled) {
+            throw ValidationException::withMessages(['shipment' => 'استخدم شاشة النقلات لتسجيل الكميات الفعلية.']);
+        }
         if ($shipment->status !== BranchShipment::PENDING_LOADING) {
             throw ValidationException::withMessages([
                 'status' => 'يمكن تأكيد التحميل فقط للشحنة التي ما زالت بانتظار التحميل.',
@@ -250,6 +264,9 @@ class BranchDeliveryService
         User $actor,
         ?string $notes = null
     ): BranchReceivingInvoice {
+        if ($shipment->multi_trip_enabled) {
+            throw ValidationException::withMessages(['shipment' => 'استخدم تأكيد استلام النقلة، ولا تُصدر فاتورة قبل اكتمال الطلب.']);
+        }
         $invoice = DB::transaction(function () use ($shipment, $submittedItems, $actor, $notes): BranchReceivingInvoice {
             $lockedShipment = BranchShipment::query()
                 ->with(['receivingInvoice.items', 'source'])
@@ -506,6 +523,11 @@ class BranchDeliveryService
         }
 
         return [];
+    }
+
+    public function finalizeSourceAfterFullReceipt(Model $source, User $actor, ?string $invoiceNumber): void
+    {
+        $this->completeSourceAfterReceipt($source, $actor, $invoiceNumber);
     }
 
     private function completeSourceAfterReceipt(

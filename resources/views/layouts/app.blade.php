@@ -1322,6 +1322,8 @@ a.app-page-btn:hover {
 
                 'stock_transfers.receive',
 
+                'branch_shipments.manage',
+
             ])
 
                 <div class="nav-section">
@@ -1455,6 +1457,16 @@ a.app-page-btn:hover {
                         </a>
 
                     @endcanany
+
+                    @can('branch_shipments.manage')
+                        <a href="{{ route('branch-shipments.index') }}" class="nav-item {{ request()->routeIs('branch-shipments.*') ? 'active' : '' }}">
+                            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="2" y="7" width="20" height="14" rx="2"/>
+                                <path d="M2 11h20M7 7V3h10v4M7 15h4M15 15h3"/>
+                            </svg>
+                            <span>Dispatcher — نقلات الفروع</span>
+                        </a>
+                    @endcan
 
                     @canany(['stock_transfers.view', 'stock_transfers.dispatch', 'stock_transfers.receive'])
 

@@ -42,6 +42,8 @@ class ThreeStageBranchReceivingTest extends TestCase
         $this->assertSame('تم التنفيذ', BranchOrderMilestones::label($cake));
 
         $shipment = $delivery->createShipment($cake, $factoryUser);
+        // Legacy delivery invoice contract remains supported for historical shipments.
+        $shipment->update(['multi_trip_enabled' => false]);
         $this->assertSame('تم التنفيذ', BranchOrderMilestones::label($cake->fresh()));
 
         $this->actingAs($receiver)->post(route('branch-shipments.receive', $shipment), [

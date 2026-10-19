@@ -91,6 +91,9 @@
     <div class="stat-card"><div class="stat-info"><div class="stat-label">فاتورة الاستلام</div><div class="stat-value" style="font-size:.95rem">{{ $invoice?->invoice_number ?? '—' }}</div></div></div>
 </div>
 
+@if($shipment->multi_trip_enabled)
+    @include('sales.branch-shipments.partials.multi-trip')
+@else
 @if($shipment->status === \App\Models\BranchShipment::PENDING_LOADING && $canFactoryOperate)
 <div class="card" style="margin-bottom:1rem">
     <div class="card-header"><span class="card-title">تأكيد التحميل وتحديد الموصّل</span></div>
@@ -222,6 +225,8 @@
         </div>
     @endif
 </div>
+
+@endif {{-- legacy single-transfer form --}}
 
 <style>
 .delivery-track{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.75rem}

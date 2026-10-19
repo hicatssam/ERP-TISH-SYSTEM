@@ -21,6 +21,7 @@ class BranchShipment extends Model
         'from_location_id',
         'to_location_id',
         'status',
+        'multi_trip_enabled',
         'driver_id',
         'loaded_by',
         'loaded_at',
@@ -36,6 +37,7 @@ class BranchShipment extends Model
     protected function casts(): array
     {
         return [
+            'multi_trip_enabled' => 'boolean',
             'loaded_at' => 'datetime',
             'dispatched_at' => 'datetime',
             'arrived_at' => 'datetime',
@@ -81,6 +83,11 @@ class BranchShipment extends Model
     public function receivedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'received_by');
+    }
+
+    public function trips(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(BranchShipmentTrip::class)->orderBy('trip_number');
     }
 
     public function receivingInvoice(): HasOne

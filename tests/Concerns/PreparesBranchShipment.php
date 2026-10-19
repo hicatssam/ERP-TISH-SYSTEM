@@ -43,6 +43,8 @@ trait PreparesBranchShipment
 
         $delivery = app(BranchDeliveryService::class);
         $shipment = $delivery->createShipment($source->fresh(), $factoryActor);
+        // Historical tests exercise the original one-step shipment lifecycle.
+        $shipment->update(['multi_trip_enabled' => false]);
         $driver = User::factory()->create();
         $shipment = $delivery->markLoaded($shipment, $factoryActor, $driver);
         $shipment = $delivery->dispatch($shipment, $factoryActor);

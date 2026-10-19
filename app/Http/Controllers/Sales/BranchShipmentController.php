@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Sales;
 use App\Http\Controllers\Controller;
 use App\Models\BranchReceivingInvoice;
 use App\Models\BranchShipment;
+use App\Models\BranchShipmentTrip;
 use App\Models\ShowroomCakeRequest;
 use App\Models\ShowroomSweetsRequest;
 use App\Models\SpecialCakeOrder;
 use App\Models\User;
 use App\Services\Delivery\BranchDeliveryService;
+use App\Services\Delivery\BranchDeliveryTripService;
 use App\Services\PrintThemeService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
@@ -20,7 +22,29 @@ class BranchShipmentController extends Controller
 {
     public function __construct(
         private readonly BranchDeliveryService $delivery,
+        private readonly BranchDeliveryTripService $trips,
     ) {
+    }
+
+    public function index(Request $request): View
+    {
+        $user = $request->user();
+        abort_unless($user->isAdmin()
+            || $user->can('branch_shipments.manage')
+            || $user->can('showroom_sweets_requests.dispatch')
+            || $user->can('showroom_cake_requests.update_status'), 403);
+
+        $query = BranchShipment::query()
+            ->with(['source', 'fromLocation', 'toLocation', 'receivingInvoice', 'trips'])
+            ->where('multi_trip_enabled', true);
+        if (! $user->isAdmin() && ! $user->can('branch_shipments.manage')) {
+            $locationIds = $this->userLocationIds($user);
+            $query->whereIn('from_location_id', $locationIds);
+        }
+
+        return view('sales.branch-shipments.index', [
+            'shipments' => $query->latest()->paginate(25),
+        ]);
     }
 
     public function create(
@@ -43,7 +67,7 @@ class BranchShipmentController extends Controller
 
         return redirect()
             ->route('branch-shipments.show', $shipment)
-            ->with('success', 'تم فتح شحنة الطلبية وتجهيز مسودة فاتورة الاستلام.');
+            ->with('success', 'تم فتح الطلبية وتجهيز كشف الكميات. تُعتمد فاتورة الاستلام عند اكتمال كل الأصناف.');
     }
 
     public function show(
@@ -65,6 +89,10 @@ class BranchShipmentController extends Controller
             'arrivedBy.employee',
             'receivedBy.employee',
             'receivingInvoice.items',
+            'trips.items.invoiceItem',
+            'trips.driver.employee',
+            'trips.loadedBy.employee',
+            'trips.receivedBy.employee',
         ]);
 
         $drivers = User::query()
@@ -80,6 +108,8 @@ class BranchShipmentController extends Controller
             'sourceLabel' => $this->delivery->sourceLabel($branchShipment->source),
             'sourceUrl' => $this->delivery->sourceRoute($branchShipment->source),
             'drivers' => $drivers,
+            'tripProgress' => $branchShipment->multi_trip_enabled
+                ? $this->trips->progress($branchShipment) : null,
             'canFactoryOperate' => $this->canFactoryOperate(
                 $request->user(),
                 $branchShipment->source
@@ -93,6 +123,44 @@ class BranchShipmentController extends Controller
                 $branchShipment
             ),
         ]);
+    }
+
+    public function loadTrip(Request $request, BranchShipment $branchShipment): RedirectResponse
+    {
+        $branchShipment->loadMissing('source');
+        abort_unless($this->canFactoryOperate($request->user(), $branchShipment->source), 403);
+
+        $data = $request->validate([
+            'driver_id' => ['required', 'integer', 'exists:users,id'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.quantity' => ['required', 'numeric', 'min:0', 'max:999999'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+        $driver = User::query()->where('is_active', true)->findOrFail((int) $data['driver_id']);
+        $this->trips->loadTrip($branchShipment, $request->user(), $driver, $data['items'], $data['notes'] ?? null);
+
+        return back()->with('success', 'تم تسجيل النقلة والموصّل والكميات المحمّلة بنجاح.');
+    }
+
+    public function receiveTrip(
+        Request $request, BranchShipment $branchShipment, BranchShipmentTrip $trip
+    ): RedirectResponse {
+        abort_unless((int) $trip->branch_shipment_id === (int) $branchShipment->id, 404);
+        abort_unless($this->canReceive($request->user(), $branchShipment), 403);
+        $data = $request->validate([
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.received_quantity' => ['required', 'numeric', 'min:0'],
+            'items.*.note' => ['nullable', 'string', 'max:1000'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+        $outcome = $this->trips->receiveTrip($trip, $request->user(), $data['items'], $data['notes'] ?? null);
+
+        if ($outcome['complete']) {
+            return redirect()->route('branch-receiving-invoices.show', $outcome['invoice'])
+                ->with('success', 'اكتملت الكميات المطلوبة لكل صنف، وتم إصدار فاتورة الاستلام النهائية.');
+        }
+        return redirect()->route('branch-shipments.show', $branchShipment)
+            ->with('success', 'تم استلام هذه النقلة وحفظ الكميات الفعلية. الطلب ما زال مفتوحًا للنقلات المتبقية.');
     }
 
     public function markLoaded(
@@ -196,6 +264,7 @@ class BranchShipmentController extends Controller
         Request $request,
         BranchReceivingInvoice $branchReceivingInvoice
     ): View {
+        abort_unless($branchReceivingInvoice->isConfirmed(), 404);
         $branchReceivingInvoice->load([
             'shipment.source',
             'shipment.driver.employee',
@@ -223,6 +292,7 @@ class BranchShipmentController extends Controller
         Request $request,
         BranchReceivingInvoice $branchReceivingInvoice
     ): View {
+        abort_unless($branchReceivingInvoice->isConfirmed(), 404);
         $this->loadInvoiceForOutput($branchReceivingInvoice);
         $this->assertShipmentAccess(
             $request->user(),
@@ -298,7 +368,9 @@ class BranchShipmentController extends Controller
             return;
         }
 
-        if ((int) $shipment->driver_id === (int) $user->id) {
+        if ((int) $shipment->driver_id === (int) $user->id
+            || $shipment->trips()->where('driver_id', $user->id)->exists()
+            || $user->can('branch_shipments.manage')) {
             return;
         }
 
@@ -326,6 +398,10 @@ class BranchShipmentController extends Controller
             $source instanceof ShowroomSweetsRequest => (int) $source->factory_location_id,
             default => 0,
         };
+
+        if ($user->can('branch_shipments.manage')) {
+            return true;
+        }
 
         if (! in_array($factoryId, $this->userLocationIds($user), true)) {
             return false;
