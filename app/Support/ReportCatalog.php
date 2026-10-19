@@ -11,6 +11,7 @@ class ReportCatalog
     public function native(): array
     {
         return [
+            'tomorrow-preparation' => ['title' => 'خطة تجهيز الغد — جميع الفروع', 'route' => 'reports.tomorrow-preparation.index', 'permission' => 'reports.view', 'factory_only' => true, 'group' => 'المبيعات والمعارض'],
             'showroom-sweets' => ['title' => 'طلبات حلويات الفروع', 'route' => 'reports.showroom-sweets-requests.index', 'permission' => 'reports.view', 'group' => 'المبيعات والمعارض'],
             'showroom-cake' => ['title' => 'تقرير قسم الكيك اليومي', 'route' => 'showroom-cake-daily-reports.index', 'permission' => 'showroom_cake_daily_reports.view', 'group' => 'المبيعات والمعارض', 'record' => true],
             'takeaway' => ['title' => 'مبيعات Take Away اليومية', 'route' => 'restaurant.takeaway-report.index', 'permission' => 'restaurant_menu.view', 'group' => 'المبيعات والمعارض', 'module' => 'restaurant', 'extra_permission' => 'restaurant.view'],
@@ -28,7 +29,8 @@ class ReportCatalog
     {
         return ($user->isAdmin() || $user->canAny((array) $meta['permission']))
             && (! isset($meta['extra_permission']) || $user->isAdmin() || $user->can($meta['extra_permission']))
-            && (! isset($meta['module']) || app(ModuleService::class)->isEnabled($meta['module']));
+            && (! isset($meta['module']) || app(ModuleService::class)->isEnabled($meta['module']))
+            && (! ($meta['factory_only'] ?? false) || $user->isAdmin() || $user->primaryLocation()?->isFactory());
     }
 
     public function groups(): array

@@ -435,7 +435,7 @@ class ShowroomSweetsRequestController extends Controller
                                 $validated[
                                     'needed_by'
                                 ]
-                                ?? null,
+                                ?? now()->addDay()->toDateString(),
 
                             'notes' =>
                                 $validated[

@@ -64,6 +64,18 @@
     @media (max-width: 460px) { .production-stats { grid-template-columns: 1fr; } }
 </style>
 
+@if(auth()->user()->can('reports.view') && (auth()->user()->isAdmin() || auth()->user()->primaryLocation()?->isFactory()))
+    <div class="card" style="margin-bottom:1rem">
+        <div class="card-body" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+            <div>
+                <strong>خطة تجهيز الغد لجميع الفروع</strong>
+                <p class="page-subheading" style="margin:.3rem 0 0">اجمع احتياجات الحلويات والكيك للغد، مع توزيع الكميات على الفروع.</p>
+            </div>
+            <a href="{{ route('reports.tomorrow-preparation.index') }}" class="btn btn-gold">فتح خطة التجهيز</a>
+        </div>
+    </div>
+@endif
+
 <div class="production-hero">
     <div>
         <h1>متابعة الإنتاج</h1>

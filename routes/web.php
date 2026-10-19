@@ -42,6 +42,7 @@ use App\Http\Controllers\Reports\ReportController;
 use App\Http\Controllers\Reports\NativeReportController;
 use App\Http\Controllers\Reports\ReportScheduleController;
 use App\Http\Controllers\Reports\ShowroomSweetsRequestsReportController;
+use App\Http\Controllers\Reports\TomorrowPreparationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Admin\PaymentMethodController;
@@ -674,6 +675,18 @@ Route::post(
             'showroom-cake-daily-reports/{showroomCakeDailyReport}/pdf',
             [ShowroomCakeDailyReportController::class, 'pdf']
         )->name('showroom-cake-daily-reports.pdf');
+
+        // ─── Factory next-day production preparation (read-only) ──────────
+        Route::middleware('can:reports.view')->group(function () {
+            Route::get('reports/tomorrow-preparation', [TomorrowPreparationController::class, 'index'])
+                ->name('reports.tomorrow-preparation.index');
+            Route::get('reports/tomorrow-preparation/print', [TomorrowPreparationController::class, 'print'])
+                ->name('reports.tomorrow-preparation.print');
+            Route::get('reports/tomorrow-preparation/pdf', [TomorrowPreparationController::class, 'pdf'])
+                ->name('reports.tomorrow-preparation.pdf');
+            Route::get('reports/tomorrow-preparation/excel', [TomorrowPreparationController::class, 'excel'])
+                ->name('reports.tomorrow-preparation.excel');
+        });
 
         // ─── Showroom Sweets Requests Report ─────────────────────────────
         Route::middleware('can:reports.view')->group(function () {

@@ -89,7 +89,7 @@
                     <input type="date"
                            name="needed_by"
                            class="form-input @error('needed_by') is-invalid @enderror"
-                           value="{{ old('needed_by') }}">
+                           value="{{ old('needed_by', now()->addDay()->toDateString()) }}">
                     @error('needed_by')<span class="form-error">{{ $message }}</span>@enderror
                 </div>
                 <div class="form-group" style="grid-column:1/-1">

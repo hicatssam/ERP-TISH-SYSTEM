@@ -79,7 +79,7 @@
                     <input type="date"
                            name="needed_by"
                            class="form-input"
-                           value="{{ old('needed_by') }}"
+                           value="{{ old('needed_by', now()->addDay()->toDateString()) }}"
                            min="{{ now()->format('Y-m-d') }}">
                 </div>
 

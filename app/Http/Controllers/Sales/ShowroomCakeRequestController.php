@@ -333,7 +333,7 @@ class ShowroomCakeRequestController extends Controller
                                     ShowroomCakeRequestStatus::InProgress,
                                 'needed_by' =>
                                     $validated['needed_by']
-                                    ?? null,
+                                    ?? now()->addDay()->toDateString(),
                                 'notes' =>
                                     $validated['notes']
                                     ?? null,
