@@ -95,35 +95,13 @@ class ProductController extends Controller
             );
         }
 
-        $sort = $request->input('sort', 'oldest');
-
-        if ($sort === 'oldest') {
-            $query->orderBy('created_at')->orderBy('id');
-        } elseif ($sort === 'newest') {
-            $query->orderByDesc('created_at')->orderByDesc('id');
-        } elseif ($sort === 'za') {
-            $query
-                ->orderByRaw("
-                    COALESCE(
-                        NULLIF(name_ar, ''),
-                        name
-                    ) DESC
-                ")
-                ->orderByDesc('id');
-        } else {
-            $query
-                ->orderByRaw("
-                    COALESCE(
-                        NULLIF(name_ar, ''),
-                        name
-                    ) ASC
-                ")
-                ->orderBy('id');
-        }
+        // Stable system-wide management order: first-added product first.
+        // URL query parameters (including old bookmarked ?sort=...) cannot override it.
+        $query->orderBy('created_at', 'asc')->orderBy('id', 'asc');
 
         $products = $query
             ->paginate(25)
-            ->withQueryString();
+            ->appends($request->except(['sort', 'page']));
         $categories = Category::query()->active()->orderBy('sort_order')->get();
         $brands = collect();
         $variantsEnabled = true;

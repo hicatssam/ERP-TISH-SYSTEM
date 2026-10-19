@@ -53,7 +53,7 @@
 
     .products-filter-main{
         display:grid;
-        grid-template-columns:minmax(260px,1.6fr) repeat(4,minmax(150px,1fr));
+        grid-template-columns:minmax(260px,1.6fr) repeat(3,minmax(150px,1fr));
         gap:.75rem;
         align-items:end;
     }
@@ -248,33 +248,14 @@
                 </select>
             </div>
 
-            <div class="products-filter-field">
-                <label class="products-filter-label">ترتيب المنتجات</label>
-                <select name="sort" class="form-select">
-                    <option value="oldest" @selected(request('sort', 'oldest') === 'oldest')>
-                        الأقدم إضافة أولًا
-                    </option>
-                    <option value="newest" @selected(request('sort') === 'newest')>
-                        الأحدث إضافة أولًا
-                    </option>
-                    <option value="az" @selected(request('sort', 'oldest') === 'az')>
-                        أ ← ي
-                    </option>
-                    <option value="za" @selected(request('sort') === 'za')>
-                        ي ← أ
-                    </option>
-                </select>
-            </div>
-
-
         </div>
 
         <div class="products-filter-footer">
             <div class="products-active-filters">
-                @if(request()->hasAny(['q','location_id','category_id','status','sort']))
-                    <span>الفلاتر الحالية مطبقة على النتائج</span>
+                @if(request()->hasAny(['q','location_id','category_id','status']))
+                    <span>الفلاتر الحالية مطبقة — الترتيب تلقائي من الأقدم إلى الأحدث</span>
                 @else
-                    <span>عرض جميع المنتجات</span>
+                    <span>جميع المنتجات مرتبة تلقائيًا حسب تاريخ إضافتها من الأقدم إلى الأحدث</span>
                 @endif
             </div>
 
