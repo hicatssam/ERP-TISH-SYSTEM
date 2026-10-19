@@ -60,6 +60,26 @@
             <span class="receiving-info-value">{{ $invoice->issued_at?->format('Y-m-d H:i') ?? '—' }}</span>
         </td>
     </tr>
+    <tr>
+        <td>
+            <span class="receiving-info-label">وقت التحميل المخطط</span>
+            <span class="receiving-info-value">{{ $invoice->shipment?->planned_loading_at?->format('Y-m-d H:i') ?? '—' }}</span>
+        </td>
+        <td>
+            <span class="receiving-info-label">وقت الاستلام المخطط</span>
+            <span class="receiving-info-value">{{ $invoice->shipment?->planned_receiving_at?->format('Y-m-d H:i') ?? '—' }}</span>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <span class="receiving-info-label">{{ $invoice->shipment?->multi_trip_enabled ? 'آخر تحميل فعلي' : 'التحميل الفعلي' }}</span>
+            <span class="receiving-info-value">{{ $invoice->shipment?->loaded_at?->format('Y-m-d H:i') ?? '—' }}</span>
+        </td>
+        <td>
+            <span class="receiving-info-label">الاستلام الفعلي</span>
+            <span class="receiving-info-value">{{ $invoice->shipment?->received_at?->format('Y-m-d H:i') ?? '—' }}</span>
+        </td>
+    </tr>
 </table>
 
 <table class="receiving-summary" cellpadding="0" cellspacing="0">

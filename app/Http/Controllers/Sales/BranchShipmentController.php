@@ -16,6 +16,9 @@ use App\Services\PrintThemeService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use App\Services\ActivityLogger;
 use Illuminate\View\View;
 
 class BranchShipmentController extends Controller
@@ -123,6 +126,70 @@ class BranchShipmentController extends Controller
                 $branchShipment
             ),
         ]);
+    }
+
+
+    /**
+     * Set a planning window for this specific branch shipment.
+     * The schedule is never a substitute for the actual loading/receiving timestamps.
+     */
+    public function updateSchedule(
+        Request $request,
+        BranchShipment $branchShipment
+    ): RedirectResponse {
+        $branchShipment->loadMissing('source');
+        abort_unless(
+            $this->canFactoryOperate($request->user(), $branchShipment->source),
+            403,
+            'تحديد المواعيد متاح للمصنع المسؤول عن الطلب فقط.'
+        );
+
+        $data = $request->validate([
+            'planned_loading_at' => ['nullable', 'date'],
+            'planned_receiving_at' => [
+                'nullable', 'date',
+                ...($request->filled('planned_loading_at') ? ['after_or_equal:planned_loading_at'] : []),
+            ],
+        ]);
+
+        DB::transaction(function () use ($branchShipment, $data, $request): void {
+            $locked = BranchShipment::query()
+                ->lockForUpdate()
+                ->findOrFail($branchShipment->id);
+
+            if (
+                $locked->status !== BranchShipment::PENDING_LOADING
+                || $locked->loaded_at !== null
+                || $locked->trips()->exists()
+            ) {
+                throw ValidationException::withMessages([
+                    'schedule' => 'لا يمكن تغيير المواعيد بعد بدء التحميل. الأوقات الفعلية محفوظة في سجل الشحنة.',
+                ]);
+            }
+
+            $before = $locked->only(['planned_loading_at', 'planned_receiving_at']);
+            $locked->update([
+                'planned_loading_at' => $data['planned_loading_at'] ?? null,
+                'planned_receiving_at' => $data['planned_receiving_at'] ?? null,
+            ]);
+
+            ActivityLogger::log(
+                userId: $request->user()->id,
+                action: 'branch_shipment.schedule_updated',
+                module: 'delivery',
+                recordType: 'branch_shipments',
+                recordId: $locked->id,
+                oldValues: $before,
+                newValues: $locked->only(['planned_loading_at', 'planned_receiving_at']),
+                metadata: [
+                    'from_location_id' => $locked->from_location_id,
+                    'to_location_id' => $locked->to_location_id,
+                ],
+            );
+        });
+
+        return redirect()->route('branch-shipments.show', $branchShipment)
+            ->with('success', 'تم حفظ وقت التحميل والاستلام المتوقع لهذا الفرع.');
     }
 
     public function loadTrip(Request $request, BranchShipment $branchShipment): RedirectResponse

@@ -43,6 +43,14 @@
             @if($shipment)
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:.75rem;margin-bottom:1rem">
                     <div>
+                        <small class="text-muted">وقت التحميل المخطط</small>
+                        <div style="font-weight:800">{{ $shipment->planned_loading_at?->format('Y-m-d H:i') ?? 'لم يحدد' }}</div>
+                    </div>
+                    <div>
+                        <small class="text-muted">وقت الاستلام المخطط</small>
+                        <div style="font-weight:800">{{ $shipment->planned_receiving_at?->format('Y-m-d H:i') ?? 'لم يحدد' }}</div>
+                    </div>
+                    <div>
                         <small class="text-muted">الموصّل</small>
                         <div style="font-weight:800">{{ $shipment->driver?->display_name ?? 'لم يحدد بعد' }}</div>
                     </div>

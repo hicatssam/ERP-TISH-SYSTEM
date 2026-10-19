@@ -22,6 +22,8 @@ class BranchShipment extends Model
         'to_location_id',
         'status',
         'multi_trip_enabled',
+        'planned_loading_at',
+        'planned_receiving_at',
         'driver_id',
         'loaded_by',
         'loaded_at',
@@ -38,6 +40,8 @@ class BranchShipment extends Model
     {
         return [
             'multi_trip_enabled' => 'boolean',
+            'planned_loading_at' => 'datetime',
+            'planned_receiving_at' => 'datetime',
             'loaded_at' => 'datetime',
             'dispatched_at' => 'datetime',
             'arrived_at' => 'datetime',

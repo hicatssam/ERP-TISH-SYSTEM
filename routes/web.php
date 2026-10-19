@@ -580,6 +580,9 @@ Route::post(
         Route::get('branch-shipments', [BranchShipmentController::class, 'index'])
             ->name('branch-shipments.index');
 
+        Route::patch('branch-shipments/{branchShipment}/schedule', [BranchShipmentController::class, 'updateSchedule'])
+            ->name('branch-shipments.schedule');
+
         Route::post('branch-shipments/{branchShipment}/trips', [BranchShipmentController::class, 'loadTrip'])
             ->name('branch-shipments.trips.store');
 

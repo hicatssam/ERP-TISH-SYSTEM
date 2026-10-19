@@ -84,6 +84,44 @@
     </div>
 @endif
 
+
+<div class="card" style="margin-bottom:1rem">
+    <div class="card-header">
+        <div>
+            <span class="card-title">جدول التحميل والاستلام للفرع</span>
+            <p class="form-help">المواعيد المتوقعة يحددها المصنع قبل أول تحميل. الأوقات الفعلية يسجلها النظام عند تأكيد التنفيذ ولا يمكن تعديلها من هنا.</p>
+        </div>
+    </div>
+    <div class="card-body">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:.85rem;margin-bottom:1rem">
+            <div><small class="text-muted">موعد التحميل المخطط</small><div><strong>{{ $shipment->planned_loading_at?->format('Y-m-d H:i') ?? 'لم يحدد' }}</strong></div></div>
+            <div><small class="text-muted">موعد الاستلام المخطط</small><div><strong>{{ $shipment->planned_receiving_at?->format('Y-m-d H:i') ?? 'لم يحدد' }}</strong></div></div>
+            <div><small class="text-muted">{{ $shipment->multi_trip_enabled ? 'آخر تحميل فعلي (راجع النقلات)' : 'التحميل الفعلي' }}</small><div><strong>{{ $shipment->loaded_at?->format('Y-m-d H:i') ?? 'لم ينفذ' }}</strong></div></div>
+            <div><small class="text-muted">الاستلام النهائي الفعلي</small><div><strong>{{ $shipment->received_at?->format('Y-m-d H:i') ?? 'بانتظار الاستلام' }}</strong></div></div>
+        </div>
+        @if($canFactoryOperate && $shipment->status === \App\Models\BranchShipment::PENDING_LOADING && !$shipment->trips->count())
+            <form method="POST" action="{{ route('branch-shipments.schedule', $shipment) }}">
+                @csrf
+                @method('PATCH')
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.75rem">
+                    <label class="form-group">
+                        <span class="form-label">التحميل المتوقع</span>
+                        <input class="form-input" type="datetime-local" name="planned_loading_at"
+                            value="{{ old('planned_loading_at', $shipment->planned_loading_at?->format('Y-m-d\\TH:i')) }}">
+                    </label>
+                    <label class="form-group">
+                        <span class="form-label">استلام الفرع المتوقع</span>
+                        <input class="form-input" type="datetime-local" name="planned_receiving_at"
+                            value="{{ old('planned_receiving_at', $shipment->planned_receiving_at?->format('Y-m-d\\TH:i')) }}">
+                    </label>
+                </div>
+                <p class="form-help">يمكن ترك الموعدين فارغين. يجب ألا يكون موعد الاستلام قبل التحميل.</p>
+                <button class="btn btn-gold" type="submit">حفظ مواعيد الفرع</button>
+            </form>
+        @endif
+    </div>
+</div>
+
 <div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-bottom:1rem">
     <div class="stat-card"><div class="stat-info"><div class="stat-label">من</div><div class="stat-value" style="font-size:.95rem">{{ $shipment->fromLocation?->name }}</div></div></div>
     <div class="stat-card"><div class="stat-info"><div class="stat-label">إلى</div><div class="stat-value" style="font-size:.95rem">{{ $shipment->toLocation?->name }}</div></div></div>

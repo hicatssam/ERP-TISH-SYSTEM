@@ -27,6 +27,9 @@
     <div class="stat-card"><div class="stat-info"><div class="stat-label">الموصّل</div><div class="stat-value" style="font-size:1rem">{{ $invoice->driver?->display_name ?? '—' }}</div></div></div>
     <div class="stat-card"><div class="stat-info"><div class="stat-label">المستلم</div><div class="stat-value" style="font-size:1rem">{{ $invoice->receivedBy?->display_name ?? '—' }}</div></div></div>
     <div class="stat-card"><div class="stat-info"><div class="stat-label">تاريخ الاستلام</div><div class="stat-value" style="font-size:1rem">{{ $invoice->issued_at?->format('Y/m/d H:i') ?? '—' }}</div></div></div>
+    <div class="stat-card"><div class="stat-info"><div class="stat-label">التحميل المخطط</div><div class="stat-value" style="font-size:1rem">{{ $invoice->shipment?->planned_loading_at?->format('Y-m-d H:i') ?? '—' }}</div></div></div>
+    <div class="stat-card"><div class="stat-info"><div class="stat-label">الاستلام المخطط</div><div class="stat-value" style="font-size:1rem">{{ $invoice->shipment?->planned_receiving_at?->format('Y-m-d H:i') ?? '—' }}</div></div></div>
+    <div class="stat-card"><div class="stat-info"><div class="stat-label">{{ $invoice->shipment?->multi_trip_enabled ? 'آخر تحميل فعلي' : 'التحميل الفعلي' }}</div><div class="stat-value" style="font-size:1rem">{{ $invoice->shipment?->loaded_at?->format('Y-m-d H:i') ?? '—' }}</div></div></div>
 </div>
 
 <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1.5rem">
