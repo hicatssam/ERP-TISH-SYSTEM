@@ -69,6 +69,11 @@ class ShowroomCakeRequestNotifier
                 ],
 
                 'completed',
+                'closed_short' => [
+                    [$branchId, $factoryId],
+                    ['showroom_cake_requests.view', 'showroom_cake_requests.create', 'showroom_cake_requests.update_status'],
+                ],
+
                 'cancelled' => [
                     [$branchId, $factoryId],
                     [

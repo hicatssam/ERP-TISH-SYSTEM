@@ -45,7 +45,7 @@
                      'at'=>$shipment->created_at,'done'=>true],
                     ['key'=>'loaded','label'=>'تم التحميل','user'=>$shipment->loadedBy,
                      'at'=>$shipment->loaded_at,
-                     'done'=>in_array($shipment->status, ['loaded','out_for_delivery','arrived','received'], true)],
+                     'done'=>in_array($shipment->status, ['loaded','out_for_delivery','arrived','received','closed_short'], true)],
                     ['key'=>'received','label'=>'تم الاستلام','user'=>$shipment->receivedBy,
                      'at'=>$shipment->received_at,'done'=>(bool) $invoice?->isConfirmed()],
                 ];
@@ -66,15 +66,18 @@
 </div>
 
 @if($invoice?->isConfirmed())
+    @if($shipment->status === \App\Models\BranchShipment::CLOSED_SHORT)
+        <div class="alert alert-warning" style="margin-bottom:1rem"><strong>أُغلقت بنقص:</strong> {{ $shipment->closure_reason }} — بواسطة {{ $shipment->closedBy?->display_name ?? '—' }} · {{ $shipment->closed_at?->format('Y-m-d H:i') }}</div>
+    @endif
     <div class="card" style="margin-bottom:1rem">
         <div class="card-header">
-            <span class="card-title">فاتورة الاستلام المعتمدة</span>
+            <span class="card-title">{{ $shipment->status === \App\Models\BranchShipment::CLOSED_SHORT ? 'فاتورة الاستلام الناقص المعتمدة' : 'فاتورة الاستلام المعتمدة' }}</span>
             <a href="{{ route('branch-receiving-invoices.show', $invoice) }}" class="btn btn-outline btn-sm">
                 عرض فاتورة {{ $invoice->invoice_number }}
             </a>
         </div>
         <div class="card-body" style="display:flex;gap:1.5rem;flex-wrap:wrap">
-            <div>المرسل: <strong>{{ number_format((float) $invoice->total_items_sent, 3) }}</strong></div>
+            <div>{{ $shipment->status === \App\Models\BranchShipment::CLOSED_SHORT ? 'المطلوب' : 'المرسل' }}: <strong>{{ number_format((float) $invoice->total_items_sent, 3) }}</strong></div>
             <div>المستلم: <strong>{{ number_format((float) $invoice->total_items_received, 3) }}</strong></div>
             <div>الفرق: <strong>{{ number_format((float) $invoice->total_difference, 3) }}</strong></div>
             @if($invoice->notes)

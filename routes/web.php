@@ -584,6 +584,9 @@ Route::post(
         Route::patch('branch-shipments/{branchShipment}/schedule', [BranchShipmentController::class, 'updateSchedule'])
             ->name('branch-shipments.schedule');
 
+        Route::post('branch-shipments/{branchShipment}/close-short', [BranchShipmentController::class, 'closeShort'])
+            ->name('branch-shipments.close-short');
+
         Route::post('branch-shipments/{branchShipment}/trips', [BranchShipmentController::class, 'loadTrip'])
             ->name('branch-shipments.trips.store');
 

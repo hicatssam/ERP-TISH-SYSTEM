@@ -3,6 +3,9 @@
 @section('page-title', 'فاتورة استلام الفرع')
 
 @section('content')
+@if($invoice->shipment?->status === \App\Models\BranchShipment::CLOSED_SHORT)
+<div class="alert alert-warning" style="margin-bottom:1rem"><strong>فاتورة استلام ناقص — الطلبية أُغلقت بسبب:</strong> {{ $invoice->shipment->closure_reason }}<div>أغلقها: {{ $invoice->shipment->closedBy?->display_name ?? '—' }} · {{ $invoice->shipment->closed_at?->format('Y-m-d H:i') }}</div></div>
+@endif
 <div class="page-header">
     <div class="page-header-text">
         <h1 class="page-heading">فاتورة رقم {{ $invoice->invoice_number }}</h1>
@@ -33,7 +36,7 @@
 </div>
 
 <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1.5rem">
-    <span class="badge badge-blue">إجمالي مرسل: {{ number_format((float)$invoice->total_items_sent, 3) }}</span>
+    <span class="badge badge-blue">{{ $invoice->shipment?->status === \App\Models\BranchShipment::CLOSED_SHORT ? 'إجمالي مطلوب' : 'إجمالي مرسل' }}: {{ number_format((float)$invoice->total_items_sent, 3) }}</span>
     <span class="badge badge-active">إجمالي مستلم: {{ number_format((float)$invoice->total_items_received, 3) }}</span>
     @if((float)$invoice->total_difference > 0)
         <span class="badge badge-danger">فرق: {{ number_format((float)$invoice->total_difference, 3) }}</span>
@@ -45,7 +48,7 @@
     <div class="table-wrap">
         <table class="data-table">
             <thead>
-                <tr><th>#</th><th>الصنف</th><th>الوحدة</th><th>الكمية المرسلة</th><th>الكمية المستلمة</th><th>الفرق</th><th>ملاحظة</th></tr>
+                <tr><th>#</th><th>الصنف</th><th>الوحدة</th><th>{{ $invoice->shipment?->status === \App\Models\BranchShipment::CLOSED_SHORT ? 'الكمية المطلوبة' : 'الكمية المرسلة' }}</th><th>الكمية المستلمة</th><th>الفرق</th><th>ملاحظة</th></tr>
             </thead>
             <tbody>
                 @foreach($invoice->items as $item)

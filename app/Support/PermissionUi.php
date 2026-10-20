@@ -61,6 +61,7 @@ class PermissionUi
             'inventory' => 'المخزون',
             'stock_requests' => 'طلبات المخزون',
             'stock_transfers' => 'تحويلات المخزون',
+            'branch_shipments' => 'توزيع ونقلات طلبات الفروع',
             'invoices' => 'الفواتير',
             'payments' => 'المدفوعات',
             'cash_sessions' => 'جلسات الكاش',
@@ -289,6 +290,8 @@ class PermissionUi
             'stock_transfers.view' => 'عرض تحويلات المخزون',
             'stock_transfers.dispatch' => 'إرسال تحويل مخزون',
             'stock_transfers.receive' => 'استلام تحويل مخزون',
+            'branch_shipments.manage' => 'إدارة وتوزيع نقلات طلبات الفروع',
+            'branch_shipments.close_short' => 'إغلاق طلبية ناقصة مع تسجيل سبب إلزامي',
 
             // المنتجات
             'products.view' => 'عرض المنتجات',

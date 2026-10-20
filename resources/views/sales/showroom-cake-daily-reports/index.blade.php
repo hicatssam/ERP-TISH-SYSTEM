@@ -170,7 +170,13 @@
                             · {{ $sourceRequest->fulfilled_at?->format('H:i') ?? '—' }}
                         </small>
                     </div>
-                    <span>{{ $sourceRequest->items->sum('quantity') }} وحدة</span>
+                    @php
+                        $isShortClosed = $sourceRequest->status->workflowValue() === 'closed_short';
+                        $actuallyReceived = $sourceRequest->branchShipment?->receivingInvoice?->items?->sum('received_quantity');
+                    @endphp
+                    <span>{{ $isShortClosed ? number_format((float) ($actuallyReceived ?? 0), 0) : $sourceRequest->items->sum('quantity') }} وحدة
+                        @if($isShortClosed)<small class="text-muted">— أُغلقت بنقص</small>@endif
+                    </span>
                     <a href="{{ route('showroom-cake-requests.show', $sourceRequest) }}" class="btn btn-outline btn-xs" target="_blank">
                         فتح الطلب
                     </a>

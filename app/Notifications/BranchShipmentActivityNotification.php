@@ -42,9 +42,14 @@ class BranchShipmentActivityNotification extends Notification
 
         $invoice = $shipment->receivingInvoice;
         $difference = round((float) ($invoice?->total_difference ?? 0), 3);
-        $isReceipt = $this->event === 'received';
+        $isClosure = $this->event === 'closed_short';
+        $isReceipt = $this->event === 'received' || $isClosure;
 
-        $message = $isReceipt
+        $message = $isClosure
+            ? "أغلق الـDispatcher طلب {$sourceLabel} رقم {$orderNumber} بنقص: "
+                . number_format($difference, 3) . "، السبب: {$shipment->closure_reason}. "
+                . "فاتورة {$invoice?->invoice_number}."
+            : ($isReceipt
             ? "تم استلام طلب {$sourceLabel} رقم {$orderNumber} في {$shipment->toLocation?->name}. "
                 . "فاتورة {$invoice?->invoice_number} — المرسل: "
                 . number_format((float) ($invoice?->total_items_sent ?? 0), 3)
@@ -55,16 +60,16 @@ class BranchShipmentActivityNotification extends Notification
                 . ($difference > 0 ? ' (يرجى مراجعة النقص).' : '.')
             : "تم تحميل طلب {$sourceLabel} رقم {$orderNumber} من {$shipment->fromLocation?->name} "
                 . "إلى {$shipment->toLocation?->name}. "
-                . "الموصّل: {$shipment->driver?->display_name}.";
+                . "الموصّل: {$shipment->driver?->display_name}.");
 
         return [
             'fingerprint' => "branch_shipment_{$this->event}_{$shipment->id}",
-            'type' => $isReceipt
+            'type' => $isClosure ? 'branch_shipment_closed_short' : ($isReceipt
                 ? 'branch_receiving_invoice_confirmed'
-                : 'branch_shipment_loaded',
-            'title' => $isReceipt
+                : 'branch_shipment_loaded'),
+            'title' => $isClosure ? 'إغلاق طلبية ناقصة مع توثيق السبب' : ($isReceipt
                 ? ($difference > 0 ? 'استلام طلبية مع فروقات في الكميات' : 'تم استلام الطلبية وإصدار الفاتورة')
-                : 'تم تحميل الطلبية للفرع',
+                : 'تم تحميل الطلبية للفرع'),
             'message' => $message,
             'branch_shipment_id' => $shipment->id,
             'invoice_id' => $isReceipt ? $invoice?->id : null,

@@ -28,6 +28,11 @@ final class BranchShipmentNotifier
         self::send($invoice->shipment, 'received', $actor);
     }
 
+    public static function closedShort(BranchShipment $shipment, User $actor): void
+    {
+        self::send($shipment, 'closed_short', $actor);
+    }
+
     private static function send(BranchShipment $shipment, string $event, User $actor): void
     {
         $shipment->loadMissing('source');

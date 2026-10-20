@@ -34,6 +34,7 @@ class BranchShipmentController extends Controller
         $user = $request->user();
         abort_unless($user->isAdmin()
             || $user->can('branch_shipments.manage')
+            || $user->can('branch_shipments.close_short')
             || $user->can('showroom_sweets_requests.dispatch')
             || $user->can('showroom_cake_requests.update_status'), 403);
 
@@ -113,6 +114,7 @@ class BranchShipmentController extends Controller
             'drivers' => $drivers,
             'tripProgress' => $branchShipment->multi_trip_enabled
                 ? $this->trips->progress($branchShipment) : null,
+            'canCloseShort' => $this->canCloseShort($request->user(), $branchShipment),
             'canFactoryOperate' => $this->canFactoryOperate(
                 $request->user(),
                 $branchShipment->source
@@ -190,6 +192,20 @@ class BranchShipmentController extends Controller
 
         return redirect()->route('branch-shipments.show', $branchShipment)
             ->with('success', 'تم حفظ وقت التحميل والاستلام المتوقع لهذا الفرع.');
+    }
+
+    public function closeShort(Request $request, BranchShipment $branchShipment): RedirectResponse
+    {
+        abort_unless($this->canCloseShort($request->user(), $branchShipment), 403);
+
+        $data = $request->validate([
+            'closure_reason' => ['required', 'string', 'min:10', 'max:2000'],
+        ]);
+
+        $invoice = $this->trips->closeShort($branchShipment, $request->user(), trim($data['closure_reason']));
+
+        return redirect()->route('branch-receiving-invoices.show', $invoice)
+            ->with('success', 'أغلقت الطلبية بنقص موثق، وأصدرت فاتورة بالكميات المستلمة فقط.');
     }
 
     public function loadTrip(Request $request, BranchShipment $branchShipment): RedirectResponse
@@ -487,6 +503,19 @@ class BranchShipmentController extends Controller
 
             default => false,
         };
+    }
+
+    private function canCloseShort(User $user, BranchShipment $shipment): bool
+    {
+        if (! $user->isAdmin() && ! $user->can('branch_shipments.close_short')) {
+            return false;
+        }
+        $shipment->loadMissing('source');
+        if (! $shipment->multi_trip_enabled || ! ($shipment->source instanceof ShowroomCakeRequest
+            || $shipment->source instanceof ShowroomSweetsRequest)) {
+            return false;
+        }
+        return $user->isAdmin() || in_array((int) $shipment->from_location_id, $this->userLocationIds($user), true);
     }
 
     private function canDriverOperate(

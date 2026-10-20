@@ -1,14 +1,15 @@
 @php
     $progress = $tripProgress;
     $complete = $invoice?->isConfirmed() ?? false;
+    $closedShort = $shipment->status === \App\Models\BranchShipment::CLOSED_SHORT;
 @endphp
 <div class="card" style="margin-bottom:1rem">
     <div class="card-header">
         <div>
             <span class="card-title">مراجعة الكميات والنقلات — Dispatcher</span>
-            <p class="form-help">يُسجل التحميل لكل نقلة مع الموصّل. لا تُصدر الفاتورة النهائية حتى يستلم الفرع جميع الأصناف المطلوبة.</p>
+            <p class="form-help">يُسجل التحميل لكل نقلة مع الموصّل. تصدر فاتورة نهائية بعد اكتمال الاستلام، أو عند إغلاق الطلب بنقص مع سبب موثق.</p>
         </div>
-        <span class="badge {{ $complete ? 'badge-active' : 'badge-warning' }}">{{ $complete ? 'مكتمل — الفاتورة صادرة' : 'قيد التوريد' }}</span>
+        <span class="badge {{ $complete ? 'badge-active' : 'badge-warning' }}">{{ $closedShort ? 'أغلقت بنقص — فاتورة معتمدة' : ($complete ? 'مكتمل — الفاتورة صادرة' : 'قيد التوريد') }}</span>
     </div>
     <div class="card-body">
         <div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:1rem">
@@ -149,7 +150,29 @@
         @endforelse
     </div>
 </div>
-@if($complete)
+@if($canCloseShort && ! $complete && ! $progress['complete'] && $progress['received'] > 0.0005 && $progress['pending'] < 0.0005)
+<div class="card" style="margin-bottom:1rem;border:1px solid #f5baba">
+    <div class="card-header"><span class="card-title">إغلاق الطلبية مع وجود نقص</span></div>
+    <div class="card-body">
+        <p class="form-help">يبقى الفرق غير مستلم، وتصدر فاتورة بالكميات المستلمة فعليًا فقط. لا يمكن إضافة نقلات بعد الإغلاق. تأكد من مراجعة جميع النقلات أولًا.</p>
+        <form method="POST" action="{{ route('branch-shipments.close-short', $shipment) }}">
+            @csrf
+            <label class="form-label" for="dispatcherClosureReason">سبب إغلاق الطلبية قبل اكتمال الكميات *</label>
+            <textarea name="closure_reason" id="dispatcherClosureReason" class="form-textarea" rows="3" minlength="10" maxlength="2000" required placeholder="مثال: عدم توفر الصنف في المصنع وتعذر إرسال باقي الكمية...">{{ old('closure_reason') }}</textarea>
+            @error('closure_reason')<small class="form-error">{{ $message }}</small>@enderror
+            <div style="margin-top:.65rem"><button class="btn btn-danger" type="submit" data-confirm="سيتم إغلاق الطلبية نهائيًا بالنقص مع حفظ السبب وإصدار فاتورة المستلم فقط، هل أنت متأكد؟">تأكيد الإغلاق مع نقص</button></div>
+        </form>
+    </div>
+</div>
+@endif
+
+@if($closedShort)
+<div class="alert alert-warning" style="margin-bottom:1rem">
+    <strong>أُغلقت الطلبية مع نقص</strong> — {{ $shipment->closure_reason }}
+    <div>أغلقها: {{ $shipment->closedBy?->display_name ?? '—' }} · {{ $shipment->closed_at?->format('Y-m-d H:i') ?? '—' }}</div>
+    <div>المتبقي غير المسلم: {{ number_format($progress['remaining'], 3) }}</div>
+</div>
+@elseif($complete)
 <div class="alert alert-success">
     اكتملت الكميات المطلوبة لكل صنف. فاتورة الاستلام النهائية {{ $invoice->invoice_number }} معتمدة.
     <a class="btn btn-outline btn-sm" href="{{ route('branch-receiving-invoices.show', $invoice) }}">فتح الفاتورة</a>

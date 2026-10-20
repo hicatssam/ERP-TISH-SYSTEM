@@ -6,6 +6,12 @@ use App\Models\BranchReceivingInvoice;
 use App\Models\BranchShipment;
 use App\Models\BranchShipmentTrip;
 use App\Models\User;
+use App\Models\ShowroomCakeRequest;
+use App\Models\ShowroomSweetsRequest;
+use App\Enums\ShowroomCakeRequestStatus;
+use App\Enums\ShowroomSweetsRequestStatus;
+use App\Services\Notifications\ShowroomCakeRequestNotifier;
+use App\Services\Notifications\ShowroomSweetsRequestNotifier;
 use App\Services\ActivityLogger;
 use App\Services\Notifications\BranchShipmentNotifier;
 use Illuminate\Support\Facades\DB;
@@ -65,6 +71,153 @@ class BranchDeliveryTripService
             'complete' => count($lines) > 0
                 && collect($lines)->every(fn ($line) => $line['outstanding'] < 0.0005),
         ];
+    }
+
+
+    /**
+     * Dispatcher closes an irrecoverably short branch shipment after all trips
+     * have been received; only physically received quantities are invoiced.
+     * Closing is independent from successful/full completion.
+     */
+    public function closeShort(BranchShipment $shipment, User $actor, string $reason): BranchReceivingInvoice
+    {
+        $reason = trim($reason);
+        if (mb_strlen($reason) < 10 || mb_strlen($reason) > 2000) {
+            throw ValidationException::withMessages([
+                'closure_reason' => 'يجب توضيح سبب الإغلاق في 10 إلى 2000 حرف.',
+            ]);
+        }
+
+        $outcome = DB::transaction(function () use ($shipment, $actor, $reason): array {
+            $locked = BranchShipment::query()->lockForUpdate()->findOrFail($shipment->id);
+
+            if (! $locked->multi_trip_enabled ||
+                ! in_array($locked->status, [BranchShipment::PENDING_LOADING, BranchShipment::LOADED], true)) {
+                throw ValidationException::withMessages([
+                    'shipment' => 'هذه الطلبية مغلقة أو غير متاحة للإغلاق الناقص.',
+                ]);
+            }
+
+            $source = $locked->source;
+            if (! ($source instanceof ShowroomCakeRequest || $source instanceof ShowroomSweetsRequest)
+                || $source->status->workflowValue() !== 'ready') {
+                throw ValidationException::withMessages([
+                    'shipment' => 'يمكن إغلاق طلبات حلويات وكيك الفروع الجاهزة فقط.',
+                ]);
+            }
+
+            $invoice = $locked->receivingInvoice;
+            if (! $invoice || $invoice->isConfirmed()) {
+                throw ValidationException::withMessages([
+                    'invoice' => 'تم اعتماد فاتورة هذه الطلبية مسبقًا.',
+                ]);
+            }
+
+            $progress = $this->progress($locked);
+            if ($progress['pending'] > 0.0005) {
+                throw ValidationException::withMessages([
+                    'shipment' => 'لا يمكن الإغلاق قبل تأكيد استلام جميع النقلات المفتوحة.',
+                ]);
+            }
+            if ($progress['received'] < 0.0005) {
+                throw ValidationException::withMessages([
+                    'shipment' => 'يجب أن يستلم الفرع كمية فعلية واحدة على الأقل قبل الإغلاق الناقص.',
+                ]);
+            }
+            if ($progress['remaining'] < 0.0005 || $progress['complete']) {
+                throw ValidationException::withMessages([
+                    'shipment' => 'كل الكميات مستلمة؛ لا يجوز تسجيل إغلاق ناقص.',
+                ]);
+            }
+
+            foreach ($progress['lines'] as $line) {
+                $line['item']->update([
+                    'received_quantity' => $line['received'],
+                    'difference_quantity' => $line['outstanding'],
+                ]);
+            }
+
+            $lastReceipt = $locked->trips()->where('status', 'received')
+                ->orderByDesc('received_at')->orderByDesc('id')->firstOrFail();
+
+            $invoice->update([
+                'invoice_number' => $invoice->invoice_number ?:
+                    'BRI-'.now()->format('Y').'-'.str_pad((string) $invoice->id, 5, '0', STR_PAD_LEFT),
+                'status' => 'confirmed',
+                'total_items_received' => $progress['received'],
+                'total_difference' => $progress['remaining'],
+                'driver_id' => $lastReceipt->driver_id,
+                'received_by' => $lastReceipt->received_by,
+                'issued_at' => now(),
+                'notes' => 'أُغلقت بنقص بواسطة الـDispatcher. السبب: '.$reason,
+            ]);
+
+            $locked->update([
+                'status' => BranchShipment::CLOSED_SHORT,
+                'closure_reason' => $reason,
+                'closed_by' => $actor->id,
+                'closed_at' => now(),
+                // Preserve the actual receiving user and receipt timestamp.
+                'received_by' => $lastReceipt->received_by,
+                'received_at' => $lastReceipt->received_at,
+            ]);
+
+            $oldStatus = $source->status->workflowValue();
+            if ($source instanceof ShowroomCakeRequest) {
+                $source->update([
+                    'status' => ShowroomCakeRequestStatus::ClosedShort,
+                    'fulfilled_at' => now(),
+                    'handled_by' => $actor->id,
+                ]);
+            } else {
+                $source->update([
+                    'status' => ShowroomSweetsRequestStatus::ClosedShort,
+                    'received_by' => $lastReceipt->received_by,
+                    'received_at' => $lastReceipt->received_at,
+                    'fulfilled_at' => now(),
+                ]);
+            }
+
+            ActivityLogger::log(
+                userId: $actor->id,
+                action: 'branch_shipment.closed_short',
+                module: 'delivery',
+                recordType: 'branch_shipments',
+                recordId: $locked->id,
+                oldValues: ['status' => $shipment->status],
+                newValues: [
+                    'status' => BranchShipment::CLOSED_SHORT,
+                    'closure_reason' => $reason,
+                    'received_quantity' => $progress['received'],
+                    'missing_quantity' => $progress['remaining'],
+                    'invoice_number' => $invoice->invoice_number,
+                ],
+                metadata: [
+                    'source_type' => $locked->source_type,
+                    'source_id' => $locked->source_id,
+                    'branch_id' => $locked->to_location_id,
+                ],
+            );
+
+            return ['invoice' => $invoice, 'shipment' => $locked,
+                'source' => $source, 'old_status' => $oldStatus];
+        });
+
+        $source = $outcome['source']->fresh();
+        if ($source instanceof ShowroomCakeRequest) {
+            ShowroomCakeRequestNotifier::statusChanged(
+                $source, $outcome['old_status'], ShowroomCakeRequestStatus::ClosedShort->value, $actor
+            );
+        } else {
+            ShowroomSweetsRequestNotifier::statusChanged(
+                $source, $outcome['old_status'], ShowroomSweetsRequestStatus::ClosedShort->value, $actor
+            );
+        }
+        \App\Services\Notifications\BranchShipmentNotifier::closedShort(
+            $outcome['shipment']->fresh(['source', 'receivingInvoice']), $actor
+        );
+
+        return $outcome['invoice']->fresh(['items', 'shipment.source']);
     }
 
     /**

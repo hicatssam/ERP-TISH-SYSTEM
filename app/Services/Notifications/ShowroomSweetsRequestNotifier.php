@@ -95,6 +95,11 @@ class ShowroomSweetsRequestNotifier
                     ],
                 ],
 
+                'closed_short' => [
+                    [$branchId, $factoryId],
+                    ['showroom_sweets_requests.view', 'showroom_sweets_requests.create', 'showroom_sweets_requests.receive', 'showroom_sweets_requests.update_status'],
+                ],
+
                 'cancelled' => [
                     [$branchId, $factoryId],
                     [

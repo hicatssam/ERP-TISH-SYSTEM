@@ -148,6 +148,115 @@ class BranchDispatcherTripsTest extends TestCase
         ])->assertForbidden();
     }
 
+
+    #[Test]
+    public function dispatcher_can_close_short_received_order_with_mandatory_reason_and_exact_invoice_difference(): void
+    {
+        [$branch, , $dispatcher, $receiver, $driver, $order] = $this->prepareOrder();
+        $shipment = app(BranchDeliveryService::class)->createShipment($order, $dispatcher);
+        $line = $shipment->receivingInvoice->items->sole();
+        $service = app(BranchDeliveryTripService::class);
+        $trip = $service->loadTrip($shipment, $dispatcher, $driver, [
+            $line->id => ['quantity' => 3],
+        ], null);
+        $service->receiveTrip($trip, $receiver, [
+            $trip->items->sole()->id => ['received_quantity' => 2],
+        ], null);
+
+        $this->actingAs($dispatcher)
+            ->get(route('branch-shipments.show', $shipment))
+            ->assertOk()->assertSee('إغلاق الطلبية مع وجود نقص');
+
+        $reason = 'نفدت مكونات الصنف قبل إكمال الكمية المتبقية';
+        $response = $this->actingAs($dispatcher)->post(
+            route('branch-shipments.close-short', $shipment),
+            ['closure_reason' => $reason]
+        );
+        $invoice = BranchReceivingInvoice::query()->sole();
+        $response->assertRedirect(route('branch-receiving-invoices.show', $invoice));
+        $this->assertSame(BranchShipment::CLOSED_SHORT, $shipment->fresh()->status);
+        $this->assertSame($reason, $shipment->fresh()->closure_reason);
+        $this->assertSame($dispatcher->id, $shipment->fresh()->closed_by);
+        $this->assertNotNull($shipment->fresh()->closed_at);
+        $this->assertTrue($invoice->isConfirmed());
+        $this->assertEquals(5.0, (float) $invoice->total_items_sent);
+        $this->assertEquals(2.0, (float) $invoice->total_items_received);
+        $this->assertEquals(3.0, (float) $invoice->total_difference);
+        $this->assertEquals(2.0, (float) $invoice->items()->sole()->received_quantity);
+        $this->assertSame('closed_short', $order->fresh()->status->workflowValue());
+        $this->assertSame($branch->id, $invoice->receiving_location_id);
+
+        $this->actingAs($receiver)
+            ->get(route('branch-receiving-invoices.show', $invoice))
+            ->assertOk()->assertSee($reason);
+        $this->actingAs($dispatcher)->post(
+            route('branch-shipments.close-short', $shipment),
+            ['closure_reason' => 'تكرار محاولة الإغلاق النهائي للطلبية']
+        )->assertSessionHasErrors('shipment');
+        $this->assertSame(1, BranchReceivingInvoice::query()->count());
+    }
+
+    #[Test]
+    public function dispatcher_cannot_close_without_reason_or_before_branch_receives_a_trip(): void
+    {
+        [, , $dispatcher, $receiver, $driver, $order] = $this->prepareOrder();
+        $shipment = app(BranchDeliveryService::class)->createShipment($order, $dispatcher);
+        $line = $shipment->receivingInvoice->items->sole();
+
+        $this->actingAs($dispatcher)->post(
+            route('branch-shipments.close-short', $shipment),
+            ['closure_reason' => '']
+        )->assertSessionHasErrors('closure_reason');
+
+        $this->actingAs($dispatcher)->post(
+            route('branch-shipments.close-short', $shipment),
+            ['closure_reason' => 'نقص في المصنع وعدم القدرة على إكمال الطلب']
+        )->assertSessionHasErrors('shipment');
+
+        $trip = app(BranchDeliveryTripService::class)->loadTrip(
+            $shipment, $dispatcher, $driver,
+            [$line->id => ['quantity' => 3]], null
+        );
+
+        $this->actingAs($dispatcher)->post(
+            route('branch-shipments.close-short', $shipment),
+            ['closure_reason' => 'نقص في المصنع وعدم القدرة على إكمال الطلب']
+        )->assertSessionHasErrors('shipment');
+
+        app(BranchDeliveryTripService::class)->receiveTrip($trip, $receiver, [
+            $trip->items->sole()->id => ['received_quantity' => 3],
+        ], null);
+
+        $this->actingAs($receiver)->post(
+            route('branch-shipments.close-short', $shipment),
+            ['closure_reason' => 'محاولة إغلاق من موظف الفرع بدون صلاحية']
+        )->assertForbidden();
+        $this->assertFalse($shipment->fresh()->receivingInvoice->isConfirmed());
+        $this->assertSame('ready', $order->fresh()->status->workflowValue());
+    }
+
+    #[Test]
+    public function dispatcher_cannot_close_a_fully_received_shipment_as_short(): void
+    {
+        [, , $dispatcher, $receiver, $driver, $order] = $this->prepareOrder();
+        $shipment = app(BranchDeliveryService::class)->createShipment($order, $dispatcher);
+        $line = $shipment->receivingInvoice->items->sole();
+        $trip = app(BranchDeliveryTripService::class)->loadTrip(
+            $shipment, $dispatcher, $driver,
+            [$line->id => ['quantity' => 5]], null
+        );
+        app(BranchDeliveryTripService::class)->receiveTrip($trip, $receiver, [
+            $trip->items->sole()->id => ['received_quantity' => 5],
+        ], null);
+
+        $this->actingAs($dispatcher)->post(
+            route('branch-shipments.close-short', $shipment),
+            ['closure_reason' => 'محاولة اعتبار الطلبية المكتملة طلبية ناقصة']
+        )->assertSessionHasErrors('shipment');
+        $this->assertSame(BranchShipment::RECEIVED, $shipment->fresh()->status);
+        $this->assertSame('completed', $order->fresh()->status->workflowValue());
+    }
+
     /** @return array{Location,Location,User,User,User,ShowroomCakeRequest} */
     private function prepareOrder(): array
     {
@@ -163,6 +272,7 @@ class BranchDispatcherTripsTest extends TestCase
         $dispatcher = User::factory()->create();
         $dispatcher->employee->locations()->attach($factory->id, ['is_primary' => true]);
         $dispatcher->givePermissionTo(Permission::findOrCreate('branch_shipments.manage', 'web'));
+        $dispatcher->givePermissionTo(Permission::findOrCreate('branch_shipments.close_short', 'web'));
 
         $receiver = User::factory()->create();
         $receiver->employee->locations()->attach($branch->id, ['is_primary' => true]);

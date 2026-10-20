@@ -14,6 +14,7 @@ class BranchShipment extends Model
     public const OUT_FOR_DELIVERY = 'out_for_delivery';
     public const ARRIVED = 'arrived';
     public const RECEIVED = 'received';
+    public const CLOSED_SHORT = 'closed_short';
 
     protected $fillable = [
         'source_type',
@@ -33,6 +34,9 @@ class BranchShipment extends Model
         'arrived_at',
         'received_by',
         'received_at',
+        'closed_by',
+        'closed_at',
+        'closure_reason',
         'notes',
     ];
 
@@ -46,6 +50,7 @@ class BranchShipment extends Model
             'dispatched_at' => 'datetime',
             'arrived_at' => 'datetime',
             'received_at' => 'datetime',
+            'closed_at' => 'datetime',
         ];
     }
 
@@ -89,6 +94,11 @@ class BranchShipment extends Model
         return $this->belongsTo(User::class, 'received_by');
     }
 
+    public function closedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'closed_by');
+    }
+
     public function trips(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(BranchShipmentTrip::class)->orderBy('trip_number');
@@ -107,6 +117,7 @@ class BranchShipment extends Model
             self::OUT_FOR_DELIVERY => 'خرج للتوصيل',
             self::ARRIVED => 'وصل إلى الفرع',
             self::RECEIVED => 'تم استلام الفرع',
+            self::CLOSED_SHORT => 'مغلقة بنقص',
             default => $this->status,
         };
     }

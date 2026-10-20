@@ -50,13 +50,14 @@ final class BranchOrderMilestones
                 BranchShipment::OUT_FOR_DELIVERY,
                 BranchShipment::ARRIVED,
                 BranchShipment::RECEIVED,
+                BranchShipment::CLOSED_SHORT,
             ], true)
         );
 
         $workflowStatus = self::workflowStatus($source);
         $cancelled = $workflowStatus === 'cancelled';
         $executed = ! $cancelled && (
-            in_array($workflowStatus, ['ready', 'completed'], true)
+            in_array($workflowStatus, ['ready', 'completed', 'closed_short'], true)
             || $shipment !== null
         );
 
@@ -78,6 +79,9 @@ final class BranchOrderMilestones
 
         if ($data['cancelled']) {
             return 'ملغى';
+        }
+        if ($data['shipment']?->status === BranchShipment::CLOSED_SHORT) {
+            return 'أغلقت بنقص';
         }
         if ($data['received']) {
             return 'تم الاستلام';

@@ -487,13 +487,24 @@ class ShowroomCakeDailyReportController extends Controller
             ->mapWithKeys(fn (string $key) => [$key => 0]);
 
         foreach ($this->completedShowroomRequestsForDay((int) $report->location_id, $date) as $request) {
+            $closedShort = $request->status->workflowValue() === 'closed_short';
+            $invoiceItems = $closedShort
+                ? $request->branchShipment?->receivingInvoice?->items?->keyBy('source_item_id')
+                : null;
+
             foreach ($request->items as $item) {
                 $key = $this->classifyRequestItem($item);
 
                 if ($key !== null) {
+                    // A short-closed order contributes only the branch's actual
+                    // confirmed receipt, not the originally requested quantity.
+                    $receivedQuantity = $closedShort
+                        ? (float) ($invoiceItems?->get($item->id)?->received_quantity ?? 0)
+                        : (float) $item->quantity;
+
                     $receivedByCategory[$key] =
                         (int) ($receivedByCategory[$key] ?? 0)
-                        + (int) $item->quantity;
+                        + (int) $receivedQuantity;
                 }
             }
         }
@@ -559,13 +570,14 @@ class ShowroomCakeDailyReportController extends Controller
     private function completedShowroomRequestsForDay(int $locationId, string $date): Collection
     {
         return ShowroomCakeRequest::query()
-            ->with('items')
+            ->with(['items', 'branchShipment.receivingInvoice.items'])
             ->where('requesting_location_id', $locationId)
             ->whereNotNull('fulfilled_at')
             ->whereDate('fulfilled_at', $date)
             ->whereIn('status', [
                 ShowroomCakeRequestStatus::Completed->value,
                 ShowroomCakeRequestStatus::Fulfilled->value,
+                ShowroomCakeRequestStatus::ClosedShort->value,
             ])
             ->orderBy('fulfilled_at')
             ->get();

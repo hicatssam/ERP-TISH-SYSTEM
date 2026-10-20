@@ -29,6 +29,9 @@
 @endpush
 
 @section('print_content')
+@if($invoice->shipment?->status === \App\Models\BranchShipment::CLOSED_SHORT)
+<div class="print-soft-box" style="margin-bottom:9px;text-align:right"><strong>أُغلقت الطلبية بنقص — السبب:</strong> {{ $invoice->shipment->closure_reason }} · بواسطة {{ $invoice->shipment->closedBy?->display_name ?? '—' }} · {{ $invoice->shipment->closed_at?->format('Y-m-d H:i') }}</div>
+@endif
 <table class="receiving-info" cellpadding="0" cellspacing="0">
     <tr>
         <td>
@@ -84,7 +87,7 @@
 
 <table class="receiving-summary" cellpadding="0" cellspacing="0">
     <tr>
-        <td><span>إجمالي المرسل</span><strong>{{ number_format((float)$invoice->total_items_sent, 3) }}</strong></td>
+        <td><span>{{ $invoice->shipment?->status === \App\Models\BranchShipment::CLOSED_SHORT ? 'إجمالي المطلوب' : 'إجمالي المرسل' }}</span><strong>{{ number_format((float)$invoice->total_items_sent, 3) }}</strong></td>
         <td><span>إجمالي المستلم</span><strong>{{ number_format((float)$invoice->total_items_received, 3) }}</strong></td>
         <td><span>الفرق</span><strong>{{ number_format((float)$invoice->total_difference, 3) }}</strong></td>
     </tr>
@@ -96,7 +99,7 @@
         <thead>
             <tr>
                 <th>#</th><th>الصنف</th><th>الوحدة</th>
-                <th>المرسل</th><th>المستلم</th><th>الفرق</th>
+                <th>{{ $invoice->shipment?->status === \App\Models\BranchShipment::CLOSED_SHORT ? 'المطلوب' : 'المرسل' }}</th><th>المستلم</th><th>الفرق</th>
             </tr>
         </thead>
         <tbody>

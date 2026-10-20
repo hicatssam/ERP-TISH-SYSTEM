@@ -10,6 +10,7 @@ enum ShowroomSweetsRequestStatus: string
     case Ready = 'ready';
     case Completed = 'completed';
     case Cancelled = 'cancelled';
+    case ClosedShort = 'closed_short';
 
     // Legacy values kept for historical compatibility.
     case Submitted = 'submitted';
@@ -27,6 +28,7 @@ enum ShowroomSweetsRequestStatus: string
             'ready' => 'جاهز للاستلام',
             'completed' => 'مكتمل',
             'cancelled' => 'ملغي',
+            'closed_short' => 'أغلقت بنقص',
             default => 'غير محدد',
         };
     }
@@ -38,6 +40,7 @@ enum ShowroomSweetsRequestStatus: string
             'in_progress' => 'badge-warning',
             'ready' => 'badge-info',
             'completed' => 'badge-success',
+            'closed_short' => 'badge-warning',
             'cancelled' => 'badge-inactive',
             default => 'badge-secondary',
         };
@@ -78,7 +81,7 @@ enum ShowroomSweetsRequestStatus: string
     {
         return in_array(
             $this->workflowValue(),
-            ['completed', 'cancelled'],
+            ['completed', 'cancelled', 'closed_short'],
             true
         );
     }
@@ -109,6 +112,7 @@ enum ShowroomSweetsRequestStatus: string
             self::Pending => 'pending',
 
             self::InProgress => 'in_progress',
+            self::ClosedShort => 'closed_short',
 
             self::Ready,
             self::ReadyForDispatch,
