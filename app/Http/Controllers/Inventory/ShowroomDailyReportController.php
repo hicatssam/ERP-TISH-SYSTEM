@@ -233,6 +233,8 @@ class ShowroomDailyReportController extends Controller
                         ->concat(
                             Product::query()
                                 ->whereIn('id', $missingProductIds)
+                                // Do not reintroduce raw items via prior-day carry-forward.
+                                ->where('is_raw_material', false)
                                 ->get()
                         )
                         ->unique('id')
@@ -1230,6 +1232,8 @@ class ShowroomDailyReportController extends Controller
 
         return Product::query()
             ->active()
+            // Raw materials appear only in the dedicated raw-material section.
+            ->where('is_raw_material', false)
             ->where(function ($query) use ($locationId): void {
                 $query
                     ->whereHas('locationProducts', function ($locationProduct) use ($locationId): void {
