@@ -1136,8 +1136,12 @@ class ReportController extends Controller
                     'مقاسات إضافية' => 'detail_sizes', 'تعليمات' => 'detail_notes',
                     'الحجوزات' => 'detail_reservation', 'ملاحظات الطلب' => 'detail_general_notes',
                 ] as $label => $key) {
-                    $value = $item->{$key};
-                    if ($value !== null && trim((string) $value) !== '') {
+                    $value = $key === 'detail_sizes'
+                        ? CakeProductionLabels::sizes($item->{$key})
+                        : ($key === 'detail_filling'
+                            ? CakeProductionLabels::flavor($item->{$key})
+                            : $item->{$key});
+                    if ($value !== null && trim((string) $value) !== '' && $value !== '—' && $value !== 'غير محدد') {
                         $notes[] = $label . ': ' . $value;
                     }
                 }
@@ -1149,7 +1153,7 @@ class ReportController extends Controller
                     CakeProductionLabels::type($item->cake_type),
                     CakeProductionLabels::size($item->cake_size),
                     CakeProductionLabels::shape($item->shape),
-                    $item->layer_count ?? '—', $item->detail_flavor ?? '—',
+                    $item->layer_count ?? '—', CakeProductionLabels::flavor($item->detail_flavor),
                     (int) $item->quantity,
                     implode(' | ', $notes) ?: '—',
                 ];

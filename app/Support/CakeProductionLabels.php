@@ -48,6 +48,45 @@ final class CakeProductionLabels
         'custom' => 'شكل خاص',
     ];
 
+    private const FLAVORS = [
+        'chocolate' => 'شوكولاتة',
+        'vanilla' => 'فانيلا',
+        'strawberry' => 'فراولة',
+        'caramel' => 'كراميل',
+        'nutella' => 'نوتيلا',
+        'pistachio' => 'فستق',
+        'oreo' => 'أوريو',
+        'lotus' => 'لوتس',
+        'coffee' => 'قهوة',
+        'fruit' => 'فواكه',
+        'other' => 'أخرى',
+    ];
+
+    public static function flavor(?string $value): string
+    {
+        return self::label($value, self::FLAVORS);
+    }
+
+    public static function sizes(?string $value): string
+    {
+        if (! filled($value)) {
+            return '—';
+        }
+
+        $decoded = json_decode($value, true);
+
+        if (! is_array($decoded)) {
+            return self::size($value);
+        }
+
+        $sizes = array_filter(array_map(
+            static fn ($size) => is_scalar($size) ? self::size((string) $size) : null,
+            $decoded
+        ));
+
+        return $sizes ? implode('، ', $sizes) : '—';
+    }
+
     public static function type(?string $value): string
     {
         return self::label($value, self::TYPES);

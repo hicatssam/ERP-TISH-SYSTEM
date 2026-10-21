@@ -456,6 +456,9 @@ class SpecialCakeAutoApprovalAndProductionReportTest extends TestCase
         $this->assertSame('طوابق ستاندر', $labels::shape('standard_tiers'));
         $this->assertSame('كيك تراثي', $labels::type('كيك تراثي'));
         $this->assertSame('غير محدد', $labels::size(null));
+        $this->assertSame('نوتيلا', $labels::flavor('nutella'));
+        $this->assertSame('وسط، كبير', $labels::sizes('["medium","large"]'));
+        $this->assertSame('كبير', $labels::sizes('large'));
     }
 
 
