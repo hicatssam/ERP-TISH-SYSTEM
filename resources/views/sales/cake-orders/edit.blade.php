@@ -179,13 +179,14 @@
             <div class="card-body cake-grid cake-grid-2">
                 <div class="form-group">
                     <label class="form-label">السعر الإجمالي (₪) *</label>
-                    <input type="number" min="0" step="0.01" name="total_price" class="form-input @error('total_price') is-invalid @enderror"
+                    <input type="number" min="0" step="0.01" name="total_price" id="cakeTotalPrice" class="form-input @error('total_price') is-invalid @enderror"
                            value="{{ old('total_price', $cakeOrder->total_price) }}" required>
                     @error('total_price')<span class="form-error">{{ $message }}</span>@enderror
                 </div>
                 <div class="price-summary">
-                    <span>السعر الحالي</span>
-                    <strong>₪{{ number_format((float) $cakeOrder->total_price, 2) }}</strong>
+                    <span>السعر بعد الخصم (معاينة)</span>
+                    <strong id="cakeNetPreview">₪{{ number_format((float) $cakeOrder->net_price ?? (float) $cakeOrder->total_price, 2) }}</strong>
+                    <small id="cakeDiscountPreview" class="form-help"></small>
                 </div>
             </div>
         </section>
@@ -218,6 +219,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const requiredDate = document.getElementById('requiredDate');
     const todayValue = @json(today()->toDateString());
     const tomorrowValue = @json(today()->addDay()->toDateString());
+    const priceInput = document.getElementById('cakeTotalPrice');
+    const netPreview = document.getElementById('cakeNetPreview');
+    const discountPreview = document.getElementById('cakeDiscountPreview');
+    const discountType = @json($cakeOrder->discount_type);
+    const discountValue = Number(@json((float) $cakeOrder->discount_value));
+    const financialDocumentsExist = @json($cakeOrder->payments()->exists() || $cakeOrder->invoice()->exists());
+    const originalTotal = Number(@json((float) $cakeOrder->total_price));
+
+    function updatePricePreview() {
+        if (!priceInput || !netPreview) return;
+        const total = Number(priceInput.value);
+        if (!Number.isFinite(total) || total < 0) {
+            netPreview.textContent = '—';
+            return;
+        }
+        const discount = discountType === 'percentage'
+            ? Math.round(total * discountValue) / 100
+            : (discountType === 'fixed' ? discountValue : 0);
+        const valid = discount <= total;
+        netPreview.textContent = valid ? '₪' + (total - discount).toFixed(2) : 'الخصم أكبر من السعر';
+        if (discountPreview) {
+            discountPreview.textContent = financialDocumentsExist && Math.abs(total - originalTotal) >= 0.005
+                ? 'لا يمكن تغيير السعر بعد تسجيل دفعة أو إصدار فاتورة.'
+                : 'الخصم: ₪' + discount.toFixed(2);
+        }
+    }
+    priceInput?.addEventListener('input', updatePricePreview);
+    updatePricePreview();
 
     function syncUrgentDelivery() {
         const urgent = Boolean(urgentToggle?.checked);

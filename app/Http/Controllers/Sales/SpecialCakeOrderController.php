@@ -20,6 +20,9 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use App\Services\ActivityLogger;
 
 class SpecialCakeOrderController extends Controller
 {
@@ -881,8 +884,80 @@ if (
         );
         $validated = $this->applySelectedCakeSizes($request, $validated);
 
+        // Cross-field rules cannot be delegated to the browser: it can be bypassed.
+        if ($request->boolean('cake_sizes_submitted') || $request->exists('cake_sizes')) {
+            $shape = $validated['shape'] ?? null;
+            $allowed = match ($shape) {
+                'round', 'standard_tiers' => ['small', 'medium', 'large'],
+                'slab' => ['30x30', '40x30', '60x40', '120x30', '120x80'],
+                'wedding_tiers' => ['standard'],
+                default => null,
+            };
+            if ($allowed !== null && array_diff($validated['cake_sizes'] ?? [], $allowed)) {
+                throw ValidationException::withMessages([
+                    'cake_sizes' => 'الأحجام المختارة لا تتوافق مع شكل الكيك.',
+                ]);
+            }
+        }
 
-        $cakeOrder->update($validated);
+        // Price, discount and net amount are linked. Do not silently leave an old
+        // net price after changing the total. Paid/invoiced orders are guarded below.
+        DB::transaction(function () use ($cakeOrder, $validated, $request): void {
+            $locked = SpecialCakeOrder::query()->lockForUpdate()->findOrFail($cakeOrder->id);
+            $this->authorize('update', $locked);
+
+            if (! in_array($locked->status, [CakeOrderStatus::Draft, CakeOrderStatus::Pending], true)) {
+                throw ValidationException::withMessages([
+                    'status' => 'تغيرت حالة الطلب أثناء التعديل؛ لا يمكن الحفظ بعد بدء الإنتاج.',
+                ]);
+            }
+
+            $old = $locked->only(array_unique([...array_keys($validated), 'discount_amount', 'net_price']));
+            $priceChanged = (int) round((float) $locked->total_price * 100) !== (int) round((float) $validated['total_price'] * 100);
+
+            // Price corrections after payment/invoicing require the accounting adjustment flow.
+            if ($priceChanged && ($locked->payments()->exists() || $locked->invoice()->exists())) {
+                throw ValidationException::withMessages([
+                    'total_price' => 'لا يمكن تغيير السعر بعد تسجيل دفعة أو إصدار فاتورة. استخدم إجراء التسوية المالية.',
+                ]);
+            }
+
+            if ($priceChanged) {
+                $discountType = $locked->discount_type instanceof \BackedEnum
+                    ? $locked->discount_type->value : (string) $locked->discount_type;
+                $discountValue = (float) ($locked->discount_value ?? 0);
+                $total = (float) $validated['total_price'];
+
+                $discount = match ($discountType) {
+                    'percentage', 'percent' => round($total * $discountValue / 100, 2),
+                    'fixed', 'amount' => $discountValue,
+                    default => 0,
+                };
+                if ($discount < 0 || $discount > $total) {
+                    throw ValidationException::withMessages([
+                        'total_price' => 'السعر الجديد لا يغطي الخصم المسجل. راجع الحسابات قبل الحفظ.',
+                    ]);
+                }
+                $validated['discount_amount'] = $discount;
+                $validated['net_price'] = round($total - $discount, 2);
+            }
+
+            $locked->update($validated);
+            $changes = $locked->getChanges();
+            unset($changes['updated_at']);
+            if ($changes) {
+                ActivityLogger::log(
+                    userId: $request->user()->id,
+                    action: 'cake_order.updated',
+                    module: 'special_cake_orders',
+                    recordType: 'special_cake_orders',
+                    recordId: $locked->id,
+                    oldValues: array_intersect_key($old, $changes),
+                    newValues: array_intersect_key($locked->only(array_unique([...array_keys($validated), 'discount_amount', 'net_price'])), $changes),
+                    metadata: ['order_number' => $locked->order_number],
+                );
+            }
+        });
 
         return redirect()->route('cake-orders.show', $cakeOrder)->with('success', 'تم تحديث الطلب.');
     }

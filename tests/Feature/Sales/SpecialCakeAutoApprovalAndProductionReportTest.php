@@ -494,6 +494,57 @@ class SpecialCakeAutoApprovalAndProductionReportTest extends TestCase
             ->assertSee('تعليمات خاصة')->assertSee($request->request_number);
     }
 
+    #[Test]
+    public function cake_order_edit_rejects_sizes_incompatible_with_shape(): void
+    {
+        $order = $this->makeSpecialCakeOrder('pending', 'chocolate', 'medium', 'round', now()->addDays(3)->toDateString());
+
+        $this->actingAs($this->user)->put(route('cake-orders.update', $order), [
+            'required_date' => now()->addDays(3)->toDateString(),
+            'shape' => 'round',
+            'cake_sizes_submitted' => '1',
+            'cake_sizes' => ['40x30'],
+            'total_price' => '100.00',
+        ])->assertSessionHasErrors('cake_sizes');
+
+        $this->assertSame('medium', $order->fresh()->cake_size);
+    }
+
+    #[Test]
+    public function cake_order_edit_recalculates_unpaid_net_price_and_discount(): void
+    {
+        $order = $this->makeSpecialCakeOrder('pending', 'chocolate', 'medium', 'round', now()->addDays(3)->toDateString());
+        $order->update(['discount_type' => 'percentage', 'discount_value' => 10, 'discount_amount' => 10, 'net_price' => 90]);
+
+        $this->actingAs($this->user)->put(route('cake-orders.update', $order), [
+            'required_date' => now()->addDays(3)->toDateString(),
+            'shape' => 'round',
+            'cake_sizes_submitted' => '1',
+            'cake_sizes' => ['small', 'large'],
+            'total_price' => '200.00',
+        ])->assertSessionHasNoErrors();
+
+        $fresh = $order->fresh();
+        $this->assertSame('200.00', $fresh->total_price);
+        $this->assertSame('20.00', $fresh->discount_amount);
+        $this->assertSame('180.00', $fresh->net_price);
+        $this->assertSame(['small', 'large'], $fresh->cake_sizes);
+        $this->assertSame('small', $fresh->cake_size);
+    }
+
+    #[Test]
+    public function cake_order_edit_cannot_change_in_progress_order(): void
+    {
+        $order = $this->makeSpecialCakeOrder('in_progress', 'chocolate', 'medium', 'round', now()->addDays(3)->toDateString());
+
+        $this->actingAs($this->user)->put(route('cake-orders.update', $order), [
+            'required_date' => now()->addDays(3)->toDateString(),
+            'total_price' => '200.00',
+        ])->assertRedirect();
+
+        $this->assertSame('100.00', $order->fresh()->total_price);
+    }
+
     private function makeLocation(
         string $name,
         string $type
