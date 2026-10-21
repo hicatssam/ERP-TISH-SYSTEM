@@ -475,4 +475,28 @@
 
 </div>
 
+
+@if($type === 'cake-production')
+    <div class="card" style="margin-top:1.5rem;padding:1rem">
+        <h3>تفاصيل طلبات إنتاج الكيك (حتى 500 صنف)</h3>
+        <div class="table-wrap" style="overflow-x:auto">
+            <table class="data-table">
+                <thead><tr>
+                    @foreach(['المصدر','رقم الطلب','الفرع','تاريخ الحاجة','نوع الكيك','الحجم','الشكل','عدد الطبقات','النكهة','الكمية','تفاصيل التصنيع والملاحظات'] as $label)
+                        <th>{{ $label }}</th>
+                    @endforeach
+                </tr></thead>
+                <tbody>
+                    @forelse($cakeDetails as $detail)
+                        <tr>@foreach($detail as $value)<td>{{ $value }}</td>@endforeach</tr>
+                    @empty
+                        <tr><td colspan="11">لا توجد تفاصيل إنتاج لهذه الفترة.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        <small>الملخص أعلاه يعرض الإجماليات، والجدول هنا يعرض أصناف الطلبات دون دمج مواصفاتها. استخدم Excel لتصدير تفاصيل أكثر.</small>
+    </div>
+@endif
+
 @endsection

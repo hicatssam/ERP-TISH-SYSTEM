@@ -234,6 +234,7 @@ class ShowroomCakeRequestController extends Controller
                 'max:50',
                 'not_in:standard',
             ],
+            'items.*.layer_count' => ['nullable', 'integer', 'min:1', 'max:20'],
             'items.*.flavor' => [
                 'nullable',
                 'string',
@@ -356,6 +357,7 @@ class ShowroomCakeRequestController extends Controller
                                 'cake_size' =>
                                     $item['cake_size']
                                     ?? null,
+                    'layer_count' => $item['layer_count'] ?? null,
                                 'flavor' =>
                                     $item['flavor']
                                     ?? null,
@@ -492,6 +494,7 @@ class ShowroomCakeRequestController extends Controller
             'items' => ['required', 'array', 'min:1'],
             'items.*.cake_type' => ['required', 'string', 'max:100'],
             'items.*.cake_size' => ['nullable', 'string', 'max:50', 'not_in:standard'],
+            'items.*.layer_count' => ['nullable', 'integer', 'min:1', 'max:20'],
             'items.*.flavor' => ['nullable', 'string', 'max:100'],
             'items.*.shape' => ['nullable', 'string', 'max:50', 'not_in:standard_tiers'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
@@ -531,6 +534,7 @@ class ShowroomCakeRequestController extends Controller
                 $showroomCakeRequest->items()->create([
                     'cake_type' => $item['cake_type'],
                     'cake_size' => $item['cake_size'] ?? null,
+                    'layer_count' => $item['layer_count'] ?? null,
                     'flavor' => $item['flavor'] ?? null,
                     'shape' => $item['shape'] ?? null,
                     'quantity' => $item['quantity'],

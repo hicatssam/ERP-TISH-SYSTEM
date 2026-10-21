@@ -19,7 +19,7 @@ class ShowroomCakeRequestLayerCountTest extends TestCase
     use RefreshDatabase;
 
     #[Test]
-    public function branch_cake_requests_have_neither_standard_size_nor_layer_count(): void
+    public function branch_cake_requests_preserve_layer_count_on_create_and_update(): void
     {
         Notification::fake();
         [$branch, $factory, $user] = $this->prepareBranchUser();
@@ -29,7 +29,7 @@ class ShowroomCakeRequestLayerCountTest extends TestCase
             ->assertOk()
             ->assertDontSee('value="standard"', false)
             ->assertDontSee('value="standard_tiers"', false)
-            ->assertDontSee('عدد الطبقات');
+            ->assertSee('عدد الطبقات');
 
         $this->actingAs($user)->post(route('showroom-cake-requests.store'), [
             'factory_location_id' => $factory->id,
@@ -55,18 +55,18 @@ class ShowroomCakeRequestLayerCountTest extends TestCase
 
         $this->assertCount(2, $items);
         $this->assertSame('large', $items[0]->cake_size);
-        $this->assertNull($items[0]->layer_count);
+        $this->assertSame(4, $items[0]->layer_count);
         $this->assertSame($branch->id, $request->requesting_location_id);
 
         $this->actingAs($user)
             ->get(route('showroom-cake-requests.show', $request))
             ->assertOk()
-            ->assertDontSee('عدد الطبقات');
+            ->assertSee('عدد الطبقات');
 
         $this->actingAs($user)
             ->get(route('showroom-cake-requests.edit', $request))
             ->assertOk()
-            ->assertDontSee('layer_count')
+            ->assertSee('layer_count')
             ->assertDontSee('value="standard"', false)
             ->assertDontSee('value="standard_tiers"', false);
 
@@ -83,7 +83,7 @@ class ShowroomCakeRequestLayerCountTest extends TestCase
             ],
         ])->assertSessionHasNoErrors();
 
-        $this->assertNull($request->fresh()->items()->sole()->layer_count);
+        $this->assertSame(5, $request->fresh()->items()->sole()->layer_count);
         $this->assertSame('medium', $request->fresh()->items()->sole()->cake_size);
         $this->assertSame(1, ShowroomCakeRequestItem::query()->count());
     }

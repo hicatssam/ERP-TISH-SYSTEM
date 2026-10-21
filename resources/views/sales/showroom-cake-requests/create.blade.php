@@ -160,6 +160,10 @@
             </select>
         </div>
         <div class="form-group">
+            <label class="form-label">عدد الطبقات</label>
+            <input type="number" name="items[__IDX__][layer_count]" class="form-input" min="1" max="20" placeholder="عدد الطبقات">
+        </div>
+        <div class="form-group">
             <label class="form-label">النكهة</label>
             <input type="text" name="items[__IDX__][flavor]" class="form-input" placeholder="مثال: نوتيلا، فراولة...">
         </div>
@@ -251,6 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
             field('[name$="[cake_size]"]').value = data.cake_size;
         }
 
+        field('[name$="[layer_count]"]').value = data.layer_count ?? '';
         field('[name$="[flavor]"]').value = data.flavor ?? '';
         field('[name$="[shape]"]').value = data.shape ?? '';
         field('.quantity-input').value = data.quantity ?? 1;

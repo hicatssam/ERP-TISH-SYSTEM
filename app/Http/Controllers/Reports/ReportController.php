@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Reports;
 
 use App\Http\Controllers\Controller;
 use App\Exports\ReportExport;
+use App\Exports\MultiSectionReportExport;
 use App\Exports\ChunkedQueryReportExport;
 use App\Models\Order;
 use App\Models\SpecialCakeOrder;
@@ -126,7 +127,9 @@ class ReportController extends Controller
 
         $rowFormatter = fn ($row) => $this->formatRowForExport($type, $row);
 
-        return view('reports.show', compact(
+        $cakeDetails = $type === 'cake-production' ? $this->cakeProductionDetailRows($locationIds, $dateFrom, $dateTo, 500) : collect();
+
+        return view('reports.show', compact('cakeDetails',
             'type', 'title', 'data', 'columns', 'summary',
             'dateFrom', 'dateTo', 'locations', 'locationId', 'rowFormatter'
         ));
@@ -200,6 +203,15 @@ class ReportController extends Controller
         $mapper   = fn ($row) => $this->formatRowForExport($type, $row);
         $filename = "{$type}_{$dateFrom}_{$dateTo}.xlsx";
 
+        if ($type === 'cake-production') {
+            $details = $this->cakeProductionDetailRows($locationIds, $dateFrom, $dateTo, $cap);
+            $summaryRows = (clone $query)->limit($cap)->get()->map(fn ($row) => $this->formatRowForExport($type, $row));
+            return Excel::download(new MultiSectionReportExport([
+                ['title' => 'ملخص إنتاج الكيك', 'columns' => $columns, 'rows' => $summaryRows],
+                ['title' => 'تفاصيل طلبات الكيك', 'columns' => $this->cakeDetailColumns(), 'rows' => $details],
+            ]), $filename);
+        }
+
         return Excel::download(
             new ChunkedQueryReportExport($query, $columns, $title, $mapper, $cap, $truncated),
             $filename
@@ -264,6 +276,7 @@ class ReportController extends Controller
          * This guarantees one source for logo, colours, stamp, signature,
          * header and footer.
          */
+        $cakeDetails = $type === 'cake-production' ? $this->cakeProductionDetailRows($locationIds, $dateFrom, $dateTo, $cap) : collect();
         $pdfMode = true;
 
         /*
@@ -283,7 +296,8 @@ class ReportController extends Controller
             'truncated',
             'cap',
             'total',
-            'pdfMode'
+            'pdfMode',
+            'cakeDetails'
         ))->render();
 
         $tempDir = storage_path('app/mpdf');
@@ -409,7 +423,9 @@ class ReportController extends Controller
         $cap       = $total;
         $pdfMode   = false;
 
-        return view('reports.print', compact(
+        $cakeDetails = $type === 'cake-production' ? $this->cakeProductionDetailRows($locationIds, $dateFrom, $dateTo, 10000) : collect();
+
+        return view('reports.print', compact('cakeDetails',
             'type',
             'title',
             'rows',
@@ -993,6 +1009,7 @@ class ReportController extends Controller
             ->all();
 
         $special = DB::table('special_cake_orders')
+            ->leftJoin('locations as detail_branch', 'detail_branch.id', '=', 'special_cake_orders.origin_branch_id')
             ->selectRaw("'special' as source")
             ->selectRaw(
                 "COALESCE(NULLIF(TRIM(cake_type), ''), 'غير محدد') as cake_type"
@@ -1004,19 +1021,24 @@ class ReportController extends Controller
                 "COALESCE(NULLIF(TRIM(shape), ''), 'غير محدد') as shape"
             )
             ->selectRaw('1 as quantity')
-            ->whereIn('origin_branch_id', $ids)
+            ->selectRaw("special_cake_orders.order_number as detail_number, detail_branch.name as detail_branch, special_cake_orders.required_date as detail_date")
+            ->selectRaw("NULL as layer_count, special_cake_orders.flavor as detail_flavor, special_cake_orders.filling as detail_filling")
+            ->selectRaw("special_cake_orders.cake_weight as detail_weight, special_cake_orders.persons_count as detail_persons")
+            ->selectRaw("special_cake_orders.color as detail_color, special_cake_orders.cake_text as detail_text, special_cake_orders.theme as detail_theme")
+            ->selectRaw("special_cake_orders.special_instructions as detail_notes, NULL as detail_reservation, special_cake_orders.cake_sizes as detail_sizes, NULL as detail_general_notes")
+            ->whereIn('special_cake_orders.origin_branch_id', $ids)
             ->whereDate(
-                'required_date',
+                'special_cake_orders.required_date',
                 '>=',
                 $dateFrom
             )
             ->whereDate(
-                'required_date',
+                'special_cake_orders.required_date',
                 '<=',
                 $dateTo
             )
             ->whereIn(
-                'status',
+                'special_cake_orders.status',
                 [
                     'pending',
                     'in_progress',
@@ -1036,7 +1058,7 @@ class ReportController extends Controller
                     'issue_open',
                 ]
             )
-            ->whereNull('deleted_at');
+            ->whereNull('special_cake_orders.deleted_at');
 
         $showroom = DB::table(
             'showroom_cake_request_items as items'
@@ -1057,7 +1079,12 @@ class ReportController extends Controller
             ->selectRaw(
                 "COALESCE(NULLIF(TRIM(items.shape), ''), 'غير محدد') as shape"
             )
+            ->leftJoin('locations as detail_branch', 'detail_branch.id', '=', 'requests.requesting_location_id')
             ->selectRaw('items.quantity as quantity')
+            ->selectRaw("requests.request_number as detail_number, detail_branch.name as detail_branch, COALESCE(requests.needed_by, DATE(requests.created_at)) as detail_date")
+            ->selectRaw("items.layer_count as layer_count, items.flavor as detail_flavor, NULL as detail_filling")
+            ->selectRaw("NULL as detail_weight, NULL as detail_persons, NULL as detail_color, NULL as detail_text, NULL as detail_theme")
+            ->selectRaw("items.notes as detail_notes, items.reservation_notes as detail_reservation, NULL as detail_sizes, requests.notes as detail_general_notes")
             ->whereIn(
                 'requests.requesting_location_id',
                 $ids
@@ -1080,6 +1107,53 @@ class ReportController extends Controller
             ->whereNull('requests.deleted_at');
 
         return $special->unionAll($showroom);
+    }
+
+
+    private function cakeProductionDetailsQuery(Collection $locationIds, string $from, string $to): \Illuminate\Database\Query\Builder
+    {
+        return DB::query()
+            ->fromSub($this->cakeDemandUnion($locationIds, $from, $to), 'cake_details')
+            ->orderBy('detail_date')->orderBy('detail_number')->orderBy('cake_type');
+    }
+
+    private function cakeDetailColumns(): array
+    {
+        return ['المصدر', 'رقم الطلب', 'الفرع', 'تاريخ الحاجة', 'نوع الكيك', 'الحجم', 'الشكل', 'عدد الطبقات', 'النكهة', 'الكمية', 'تفاصيل التصنيع والملاحظات'];
+    }
+
+    private function cakeProductionDetailRows(Collection $locationIds, string $from, string $to, int $limit): Collection
+    {
+        return $this->cakeProductionDetailsQuery($locationIds, $from, $to)
+            ->limit($limit)
+            ->get()
+            ->map(function ($item): array {
+                $notes = [];
+                foreach ([
+                    'الحشوة' => 'detail_filling', 'الوزن' => 'detail_weight',
+                    'عدد الأشخاص' => 'detail_persons', 'اللون' => 'detail_color',
+                    'الكتابة' => 'detail_text', 'الثيم' => 'detail_theme',
+                    'مقاسات إضافية' => 'detail_sizes', 'تعليمات' => 'detail_notes',
+                    'الحجوزات' => 'detail_reservation', 'ملاحظات الطلب' => 'detail_general_notes',
+                ] as $label => $key) {
+                    $value = $item->{$key};
+                    if ($value !== null && trim((string) $value) !== '') {
+                        $notes[] = $label . ': ' . $value;
+                    }
+                }
+
+                return [
+                    $item->source === 'special' ? 'طلب خاص' : 'طلب فرع',
+                    $item->detail_number ?? '—', $item->detail_branch ?? '—',
+                    $item->detail_date ?? '—',
+                    CakeProductionLabels::type($item->cake_type),
+                    CakeProductionLabels::size($item->cake_size),
+                    CakeProductionLabels::shape($item->shape),
+                    $item->layer_count ?? '—', $item->detail_flavor ?? '—',
+                    (int) $item->quantity,
+                    implode(' | ', $notes) ?: '—',
+                ];
+            });
     }
 
     /**

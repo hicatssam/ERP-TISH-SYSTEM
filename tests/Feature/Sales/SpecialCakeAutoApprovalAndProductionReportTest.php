@@ -458,6 +458,39 @@ class SpecialCakeAutoApprovalAndProductionReportTest extends TestCase
         $this->assertSame('غير محدد', $labels::size(null));
     }
 
+
+    #[Test]
+    public function unified_report_preserves_distinct_layers_and_flavors_without_changing_totals(): void
+    {
+        $date = '2026-09-28';
+        $request = $this->makeShowroomRequest($this->branch, ShowroomCakeRequestStatus::Ready, $date);
+        foreach ([[2, 'فراولة', 2], [4, 'نوتيلا', 3]] as [$layers, $flavor, $quantity]) {
+            ShowroomCakeRequestItem::query()->create([
+                'showroom_cake_request_id' => $request->id,
+                'cake_type' => 'chocolate',
+                'cake_size' => 'large',
+                'shape' => 'round',
+                'layer_count' => $layers,
+                'flavor' => $flavor,
+                'quantity' => $quantity,
+                'notes' => 'تعليمات خاصة',
+            ]);
+        }
+
+        $params = ['type' => 'cake-production', 'date_from' => $date,
+            'date_to' => $date, 'location_id' => $this->branch->id];
+        $screen = $this->actingAs($this->user)->get(route('reports.show', $params))->assertOk()
+            ->assertSee('عدد الطبقات')->assertSee('فراولة')->assertSee('نوتيلا');
+        $this->assertSame(5, (int) $screen->viewData('data')->items()[0]->total_quantity);
+        $details = $screen->viewData('cakeDetails');
+        $this->assertCount(2, $details);
+        $this->assertSame([2, 4], $details->pluck(7)->all());
+        $this->assertSame([2, 3], $details->pluck(9)->all());
+
+        $this->get(route('reports.print', $params))->assertOk()
+            ->assertSee('تعليمات خاصة')->assertSee($request->request_number);
+    }
+
     private function makeLocation(
         string $name,
         string $type
