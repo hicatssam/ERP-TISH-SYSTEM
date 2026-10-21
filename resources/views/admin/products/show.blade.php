@@ -90,8 +90,12 @@
         <a href="{{ route('products.edit', $product) }}" class="btn btn-outline btn-sm">تعديل</a>
         <form action="{{ route('products.toggle-status', $product) }}" method="POST" style="display:inline">
             @csrf
-            @method('POST')
-            <button class="btn btn-ghost btn-sm" type="submit">{{ $product->is_active ? 'تعطيل' : 'تفعيل' }}</button>
+            <input type="hidden" name="expected_active" value="{{ $product->is_active ? 1 : 0 }}">
+            <button type="button" class="btn btn-ghost btn-sm" data-open-dialog="product-status-confirm">{{ $product->is_active ? 'تعطيل' : 'تفعيل' }}</button>
+            <x-action-dialog id="product-status-confirm" title="تأكيد تغيير حالة المنتج" description="المنتج: {{ $product->name_ar ?: $product->name }}">
+                <p>سيتم {{ $product->is_active ? 'تعطيل' : 'تفعيل' }} المنتج في الكتالوج. لن تُحذف سجلات المبيعات السابقة.</p>
+                <div class="action-btns"><button type="submit" class="btn btn-gold">تأكيد</button><button type="button" class="btn btn-ghost" data-close-dialog>إلغاء</button></div>
+            </x-action-dialog>
         </form>
         @endcan
         <a href="{{ route('products.index') }}" class="btn btn-ghost btn-sm">رجوع</a>

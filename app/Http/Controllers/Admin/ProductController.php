@@ -364,8 +364,28 @@ class ProductController extends Controller
     public function toggleStatus(Request $request, Product $product)
     {
         $this->ensureProductAccess($product, $request->user());
-        $product->update(['is_active' => ! $product->is_active]);
-        return back()->with('success', 'تم تحديث حالة المنتج.');
+
+        $validated = $request->validate([
+            'expected_active' => ['required', 'boolean'],
+        ]);
+
+        $changed = DB::transaction(function () use ($product, $validated): ?bool {
+            $locked = Product::query()->lockForUpdate()->findOrFail($product->id);
+
+            if ((bool) $locked->is_active !== (bool) $validated['expected_active']) {
+                return null;
+            }
+
+            $locked->update(['is_active' => ! $locked->is_active]);
+
+            return (bool) $locked->is_active;
+        });
+
+        if ($changed === null) {
+            return back()->with('error', 'تغيرت حالة المنتج. حدّث الصفحة قبل إعادة المحاولة.');
+        }
+
+        return back()->with('success', $changed ? 'تم تفعيل المنتج.' : 'تم تعطيل المنتج.');
     }
 
     private function normalizeCatalogFields(array &$data, Request $request): void
