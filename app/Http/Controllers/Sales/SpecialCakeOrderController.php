@@ -809,13 +809,12 @@ if (
                 CakeOrderStatus::Draft,
                 CakeOrderStatus::Pending,
                 CakeOrderStatus::InProgress,
-                CakeOrderStatus::Ready,
             ],
             true
         )) {
             return back()->with(
                 'error',
-                'يمكن تعديل الطلب ما دام قيد المراجعة فقط.'
+                'التعديل متاح قبل التنفيذ، أو استثنائيًا أثناء التنفيذ فقط.'
             );
         }
         return view('sales.cake-orders.edit', compact('cakeOrder'));
@@ -830,13 +829,12 @@ if (
                 CakeOrderStatus::Draft,
                 CakeOrderStatus::Pending,
                 CakeOrderStatus::InProgress,
-                CakeOrderStatus::Ready,
             ],
             true
         )) {
             return back()->with(
                 'error',
-                'يمكن تعديل الطلب ما دام قيد المراجعة فقط.'
+                'التعديل متاح قبل التنفيذ، أو استثنائيًا أثناء التنفيذ فقط.'
             );
         }
 
@@ -916,13 +914,13 @@ if (
             $locked = SpecialCakeOrder::query()->lockForUpdate()->findOrFail($cakeOrder->id);
             $this->authorize('update', $locked);
 
-            if (! in_array($locked->status, [CakeOrderStatus::Draft, CakeOrderStatus::Pending, CakeOrderStatus::InProgress, CakeOrderStatus::Ready], true)) {
+            if (! in_array($locked->status, [CakeOrderStatus::Draft, CakeOrderStatus::Pending, CakeOrderStatus::InProgress], true)) {
                 throw ValidationException::withMessages([
                     'status' => 'تغيرت حالة الطلب أثناء التعديل؛ لا يمكن الحفظ بعد بدء الإنتاج.',
                 ]);
             }
 
-            if (in_array($locked->status, [CakeOrderStatus::InProgress, CakeOrderStatus::Ready], true)
+            if (in_array($locked->status, [CakeOrderStatus::InProgress], true)
                 && $editType !== 'exceptional') {
                 throw \Illuminate\Validation\ValidationException::withMessages([
                     'edit_type' => 'بعد بدء التنفيذ يجب اختيار تعديل استثنائي وذكر سببه.',

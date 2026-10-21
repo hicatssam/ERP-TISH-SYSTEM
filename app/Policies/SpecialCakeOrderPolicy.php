@@ -52,7 +52,6 @@ class SpecialCakeOrderPolicy
                 CakeOrderStatus::Draft,
                 CakeOrderStatus::Pending,
                 CakeOrderStatus::InProgress,
-                CakeOrderStatus::Ready,
             ],
             true
         );

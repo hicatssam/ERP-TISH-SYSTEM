@@ -197,8 +197,8 @@
                 <div class="form-group">
                     <label class="form-label" for="cakeEditType">نوع التعديل *</label>
                     <select id="cakeEditType" name="edit_type" class="form-select" required>
-                        <option value="normal" @selected(old('edit_type', in_array($cakeOrder->status, [\App\Enums\CakeOrderStatus::InProgress, \App\Enums\CakeOrderStatus::Ready], true) ? 'exceptional' : 'normal') === 'normal')>تعديل عادي</option>
-                        <option value="exceptional" @selected(old('edit_type', in_array($cakeOrder->status, [\App\Enums\CakeOrderStatus::InProgress, \App\Enums\CakeOrderStatus::Ready], true) ? 'exceptional' : 'normal') === 'exceptional')>تعديل استثنائي</option>
+                        <option value="normal" @selected(old('edit_type', in_array($cakeOrder->status, [\App\Enums\CakeOrderStatus::InProgress], true) ? 'exceptional' : 'normal') === 'normal')>تعديل عادي</option>
+                        <option value="exceptional" @selected(old('edit_type', in_array($cakeOrder->status, [\App\Enums\CakeOrderStatus::InProgress], true) ? 'exceptional' : 'normal') === 'exceptional')>تعديل استثنائي</option>
                     </select>
                     @error('edit_type')<span class="form-error">{{ $message }}</span>@enderror
                 </div>

@@ -594,6 +594,22 @@ class SpecialCakeAutoApprovalAndProductionReportTest extends TestCase
         $this->assertSoftDeleted('special_cake_orders', ['id' => $order->id]);
     }
 
+    #[Test]
+    public function ready_cake_cannot_be_edited_even_exceptionally(): void
+    {
+        $order = $this->makeSpecialCakeOrder('ready', 'chocolate', 'medium', 'round', now()->addDays(3)->toDateString());
+
+        $this->actingAs($this->user)->get(route('cake-orders.edit', $order))->assertRedirect();
+        $this->put(route('cake-orders.update', $order), [
+            'edit_type' => 'exceptional',
+            'edit_reason' => 'محاولة تعديل بعد انتهاء التنفيذ',
+            'required_date' => now()->addDays(3)->toDateString(),
+            'total_price' => '250.00',
+        ])->assertRedirect();
+
+        $this->assertSame('100.00', $order->fresh()->total_price);
+    }
+
     private function makeLocation(
         string $name,
         string $type
