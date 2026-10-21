@@ -191,6 +191,25 @@
             </div>
         </section>
 
+        <section class="card">
+            <div class="card-header"><span class="card-title">سبب التعديل</span></div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label class="form-label" for="cakeEditType">نوع التعديل *</label>
+                    <select id="cakeEditType" name="edit_type" class="form-select" required>
+                        <option value="normal" @selected(old('edit_type', in_array($cakeOrder->status, [\App\Enums\CakeOrderStatus::InProgress, \App\Enums\CakeOrderStatus::Ready], true) ? 'exceptional' : 'normal') === 'normal')>تعديل عادي</option>
+                        <option value="exceptional" @selected(old('edit_type', in_array($cakeOrder->status, [\App\Enums\CakeOrderStatus::InProgress, \App\Enums\CakeOrderStatus::Ready], true) ? 'exceptional' : 'normal') === 'exceptional')>تعديل استثنائي</option>
+                    </select>
+                    @error('edit_type')<span class="form-error">{{ $message }}</span>@enderror
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="cakeEditReason">سبب التعديل *</label>
+                    <textarea id="cakeEditReason" name="edit_reason" rows="3" minlength="5" maxlength="1000" class="form-textarea" required placeholder="اشرح السبب الذي استدعى تعديل الطلب">{{ old('edit_reason') }}</textarea>
+                    @error('edit_reason')<span class="form-error">{{ $message }}</span>@enderror
+                </div>
+                <p class="form-help">بعد بدء الإنتاج يُشترط التعديل الاستثنائي، ويتم تسجيل السبب والتغييرات في سجل النشاط.</p>
+            </div>
+        </section>
         <div class="sticky-actions">
             <a href="{{ route('cake-orders.show', $cakeOrder) }}" class="btn btn-ghost">إلغاء</a>
             <button class="btn btn-gold" type="submit">حفظ التعديلات</button>

@@ -500,6 +500,8 @@ class SpecialCakeAutoApprovalAndProductionReportTest extends TestCase
         $order = $this->makeSpecialCakeOrder('pending', 'chocolate', 'medium', 'round', now()->addDays(3)->toDateString());
 
         $this->actingAs($this->user)->put(route('cake-orders.update', $order), [
+            'edit_type' => 'normal',
+            'edit_reason' => 'تصحيح مواصفات الطلب بناء على طلب العميل',
             'required_date' => now()->addDays(3)->toDateString(),
             'shape' => 'round',
             'cake_sizes_submitted' => '1',
@@ -517,6 +519,8 @@ class SpecialCakeAutoApprovalAndProductionReportTest extends TestCase
         $order->update(['discount_type' => 'percentage', 'discount_value' => 10, 'discount_amount' => 10, 'net_price' => 90]);
 
         $this->actingAs($this->user)->put(route('cake-orders.update', $order), [
+            'edit_type' => 'normal',
+            'edit_reason' => 'تصحيح مواصفات الطلب بناء على طلب العميل',
             'required_date' => now()->addDays(3)->toDateString(),
             'shape' => 'round',
             'cake_sizes_submitted' => '1',
@@ -538,11 +542,56 @@ class SpecialCakeAutoApprovalAndProductionReportTest extends TestCase
         $order = $this->makeSpecialCakeOrder('in_progress', 'chocolate', 'medium', 'round', now()->addDays(3)->toDateString());
 
         $this->actingAs($this->user)->put(route('cake-orders.update', $order), [
+            'edit_type' => 'normal',
+            'edit_reason' => 'تصحيح مواصفات الطلب بناء على طلب العميل',
             'required_date' => now()->addDays(3)->toDateString(),
             'total_price' => '200.00',
         ])->assertRedirect();
 
         $this->assertSame('100.00', $order->fresh()->total_price);
+    }
+
+    #[Test]
+    public function cake_order_in_progress_can_be_exceptionally_edited_with_reason(): void
+    {
+        $order = $this->makeSpecialCakeOrder('in_progress', 'chocolate', 'medium', 'round', now()->addDays(3)->toDateString());
+
+        $this->actingAs($this->user)->put(route('cake-orders.update', $order), [
+            'edit_type' => 'exceptional',
+            'edit_reason' => 'العميل طلب تعديل المواصفات أثناء التنفيذ',
+            'required_date' => now()->addDays(3)->toDateString(),
+            'shape' => 'round',
+            'cake_sizes_submitted' => 1,
+            'cake_sizes' => ['large'],
+            'total_price' => '100.00',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame('large', $order->fresh()->cake_size);
+    }
+
+    #[Test]
+    public function cake_order_in_progress_rejects_normal_edits_even_with_reason(): void
+    {
+        $order = $this->makeSpecialCakeOrder('in_progress', 'chocolate', 'medium', 'round', now()->addDays(3)->toDateString());
+
+        $this->actingAs($this->user)->put(route('cake-orders.update', $order), [
+            'edit_type' => 'normal',
+            'edit_reason' => 'تغيير طفيف في المواصفات حسب العميل',
+            'required_date' => now()->addDays(3)->toDateString(),
+            'shape' => 'round',
+            'total_price' => '100.00',
+        ])->assertSessionHasErrors('edit_type');
+
+        $this->assertSame('medium', $order->fresh()->cake_size);
+    }
+
+    #[Test]
+    public function cancelled_cake_order_without_financial_records_can_be_deleted(): void
+    {
+        $order = $this->makeSpecialCakeOrder('cancelled', 'chocolate', 'medium', 'round', now()->addDays(3)->toDateString());
+
+        $this->actingAs($this->user)->delete(route('cake-orders.destroy', $order))->assertRedirect();
+        $this->assertSoftDeleted('special_cake_orders', ['id' => $order->id]);
     }
 
     private function makeLocation(

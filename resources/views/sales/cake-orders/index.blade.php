@@ -643,11 +643,16 @@
                             فتح الطلب
                         </a>
 
-                        @if($statusValue === 'draft')
-                            @can('cake_orders.edit')
-                                <a href="{{ route('cake-orders.edit', $order) }}" class="btn btn-outline btn-sm">
-                                    تعديل
-                                </a>
+                        @can('update', $order)
+                            <a href="{{ route('cake-orders.edit', $order) }}" class="btn btn-outline btn-sm">تعديل</a>
+                        @endcan
+                        @if($statusValue === 'cancelled')
+                            @can('delete', $order)
+                                <form action="{{ route('cake-orders.destroy', $order) }}" method="POST" data-confirm="هل تريد حذف الطلب الملغى «{{ $order->order_number }}»؟ لا يمكن التراجع عن إخفائه من القائمة." data-confirm-title="تأكيد حذف طلب ملغى" data-confirm-type="danger">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-danger btn-sm">حذف</button>
+                                </form>
                             @endcan
                         @endif
                     </div>

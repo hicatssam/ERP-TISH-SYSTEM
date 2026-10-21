@@ -245,6 +245,8 @@ class CakeUrgencyAndCustomerReservationTest extends TestCase
                     $order
                 ),
                 [
+                    'edit_type' => 'normal',
+                    'edit_reason' => 'تصحيح موعد الطلب حسب تواصل العميل',
                     'required_date' =>
                         today()->toDateString(),
                     'required_time' =>
@@ -285,6 +287,8 @@ class CakeUrgencyAndCustomerReservationTest extends TestCase
                     $order
                 ),
                 [
+                    'edit_type' => 'normal',
+                    'edit_reason' => 'تصحيح موعد الطلب حسب تواصل العميل',
                     'required_date' =>
                         today()->toDateString(),
                     'required_time' =>
@@ -304,6 +308,8 @@ class CakeUrgencyAndCustomerReservationTest extends TestCase
                     $order
                 ),
                 [
+                    'edit_type' => 'normal',
+                    'edit_reason' => 'تصحيح موعد الطلب حسب تواصل العميل',
                     'required_date' =>
                         today()->toDateString(),
                     'required_time' =>
@@ -331,6 +337,8 @@ class CakeUrgencyAndCustomerReservationTest extends TestCase
                     $order
                 ),
                 [
+                    'edit_type' => 'normal',
+                    'edit_reason' => 'تصحيح موعد الطلب حسب تواصل العميل',
                     'required_date' =>
                         today()->toDateString(),
                     'required_time' =>

@@ -808,6 +808,8 @@ if (
             [
                 CakeOrderStatus::Draft,
                 CakeOrderStatus::Pending,
+                CakeOrderStatus::InProgress,
+                CakeOrderStatus::Ready,
             ],
             true
         )) {
@@ -827,6 +829,8 @@ if (
             [
                 CakeOrderStatus::Draft,
                 CakeOrderStatus::Pending,
+                CakeOrderStatus::InProgress,
+                CakeOrderStatus::Ready,
             ],
             true
         )) {
@@ -837,6 +841,8 @@ if (
         }
 
         $validated = $request->validate([
+            'edit_type' => ['required', Rule::in(['normal', 'exceptional'])],
+            'edit_reason' => ['required', 'string', 'min:5', 'max:1000'],
             'required_date' => ['required', 'date'],
             'required_time' => ['nullable', 'date_format:H:i'],
             'is_urgent' => ['nullable', 'boolean'],
@@ -900,15 +906,26 @@ if (
             }
         }
 
+        $editType = $validated['edit_type'];
+        $editReason = trim($validated['edit_reason']);
+        unset($validated['edit_type'], $validated['edit_reason']);
+
         // Price, discount and net amount are linked. Do not silently leave an old
         // net price after changing the total. Paid/invoiced orders are guarded below.
-        DB::transaction(function () use ($cakeOrder, $validated, $request): void {
+        DB::transaction(function () use ($cakeOrder, $validated, $request, $editType, $editReason): void {
             $locked = SpecialCakeOrder::query()->lockForUpdate()->findOrFail($cakeOrder->id);
             $this->authorize('update', $locked);
 
-            if (! in_array($locked->status, [CakeOrderStatus::Draft, CakeOrderStatus::Pending], true)) {
+            if (! in_array($locked->status, [CakeOrderStatus::Draft, CakeOrderStatus::Pending, CakeOrderStatus::InProgress, CakeOrderStatus::Ready], true)) {
                 throw ValidationException::withMessages([
                     'status' => 'تغيرت حالة الطلب أثناء التعديل؛ لا يمكن الحفظ بعد بدء الإنتاج.',
+                ]);
+            }
+
+            if (in_array($locked->status, [CakeOrderStatus::InProgress, CakeOrderStatus::Ready], true)
+                && $editType !== 'exceptional') {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'edit_type' => 'بعد بدء التنفيذ يجب اختيار تعديل استثنائي وذكر سببه.',
                 ]);
             }
 
@@ -954,7 +971,7 @@ if (
                     recordId: $locked->id,
                     oldValues: array_intersect_key($old, $changes),
                     newValues: array_intersect_key($locked->only(array_unique([...array_keys($validated), 'discount_amount', 'net_price'])), $changes),
-                    metadata: ['order_number' => $locked->order_number],
+                    metadata: ['order_number' => $locked->order_number, 'edit_type' => $editType, 'edit_reason' => $editReason],
                 );
             }
         });
@@ -993,11 +1010,30 @@ if (
     {
         $this->authorize('delete', $cakeOrder);
 
-        if ($cakeOrder->status !== CakeOrderStatus::Draft) {
-            return back()->with('error', 'يمكن حذف طلبات المسودة فقط.');
+        if (! in_array($cakeOrder->status, [CakeOrderStatus::Draft, CakeOrderStatus::Cancelled], true)) {
+            return back()->with('error', 'يمكن حذف الطلبات الملغاة أو المسودات فقط.');
         }
 
-        $cakeOrder->delete();
+        $deleted = DB::transaction(function () use ($cakeOrder): bool {
+            $locked = SpecialCakeOrder::query()->lockForUpdate()->findOrFail($cakeOrder->id);
+            $this->authorize('delete', $locked);
+
+            if (! in_array($locked->status, [CakeOrderStatus::Draft, CakeOrderStatus::Cancelled], true)) {
+                return false;
+            }
+
+            if ($locked->payments()->exists() || $locked->invoice()->exists()
+                || $locked->branchShipment()->exists() || $locked->receivingIssues()->exists()) {
+                return false;
+            }
+
+            $locked->delete();
+            return true;
+        });
+
+        if (! $deleted) {
+            return back()->with('error', 'لا يمكن حذف طلب مرتبط بمدفوعات أو فاتورة أو شحنة أو محضر استلام.');
+        }
 
         return redirect()
             ->route('cake-orders.index')

@@ -51,6 +51,8 @@ class SpecialCakeOrderPolicy
             [
                 CakeOrderStatus::Draft,
                 CakeOrderStatus::Pending,
+                CakeOrderStatus::InProgress,
+                CakeOrderStatus::Ready,
             ],
             true
         );
@@ -72,6 +74,6 @@ class SpecialCakeOrderPolicy
             return false;
         }
 
-        return $order->status === CakeOrderStatus::Draft;
+        return in_array($order->status, [CakeOrderStatus::Draft, CakeOrderStatus::Cancelled], true);
     }
 }

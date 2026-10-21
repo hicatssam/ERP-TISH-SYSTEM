@@ -84,7 +84,9 @@ class SpecialCakeOrderCreationFlowTest extends TestCase
         $response = $this->actingAs($creator)
             ->post(route('cake-orders.store'), [
                 'customer_id' => $customer->id,
-                'required_date' => now()->addDays(3)->toDateString(),
+                'edit_type' => 'normal',
+            'edit_reason' => 'تصحيح مواصفات الطلب بناء على طلب العميل',
+            'required_date' => now()->addDays(3)->toDateString(),
                 'required_time' => '15:30',
                 'cake_type' => 'Birthday',
                 'cake_size' => 'Large',
@@ -238,6 +240,8 @@ class SpecialCakeOrderCreationFlowTest extends TestCase
 
         $payload = [
             'customer_id' => $customer->id,
+            'edit_type' => 'normal',
+            'edit_reason' => 'تصحيح مواصفات الطلب بناء على طلب العميل',
             'required_date' => now()->addDays(3)->toDateString(),
             'required_time' => '15:30',
             'cake_type' => 'Birthday',
@@ -326,7 +330,9 @@ class SpecialCakeOrderCreationFlowTest extends TestCase
         $this->actingAs($creator)
             ->post(route('cake-orders.store'), [
                 'customer_id' => $customer->id,
-                'required_date' => now()->addDays(3)->toDateString(),
+                'edit_type' => 'normal',
+            'edit_reason' => 'تصحيح مواصفات الطلب بناء على طلب العميل',
+            'required_date' => now()->addDays(3)->toDateString(),
                 'required_time' => '15:30',
                 'cake_type' => 'chocolate',
                 'shape' => 'round',
@@ -343,7 +349,9 @@ class SpecialCakeOrderCreationFlowTest extends TestCase
         $this->actingAs($creator)
             ->post(route('cake-orders.store'), [
                 'customer_id' => $customer->id,
-                'required_date' => now()->addDays(3)->toDateString(),
+                'edit_type' => 'normal',
+            'edit_reason' => 'تصحيح مواصفات الطلب بناء على طلب العميل',
+            'required_date' => now()->addDays(3)->toDateString(),
                 'required_time' => '15:30',
                 'cake_type' => 'chocolate',
                 'shape' => 'round',
@@ -377,6 +385,8 @@ class SpecialCakeOrderCreationFlowTest extends TestCase
 
         $this->actingAs($creator)
             ->put(route('cake-orders.update', $order), [
+                'edit_type' => 'normal',
+                'edit_reason' => 'تصحيح خيارات العميل قبل بدء التنفيذ',
                 'required_date' => now()->addDays(4)->toDateString(),
                 'required_time' => '15:30',
                 'cake_type' => 'chocolate',

@@ -284,6 +284,16 @@
         @endcan
 
 
+        @if($cakeOrder->status === \App\Enums\CakeOrderStatus::Cancelled)
+            @can('delete', $cakeOrder)
+                <form action="{{ route('cake-orders.destroy', $cakeOrder) }}" method="POST" data-confirm="هل تريد حذف هذا الطلب الملغى؟ لن يتم حذف السجلات المالية، وأي طلب مرتبط بها سيُرفض حذفه." data-confirm-title="تأكيد حذف الطلب الملغى" data-confirm-type="danger" style="display:inline">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-danger btn-sm">حذف الطلب الملغى</button>
+                </form>
+            @endcan
+        @endif
+
         <a
             href="{{ route('cake-orders.index') }}"
             class="btn btn-ghost btn-sm"
