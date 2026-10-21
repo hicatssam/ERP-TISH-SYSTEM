@@ -20,7 +20,7 @@
     </div>
 @endif
 
-<form action="{{ route('showroom-sweets-requests.store') }}" method="POST" id="ssrForm">
+<form action="{{ route('showroom-sweets-requests.store') }}" method="POST" id="ssrForm" data-daily-order-form>
     @csrf
 
     <div style="display:grid;gap:1.5rem;max-width:1100px">
@@ -115,7 +115,10 @@
             </div>
         </div>
 
-        @include('sales.partials.daily-raw-materials-form')
+        @can('create', \App\Models\StockRequest::class)
+            @include('sales.partials.daily-raw-materials-form')
+        @endcan
+        <div class="alert alert-danger" data-order-error role="alert" tabindex="-1" hidden></div>
 
         <div style="display:flex;gap:.75rem;flex-wrap:wrap">
             <button class="btn btn-gold" type="submit" {{ $factories->isEmpty() ? 'disabled' : '' }}>
@@ -316,7 +319,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('ssrForm').addEventListener('submit', (event) => {
         if (!container.querySelector('.ssr-item-row')) {
             event.preventDefault();
-            alert('يجب إضافة صنف حلويات واحد على الأقل.');
+            const error = document.querySelector('#ssrForm [data-order-error]');
+            error.textContent = 'يجب إضافة صنف حلويات واحد على الأقل.';
+            error.hidden = false;
+            error.focus();
         }
     });
 
@@ -324,3 +330,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 @endsection
+
+
+@push('scripts')
+<script src="{{ asset('assets/js/daily-order-form.js') }}"></script>
+@endpush

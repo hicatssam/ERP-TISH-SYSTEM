@@ -326,7 +326,7 @@ class ShowroomSweetsRequestController extends Controller
                 'string',
                 'max:500',
             ],
-        ]);
+        ], app(DailyRawMaterialRequestService::class)->validationMessages());
 
         foreach ($validated['items'] as $index => $item) {
             $reserved =
@@ -1406,3 +1406,4 @@ class ShowroomSweetsRequestController extends Controller
     }
 
 }
+

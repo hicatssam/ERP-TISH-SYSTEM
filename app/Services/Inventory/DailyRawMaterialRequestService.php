@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Notifications\StockRequestCreatedNotification;
 use App\Services\Notifications\NotificationDispatcher;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 /** Optional material requisition linked to a daily order, created atomically with it. */
 class DailyRawMaterialRequestService
@@ -31,12 +32,34 @@ class DailyRawMaterialRequestService
             'raw_materials.*.note' => ['nullable', 'string', 'max:500'],
         ];
     }
+    public function validationMessages(): array
+    {
+        return [
+            'raw_materials.array' => 'يجب إرسال المواد الخام في قائمة أصناف صحيحة.',
+            'raw_materials.max' => 'يمكن إرفاق 30 مادة خام كحد أقصى.',
+            'raw_materials.*.product_id.required' => 'اختر المادة الخام لكل سطر.',
+            'raw_materials.*.product_id.integer' => 'اختيار المادة الخام غير صالح.',
+            'raw_materials.*.product_id.distinct' => 'المادة الخام مكررة؛ اجمع كميتها في سطر واحد.',
+            'raw_materials.*.product_id.exists' => 'المادة المختارة غير متاحة أو ليست مادة خام مفعّلة.',
+            'raw_materials.*.quantity.required' => 'أدخل كمية المادة الخام.',
+            'raw_materials.*.quantity.numeric' => 'كمية المادة الخام يجب أن تكون رقمًا.',
+            'raw_materials.*.quantity.min' => 'أقل كمية مسموحة للمادة الخام هي 0.001.',
+            'raw_materials.*.quantity.max' => 'أكبر كمية مسموحة للمادة الخام هي 999999.',
+            'raw_materials.*.note.string' => 'ملاحظة المادة الخام يجب أن تكون نصًا.',
+            'raw_materials.*.note.max' => 'ملاحظة المادة الخام لا تتجاوز 500 حرف.',
+        ];
+    }
     public function createForDailyRequest(
         ShowroomSweetsRequest|ShowroomCakeRequest $dailyRequest,
         array $lines,
         User $actor
     ): ?StockRequest {
         if ($lines === []) return null;
+        abort_unless(
+            Gate::forUser($actor)->allows('create', StockRequest::class),
+            403,
+            'لا تملك صلاحية طلب المواد الخام. اطلب تفعيل صلاحية إنشاء طلبات المخزون.'
+        );
         $sourceKey = $dailyRequest instanceof ShowroomSweetsRequest
             ? 'showroom_sweets_request_id' : 'showroom_cake_request_id';
         $stockRequest = StockRequest::query()->create([
@@ -67,3 +90,4 @@ class DailyRawMaterialRequestService
         );
     }
 }
+

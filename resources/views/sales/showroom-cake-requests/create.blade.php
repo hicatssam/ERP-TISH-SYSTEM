@@ -20,7 +20,7 @@
 </div>
 @endif
 
-<form action="{{ route('showroom-cake-requests.store') }}" method="POST" id="scrForm">
+<form action="{{ route('showroom-cake-requests.store') }}" method="POST" id="scrForm" data-daily-order-form>
     @csrf
     <div style="display:grid;gap:1.5rem;max-width:1000px">
 
@@ -120,7 +120,10 @@
             </div>
         </div>
 
-        @include('sales.partials.daily-raw-materials-form')
+        @can('create', \App\Models\StockRequest::class)
+            @include('sales.partials.daily-raw-materials-form')
+        @endcan
+        <div class="alert alert-danger" data-order-error role="alert" tabindex="-1" hidden></div>
 
         <div style="display:flex;gap:.75rem">
             <button class="btn btn-gold" type="submit">إرسال الطلب</button>
@@ -271,7 +274,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('scrForm').addEventListener('submit', e => {
         if (!container.querySelector('.scr-item-row')) {
             e.preventDefault();
-            alert('يجب إضافة صنف كيك واحد على الأقل.');
+            const error = document.querySelector('#scrForm [data-order-error]');
+            error.textContent = 'يجب إضافة صنف كيك واحد على الأقل.';
+            error.hidden = false;
+            error.focus();
         }
     });
 
@@ -284,3 +290,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 @endsection
+
+
+@push('scripts')
+<script src="{{ asset('assets/js/daily-order-form.js') }}"></script>
+@endpush

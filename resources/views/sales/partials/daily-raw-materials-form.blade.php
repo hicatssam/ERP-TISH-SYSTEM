@@ -27,7 +27,7 @@
             </select>
         </label>
         <label><span class="form-label">الكمية *</span>
-            <input type="number" name="raw_materials[__N__][quantity]" min=".001" step=".001" class="form-input raw-quantity" required>
+            <input type="number" name="raw_materials[__N__][quantity]" min=".001" max="999999" step=".001" class="form-input raw-quantity" required>
         </label>
         <label><span class="form-label">ملاحظة</span>
             <input type="text" name="raw_materials[__N__][note]" maxlength="500" class="form-input raw-note">
@@ -43,15 +43,29 @@
     const empty = document.getElementById('rawMaterialEmpty');
     const tpl = document.getElementById('rawMaterialTemplate');
     const saved = {{ \Illuminate\Support\Js::from(old('raw_materials', [])) }};
+    const errors = {{ \Illuminate\Support\Js::from($errors->getMessages()) }};
     let next = 0;
     function refresh() {
         empty.hidden = host.children.length !== 0;
         button.disabled = host.children.length >= 30 || @json($rawMaterials->isEmpty());
     }
-    function add(item = {}) {
+    function add(item = {}, originalIndex = null) {
         const content = tpl.content.cloneNode(true);
         const row = content.querySelector('.raw-material-line');
         row.querySelectorAll('[name]').forEach(input => input.name = input.name.replace('__N__', String(next)));
+        row.querySelectorAll('[name]').forEach(input => {
+            const field = input.name.match(/\[([^\]]+)\]$/)[1];
+            const messages = originalIndex === null ? [] : errors[`raw_materials.${originalIndex}.${field}`] || [];
+            if (messages.length) {
+                const error = document.createElement('small');
+                error.className = 'form-error';
+                error.id = `raw-error-${next}-${field}`;
+                error.textContent = messages.join(' ');
+                input.setAttribute('aria-invalid', 'true');
+                input.setAttribute('aria-describedby', error.id);
+                input.parentElement.appendChild(error);
+            }
+        });
         next++;
         row.querySelector('.raw-product').value = item.product_id || '';
         row.querySelector('.raw-quantity').value = item.quantity || '';
@@ -61,7 +75,8 @@
         refresh();
     }
     button.addEventListener('click', () => add());
-    (Array.isArray(saved) ? saved : Object.values(saved || {})).forEach(add);
+    Object.entries(saved || {}).forEach(([index, item]) => add(item, index));
     refresh();
 })();
 </script>
+

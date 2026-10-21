@@ -312,6 +312,49 @@ class DailyBranchRawMaterialsTest extends TestCase
         $this->assertSame(0, \App\Models\AccountingJournal::query()->count());
     }
 
+    #[Test]
+    public function daily_materials_cannot_bypass_stock_request_creation_permission(): void
+    {
+        Notification::fake();
+        [, $factory, $user] = $this->locationsAndUser();
+        $raw = $this->product('Restricted raw', true);
+        $sweet = $this->product('Allowed sweet', false);
+        $user->revokePermissionTo('stock_requests.create');
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        $user = $user->fresh();
+
+        foreach (['cake', 'sweets'] as $kind) {
+            $this->actingAs($user)->get(route("showroom-{$kind}-requests.create"))
+                ->assertOk()->assertDontSee('id="addRawMaterial"', false);
+            $this->actingAs($user)->post(route("showroom-{$kind}-requests.store"), [
+                'factory_location_id' => $factory->id,
+                'items' => $kind === 'cake'
+                    ? [['cake_type' => 'vanilla', 'quantity' => 1]]
+                    : [['product_id' => $sweet->id, 'quantity' => 1, 'requested_unit' => 'tray']],
+                'raw_materials' => [['product_id' => $raw->id, 'quantity' => 1]],
+            ])->assertForbidden();
+        }
+        $this->assertDatabaseCount('showroom_cake_requests', 0);
+        $this->assertDatabaseCount('showroom_sweets_requests', 0);
+        $this->assertDatabaseCount('stock_requests', 0);
+        Notification::assertNothingSent();
+    }
+
+    #[Test]
+    public function daily_order_without_materials_does_not_require_stock_permission(): void
+    {
+        Notification::fake();
+        [, $factory, $user] = $this->locationsAndUser();
+        $user->revokePermissionTo('stock_requests.create');
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        $this->actingAs($user->fresh())->post(route('showroom-cake-requests.store'), [
+            'factory_location_id' => $factory->id,
+            'items' => [['cake_type' => 'vanilla', 'quantity' => 1]],
+        ])->assertSessionHasNoErrors()->assertSessionHas('success');
+        $this->assertDatabaseCount('showroom_cake_requests', 1);
+        $this->assertDatabaseCount('stock_requests', 0);
+    }
+
     /** @return array{Location,Location,User} */
     private function locationsAndUser(): array
     {
@@ -359,3 +402,4 @@ class DailyBranchRawMaterialsTest extends TestCase
         ]);
     }
 }
+

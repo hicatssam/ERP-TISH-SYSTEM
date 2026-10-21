@@ -45,6 +45,9 @@ jobs:
       - name: Generate app key
         run: php artisan key:generate
 
+      - name: Verify daily branch raw material authorization and reports
+        run: php artisan test tests/Feature/Sales/DailyBranchRawMaterialsTest.php
+
       - name: Install frontend dependencies
         run: npm install --no-audit --no-fund
 
@@ -81,4 +84,5 @@ jobs:
 
       - name: Run test suite
         run: php artisan test
+
 
