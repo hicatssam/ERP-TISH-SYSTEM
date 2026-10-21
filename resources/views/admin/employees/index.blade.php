@@ -271,6 +271,14 @@
                             >
                                 تعديل
                             </a>
+                            <form method="POST" action="{{ route('employees.toggle', $emp) }}" style="display:inline">
+                                @csrf
+                                <button type="button" class="btn btn-ghost btn-sm" data-open-dialog="employee-status-{{ $emp->id }}">{{ $statusValue === 'active' ? 'تعطيل' : 'تفعيل' }}</button>
+                                <x-action-dialog id="employee-status-{{ $emp->id }}" title="تأكيد تغيير حالة الموظف" description="الموظف: {{ $emp->full_name }}">
+                                    <p>سيتم تغيير حالة الموظف وحالة حساب الدخول المرتبط به إن وجد.</p>
+                                    <div class="action-btns"><button type="submit" class="btn btn-gold">تأكيد</button><button type="button" class="btn btn-ghost" data-close-dialog>إلغاء</button></div>
+                                </x-action-dialog>
+                            </form>
                         @endcan
                     </div>
                 </td>

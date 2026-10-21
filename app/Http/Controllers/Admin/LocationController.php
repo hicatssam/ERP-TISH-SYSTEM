@@ -49,10 +49,25 @@ class LocationController extends Controller
         return redirect()->route('locations.index')->with('error', 'لا يمكن حذف الموقع.');
     }
 
-    public function toggleStatus(Location $location)
+    public function toggleStatus(Request $request, Location $location)
     {
-        $location->update(['is_active' => ! $location->is_active]);
-        $msg = $location->is_active ? 'تم تفعيل الموقع.' : 'تم تعطيل الموقع.';
-        return back()->with('success', $msg);
+        $data = $request->validate([
+            'expected_active' => ['required', 'boolean'],
+        ]);
+
+        $changed = \Illuminate\Support\Facades\DB::transaction(function () use ($location, $data): ?bool {
+            $locked = Location::query()->lockForUpdate()->findOrFail($location->id);
+            if ((bool) $locked->is_active !== (bool) $data['expected_active']) {
+                return null;
+            }
+            $locked->update(['is_active' => ! $locked->is_active]);
+            return (bool) $locked->is_active;
+        });
+
+        if ($changed === null) {
+            return back()->with('error', 'تغيرت حالة الموقع منذ فتح القائمة. حدّث الصفحة ثم حاول مجددًا.');
+        }
+
+        return back()->with('success', $changed ? 'تم تفعيل الموقع.' : 'تم تعطيل الموقع.');
     }
 }

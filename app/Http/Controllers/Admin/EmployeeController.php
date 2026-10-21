@@ -298,7 +298,14 @@ class EmployeeController extends Controller
                     ->store('employees/profile-images', 'public');
             }
 
+            $oldEmploymentStatus = $employee->employment_status;
             $employee->update($validated);
+
+            if ($employee->user && $employee->employment_status !== $oldEmploymentStatus) {
+                $employee->user->update([
+                    'is_active' => $employee->employment_status === EmploymentStatus::Active,
+                ]);
+            }
 
             $this->updatePrimaryLocation(
                 $employee,
@@ -340,19 +347,23 @@ class EmployeeController extends Controller
         $this->requirePermission($user, ['employees.update']);
         $this->ensureEmployeeAccess($employee, $user);
 
+        if ($employee->employment_status === EmploymentStatus::Terminated) {
+            return back()->with('error', 'لا يمكن إعادة تفعيل موظف منتهي الخدمة عبر تغيير الحالة السريع.');
+        }
+
         $newStatus = $employee->employment_status === EmploymentStatus::Active
             ? EmploymentStatus::Inactive
             : EmploymentStatus::Active;
 
-        $employee->update([
-            'employment_status' => $newStatus,
-        ]);
+        DB::transaction(function () use ($employee, $newStatus): void {
+            $employee->update(['employment_status' => $newStatus]);
 
-        if ($employee->user) {
-            $employee->user->update([
-                'is_active' => $newStatus === EmploymentStatus::Active,
-            ]);
-        }
+            if ($employee->user) {
+                $employee->user->update([
+                    'is_active' => $newStatus === EmploymentStatus::Active,
+                ]);
+            }
+        });
 
         return back()->with(
             'success',

@@ -181,20 +181,21 @@
                     <button
                         type="button"
                         class="btn btn-ghost btn-sm"
-                        onclick="paOpenEditModal({
-                            id: '{{ $account->id }}',
-                            payment_method_id: '{{ $account->payment_method_id }}',
-                            name: `{{ addslashes($account->name) }}`,
-                            provider_name: `{{ addslashes($account->provider_name) }}`,
-                            account_holder_name: `{{ addslashes($account->account_holder_name) }}`,
-                            account_number: `{{ addslashes($account->account_number) }}`,
-                            iban: `{{ addslashes($account->iban) }}`,
-                            phone_number: `{{ addslashes($account->phone_number) }}`,
-                            instructions: `{{ addslashes($account->instructions) }}`,
-                            sort_order: '{{ $account->sort_order }}',
-                            is_active: {{ $account->is_active ? 'true' : 'false' }},
-                            updateUrl: '{{ route('locations.payment-accounts.update', [$location, $account]) }}'
-                        })"
+                        data-account="{{ json_encode([
+                            'id' => $account->id,
+                            'payment_method_id' => $account->payment_method_id,
+                            'name' => $account->name,
+                            'provider_name' => $account->provider_name,
+                            'account_holder_name' => $account->account_holder_name,
+                            'account_number' => $account->account_number,
+                            'iban' => $account->iban,
+                            'phone_number' => $account->phone_number,
+                            'instructions' => $account->instructions,
+                            'sort_order' => $account->sort_order,
+                            'is_active' => (bool) $account->is_active,
+                            'updateUrl' => route('locations.payment-accounts.update', [$location, $account]),
+                        ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) }}"
+                        onclick="paOpenEditModal(JSON.parse(this.dataset.account))"
                     >
                         تعديل
                     </button>
@@ -1133,13 +1134,13 @@
             paOpenEditModal({
                 id: '{{ old('account_id') }}',
                 payment_method_id: '{{ old('payment_method_id') }}',
-                name: `{{ addslashes(old('name', '')) }}`,
-                provider_name: `{{ addslashes(old('provider_name', '')) }}`,
-                account_holder_name: `{{ addslashes(old('account_holder_name', '')) }}`,
-                account_number: `{{ addslashes(old('account_number', '')) }}`,
-                iban: `{{ addslashes(old('iban', '')) }}`,
-                phone_number: `{{ addslashes(old('phone_number', '')) }}`,
-                instructions: `{{ addslashes(old('instructions', '')) }}`,
+                name: {!! \Illuminate\Support\Js::from(old('name', '')) !!},
+                provider_name: {!! \Illuminate\Support\Js::from(old('provider_name', '')) !!},
+                account_holder_name: {!! \Illuminate\Support\Js::from(old('account_holder_name', '')) !!},
+                account_number: {!! \Illuminate\Support\Js::from(old('account_number', '')) !!},
+                iban: {!! \Illuminate\Support\Js::from(old('iban', '')) !!},
+                phone_number: {!! \Illuminate\Support\Js::from(old('phone_number', '')) !!},
+                instructions: {!! \Illuminate\Support\Js::from(old('instructions', '')) !!},
                 sort_order: '{{ old('sort_order', 0) }}',
                 is_active: {{ old('is_active') ? 'true' : 'false' }},
                 updateUrl: '{{ route('locations.payment-accounts.update', [$location, old('account_id')]) }}'

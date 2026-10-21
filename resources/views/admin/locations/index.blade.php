@@ -46,8 +46,13 @@
                         @can('locations.manage')
                         <a href="{{ route('locations.edit', $location) }}" class="btn btn-outline btn-sm">تعديل</a>
                         <form action="{{ route('locations.toggle', $location) }}" method="POST" style="display:inline">
-                            @csrf @method('PATCH')
-                            <button class="btn btn-ghost btn-sm">{{ $location->is_active ? 'تعطيل' : 'تفعيل' }}</button>
+                            @csrf
+                            <input type="hidden" name="expected_active" value="{{ $location->is_active ? 1 : 0 }}">
+                            <button type="button" class="btn btn-ghost btn-sm" data-open-dialog="location-status-{{ $location->id }}">{{ $location->is_active ? 'تعطيل' : 'تفعيل' }}</button>
+                            <x-action-dialog id="location-status-{{ $location->id }}" title="{{ $location->is_active ? 'تأكيد تعطيل الموقع' : 'تأكيد تفعيل الموقع' }}" description="الموقع: {{ $location->name }}">
+                                <p>{{ $location->is_active ? 'سيتم إيقاف الموقع عن العمل في النظام. تأكد من عدم وجود عمليات جارية.' : 'سيصبح الموقع نشطًا في النظام.' }}</p>
+                                <div class="action-btns"><button type="submit" class="btn btn-gold">{{ $location->is_active ? 'تأكيد التعطيل' : 'تأكيد التفعيل' }}</button><button type="button" class="btn btn-ghost" data-close-dialog>إلغاء</button></div>
+                            </x-action-dialog>
                         </form>
                         @endcan
                     </div>
