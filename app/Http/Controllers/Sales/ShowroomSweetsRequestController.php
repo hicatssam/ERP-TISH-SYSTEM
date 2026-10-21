@@ -181,7 +181,9 @@ class ShowroomSweetsRequestController extends Controller
         }
 
         return response()->json($query->with('category')
-            ->orderBy('name_ar')->orderBy('name')->limit(30)->get()
+            // Match the product catalog: first product created appears first.
+            // ID provides a stable tie-breaker for imported products with the same timestamp.
+            ->orderBy('created_at')->orderBy('id')->limit(30)->get()
             ->map(fn (Product $product) => [
                 'id' => $product->id,
                 'label' => ($product->name_ar ?: $product->name)
