@@ -402,6 +402,16 @@ class EmployeeController extends Controller
             ],
         ]);
 
+        $selectedRole = \Spatie\Permission\Models\Role::query()
+            ->where('name', $validated['role'])
+            ->where('guard_name', 'web')
+            ->firstOrFail();
+
+        abort_if(
+            ! $user->isAdmin() && in_array(strtolower($selectedRole->name), ['admin', 'super-admin'], true),
+            403
+        );
+
         $tempPassword = Str::random(12) . '!1A';
 
         $newUser = User::create([
@@ -415,7 +425,7 @@ class EmployeeController extends Controller
             'must_change_password' => true,
         ]);
 
-        $newUser->assignRole($validated['role']);
+        $newUser->assignRole($selectedRole);
 
         NotificationDispatcher::notifyByPermissions(
             new UserCreatedNotification($newUser->load('employee')),

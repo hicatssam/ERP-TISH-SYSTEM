@@ -14,6 +14,8 @@ class PermissionUi
             'Branch Employee' => 'موظف فرع',
             'Cashier' => 'كاشير',
             'Factory Manager' => 'مدير المصنع',
+            'Cake Department Manager' => 'مدير قسم الكيك',
+            'Production Employee caek' => 'موظف إنتاج الكيك',
             'Production Employee' => 'موظف إنتاج',
             'Cake Designer' => 'مصمم كيك',
             'Quality Control' => 'مراقب جودة',

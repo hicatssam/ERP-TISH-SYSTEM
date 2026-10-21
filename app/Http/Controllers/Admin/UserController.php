@@ -226,7 +226,21 @@ class UserController extends Controller
             'role' => ['required', 'exists:roles,name'],
         ]);
 
-        $user->syncRoles([$request->role]);
+        $targetRole = \Spatie\Permission\Models\Role::query()
+            ->where('name', $request->input('role'))
+            ->where('guard_name', 'web')
+            ->firstOrFail();
+
+        // Managing branch users does not grant permission to create administrators.
+        abort_unless(
+            auth()->user()->isAdmin()
+            || (! in_array(strtolower($targetRole->name), ['admin', 'super-admin'], true)
+                && ! $user->isAdmin()),
+            403,
+            'لا يمكن منح دور مدير النظام أو تغيير حساب مدير النظام.'
+        );
+
+        $user->syncRoles([$targetRole]);
 
         return back()->with('success', 'تم تحديث الدور.');
     }
