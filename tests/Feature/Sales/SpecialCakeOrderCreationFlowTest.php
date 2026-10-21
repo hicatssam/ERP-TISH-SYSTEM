@@ -398,6 +398,42 @@ class SpecialCakeOrderCreationFlowTest extends TestCase
 
         $this->assertSame(['medium', 'large'], $order->fresh()->cake_sizes);
         $this->assertSame('medium', $order->fresh()->cake_size);
+
+        $this->actingAs($creator)->post(route('cake-orders.store'), [
+            'customer_id' => $customer->id,
+            'required_date' => now()->addDays(5)->toDateString(),
+            'required_time' => '15:30',
+            'cake_type' => 'chocolate',
+            'shape' => 'slab',
+            'cake_sizes_submitted' => 1,
+            'cake_sizes' => ['40x30', '60x40'],
+            'total_price' => 250,
+            'payment_arrangement' => 'pay_on_pickup',
+            'payment_method_id' => $cash->id,
+            'discount_type' => 'none',
+            'discount_value' => 0,
+            'image_cover_type' => 'none',
+        ])->assertSessionHasNoErrors();
+
+        $slab = SpecialCakeOrder::query()->whereKeyNot($order->id)->sole();
+        $this->assertSame('slab', $slab->shape);
+        $this->assertSame(['40x30', '60x40'], $slab->cake_sizes);
+        $this->assertSame('40x30', $slab->cake_size);
+        $this->actingAs($creator)->get(route('cake-orders.show', $slab))
+            ->assertOk()->assertSee('بلاطة')->assertSee('40 × 30 سم')->assertSee('60 × 40 سم');
+
+        $this->actingAs($creator)->post(route('cake-orders.store'), [
+            'customer_id' => $customer->id,
+            'required_date' => now()->addDays(5)->toDateString(),
+            'cake_type' => 'chocolate',
+            'shape' => 'round',
+            'cake_sizes_submitted' => 1,
+            'cake_sizes' => ['40x30'],
+            'total_price' => 250,
+            'payment_arrangement' => 'pay_on_pickup',
+            'payment_method_id' => $cash->id,
+            'image_cover_type' => 'none',
+        ])->assertSessionHasErrors('cake_sizes');
     }
 
     private function userAt(

@@ -991,7 +991,30 @@ if (
             return $validated;
         }
 
+        $shape = $validated['shape'] ?? $request->input('shape');
+        $available = match ($shape) {
+            'round', 'standard_tiers' => ['small', 'medium', 'large'],
+            'slab' => ['30x30', '40x30', '60x40', '120x30', '120x80'],
+            'wedding_tiers' => ['standard'],
+            default => null,
+        };
+        if ($available === null) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'shape' => 'يجب اختيار شكل كيك صحيح قبل تحديد المقاس.',
+            ]);
+        }
+
         $sizes = array_values(array_unique($validated['cake_sizes'] ?? []));
+        if (array_diff($sizes, $available)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'cake_sizes' => 'المقاسات المحددة لا تتوافق مع شكل الكيك.',
+            ]);
+        }
+        if ($shape !== 'wedding_tiers' && count($sizes) === 0) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'cake_sizes' => 'يجب اختيار مقاس واحد على الأقل للشكل المحدد.',
+            ]);
+        }
 
         // Wedding tiers have a fixed legacy "standard" value without a size picker.
         if (($validated['shape'] ?? $request->input('shape')) === 'wedding_tiers') {
