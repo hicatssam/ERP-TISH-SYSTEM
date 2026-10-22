@@ -23,7 +23,7 @@
     $featuredLimit = max(2, min(8, (int) $cmSetting('customer_menu_featured_limit', 4)));
     $homeTitle = (string) $cmSetting('customer_menu_title', 'أهلاً بك');
     $homeSubtitle = (string) $cmSetting('customer_menu_subtitle', 'شو بتحب تأكل اليوم؟');
-    $introMode = (string) $cmSetting('customer_menu_intro_mode', 'off');
+    $introMode = (string) $cmSetting('customer_menu_intro_mode', 'first_visit');
     $introTitle = (string) $cmSetting('customer_menu_intro_title', 'أهلاً بك');
     $introSubtitle = (string) $cmSetting('customer_menu_intro_subtitle', 'تجربة ألذ تبدأ من هنا');
     $introEyebrow = (string) $cmSetting('customer_menu_intro_eyebrow', '');
@@ -177,6 +177,11 @@
 }
 
 /* Motion only: preserve the existing layout and configurable brand palette. */
+@keyframes cmHeroEnter{from{opacity:.15;transform:translateY(30px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes cmSectionEnter{from{opacity:.1;transform:translateY(22px)}to{opacity:1;transform:none}}
+.reference-home .reference-hero,.reference-home .reference-hero-fallback,.reference-home .reference-banner{animation:cmHeroEnter .85s cubic-bezier(.2,.75,.2,1) both}
+.reference-home .reference-section-head{animation:cmSectionEnter .65s cubic-bezier(.2,.75,.2,1) both}
+
 @keyframes cmIntroReveal{from{opacity:0;transform:translate3d(0,18px,0) scale(.94);filter:blur(5px)}to{opacity:1;transform:none;filter:blur(0)}}
 @keyframes cmCardReveal{from{opacity:0;transform:translate3d(0,20px,0)}to{opacity:1;transform:none}}
 @keyframes cmBannerCopyReveal{from{opacity:0;transform:translate3d(0,14px,0)}to{opacity:1;transform:none}}
@@ -198,6 +203,7 @@
 @media(prefers-reduced-motion:reduce){
  .intro:not(.hide) .intro-logo,.intro:not(.hide) .intro-box small,.intro:not(.hide) .intro-box h1,.intro:not(.hide) .intro-box p,.intro:not(.hide) .intro-enter,.reference-home .product.cm-reveal,.reference-home .banner-slide .banner-copy{animation:none!important}
  .reference-home .cat,.reference-home .product-media img,.reference-home .details{transition:none!important}
+ .reference-home .reference-hero,.reference-home .reference-hero-fallback,.reference-home .reference-banner,.reference-home .reference-section-head{animation:none!important}
  .reference-home .cat.active{transform:none}
 }
 
