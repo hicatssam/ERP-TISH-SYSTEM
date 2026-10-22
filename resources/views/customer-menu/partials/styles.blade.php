@@ -317,4 +317,26 @@ a{color:inherit;text-decoration:none}
  .nav-btn.active i{transform:translateY(-2px);font-size:22px}
  .nav-badge{position:absolute;top:0;left:50%;margin-left:9px;min-width:19px;height:19px;border:2px solid var(--surface);border-radius:12px;background:var(--primary);color:#fff;font-size:9px;font-weight:900;display:grid;place-items:center;padding:0 3px}
 }
+
+/* Subtle background brand watermark. Only the logo configured in settings is used. */
+.cm-brand-watermark{
+ position:fixed;inset:0;z-index:40;display:grid;place-items:center;
+ pointer-events:none;overflow:hidden;isolation:isolate;
+}
+.cm-brand-watermark img{
+ display:block;width:clamp(220px,52vw,340px);height:auto;max-height:52vh;
+ object-fit:contain;opacity:.045;
+ animation:cmWatermarkDrift 16s ease-in-out infinite;
+ will-change:transform;
+}
+@keyframes cmWatermarkDrift{
+ 0%,100%{transform:translate3d(0,0,0) scale(1)}
+ 50%{transform:translate3d(0,-13px,0) scale(1.035)}
+}
+/* The image overlays opaque menu-area backgrounds at only 4.5% opacity. */
+body.crisp-customer-menu > .app{position:relative;z-index:1}
+@media(prefers-reduced-motion:reduce){
+ .cm-brand-watermark img{animation:none!important;will-change:auto}
+}
+
 </style>

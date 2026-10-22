@@ -210,6 +210,7 @@
 </style>
 </head>
 <body class="crisp-customer-menu reference-home">
+@include('customer-menu.partials.brand-watermark')
 
 @if($introMode !== 'off')
 <div id="intro" class="intro" data-mode="{{ $introMode }}" @if($introImage) style="background-image:url('{{ $introImage }}')" @endif>

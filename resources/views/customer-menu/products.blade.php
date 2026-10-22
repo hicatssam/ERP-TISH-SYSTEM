@@ -19,6 +19,7 @@
 </style>
 </head>
 <body class="crisp-customer-menu">
+@include('customer-menu.partials.brand-watermark')
 <div class="app crisp-menu-app">
 @include('customer-menu.partials.topbar', ['pageTitle' => 'المنيو الكامل', 'pageSubtitle' => $location->name])
 
