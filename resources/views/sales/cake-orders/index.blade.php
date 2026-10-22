@@ -417,8 +417,13 @@
         </div>
     </section>
 
-    <section class="card cake-filter-card" aria-label="البحث والتصفية">
+    <div style="display:flex;gap:.6rem;margin-bottom:1rem;flex-wrap:wrap">
+    <a class="btn btn-outline btn-sm" href="{{ route('cake-orders.index') }}">الطلبات التشغيلية</a>
+    <a class="btn btn-outline btn-sm" href="{{ route('cake-orders.index', ['archive' => 'archived']) }}">الطلبات المؤرشفة</a>
+</div>
+<section class="card cake-filter-card" aria-label="البحث والتصفية">
         <form method="GET" action="{{ route('cake-orders.index') }}" class="cake-filter-grid">
+            @if(request('archive') === 'archived')<input type="hidden" name="archive" value="archived">@endif
             <label class="filter-field search-field">
                 <span>بحث سريع</span>
                 <span class="input-with-icon">

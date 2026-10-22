@@ -499,6 +499,14 @@ Route::match(['put', 'patch'], 'cake-orders/{cakeOrder}', [SpecialCakeOrderContr
     ->name('cake-orders.update')
     ->middleware('can:cake_orders.edit');
 
+Route::post('cake-orders/{cakeOrder}/archive', [SpecialCakeOrderController::class, 'archive'])
+    ->name('cake-orders.archive')
+    ->middleware('can:cake_orders.delete');
+
+Route::post('cake-orders/{cakeOrder}/restore-archive', [SpecialCakeOrderController::class, 'restoreArchive'])
+    ->name('cake-orders.restore-archive')
+    ->middleware('can:cake_orders.delete');
+
 Route::delete('cake-orders/{cakeOrder}', [SpecialCakeOrderController::class, 'destroy'])
     ->name('cake-orders.destroy')
     ->middleware('can:cake_orders.delete');

@@ -23,6 +23,7 @@ class SpecialCakeOrder extends Model
         'status', 'payment_status', 'payment_arrangement', 'payment_channel',
         'created_by', 'assigned_to',
         'scheduled_at', 'completed_at', 'cancelled_at', 'cancellation_reason', 'cancelled_by',
+        'archived_at', 'archived_by',
     ];
 
     protected function casts(): array

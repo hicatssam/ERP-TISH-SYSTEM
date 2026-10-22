@@ -281,6 +281,18 @@
     </div>
 @endif
 
+@if($cakeOrder->archived_at)
+    <div role="status" style="margin-bottom:1rem;padding:1rem;background:#f1f5f9;border-radius:12px">
+        <strong>هذا الطلب مؤرشف</strong> — يبقى ظاهرًا من الفواتير والحوالات المالية.
+        @can('delete', $cakeOrder)
+            <form method="POST" action="{{ route('cake-orders.restore-archive', $cakeOrder) }}" style="display:inline-block;margin-right:.8rem">
+                @csrf
+                <button type="submit" class="btn btn-outline btn-sm">استعادة من الأرشيف</button>
+            </form>
+        @endcan
+    </div>
+@endif
+
 <div class="page-actions">
 
     <div class="page-actions-title">
@@ -326,7 +338,16 @@
         @endcan
 
 
-        @if($cakeOrder->status === \App\Enums\CakeOrderStatus::Cancelled)
+        @if($cakeOrder->status === \App\Enums\CakeOrderStatus::Cancelled && ! $cakeOrder->archived_at)
+            @can('delete', $cakeOrder)
+                <form method="POST" action="{{ route('cake-orders.archive', $cakeOrder) }}" style="display:inline">
+                    @csrf
+                    <button type="submit" class="btn btn-outline btn-sm">أرشفة الطلب</button>
+                </form>
+            @endcan
+        @endif
+
+        @if($cakeOrder->status === \App\Enums\CakeOrderStatus::Cancelled && ! $cakeOrder->archived_at)
             @can('delete', $cakeOrder)
                 <form action="{{ route('cake-orders.destroy', $cakeOrder) }}" method="POST" data-confirm="هل تريد حذف هذا الطلب الملغى؟ لن يتم حذف السجلات المالية، وأي طلب مرتبط بها سيُرفض حذفه." data-confirm-title="تأكيد حذف الطلب الملغى" data-confirm-type="danger" style="display:inline">
                     @csrf

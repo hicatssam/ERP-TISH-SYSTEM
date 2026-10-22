@@ -59,6 +59,11 @@ class SpecialCakeOrderController extends Controller
             });
         }
 
+        $archiveFilter = $request->query('archive', 'active');
+        $request->validate(['archive' => ['nullable', 'in:active,archived']]);
+        $scopedQuery = clone $baseQuery;
+        $baseQuery->whereNull('archived_at');
+
         $activeStatuses = collect(
             CakeOrderStatus::workflowCases()
         )
@@ -186,7 +191,8 @@ class SpecialCakeOrderController extends Controller
             ];
         });
 
-        $query = clone $baseQuery;
+        $query = clone $scopedQuery;
+        $query->when($archiveFilter === 'archived', fn ($q) => $q->whereNotNull('archived_at'), fn ($q) => $q->whereNull('archived_at'));
 
         if ($request->filled('q')) {
             $search = trim(
@@ -1059,6 +1065,42 @@ if (
         return redirect()
             ->route('cake-orders.index')
             ->with('success', 'تم حذف الطلب.');
+    }
+
+    public function archive(SpecialCakeOrder $cakeOrder)
+    {
+        $this->authorize('delete', $cakeOrder);
+
+        DB::transaction(function () use ($cakeOrder): void {
+            $locked = SpecialCakeOrder::query()->lockForUpdate()->findOrFail($cakeOrder->id);
+            $this->authorize('delete', $locked);
+            abort_unless($locked->status === CakeOrderStatus::Cancelled, 422);
+            if ($locked->archived_at === null) {
+                $locked->forceFill(['archived_at' => now(), 'archived_by' => Auth::id()])->save();
+                ActivityLogger::log(userId: Auth::id(), action: 'cake_order.archived',
+                    module: 'special_cake_orders', recordType: 'special_cake_orders', recordId: $locked->id);
+            }
+        });
+
+        return back()->with('success', 'تمت أرشفة طلب الكيك دون المساس بالسجلات المالية.');
+    }
+
+    public function restoreArchive(SpecialCakeOrder $cakeOrder)
+    {
+        $this->authorize('delete', $cakeOrder);
+
+        DB::transaction(function () use ($cakeOrder): void {
+            $locked = SpecialCakeOrder::query()->lockForUpdate()->findOrFail($cakeOrder->id);
+            $this->authorize('delete', $locked);
+            abort_unless($locked->status === CakeOrderStatus::Cancelled, 422);
+            if ($locked->archived_at !== null) {
+                $locked->forceFill(['archived_at' => null, 'archived_by' => null])->save();
+                ActivityLogger::log(userId: Auth::id(), action: 'cake_order.archive_restored',
+                    module: 'special_cake_orders', recordType: 'special_cake_orders', recordId: $locked->id);
+            }
+        });
+
+        return redirect()->route('cake-orders.show', $cakeOrder)->with('success', 'تمت استعادة الطلب من الأرشيف.');
     }
 
     public function transition(Request $request, SpecialCakeOrder $cakeOrder)
