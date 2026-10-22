@@ -18,6 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -695,8 +696,15 @@ class IncomingBankTransferController extends Controller
             ],
         ]);
 
-        if (
-            $incomingBankTransfer->statusValue()
+        $approved = $validated['action'] === 'verify';
+
+        DB::transaction(function () use ($incomingBankTransfer, $validated, $user, $approved): void {
+            $lockedTransfer = IncomingBankTransfer::query()
+                ->lockForUpdate()
+                ->findOrFail($incomingBankTransfer->id);
+
+            if (
+            $lockedTransfer->statusValue()
             !== IncomingTransferStatus::
                 PendingVerification->value
         ) {
@@ -706,10 +714,7 @@ class IncomingBankTransferController extends Controller
             ]);
         }
 
-        $approved =
-            $validated['action'] === 'verify';
-
-        $incomingBankTransfer->update([
+        $lockedTransfer->update([
             'status' => $approved
                 ? IncomingTransferStatus::Confirmed
                 : IncomingTransferStatus::Rejected,
@@ -724,31 +729,33 @@ class IncomingBankTransferController extends Controller
                 ),
         ]);
 
-        ActivityLogger::log(
+            ActivityLogger::log(
             userId: $user->id,
             action: $approved
                 ? 'incoming_bank_transfer.verified'
                 : 'incoming_bank_transfer.rejected',
             module: 'payments',
             recordType: 'incoming_bank_transfers',
-            recordId: $incomingBankTransfer->id,
+            recordId: $lockedTransfer->id,
             oldValues: [
                 'status' => 'pending_verification',
             ],
             newValues: [
                 'status' =>
-                    $incomingBankTransfer
+                    $lockedTransfer
                         ->fresh()
                         ->statusValue(),
             ],
             metadata: [
                 'location_id' =>
-                    $incomingBankTransfer->location_id,
+                    $lockedTransfer->location_id,
                 'reason' =>
                     $validated['rejection_reason']
                     ?? null,
             ],
         );
+
+        });
 
         return back()->with(
             'success',
@@ -775,6 +782,14 @@ class IncomingBankTransferController extends Controller
             $incomingBankTransfer,
             $user
         );
+
+        // Preserve approved bank transfer records and their payment evidence
+        // for audits. Only unapproved/rejected records can be removed here.
+        if ($incomingBankTransfer->statusValue() === IncomingTransferStatus::Confirmed->value) {
+            throw ValidationException::withMessages([
+                'transfer' => 'لا يمكن حذف حوالة بنكية معتمدة. استخدم إجراء تسوية محاسبية موثق.',
+            ]);
+        }
 
         $snapshot = [
             'location_id' =>

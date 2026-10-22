@@ -273,6 +273,25 @@ class IncomingBankTransferDashboardTest extends TestCase
         $this->assertNotNull($transfer->verified_at);
     }
 
+    #[Test]
+    public function confirmed_incoming_transfer_cannot_be_deleted_even_by_admin(): void
+    {
+        $branch = $this->makeLocation('PROTECTED');
+        $admin = $this->makeAdmin();
+        [$method, $account] = $this->makeMethodAndAccount($branch);
+        $transfer = $this->makeTransfer($branch, $method, $account, 'KEEP-CONFIRMED', 'confirmed');
+
+        $this->actingAs($admin)
+            ->from(route('incoming-bank-transfers.index'))
+            ->delete(route('incoming-bank-transfers.destroy', $transfer))
+            ->assertSessionHasErrors('transfer');
+
+        $this->assertDatabaseHas('incoming_bank_transfers', [
+            'id' => $transfer->id,
+            'status' => 'confirmed',
+        ]);
+    }
+
     private function makeLocation(string $suffix): Location
     {
         return Location::query()->create([
