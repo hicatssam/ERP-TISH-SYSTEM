@@ -175,6 +175,32 @@
  .reference-actions .icon-btn{width:44px;height:44px}
  .reference-home .cat{min-width:84px}
 }
+
+/* Motion only: preserve the existing layout and configurable brand palette. */
+@keyframes cmIntroReveal{from{opacity:0;transform:translate3d(0,18px,0) scale(.94);filter:blur(5px)}to{opacity:1;transform:none;filter:blur(0)}}
+@keyframes cmCardReveal{from{opacity:0;transform:translate3d(0,20px,0)}to{opacity:1;transform:none}}
+@keyframes cmBannerCopyReveal{from{opacity:0;transform:translate3d(0,14px,0)}to{opacity:1;transform:none}}
+.intro:not(.hide) .intro-logo{animation:cmIntroReveal .75s cubic-bezier(.2,.75,.2,1) both}
+.intro:not(.hide) .intro-box small{animation:cmIntroReveal .6s .13s both}
+.intro:not(.hide) .intro-box h1{animation:cmIntroReveal .7s .19s both}
+.intro:not(.hide) .intro-box p{animation:cmIntroReveal .7s .29s both}
+.intro:not(.hide) .intro-enter{animation:cmIntroReveal .65s .4s both;transition:transform .2s ease}
+.intro-enter:active{transform:scale(.96)}
+.reference-home .cat{transition:transform .28s cubic-bezier(.2,.75,.2,1),background-color .28s ease,border-color .28s ease,box-shadow .28s ease}
+.reference-home .cat:active{transform:scale(.95)}
+.reference-home .cat.active{transform:translateY(-3px)}
+.reference-home .product.cm-reveal{animation:cmCardReveal .52s cubic-bezier(.2,.75,.2,1) both;animation-delay:var(--cm-delay,0ms)}
+.reference-home .product-media img{transition:transform .55s cubic-bezier(.2,.75,.2,1)}
+@media(hover:hover){.reference-home .product:hover .product-media img{transform:scale(1.045)}}
+.reference-home .banner-slide .banner-copy{animation:cmBannerCopyReveal .55s ease both}
+.reference-home .details{transition:transform .18s ease,box-shadow .25s ease}
+.reference-home .details:active{transform:scale(.96)}
+@media(prefers-reduced-motion:reduce){
+ .intro:not(.hide) .intro-logo,.intro:not(.hide) .intro-box small,.intro:not(.hide) .intro-box h1,.intro:not(.hide) .intro-box p,.intro:not(.hide) .intro-enter,.reference-home .product.cm-reveal,.reference-home .banner-slide .banner-copy{animation:none!important}
+ .reference-home .cat,.reference-home .product-media img,.reference-home .details{transition:none!important}
+ .reference-home .cat.active{transform:none}
+}
+
 </style>
 </head>
 <body class="crisp-customer-menu reference-home">
@@ -385,6 +411,25 @@
         });
     }
 
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let revealObserver = null;
+    function animateVisibleCards() {
+        if (revealObserver) revealObserver.disconnect();
+        const cards = document.querySelectorAll('.reference-home .product');
+        if (reducedMotion.matches || !('IntersectionObserver' in window)) return;
+        revealObserver = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (!entry.isIntersecting) return;
+                entry.target.classList.add('cm-reveal');
+                revealObserver.unobserve(entry.target);
+            });
+        }, { threshold: 0.08, rootMargin: '0px 0px 70px 0px' });
+        cards.forEach(function (card, index) {
+            card.style.setProperty('--cm-delay', Math.min(index % 6, 5) * 55 + 'ms');
+            revealObserver.observe(card);
+        });
+    }
+
     function render() {
         const rows = filteredProducts();
         const ranked = popularProductIds
@@ -416,6 +461,7 @@
             ? 'كل الأصناف'
             : (selected?.dataset.catName || 'الأصناف');
         document.getElementById('catalogSubtitle').textContent = rows.length + ' صنف متاح';
+        animateVisibleCards();
     }
 
     document.addEventListener('click', function (event) {
@@ -499,13 +545,14 @@
         const key = 'dahab_menu_intro_seen_' + CM.LOCATION_CODE;
         const hideIntro = function () {
             intro.classList.add('hide');
-            sessionStorage.setItem(key, '1');
+            try { sessionStorage.setItem(key, '1'); } catch (error) { /* private browsing */ }
             setTimeout(function () { intro.remove(); }, 500);
         };
-        if (intro.dataset.mode === 'first_visit' && sessionStorage.getItem(key) === '1') {
+        if (intro.dataset.mode === 'first_visit' && (function () { try { return sessionStorage.getItem(key) === '1'; } catch (error) { return false; } })()) {
             intro.remove();
         } else {
             document.getElementById('introEnter')?.addEventListener('click', hideIntro);
+            if (reducedMotion.matches) intro.classList.add('cm-reduced-motion');
         }
     }
 

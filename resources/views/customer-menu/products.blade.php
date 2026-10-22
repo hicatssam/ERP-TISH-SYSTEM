@@ -9,6 +9,14 @@
 @if(!empty($branding['favicon']))<link rel="icon" href="{{ $branding['favicon'] }}">@endif
 @include('customer-menu.partials.styles')
 @include('customer-menu.partials.pwa-head')
+<style>
+@keyframes dahabMenuCardIn {from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+.crisp-customer-menu .product.cm-card-motion {animation:dahabMenuCardIn .48s cubic-bezier(.2,.75,.2,1) both;animation-delay:var(--cm-delay,0ms)}
+.crisp-customer-menu .cat {transition:transform .25s ease}
+.crisp-customer-menu .cat:active{transform:scale(.95)}
+.crisp-customer-menu .details:active{transform:scale(.96)}
+@media(prefers-reduced-motion:reduce){.crisp-customer-menu .product.cm-card-motion{animation:none!important}.crisp-customer-menu .cat{transition:none!important}}
+</style>
 </head>
 <body class="crisp-customer-menu">
 <div class="app crisp-menu-app">
@@ -109,6 +117,25 @@ function priceMatches(price) {
     return price >= min && price <= max;
 }
 
+const menuMotionReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let productMotionObserver;
+function revealMenuCards() {
+    if (productMotionObserver) productMotionObserver.disconnect();
+    if (menuMotionReduced || !('IntersectionObserver' in window)) return;
+    productMotionObserver = new IntersectionObserver(entries => {
+        for (const entry of entries) {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('cm-card-motion');
+                productMotionObserver.unobserve(entry.target);
+            }
+        }
+    }, {threshold: .08, rootMargin: '0px 0px 70px 0px'});
+    document.querySelectorAll('#productGrid .product').forEach((card, i) => {
+        card.style.setProperty('--cm-delay', (i % 6) * 50 + 'ms');
+        productMotionObserver.observe(card);
+    });
+}
+
 function renderProducts() {
     const q = document.getElementById('searchInput').value.trim().toLowerCase();
     let rows = CM.PRODUCTS.filter(p =>
@@ -126,6 +153,7 @@ function renderProducts() {
         : `<div class="empty">لا توجد أصناف مطابقة.</div>`;
 
     document.getElementById('openFilters').classList.toggle('has-filters', priceRange !== 'all' || sortMode !== 'default');
+    revealMenuCards();
 }
 
 document.addEventListener('click', e => {
