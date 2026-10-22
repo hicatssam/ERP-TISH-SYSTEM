@@ -649,6 +649,40 @@
 
 
                 <tr>
+                    <td style="color:var(--text-muted)">
+                        إثبات الدفع
+                    </td>
+                    <td>
+                        @php
+                            $proofPayment = $cakeOrder->payments
+                                ->sortByDesc('created_at')
+                                ->first(fn ($payment) => filled($payment->payment_proof));
+                        @endphp
+                        @if($proofPayment)
+                            @can('view', $proofPayment)
+                                @php
+                                    $proofUrl = route('payments.proof', $proofPayment);
+                                    $proofExtension = strtolower(pathinfo((string) $proofPayment->payment_proof, PATHINFO_EXTENSION));
+                                @endphp
+                                @if(in_array($proofExtension, ['jpg', 'jpeg', 'png', 'webp'], true))
+                                    <a href="{{ $proofUrl }}" target="_blank" rel="noopener" aria-label="عرض صورة إثبات الدفع">
+                                        <img src="{{ $proofUrl }}" alt="صورة إثبات الدفع" loading="lazy"
+                                             style="display:block;max-width:260px;max-height:220px;width:auto;height:auto;object-fit:contain;border:1px solid var(--border,#ddd);border-radius:10px;margin-bottom:8px">
+                                    </a>
+                                @endif
+                                <a class="btn btn-outline btn-sm" href="{{ $proofUrl }}" target="_blank" rel="noopener">
+                                    {{ $proofExtension === 'pdf' ? 'عرض إثبات الدفع PDF' : 'عرض إثبات الدفع بالحجم الكامل' }}
+                                </a>
+                            @else
+                                <span class="text-muted">إثبات الدفع متاح للمستخدمين المخولين بعرض الدفعات فقط.</span>
+                            @endcan
+                        @else
+                            <span class="text-muted">لم يتم إرفاق إثبات دفع لهذا الطلب.</span>
+                        @endif
+                    </td>
+                </tr>
+
+                <tr>
 
                     <td style="color:var(--text-muted)">
                         نوع الصورة على الكيك
