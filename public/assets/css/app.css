@@ -793,7 +793,8 @@ input, select, textarea, button { font-family: inherit; }
 /* Dahab unified action confirmation */
 .dahab-confirm-overlay {
   background: rgba(9, 20, 35, .56);
-  z-index: 3000;
+  /* Global confirmations must sit above operational dialogs (e.g. cake status at 99999). */
+  z-index: 100100;
   padding: 1rem;
 }
 
