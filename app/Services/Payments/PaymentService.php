@@ -116,7 +116,13 @@ class PaymentService
                 throw ValidationException::withMessages(['payment' => 'تمت معالجة هذه الدفعة مسبقًا.']);
             }
 
-            [$source, , $total] = $this->lockSource($locked->orderTypeValue(), (int) $locked->order_id);
+            // Rejecting a transfer must remain possible after an order was cancelled.
+            // Approving it must still be blocked for cancelled source orders.
+            [$source, , $total] = $this->lockSource(
+                $locked->orderTypeValue(),
+                (int) $locked->order_id,
+                allowCancelled: ! $approved
+            );
             if ($approved) {
                 $otherPaid = $this->effectivePaid($locked->orderTypeValue(), (int) $locked->order_id, $locked->id);
                 if ($otherPaid + (float) $locked->amount > $total + 0.004) {
@@ -209,11 +215,11 @@ class PaymentService
         });
     }
 
-    private function lockSource(string $type, int $id): array
+    private function lockSource(string $type, int $id, bool $allowCancelled = false): array
     {
         if ($type === 'order') {
             $source = Order::query()->lockForUpdate()->findOrFail($id);
-            if ($source->statusValue() === 'cancelled') {
+            if (! $allowCancelled && $source->statusValue() === 'cancelled') {
                 throw ValidationException::withMessages(['order_id' => 'لا يمكن تسجيل دفعة لطلب ملغى.']);
             }
             return [$source, (int) $source->location_id, round((float) $source->total_amount, 2)];
@@ -221,7 +227,7 @@ class PaymentService
         if ($type === 'special_cake_order') {
             $source = SpecialCakeOrder::query()->lockForUpdate()->findOrFail($id);
             $status = $source->status instanceof \BackedEnum ? $source->status->value : (string) $source->status;
-            if (in_array($status, ['cancelled', 'rejected'], true)) {
+            if (! $allowCancelled && in_array($status, ['cancelled', 'rejected'], true)) {
                 throw ValidationException::withMessages(['order_id' => 'لا يمكن تسجيل دفعة لطلب كيك ملغى أو مرفوض.']);
             }
             return [$source, (int) $source->origin_branch_id, round((float) ($source->net_price ?? $source->total_price), 2)];

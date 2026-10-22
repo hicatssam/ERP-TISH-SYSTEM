@@ -164,6 +164,61 @@ class OrderBankTransferFlowTest extends TestCase
         $this->assertDatabaseCount('payments', 0);
     }
 
+    #[Test]
+    public function pending_transfer_can_be_rejected_after_order_cancellation_but_not_approved(): void
+    {
+        [$user, $location] = $this->makeFinanceUser();
+        [$method, $account] = $this->makeBankMethodAndAccount($location);
+
+        $order = Order::query()->create([
+            'order_number' => 'ORD-CANCEL-BANK-' . Str::upper(Str::random(6)),
+            'location_id' => $location->id,
+            'created_by' => $user->id,
+            'status' => 'confirmed',
+            'payment_status' => 'payment_pending',
+            'payment_arrangement' => 'pay_on_pickup',
+            'subtotal' => 100,
+            'total_amount' => 100,
+            'confirmed_at' => now(),
+        ]);
+
+        $this->actingAs($user)->post(route('payments.store'), [
+            'entry_context' => 'order_bank_transfer',
+            'order_type' => 'order',
+            'order_id' => $order->id,
+            'payment_method_id' => $method->id,
+            'location_payment_account_id' => $account->id,
+            'amount' => 100,
+            'sender_name' => 'Customer with cancelled order',
+            'sender_account_number' => 'SENDER-CANCEL-ACCOUNT',
+            'reference_number' => 'CANCEL-TEST',
+        ]);
+
+        $payment = Payment::query()->sole();
+        $this->assertSame('pending_verification', $payment->statusValue());
+
+        $order->update(['status' => 'cancelled']);
+
+        $this->actingAs($user)
+            ->from(route('payments.bank-sales'))
+            ->post(route('payments.verify', $payment), ['action' => 'verify'])
+            ->assertSessionHasErrors('order_id');
+
+        $this->assertSame('pending_verification', $payment->fresh()->statusValue());
+
+        $this->actingAs($user)
+            ->from(route('payments.bank-sales'))
+            ->post(route('payments.verify', $payment), [
+                'action' => 'reject',
+                'rejection_reason' => 'تم إلغاء الطلب قبل اعتماد الحوالة',
+            ])
+            ->assertRedirect(route('payments.bank-sales'))
+            ->assertSessionHas('success');
+
+        $this->assertSame('rejected', $payment->fresh()->statusValue());
+        $this->assertSame('cancelled', $order->fresh()->statusValue());
+    }
+
     private function makeFinanceUser(): array
     {
         $location = Location::query()->create([
