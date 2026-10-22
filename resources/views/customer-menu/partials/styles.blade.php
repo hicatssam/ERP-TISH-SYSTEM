@@ -288,6 +288,7 @@ a{color:inherit;text-decoration:none}
  background:var(--primary);color:var(--on-primary);padding:11px 16px;
  font-weight:800;font-size:.8rem;box-shadow:0 10px 24px color-mix(in srgb, var(--primary) 40%, transparent);
 }
+.pwa-install-btn[hidden],.pwa-ios-sheet[hidden]{display:none!important}
 .pwa-install-btn i{font-size:.9rem}
 @media(min-width:560px){ .pwa-install-btn{ bottom:20px; } }
 
