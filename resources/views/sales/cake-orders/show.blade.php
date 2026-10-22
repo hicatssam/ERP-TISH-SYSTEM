@@ -38,6 +38,8 @@
         ->first();
 
     $allowed = $allowedTransitions ?? [];
+    $cancelledHasFinancialRecords = $cakeOrder->status === \App\Enums\CakeOrderStatus::Cancelled
+        && ($cakeOrder->payments->isNotEmpty() || $cakeOrder->invoice()->exists());
 
 
     /*
@@ -247,6 +249,13 @@
 {{-- =========================================================
      رأس الصفحة
 ========================================================= --}}
+
+@if($cancelledHasFinancialRecords)
+    <div role="alert" style="margin-bottom:1rem;border:1px solid #e5bb6d;background:#fff9ed;border-radius:12px;padding:1rem;line-height:1.8">
+        <strong>تنبيه محاسبي: طلب ملغي وله سجلات مالية</strong>
+        <div>إلغاء الطلب لا يعني استرداد المبلغ المدفوع أو تسويته تلقائيًا. يجب مراجعة الدفعات والفاتورة المرتبطة بهذا الطلب عبر الإجراءات المالية المعتمدة قبل إغلاق ملف العميل.</div>
+    </div>
+@endif
 
 <div class="page-actions">
 

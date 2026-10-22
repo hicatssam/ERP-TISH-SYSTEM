@@ -1109,8 +1109,9 @@
 
 
             <form
+                id="dahabLoginForm"
                 method="POST"
-                action="{{ route('login') }}"
+                action="{{ route('login.post') }}"
             >
 
                 @csrf
@@ -1362,6 +1363,29 @@
                         : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
             }
         );
+    </script>
+    <script>
+        // Prevent a second submit with a stale CSRF/session token while the first
+        // login is being processed. Never disable the submit button, because
+        // disabled buttons are not submitted and keyboard flows should still work.
+        (() => {
+            const form = document.getElementById('dahabLoginForm');
+            if (!form) return;
+            let submitting = false;
+            form.addEventListener('submit', event => {
+                if (submitting) {
+                    event.preventDefault();
+                    return;
+                }
+                submitting = true;
+                form.setAttribute('aria-busy', 'true');
+                // Validation failure triggers a redirect and a fresh form.
+            });
+            window.addEventListener('pageshow', () => {
+                submitting = false;
+                form.removeAttribute('aria-busy');
+            });
+        })();
     </script>
 
 </body>
