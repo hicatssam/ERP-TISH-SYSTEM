@@ -105,6 +105,12 @@ class PaymentController extends Controller
             );
         }
 
+        // Exact source filter for links from an individual order's financial notice.
+        if ($request->filled('order_id')) {
+            $request->validate(['order_id' => ['integer', 'min:1']]);
+            $query->where('order_id', $request->integer('order_id'));
+        }
+
         if ($request->filled('date_from')) {
             $query->whereDate(
                 'paid_at',

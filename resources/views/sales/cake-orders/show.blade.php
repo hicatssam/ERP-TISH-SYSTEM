@@ -254,6 +254,30 @@
     <div role="alert" style="margin-bottom:1rem;border:1px solid #e5bb6d;background:#fff9ed;border-radius:12px;padding:1rem;line-height:1.8">
         <strong>تنبيه محاسبي: طلب ملغي وله سجلات مالية</strong>
         <div>إلغاء الطلب لا يعني استرداد المبلغ المدفوع أو تسويته تلقائيًا. يجب مراجعة الدفعات والفاتورة المرتبطة بهذا الطلب عبر الإجراءات المالية المعتمدة قبل إغلاق ملف العميل.</div>
+        @php
+            $canReviewCakeFinance = auth()->user()->isAdmin() || auth()->user()->canAny([
+                'payments.record', 'payments.verify', 'payments.correct', 'payments.refund',
+                'financial.branch.view', 'financial.global.view', 'financial.collections.view',
+            ]);
+            $financialLocationAllowed = auth()->user()->isAdmin()
+                || auth()->user()->can('financial.global.view')
+                || (int) (auth()->user()->primaryLocation()?->id ?? 0) === (int) $cakeOrder->origin_branch_id;
+        @endphp
+        <div style="display:flex;gap:.65rem;flex-wrap:wrap;margin-top:.8rem">
+            @if($canReviewCakeFinance && $financialLocationAllowed && $cakeOrder->payments->isNotEmpty())
+                <a class="btn btn-gold btn-sm" href="{{ route('payments.index', [
+                    'order_type' => 'special_cake_order',
+                    'order_id' => $cakeOrder->id,
+                ]) }}">عرض الحركات المالية لهذا الطلب</a>
+                @if($cakeOrder->payments->contains(fn ($payment) => $payment->location_payment_account_id
+                    || in_array($payment->paymentMethod?->type, ['bank_transfer', 'electronic_wallet'], true)))
+                    <a class="btn btn-outline btn-sm" href="{{ route('payments.bank-sales', ['search' => $cakeOrder->order_number]) }}">عرض الحوالات المرتبطة</a>
+                @endif
+            @endif
+            @if($cakeOrder->invoice && (auth()->user()->isAdmin() || auth()->user()->can('invoices.view')))
+                <a class="btn btn-outline btn-sm" href="{{ route('invoices.show', $cakeOrder->invoice) }}">فتح الفاتورة المرتبطة</a>
+            @endif
+        </div>
     </div>
 @endif
 
