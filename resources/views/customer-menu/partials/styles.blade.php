@@ -325,7 +325,7 @@ a{color:inherit;text-decoration:none}
 }
 .cm-brand-watermark img{
  display:block;width:clamp(220px,52vw,340px);height:auto;max-height:52vh;
- object-fit:contain;opacity:.045;
+ object-fit:contain;opacity:.08;
  animation:cmWatermarkDrift 16s ease-in-out infinite;
  will-change:transform;
 }
@@ -333,7 +333,7 @@ a{color:inherit;text-decoration:none}
  0%,100%{transform:translate3d(0,0,0) scale(1)}
  50%{transform:translate3d(0,-13px,0) scale(1.035)}
 }
-/* The image overlays opaque menu-area backgrounds at only 4.5% opacity. */
+/* The image overlays opaque menu-area backgrounds at only 8% opacity. */
 body.crisp-customer-menu > .app{position:relative;z-index:1}
 @media(prefers-reduced-motion:reduce){
  .cm-brand-watermark img{animation:none!important;will-change:auto}
