@@ -390,18 +390,34 @@ class ShowroomCakeRequestController extends Controller
                 }
             );
 
-        if ($rawStockRequest = $showroomRequest->rawMaterialStockRequest()->first()) {
-            app(DailyRawMaterialRequestService::class)->notifyFactory($rawStockRequest, $user);
+        // Order and items are committed above. An optional notification failure
+        // must not turn a successful submission into HTTP 500 or invite a retry.
+        try {
+            if ($rawStockRequest = $showroomRequest->rawMaterialStockRequest()->first()) {
+                app(DailyRawMaterialRequestService::class)->notifyFactory($rawStockRequest, $user);
+            }
+        } catch (\Throwable $exception) {
+            \Illuminate\Support\Facades\Log::error('Showroom cake raw-material notification failed after save', [
+                'showroom_cake_request_id' => $showroomRequest->id,
+                'exception' => $exception,
+            ]);
         }
 
-        ShowroomCakeRequestNotifier::requestCreated(
-            $showroomRequest->fresh([
-                'requestingLocation',
-                'factoryLocation',
-                'items',
-            ]),
-            $user
-        );
+        try {
+            ShowroomCakeRequestNotifier::requestCreated(
+                $showroomRequest->fresh([
+                    'requestingLocation',
+                    'factoryLocation',
+                    'items',
+                ]),
+                $user
+            );
+        } catch (\Throwable $exception) {
+            \Illuminate\Support\Facades\Log::error('Showroom cake notification failed after save', [
+                'showroom_cake_request_id' => $showroomRequest->id,
+                'exception' => $exception,
+            ]);
+        }
 
         return redirect()
             ->route(
