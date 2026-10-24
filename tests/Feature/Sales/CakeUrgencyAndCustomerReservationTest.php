@@ -452,6 +452,7 @@ class CakeUrgencyAndCustomerReservationTest extends TestCase
             [
                 'showroom_cake_requests.view',
                 'showroom_cake_requests.create',
+                'showroom_cake_requests.reservations',
             ]
         );
 
@@ -511,6 +512,7 @@ class CakeUrgencyAndCustomerReservationTest extends TestCase
             [
                 'showroom_cake_requests.view',
                 'showroom_cake_requests.create',
+                'showroom_cake_requests.reservations',
             ]
         );
 
@@ -718,6 +720,7 @@ class CakeUrgencyAndCustomerReservationTest extends TestCase
             [
                 'showroom_cake_requests.view',
                 'showroom_cake_requests.create',
+                'showroom_cake_requests.reservations',
             ]
         );
 
@@ -786,6 +789,7 @@ class CakeUrgencyAndCustomerReservationTest extends TestCase
             [
                 'showroom_cake_requests.view',
                 'showroom_cake_requests.create',
+                'showroom_cake_requests.reservations',
             ]
         );
 

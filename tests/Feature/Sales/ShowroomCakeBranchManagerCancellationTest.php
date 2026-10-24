@@ -189,7 +189,7 @@ class ShowroomCakeBranchManagerCancellationTest extends TestCase
         $factory = $this->location('factory');
         $manager = $this->branchManager($branch);
         $factoryUser = $this->factoryViewer($factory);
-        $factoryUser->givePermissionTo(Permission::findOrCreate('showroom_cake_requests.update_status', 'web'));
+        $factoryUser->givePermissionTo(Permission::findOrCreate('showroom_cake_requests.cancel_factory', 'web'));
 
         $cake = $this->requestFor($branch, $factory, $manager);
 

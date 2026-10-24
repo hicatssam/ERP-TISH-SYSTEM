@@ -1087,11 +1087,13 @@ if (
 
     public function archive(SpecialCakeOrder $cakeOrder)
     {
-        $this->authorize('delete', $cakeOrder);
+        $this->authorize('view', $cakeOrder);
+        abort_unless(Auth::user()->isAdmin() || Auth::user()->can('cake_orders.archive'), 403);
 
         DB::transaction(function () use ($cakeOrder): void {
             $locked = SpecialCakeOrder::query()->lockForUpdate()->findOrFail($cakeOrder->id);
-            $this->authorize('delete', $locked);
+            $this->authorize('view', $locked);
+            abort_unless(Auth::user()->isAdmin() || Auth::user()->can('cake_orders.archive'), 403);
             abort_unless($locked->status === CakeOrderStatus::Cancelled, 422);
             if ($locked->archived_at === null) {
                 $locked->forceFill(['archived_at' => now(), 'archived_by' => Auth::id()])->save();
@@ -1105,11 +1107,13 @@ if (
 
     public function restoreArchive(SpecialCakeOrder $cakeOrder)
     {
-        $this->authorize('delete', $cakeOrder);
+        $this->authorize('view', $cakeOrder);
+        abort_unless(Auth::user()->isAdmin() || Auth::user()->can('cake_orders.restore'), 403);
 
         DB::transaction(function () use ($cakeOrder): void {
             $locked = SpecialCakeOrder::query()->lockForUpdate()->findOrFail($cakeOrder->id);
-            $this->authorize('delete', $locked);
+            $this->authorize('view', $locked);
+            abort_unless(Auth::user()->isAdmin() || Auth::user()->can('cake_orders.restore'), 403);
             abort_unless($locked->status === CakeOrderStatus::Cancelled, 422);
             if ($locked->archived_at !== null) {
                 $locked->forceFill(['archived_at' => null, 'archived_by' => null])->save();
@@ -1156,6 +1160,7 @@ if (
     public function addComment(Request $request, SpecialCakeOrder $cakeOrder)
     {
         $this->authorize('view', $cakeOrder);
+        abort_unless($request->user()->isAdmin() || $request->user()->can('cake_orders.comment'), 403);
 
         $validated = $request->validate([
             'comment' => ['required', 'string', 'max:2000'],
@@ -1280,6 +1285,7 @@ if (
     public function addAttachment(Request $request, SpecialCakeOrder $cakeOrder)
     {
         $this->authorize('view', $cakeOrder);
+        abort_unless($request->user()->isAdmin() || $request->user()->can('cake_orders.attachment'), 403);
 
         $validated = $request->validate([
             'attachment_type' => ['required', 'in:reference_image,customer_design,final_cake_image,other'],

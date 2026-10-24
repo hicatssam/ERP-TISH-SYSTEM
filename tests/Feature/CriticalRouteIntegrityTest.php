@@ -171,12 +171,16 @@ class CriticalRouteIntegrityTest extends TestCase
                 'can:showroom_cake_requests.create',
             'showroom-cake-requests.store' =>
                 'can:showroom_cake_requests.create',
+            'showroom-cake-requests.edit' =>
+                'can:showroom_cake_requests.edit',
+            'showroom-cake-requests.update' =>
+                'can:showroom_cake_requests.edit',
             'showroom-cake-requests.status' =>
-                'can:showroom_cake_requests.update_status',
+                'can:showroom_cake_requests.view',
             'showroom-cake-requests.destroy' =>
                 'can:showroom_cake_requests.delete',
             'showroom-cake-requests.items.reservation' =>
-                'can:showroom_cake_requests.create',
+                'can:showroom_cake_requests.reservations',
         ];
 
         foreach ($expectations as $name => $middleware) {

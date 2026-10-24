@@ -654,7 +654,7 @@ class ShowroomCakeRequestController extends Controller
             $user->isAdmin()
             || (
                 $user->can(
-                    'showroom_cake_requests.create'
+                    'showroom_cake_requests.reservations'
                 )
                 && in_array(
                     (int) $showroomCakeRequest
@@ -699,7 +699,7 @@ class ShowroomCakeRequestController extends Controller
             $user->isAdmin()
             || (
                 $user->can(
-                    'showroom_cake_requests.create'
+                    'showroom_cake_requests.reservations'
                 )
                 && in_array(
                     (int) $showroomCakeRequest
@@ -801,6 +801,15 @@ class ShowroomCakeRequestController extends Controller
                 $validated['status']
             );
 
+        $stagePermission = match ($newStatus) {
+            ShowroomCakeRequestStatus::InProgress => 'showroom_cake_requests.accept',
+            ShowroomCakeRequestStatus::Ready => 'showroom_cake_requests.ready',
+            ShowroomCakeRequestStatus::Cancelled => 'showroom_cake_requests.cancel_factory',
+            default => 'showroom_cake_requests.update_status',
+        };
+        abort_unless($user->isAdmin() || $user->can($stagePermission), 403,
+            'لا تملك صلاحية إجراء هذه المرحلة من طلب كيك الفرع.');
+
         if (
             ! $showroomCakeRequest
                 ->canTransitionTo(
@@ -822,15 +831,6 @@ class ShowroomCakeRequestController extends Controller
                 'إكمال الطلب يتم فقط بعد استلام الفرع وإصدار فاتورة الاستلام.'
             );
         }
-
-        abort_unless(
-            $user->isAdmin()
-            || $user->can(
-                'showroom_cake_requests.update_status'
-            ),
-            403,
-            'لا تملك صلاحية تحديث حالة الطلب.'
-        );
 
         abort_unless(
             $this->transitionLocationAllowed(
@@ -1022,9 +1022,12 @@ class ShowroomCakeRequestController extends Controller
                     )
                     && (
                         $user->isAdmin()
-                        || $user->can(
-                            'showroom_cake_requests.update_status'
-                        )
+                        || $user->can(match ($status) {
+                            ShowroomCakeRequestStatus::InProgress => 'showroom_cake_requests.accept',
+                            ShowroomCakeRequestStatus::Ready => 'showroom_cake_requests.ready',
+                            ShowroomCakeRequestStatus::Cancelled => 'showroom_cake_requests.cancel_factory',
+                            default => 'showroom_cake_requests.update_status',
+                        })
                     )
                     && $this->transitionLocationAllowed(
                         $user,
@@ -1182,7 +1185,7 @@ class ShowroomCakeRequestController extends Controller
             return true;
         }
 
-        return $user->can('showroom_cake_requests.create')
+        return $user->can('showroom_cake_requests.edit')
             && in_array(
                 (int) $request->requesting_location_id,
                 $this->userLocationIds($user),

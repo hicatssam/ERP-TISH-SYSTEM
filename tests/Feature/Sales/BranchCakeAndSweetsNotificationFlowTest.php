@@ -68,6 +68,9 @@ class BranchCakeAndSweetsNotificationFlowTest extends TestCase
                 [
                     'showroom_cake_requests.view',
                     'showroom_cake_requests.update_status',
+                    'showroom_cake_requests.accept',
+                    'showroom_cake_requests.ready',
+                    'showroom_cake_requests.cancel_factory',
                     'showroom_sweets_requests.view',
                     'showroom_sweets_requests.create',
                     'showroom_sweets_requests.cancel',
@@ -249,6 +252,9 @@ class BranchCakeAndSweetsNotificationFlowTest extends TestCase
                 [
                     'showroom_cake_requests.view',
                     'showroom_cake_requests.update_status',
+                    'showroom_cake_requests.accept',
+                    'showroom_cake_requests.ready',
+                    'showroom_cake_requests.cancel_factory',
                 ]
             );
 
@@ -266,6 +272,9 @@ class BranchCakeAndSweetsNotificationFlowTest extends TestCase
                 [
                     'showroom_cake_requests.view',
                     'showroom_cake_requests.update_status',
+                    'showroom_cake_requests.accept',
+                    'showroom_cake_requests.ready',
+                    'showroom_cake_requests.cancel_factory',
                 ]
             );
 
@@ -423,6 +432,9 @@ class BranchCakeAndSweetsNotificationFlowTest extends TestCase
                 [
                     'showroom_cake_requests.view',
                     'showroom_cake_requests.update_status',
+                    'showroom_cake_requests.accept',
+                    'showroom_cake_requests.ready',
+                    'showroom_cake_requests.cancel_factory',
                 ]
             );
 
@@ -433,6 +445,9 @@ class BranchCakeAndSweetsNotificationFlowTest extends TestCase
                     'showroom_cake_requests.view',
                     'showroom_cake_requests.create',
                     'showroom_cake_requests.update_status',
+                    'showroom_cake_requests.accept',
+                    'showroom_cake_requests.ready',
+                    'showroom_cake_requests.cancel_factory',
                 ]
             );
 
@@ -850,6 +865,9 @@ class BranchCakeAndSweetsNotificationFlowTest extends TestCase
                 [
                     'showroom_cake_requests.view',
                     'showroom_cake_requests.update_status',
+                    'showroom_cake_requests.accept',
+                    'showroom_cake_requests.ready',
+                    'showroom_cake_requests.cancel_factory',
                 ]
             );
 
@@ -980,6 +998,9 @@ class BranchCakeAndSweetsNotificationFlowTest extends TestCase
                 [
                     'showroom_cake_requests.view',
                     'showroom_cake_requests.update_status',
+                    'showroom_cake_requests.accept',
+                    'showroom_cake_requests.ready',
+                    'showroom_cake_requests.cancel_factory',
                 ]
             );
 

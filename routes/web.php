@@ -501,11 +501,11 @@ Route::match(['put', 'patch'], 'cake-orders/{cakeOrder}', [SpecialCakeOrderContr
 
 Route::post('cake-orders/{cakeOrder}/archive', [SpecialCakeOrderController::class, 'archive'])
     ->name('cake-orders.archive')
-    ->middleware('can:cake_orders.delete');
+    ->middleware('can:cake_orders.archive');
 
 Route::post('cake-orders/{cakeOrder}/restore-archive', [SpecialCakeOrderController::class, 'restoreArchive'])
     ->name('cake-orders.restore-archive')
-    ->middleware('can:cake_orders.delete');
+    ->middleware('can:cake_orders.restore');
 
 Route::delete('cake-orders/{cakeOrder}', [SpecialCakeOrderController::class, 'destroy'])
     ->name('cake-orders.destroy')
@@ -523,13 +523,13 @@ Route::post(
     'cake-orders/{cakeOrder}/comment',
     [SpecialCakeOrderController::class, 'addComment']
 )->name('cake-orders.comment')
-    ->middleware('can:cake_orders.view');
+    ->middleware('can:cake_orders.comment');
 
 Route::post(
     'cake-orders/{cakeOrder}/attachment',
     [SpecialCakeOrderController::class, 'addAttachment']
 )->name('cake-orders.attachment')
-    ->middleware('can:cake_orders.view');
+    ->middleware('can:cake_orders.attachment');
         Route::post('showroom-branch-requests/{type}/bulk-delete', BranchOrderBulkDeletionController::class)
             ->whereIn('type', ['cake', 'sweets'])
             ->name('showroom-branch-requests.bulk-delete');
@@ -537,17 +537,15 @@ Route::post(
         // ─── Showroom Cake Requests (طلبات كيك الفروع) ─────────────────────
         // The static /create route must be registered before /{showroomCakeRequest}.
         // Otherwise Laravel captures "create" as a model ID and returns 404.
-        Route::middleware('can:showroom_cake_requests.create')->group(function () {
-            Route::resource(
-                'showroom-cake-requests',
-                ShowroomCakeRequestController::class
-            )->only(['create', 'store', 'edit', 'update']);
-
-            Route::patch(
-                'showroom-cake-requests/{showroomCakeRequest}/items/{item}/reservation',
-                [ShowroomCakeRequestController::class, 'updateItemReservation']
-            )->name('showroom-cake-requests.items.reservation');
-        });
+        Route::resource('showroom-cake-requests', ShowroomCakeRequestController::class)
+            ->only(['create', 'store'])->middleware('can:showroom_cake_requests.create');
+        Route::resource('showroom-cake-requests', ShowroomCakeRequestController::class)
+            ->only(['edit', 'update'])->middleware('can:showroom_cake_requests.edit');
+        Route::patch(
+            'showroom-cake-requests/{showroomCakeRequest}/items/{item}/reservation',
+            [ShowroomCakeRequestController::class, 'updateItemReservation']
+        )->name('showroom-cake-requests.items.reservation')
+            ->middleware('can:showroom_cake_requests.reservations');
 
         Route::middleware('can:showroom_cake_requests.view')->group(function () {
             Route::resource(
@@ -561,7 +559,7 @@ Route::post(
             [ShowroomCakeRequestController::class, 'updateStatus']
         )
             ->name('showroom-cake-requests.status')
-            ->middleware('can:showroom_cake_requests.update_status');
+            ->middleware('can:showroom_cake_requests.view');
 
         Route::patch(
             'showroom-cake-requests/{showroomCakeRequest}/cancel',

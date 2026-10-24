@@ -285,12 +285,12 @@
 @if($cakeOrder->archived_at)
     <div role="status" style="margin-bottom:1rem;padding:1rem;background:#f1f5f9;border-radius:12px">
         <strong>هذا الطلب مؤرشف</strong> — يبقى ظاهرًا من الفواتير والحوالات المالية.
-        @can('delete', $cakeOrder)
+        @if(auth()->user()->isAdmin() || auth()->user()->can('cake_orders.restore'))
             <form method="POST" action="{{ route('cake-orders.restore-archive', $cakeOrder) }}" style="display:inline-block;margin-right:.8rem">
                 @csrf
                 <button type="submit" class="btn btn-outline btn-sm">استعادة من الأرشيف</button>
             </form>
-        @endcan
+        @endif
     </div>
 @endif
 
@@ -340,12 +340,12 @@
 
 
         @if($cakeOrder->status === \App\Enums\CakeOrderStatus::Cancelled && ! $cakeOrder->archived_at)
-            @can('delete', $cakeOrder)
+            @if(auth()->user()->isAdmin() || auth()->user()->can('cake_orders.archive'))
                 <form method="POST" action="{{ route('cake-orders.archive', $cakeOrder) }}" style="display:inline">
                     @csrf
                     <button type="submit" class="btn btn-outline btn-sm">أرشفة الطلب</button>
                 </form>
-            @endcan
+            @endif
         @endif
 
         @if(in_array($cakeOrder->status, [\App\Enums\CakeOrderStatus::Draft, \App\Enums\CakeOrderStatus::Cancelled], true) && ! $cakeOrder->archived_at)
@@ -970,6 +970,7 @@
 
 
         {{-- رفع صورة جديدة --}}
+        @if(auth()->user()->isAdmin() || auth()->user()->can('cake_orders.attachment'))
         <details style="margin-top:1rem">
 
             <summary
@@ -1061,6 +1062,7 @@
             </form>
 
         </details>
+        @endif
 
     </div>
 
@@ -1241,6 +1243,7 @@
         @endforelse
 
 
+        @if(auth()->user()->isAdmin() || auth()->user()->can('cake_orders.comment'))
         <form
             action="{{ route('cake-orders.comment', $cakeOrder) }}"
             method="POST"
@@ -1275,6 +1278,7 @@
             </div>
 
         </form>
+        @endif
 
     </div>
 

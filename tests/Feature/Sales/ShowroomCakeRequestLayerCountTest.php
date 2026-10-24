@@ -136,7 +136,7 @@ class ShowroomCakeRequestLayerCountTest extends TestCase
         $user = User::factory()->create();
         $user->employee->locations()->attach($branch->id, ['is_primary' => true]);
 
-        foreach (['showroom_cake_requests.view', 'showroom_cake_requests.create'] as $name) {
+        foreach (['showroom_cake_requests.view', 'showroom_cake_requests.create', 'showroom_cake_requests.edit'] as $name) {
             $user->givePermissionTo(Permission::findOrCreate($name, 'web'));
         }
 

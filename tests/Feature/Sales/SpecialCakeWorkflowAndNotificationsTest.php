@@ -308,7 +308,7 @@ class SpecialCakeWorkflowAndNotificationsTest extends TestCase
         $creator = $this->admin();
 
         $branchUser = $this->userAt($branch, [
-            'cake_orders.view',
+            'cake_orders.view', 'cake_orders.comment', 'cake_orders.attachment',
         ]);
 
         $factoryUser = $this->userAt($factory, [

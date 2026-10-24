@@ -67,11 +67,11 @@ class BranchManagerShowroomCakePermissionsTest extends TestCase
     public function role_editor_names_showroom_cake_permissions_separately(): void
     {
         $this->assertSame(
-            'طلبات كيك المعرض',
+            'طلبات كيك الفروع',
             PermissionUi::groupLabels()['showroom_cake_requests']
         );
         $this->assertSame(
-            'إنشاء وتعديل طلب كيك المعرض للفرع',
+            'إنشاء طلب كيك للفرع',
             PermissionUi::permissionLabels()['showroom_cake_requests.create']
         );
         $this->assertSame(

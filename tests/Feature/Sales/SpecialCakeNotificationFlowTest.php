@@ -797,7 +797,7 @@ class SpecialCakeNotificationFlowTest extends TestCase
 
         $commenter = $this->makeUser(
             $this->branch,
-            ['cake_orders.view']
+            ['cake_orders.view', 'cake_orders.comment']
         );
 
         $branchRecipient = $this->makeUser(
@@ -920,7 +920,7 @@ class SpecialCakeNotificationFlowTest extends TestCase
 
         $uploader = $this->makeUser(
             $this->branch,
-            ['cake_orders.view']
+            ['cake_orders.view', 'cake_orders.attachment']
         );
 
         $branchRecipient = $this->makeUser(

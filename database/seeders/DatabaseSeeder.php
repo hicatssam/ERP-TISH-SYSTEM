@@ -2201,12 +2201,15 @@ SVG;
             'expenses.submit','expenses.approve','expenses.approve_own','expenses.post',
             'expenses.void','expenses.view_all_locations',
             'cake_orders.view','cake_orders.view_all','cake_orders.create','cake_orders.edit',
-            'cake_orders.delete','cake_orders.manage','cake_orders.cancel','cake_orders.complete',
+            'cake_orders.delete','cake_orders.archive','cake_orders.restore','cake_orders.comment','cake_orders.attachment',
+            'cake_orders.manage','cake_orders.cancel','cake_orders.complete',
             'cake_orders.review','cake_orders.accept','cake_orders.reject',
             'cake_orders.request_modification','cake_orders.schedule','cake_orders.prepare',
             'cake_orders.decorate','cake_orders.quality_check','cake_orders.dispatch','cake_orders.receive',
             'showroom_cake_requests.view','showroom_cake_requests.view_all',
-            'showroom_cake_requests.create','showroom_cake_requests.cancel','showroom_cake_requests.update_status',
+            'showroom_cake_requests.create','showroom_cake_requests.edit','showroom_cake_requests.reservations',
+            'showroom_cake_requests.accept','showroom_cake_requests.ready','showroom_cake_requests.cancel_factory',
+            'showroom_cake_requests.cancel','showroom_cake_requests.update_status',
             'showroom_cake_requests.delete',
             'showroom_sweets_requests.view','showroom_sweets_requests.view_all',
             'showroom_sweets_requests.create','showroom_sweets_requests.start',
@@ -2269,7 +2272,8 @@ SVG;
             'inventory.','stock_','reports.','invoices.','payments.','restaurant.','kitchen.','kds.',
             'attendance.','chat.','crm.','loyalty.','delivery.','customer_display.','cash_sessions.',
         ], ['users.manage','financial.cash.view','accounting.employee_accounts.view','accounting.employee_accounts.create','accounting.employee_accounts.receive','accounting.books.view','accounting.vouchers.create',
-            'showroom_cake_requests.view','showroom_cake_requests.create','showroom_cake_requests.cancel'], ['orders.confirm','orders.cancel','customers.view_all','employees.view_all','hr.documents.manage','hr.organization.manage']);
+            'showroom_cake_requests.view','showroom_cake_requests.create','showroom_cake_requests.edit',
+            'showroom_cake_requests.reservations','showroom_cake_requests.cancel'], ['orders.confirm','orders.cancel','customers.view_all','employees.view_all','hr.documents.manage','hr.organization.manage']);
         $grantByPrefixes('Cashier', ['orders.','customers.','payments.','invoices.','restaurant.pos.'], [
             'products.view','categories.view','payment_methods.view',
         ], ['orders.confirm','orders.cancel','orders.delete','customers.view_all']);
