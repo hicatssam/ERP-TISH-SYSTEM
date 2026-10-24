@@ -483,16 +483,14 @@ class SpecialCakeAutoApprovalAndProductionReportTest extends TestCase
         $params = ['type' => 'cake-production', 'date_from' => $date,
             'date_to' => $date, 'location_id' => $this->branch->id];
         $screen = $this->actingAs($this->user)->get(route('reports.show', $params))->assertOk()
-            ->assertSee('عدد الطبقات')->assertSee('فراولة')->assertSee('نوتيلا');
+            ->assertSee('الطبقات')->assertSee('فراولة')->assertSee('نوتيلا');
         $this->assertSame(5, collect($screen->viewData('data')->items())->sum('total_quantity'));
         $this->assertCount(2, $screen->viewData('data')->items());
-        $details = $screen->viewData('cakeDetails');
-        $this->assertCount(2, $details);
-        $this->assertSame([2, 4], $details->pluck(7)->all());
-        $this->assertSame([2, 3], $details->pluck(11)->all());
-
+        $screen->assertDontSee('تفاصيل طلبات إنتاج الكيك');
         $this->get(route('reports.print', $params))->assertOk()
-            ->assertSee('تعليمات خاصة')->assertSee($request->request_number);
+            ->assertDontSee('تفاصيل طلبات إنتاج الكيك')
+            ->assertDontSee('تعليمات خاصة')
+            ->assertDontSee($request->request_number);
     }
 
     #[Test]

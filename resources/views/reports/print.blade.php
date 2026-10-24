@@ -438,24 +438,6 @@
         </div>
     @endif
 
-@if(($type ?? null) === 'cake-production')
-    <div class="print-section" style="margin-top:18px">
-        <h3 style="text-align:right">تفاصيل طلبات إنتاج الكيك</h3>
-        <table class="print-table">
-            <thead><tr>
-                @foreach(['المصدر','رقم الطلب','الفرع','تاريخ الحاجة','نوع الكيك','الحجم','الشكل','عدد الطبقات','النكهة','للمعرض','محجوز للعملاء','إجمالي الكمية','تفاصيل التصنيع والملاحظات'] as $label)
-                    <th>{{ $label }}</th>
-                @endforeach
-            </tr></thead>
-            <tbody>
-                @forelse($cakeDetails ?? [] as $detail)
-                    <tr>@foreach($detail as $value)<td>{{ $value }}</td>@endforeach</tr>
-                @empty
-                    <tr><td colspan="13">لا توجد تفاصيل إنتاج لهذه الفترة.</td></tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-@endif
+
 
 @endsection

@@ -127,9 +127,7 @@ class ReportController extends Controller
 
         $rowFormatter = fn ($row) => $this->formatRowForExport($type, $row);
 
-        $cakeDetails = $type === 'cake-production' ? $this->cakeProductionDetailRows($locationIds, $dateFrom, $dateTo, 500) : collect();
-
-        return view('reports.show', compact('cakeDetails',
+        return view('reports.show', compact(
             'type', 'title', 'data', 'columns', 'summary',
             'dateFrom', 'dateTo', 'locations', 'locationId', 'rowFormatter'
         ));
@@ -203,14 +201,6 @@ class ReportController extends Controller
         $mapper   = fn ($row) => $this->formatRowForExport($type, $row);
         $filename = "{$type}_{$dateFrom}_{$dateTo}.xlsx";
 
-        if ($type === 'cake-production') {
-            $details = $this->cakeProductionDetailRows($locationIds, $dateFrom, $dateTo, $cap);
-            $summaryRows = (clone $query)->limit($cap)->get()->map(fn ($row) => $this->formatRowForExport($type, $row));
-            return Excel::download(new MultiSectionReportExport([
-                ['title' => 'ملخص إنتاج الكيك', 'columns' => $columns, 'rows' => $summaryRows],
-                ['title' => 'تفاصيل طلبات الكيك', 'columns' => $this->cakeDetailColumns(), 'rows' => $details],
-            ]), $filename);
-        }
 
         return Excel::download(
             new ChunkedQueryReportExport($query, $columns, $title, $mapper, $cap, $truncated),
@@ -276,7 +266,6 @@ class ReportController extends Controller
          * This guarantees one source for logo, colours, stamp, signature,
          * header and footer.
          */
-        $cakeDetails = $type === 'cake-production' ? $this->cakeProductionDetailRows($locationIds, $dateFrom, $dateTo, $cap) : collect();
         $pdfMode = true;
 
         /*
@@ -297,7 +286,6 @@ class ReportController extends Controller
             'cap',
             'total',
             'pdfMode',
-            'cakeDetails'
         ))->render();
 
         $tempDir = storage_path('app/mpdf');
@@ -423,9 +411,7 @@ class ReportController extends Controller
         $cap       = $total;
         $pdfMode   = false;
 
-        $cakeDetails = $type === 'cake-production' ? $this->cakeProductionDetailRows($locationIds, $dateFrom, $dateTo, 10000) : collect();
-
-        return view('reports.print', compact('cakeDetails',
+        return view('reports.print', compact(
             'type',
             'title',
             'rows',

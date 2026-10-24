@@ -476,27 +476,6 @@
 </div>
 
 
-@if($type === 'cake-production')
-    <div class="card" style="margin-top:1.5rem;padding:1rem">
-        <h3>تفاصيل طلبات إنتاج الكيك (حتى 500 صنف)</h3>
-        <div class="table-wrap" style="overflow-x:auto">
-            <table class="data-table">
-                <thead><tr>
-                    @foreach(['المصدر','رقم الطلب','الفرع','تاريخ الحاجة','نوع الكيك','الحجم','الشكل','عدد الطبقات','النكهة','للمعرض','محجوز للعملاء','إجمالي الكمية','تفاصيل التصنيع والملاحظات'] as $label)
-                        <th>{{ $label }}</th>
-                    @endforeach
-                </tr></thead>
-                <tbody>
-                    @forelse($cakeDetails as $detail)
-                        <tr>@foreach($detail as $value)<td>{{ $value }}</td>@endforeach</tr>
-                    @empty
-                        <tr><td colspan="13">لا توجد تفاصيل إنتاج لهذه الفترة.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        <small>الكميات المحجوزة جزء من إجمالي طلبات الفروع. إجمالي الإنتاج = للمعرض + المحجوز + الطلبات الخاصة. اختلاف الطبقات أو النكهة يعني تشكيلة مستقلة. استخدم Excel لعرض جميع التفاصيل.</small>
-    </div>
-@endif
+
 
 @endsection
