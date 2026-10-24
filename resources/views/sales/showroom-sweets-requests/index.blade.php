@@ -1104,7 +1104,7 @@
 
 
             <div class="sweets-request-card tone-{{ $cardTone }}">
-                @if(auth()->user()->isAdmin() && $req->status->workflowValue() === 'cancelled' && ! $req->branchShipment && ! $req->rawMaterialStockRequest)
+                @if(auth()->user()->isAdmin() && $req->status->workflowValue() === 'cancelled' && ($deleteBlockReasons[$req->id] ?? null) === null)
                     <label style="display:flex;gap:.5rem;align-items:center;padding:.65rem 1rem;font-size:.85rem">
                         <input class="sweets-bulk-checkbox" type="checkbox" form="sweetsBulkArchive" name="ids[]" value="{{ $req->id }}">
                         تحديد هذا الطلب الملغى للحذف
@@ -1549,12 +1549,24 @@
                         @endcan
 
 
-                        @if(auth()->user()->isAdmin() && $req->status->workflowValue() === 'cancelled' && ! $req->branchShipment && ! $req->rawMaterialStockRequest)
-                            <form action="{{ route('showroom-sweets-requests.destroy', $req) }}" method="POST" data-confirm="هل تريد حذف طلب الحلويات الملغى {{ $req->request_number }} من القائمة؟ سيُحذف منطقيًا فقط." data-confirm-title="تأكيد حذف الطلب الملغى" data-confirm-type="danger">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-danger btn-sm">حذف الطلب الملغى</button>
-                            </form>
+                        @if(auth()->user()->isAdmin() && $req->status->workflowValue() === 'cancelled')
+                            @if(($deleteBlockReasons[$req->id] ?? null) === null)
+                                <form action="{{ route('showroom-sweets-requests.destroy', $req) }}" method="POST"
+                                      data-confirm="هل تريد حذف طلب الحلويات الملغى {{ $req->request_number }} من القائمة؟ سيُحذف منطقيًا فقط."
+                                      data-confirm-title="تأكيد حذف الطلب الملغى" data-confirm-type="danger">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-danger btn-sm">حذف الطلب الملغى</button>
+                                </form>
+                            @else
+                                <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;max-width:24rem">
+                                    <button type="button" class="btn btn-danger btn-sm" disabled
+                                            title="{{ $deleteBlockReasons[$req->id] }}">حذف الطلب الملغى</button>
+                                    <small style="color:var(--text-muted);line-height:1.6">
+                                        {{ $deleteBlockReasons[$req->id] }}
+                                    </small>
+                                </div>
+                            @endif
                         @endif
 
 

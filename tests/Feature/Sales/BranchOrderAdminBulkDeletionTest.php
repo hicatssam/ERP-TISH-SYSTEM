@@ -65,6 +65,39 @@ class BranchOrderAdminBulkDeletionTest extends TestCase
     }
 
     #[Test]
+    public function linked_cancelled_sweets_show_a_disabled_delete_action_and_explanation(): void
+    {
+        [$admin, $branch, $factory] = $this->setupRolesAndLocations();
+        $linked = $this->sweets($branch, $factory, $admin, 'cancelled');
+        $stock = StockRequest::query()->create([
+            'request_number' => 'SR-BLOCK-'.Str::upper(Str::random(9)),
+            'branch_location_id' => $branch->id,
+            'factory_location_id' => $factory->id,
+            'showroom_sweets_request_id' => $linked->id,
+            'status' => 'pending_factory_review',
+            'created_by' => $admin->id,
+        ]);
+
+        $reason = 'لا يمكن حذف هذا الطلب لوجود طلب مواد خام مرتبط به.';
+        $this->actingAs($admin)->get(route('showroom-sweets-requests.index'))
+            ->assertOk()
+            ->assertSee('حذف الطلب الملغى')
+            ->assertSee($reason)
+            ->assertDontSee('class="sweets-bulk-checkbox" type="checkbox" form="sweetsBulkArchive" name="ids[]" value="'.$linked->id.'"', false);
+
+        $this->actingAs($admin)->get(route('showroom-sweets-requests.show', $linked))
+            ->assertOk()
+            ->assertSee('حذف الطلب الملغى')
+            ->assertSee($reason)
+            ->assertSee('disabled', false);
+
+        $this->actingAs($admin)->delete(route('showroom-sweets-requests.destroy', $linked))
+            ->assertSessionHasErrors('ids');
+        $this->assertDatabaseHas('showroom_sweets_requests', ['id' => $linked->id, 'deleted_at' => null]);
+        $this->assertDatabaseHas('stock_requests', ['id' => $stock->id]);
+    }
+
+    #[Test]
     public function admin_can_delete_all_eligible_sweets_after_typed_confirmation(): void
     {
         [$admin, $branch, $factory] = $this->setupRolesAndLocations();

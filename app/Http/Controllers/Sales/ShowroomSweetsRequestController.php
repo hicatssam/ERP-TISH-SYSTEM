@@ -91,13 +91,27 @@ class ShowroomSweetsRequestController extends Controller
         $statusEnum =
             ShowroomSweetsRequestStatus::workflowCases();
 
+        // Show the delete control for every cancelled request to admins,
+        // including those blocked by linked shipment or raw-material records.
+        $deleteBlockReasons = [];
+        if ($user->isAdmin()) {
+            $deletionService = app(BranchOrderDeletionService::class);
+            foreach ($requests as $dailyRequest) {
+                if ($dailyRequest->status?->workflowValue() === 'cancelled') {
+                    $deleteBlockReasons[$dailyRequest->id] =
+                        $deletionService->deletionBlockReason($dailyRequest);
+                }
+            }
+        }
+
         return view(
             'sales.showroom-sweets-requests.index',
             compact(
                 'requests',
                 'locations',
                 'statusEnum',
-                'canViewAll'
+                'canViewAll',
+                'deleteBlockReasons'
             )
         );
     }
@@ -778,8 +792,12 @@ class ShowroomSweetsRequestController extends Controller
             $showroomSweetsRequest
         );
 
-        $canDeleteCancelled = $user->isAdmin()
-            && app(BranchOrderDeletionService::class)->eligible($showroomSweetsRequest);
+        $showCancelledDelete = $user->isAdmin()
+            && $showroomSweetsRequest->status?->workflowValue() === 'cancelled';
+        $deleteBlockReason = $showCancelledDelete
+            ? app(BranchOrderDeletionService::class)->deletionBlockReason($showroomSweetsRequest)
+            : null;
+        $canDeleteCancelled = $showCancelledDelete && $deleteBlockReason === null;
 
         $canManageReservations =
             $user->isAdmin()
@@ -803,7 +821,9 @@ class ShowroomSweetsRequestController extends Controller
                 'canCancel',
                 'canEditRequest',
                 'canManageReservations',
-                'canDeleteCancelled'
+                'canDeleteCancelled',
+                'showCancelledDelete',
+                'deleteBlockReason'
             )
         );
     }

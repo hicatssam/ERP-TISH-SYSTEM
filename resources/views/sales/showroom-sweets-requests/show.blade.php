@@ -1289,18 +1289,24 @@
             @endif
 
 
-            @if($canDeleteCancelled)
-                <form action="{{ route('showroom-sweets-requests.destroy', $showroomSweetsRequest) }}"
-                      method="POST"
-                      data-confirm="هل تريد حذف طلب الحلويات الملغى {{ $showroomSweetsRequest->request_number }} من القائمة؟ هذا حذف منطقي ولا يمكن إجراؤه إذا وُجدت شحنات أو طلبات مخزون مرتبطة."
-                      data-confirm-title="تأكيد حذف الطلب الملغى"
-                      data-confirm-type="danger">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn btn-danger btn-sm">
-                        حذف الطلب الملغى
-                    </button>
-                </form>
+            @if($showCancelledDelete)
+                @if($canDeleteCancelled)
+                    <form action="{{ route('showroom-sweets-requests.destroy', $showroomSweetsRequest) }}"
+                          method="POST"
+                          data-confirm="هل تريد حذف طلب الحلويات الملغى {{ $showroomSweetsRequest->request_number }} من القائمة؟ هذا حذف منطقي ولا يمكن إجراؤه إذا وُجدت شحنات أو طلبات مخزون مرتبطة."
+                          data-confirm-title="تأكيد حذف الطلب الملغى"
+                          data-confirm-type="danger">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-danger btn-sm">حذف الطلب الملغى</button>
+                    </form>
+                @else
+                    <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;max-width:27rem">
+                        <button type="button" class="btn btn-danger btn-sm" disabled
+                                title="{{ $deleteBlockReason }}">حذف الطلب الملغى</button>
+                        <small style="color:var(--text-muted);line-height:1.6">{{ $deleteBlockReason }}</small>
+                    </div>
+                @endif
             @endif
 
             <a

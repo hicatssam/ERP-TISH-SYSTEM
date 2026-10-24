@@ -18,10 +18,28 @@ class BranchOrderDeletionService
 {
     public function eligible(ShowroomCakeRequest|ShowroomSweetsRequest $order): bool
     {
-        $status = $order->status?->workflowValue();
-        return $status === 'cancelled'
-            && ! $order->branchShipment()->exists()
-            && ! $order->rawMaterialStockRequest()->exists();
+        return $this->deletionBlockReason($order) === null;
+    }
+
+    /**
+     * Give the operator a clear reason when a cancelled daily request
+     * must remain available for shipment or inventory audit.
+     */
+    public function deletionBlockReason(ShowroomCakeRequest|ShowroomSweetsRequest $order): ?string
+    {
+        if ($order->status?->workflowValue() !== 'cancelled') {
+            return 'الحذف متاح للطلبات الملغاة فقط.';
+        }
+
+        if ($order->branchShipment()->exists()) {
+            return 'لا يمكن حذف هذا الطلب لوجود شحنة مرتبطة به. يجب الاحتفاظ بالسجل للتتبع.';
+        }
+
+        if ($order->rawMaterialStockRequest()->exists()) {
+            return 'لا يمكن حذف هذا الطلب لوجود طلب مواد خام مرتبط به. يجب الاحتفاظ بالسجل للتتبع.';
+        }
+
+        return null;
     }
 
     /** @param class-string<ShowroomCakeRequest|ShowroomSweetsRequest> $type */
