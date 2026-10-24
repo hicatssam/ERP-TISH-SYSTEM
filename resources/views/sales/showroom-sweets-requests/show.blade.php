@@ -1293,7 +1293,7 @@
                 @if($canDeleteCancelled)
                     <form action="{{ route('showroom-sweets-requests.destroy', $showroomSweetsRequest) }}"
                           method="POST"
-                          data-confirm="هل تريد حذف طلب الحلويات الملغى {{ $showroomSweetsRequest->request_number }} من القائمة؟ هذا حذف منطقي ولا يمكن إجراؤه إذا وُجدت شحنات أو طلبات مخزون مرتبطة."
+                          data-confirm="هل تريد أرشفة طلب الحلويات الملغى {{ $showroomSweetsRequest->request_number }}؟ إذا كان طلب المواد الخام المرفق لا يزال بانتظار المراجعة فسيُرفض تلقائيًا مع الاحتفاظ بالسجل. لن يتم الحذف إذا وُجدت شحنات أو طلبات مواد خام معتمدة."
                           data-confirm-title="تأكيد حذف الطلب الملغى"
                           data-confirm-type="danger">
                         @csrf

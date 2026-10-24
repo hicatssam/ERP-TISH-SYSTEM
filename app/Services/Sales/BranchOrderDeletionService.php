@@ -2,7 +2,9 @@
 
 namespace App\Services\Sales;
 
+use App\Enums\StockRequestStatus;
 use App\Models\ShowroomCakeRequest;
+use App\Models\StockRequest;
 use App\Models\ShowroomSweetsRequest;
 use App\Models\User;
 use App\Services\ActivityLogger;
@@ -35,8 +37,21 @@ class BranchOrderDeletionService
             return 'لا يمكن حذف هذا الطلب لوجود شحنة مرتبطة به. يجب الاحتفاظ بالسجل للتتبع.';
         }
 
-        if ($order->rawMaterialStockRequest()->exists()) {
-            return 'لا يمكن حذف هذا الطلب لوجود طلب مواد خام مرتبط به. يجب الاحتفاظ بالسجل للتتبع.';
+        $materials = $order->rawMaterialStockRequest()->first();
+        if ($materials !== null) {
+            if ($order instanceof ShowroomCakeRequest) {
+                return 'لا يمكن حذف طلب كيك الفروع لوجود طلب مواد خام مرتبط به.';
+            }
+
+            $status = $materials->status?->value ?? $materials->status;
+            if (! in_array($status, ['pending_factory_review', 'rejected'], true)) {
+                return 'لا يمكن حذف الطلب لأن طلب المواد الخام المرتبط به تم اعتماده أو بدأ تنفيذه.';
+            }
+
+            if ($materials->transfers()->exists()
+                || $materials->items()->where('approved_quantity', '>', 0)->exists()) {
+                return 'لا يمكن حذف الطلب لوجود اعتماد كميات أو تحويلات مخزنية في طلب المواد الخام.';
+            }
         }
 
         return null;
@@ -76,8 +91,19 @@ class BranchOrderDeletionService
         return DB::transaction(function () use ($type, $actor): int {
             $query = $type::query()
                 ->whereIn('status', ['cancelled', 'rejected'])
-                ->whereDoesntHave('branchShipment')
-                ->whereDoesntHave('rawMaterialStockRequest');
+                ->whereDoesntHave('branchShipment');
+
+            if ($type === ShowroomSweetsRequest::class) {
+                // Exclude processed/approved stock requests while retaining
+                // unprocessed pending/rejected requests in the eligible batch.
+                $query->whereDoesntHave('rawMaterialStockRequest', function ($raw) {
+                    $raw->whereNotIn('status', ['pending_factory_review', 'rejected'])
+                        ->orWhereHas('transfers')
+                        ->orWhereHas('items', fn ($item) => $item->where('approved_quantity', '>', 0));
+                });
+            } else {
+                $query->whereDoesntHave('rawMaterialStockRequest');
+            }
 
             // Prevent long-running mass edits. The admin may repeat after reviewing.
             $count = (clone $query)->count();
@@ -107,6 +133,47 @@ class BranchOrderDeletionService
 
     private function softDelete(Model $order, User $actor): void
     {
+        if ($order instanceof ShowroomSweetsRequest) {
+            // Lock the linked stock request so factory review and order
+            // deletion cannot race. Keep the stock request and its items
+            // for audit; only close it if it was still pending review.
+            $materials = $order->rawMaterialStockRequest()->lockForUpdate()->first();
+
+            if ($materials !== null) {
+                $status = $materials->status?->value ?? $materials->status;
+                if (! in_array($status, ['pending_factory_review', 'rejected'], true)
+                    || $materials->transfers()->exists()
+                    || $materials->items()->where('approved_quantity', '>', 0)->exists()) {
+                    throw ValidationException::withMessages([
+                        'ids' => 'لا يمكن الحذف: طلب المواد الخام مرتبط باعتماد أو حركة مخزون.',
+                    ]);
+                }
+
+                if ($status === 'pending_factory_review') {
+                    $materials->update([
+                        'status' => StockRequestStatus::Rejected,
+                        'rejection_reason' => 'أُلغي وأُرشف طلب حلويات الفرع المرتبط به: '.$order->request_number,
+                        'reviewed_by' => $actor->id,
+                        'reviewed_at' => now(),
+                    ]);
+
+                    ActivityLogger::log(
+                        userId: $actor->id,
+                        action: 'stock_request.rejected_due_to_cancelled_source',
+                        module: 'inventory',
+                        recordType: $materials->getTable(),
+                        recordId: $materials->id,
+                        oldValues: ['status' => 'pending_factory_review'],
+                        newValues: ['status' => 'rejected'],
+                        metadata: [
+                            'showroom_sweets_request_id' => $order->id,
+                            'reason' => 'cancelled_daily_order_archived',
+                        ],
+                    );
+                }
+            }
+        }
+
         $order->delete();
         ActivityLogger::log(
             userId: $actor->id,

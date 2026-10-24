@@ -1055,7 +1055,7 @@
                 </label>
                 <button type="submit" class="btn btn-danger btn-sm">حذف جميع الطلبات الملغاة المؤهلة</button>
             </form>
-            <small class="form-help" style="width:100%">الحذف منطقي فقط للطلبات الملغاة بلا شحنات أو طلبات مخزون مرتبطة، ولا يؤثر على المحاسبة والتقارير.</small>
+            <small class="form-help" style="width:100%">الحذف منطقي للطلبات الملغاة؛ طلب المواد الخام المعلّق يُرفض تلقائيًا مع حفظ سجله، أما الطلب المعتمد أو المرتبط بشحنة فلا يمكن حذفه.</small>
         </div>
     </div>
 @endif
@@ -1552,7 +1552,7 @@
                         @if(auth()->user()->isAdmin() && $req->status->workflowValue() === 'cancelled')
                             @if(($deleteBlockReasons[$req->id] ?? null) === null)
                                 <form action="{{ route('showroom-sweets-requests.destroy', $req) }}" method="POST"
-                                      data-confirm="هل تريد حذف طلب الحلويات الملغى {{ $req->request_number }} من القائمة؟ سيُحذف منطقيًا فقط."
+                                      data-confirm="هل تريد أرشفة طلب الحلويات الملغى {{ $req->request_number }}؟ إذا كان طلب المواد الخام ما زال بانتظار المراجعة فسيُرفض تلقائيًا مع حفظ سجله."
                                       data-confirm-title="تأكيد حذف الطلب الملغى" data-confirm-type="danger">
                                     @csrf
                                     @method('DELETE')

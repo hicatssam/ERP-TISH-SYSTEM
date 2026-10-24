@@ -74,11 +74,11 @@ class BranchOrderAdminBulkDeletionTest extends TestCase
             'branch_location_id' => $branch->id,
             'factory_location_id' => $factory->id,
             'showroom_sweets_request_id' => $linked->id,
-            'status' => 'pending_factory_review',
+            'status' => 'accepted',
             'created_by' => $admin->id,
         ]);
 
-        $reason = 'لا يمكن حذف هذا الطلب لوجود طلب مواد خام مرتبط به.';
+        $reason = 'لا يمكن حذف الطلب لأن طلب المواد الخام المرتبط به تم اعتماده أو بدأ تنفيذه.';
         $this->actingAs($admin)->get(route('showroom-sweets-requests.index'))
             ->assertOk()
             ->assertSee('حذف الطلب الملغى')
@@ -95,6 +95,85 @@ class BranchOrderAdminBulkDeletionTest extends TestCase
             ->assertSessionHasErrors('ids');
         $this->assertDatabaseHas('showroom_sweets_requests', ['id' => $linked->id, 'deleted_at' => null]);
         $this->assertDatabaseHas('stock_requests', ['id' => $stock->id]);
+    }
+
+    #[Test]
+    public function cancelled_sweets_with_pending_raw_materials_can_be_archived_and_stock_request_is_preserved_as_rejected(): void
+    {
+        [$admin, $branch, $factory] = $this->setupRolesAndLocations();
+        $cancelled = $this->sweets($branch, $factory, $admin, 'cancelled');
+        $stock = StockRequest::query()->create([
+            'request_number' => 'SR-PEND-'.Str::upper(Str::random(8)),
+            'branch_location_id' => $branch->id,
+            'factory_location_id' => $factory->id,
+            'showroom_sweets_request_id' => $cancelled->id,
+            'status' => 'pending_factory_review',
+            'created_by' => $admin->id,
+        ]);
+
+        $this->actingAs($admin)->get(route('showroom-sweets-requests.index'))
+            ->assertOk()->assertSee('حذف الطلب الملغى')
+            ->assertSee('name="ids[]" value="'.$cancelled->id.'"', false);
+        $this->actingAs($admin)->get(route('showroom-sweets-requests.show', $cancelled))
+            ->assertOk()->assertSee(route('showroom-sweets-requests.destroy', $cancelled), false);
+
+        $this->actingAs($admin)->delete(route('showroom-sweets-requests.destroy', $cancelled))
+            ->assertRedirect(route('showroom-sweets-requests.index'))
+            ->assertSessionHas('success');
+
+        $this->assertSoftDeleted('showroom_sweets_requests', ['id' => $cancelled->id]);
+        $this->assertDatabaseHas('stock_requests', [
+            'id' => $stock->id,
+            'showroom_sweets_request_id' => $cancelled->id,
+            'status' => 'rejected',
+            'reviewed_by' => $admin->id,
+        ]);
+        $this->assertStringContainsString($cancelled->request_number, (string) $stock->fresh()->rejection_reason);
+    }
+
+    #[Test]
+    public function already_rejected_raw_material_request_is_preserved_when_cancelled_sweets_is_archived(): void
+    {
+        [$admin, $branch, $factory] = $this->setupRolesAndLocations();
+        $cancelled = $this->sweets($branch, $factory, $admin, 'cancelled');
+        $stock = StockRequest::query()->create([
+            'request_number' => 'SR-REJ-'.Str::upper(Str::random(8)),
+            'branch_location_id' => $branch->id,
+            'factory_location_id' => $factory->id,
+            'showroom_sweets_request_id' => $cancelled->id,
+            'status' => 'rejected',
+            'rejection_reason' => 'رفض سابق في المصنع',
+            'created_by' => $admin->id,
+        ]);
+
+        $this->actingAs($admin)->delete(route('showroom-sweets-requests.destroy', $cancelled))
+            ->assertSessionHas('success');
+        $this->assertSoftDeleted('showroom_sweets_requests', ['id' => $cancelled->id]);
+        $this->assertSame('rejected', $stock->fresh()->status->value);
+        $this->assertSame('رفض سابق في المصنع', $stock->fresh()->rejection_reason);
+    }
+
+    #[Test]
+    public function bulk_delete_can_archive_cancelled_sweets_with_pending_unprocessed_raw_materials(): void
+    {
+        [$admin, $branch, $factory] = $this->setupRolesAndLocations();
+        $cancelled = $this->sweets($branch, $factory, $admin, 'cancelled');
+        $stock = StockRequest::query()->create([
+            'request_number' => 'SR-BULK-'.Str::upper(Str::random(8)),
+            'branch_location_id' => $branch->id,
+            'factory_location_id' => $factory->id,
+            'showroom_sweets_request_id' => $cancelled->id,
+            'status' => 'pending_factory_review',
+            'created_by' => $admin->id,
+        ]);
+
+        $this->actingAs($admin)->post(route('showroom-branch-requests.bulk-delete', ['type' => 'sweets']), [
+            'mode' => 'all_eligible',
+            'confirmation' => 'حذف الطلبات الملغاة',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSoftDeleted('showroom_sweets_requests', ['id' => $cancelled->id]);
+        $this->assertSame('rejected', $stock->fresh()->status->value);
     }
 
     #[Test]
@@ -156,7 +235,7 @@ class BranchOrderAdminBulkDeletionTest extends TestCase
             'branch_location_id' => $branch->id,
             'factory_location_id' => $factory->id,
             'showroom_sweets_request_id' => $materials->id,
-            'status' => 'pending_factory_review',
+            'status' => 'accepted',
             'created_by' => $admin->id,
         ]);
 
