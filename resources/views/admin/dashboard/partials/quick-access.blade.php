@@ -24,7 +24,7 @@
     <div class="card-header dahab-shortcuts-header">
         <h2 class="card-title" id="dahab-shortcuts-title">اختصاراتي</h2>
         <button type="button" class="dahab-shortcuts-customize" data-shortcuts-edit aria-pressed="false">
-            <i class="bi bi-sliders" aria-hidden="true"></i> تخصيص
+            <span aria-hidden="true">⚙</span> تخصيص
         </button>
     </div>
     <div class="card-body">
@@ -32,9 +32,23 @@
         <div class="dahab-shortcuts-grid">
             @foreach($dashboardShortcuts as $shortcut)
             <a class="dahab-shortcut" href="{{ route($shortcut['route']) }}" data-shortcut-key="{{ $shortcut['key'] }}">
-                <span class="dahab-shortcut-icon"><i class="bi {{ $shortcut['icon'] }}" aria-hidden="true"></i></span>
+                <span class="dahab-shortcut-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    @switch($shortcut['key'])
+                        @case('orders') <path d="M12 5v14M5 12h14"/> @break
+                        @case('cakes') <path d="M4 11h16v9H4zM4 15h16M7 11V8m5 3V8m5 3V8M7 5v1m5-1v1m5-1v1"/> @break
+                        @case('stock') <path d="m3 7 9-4 9 4v10l-9 4-9-4zM3 7l9 4 9-4M12 11v10"/> @break
+                        @case('cash') <rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M16 15h2"/> @break
+                        @case('sweets') <path d="M5 8h14l-1 13H6zM9 9V6a3 3 0 0 1 6 0v3M9 15h6m-3-3v6"/> @break
+                        @case('pos') <circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/><path d="M2 3h2l3 13h12l3-10H5"/> @break
+                        @case('hall') <path d="M3 10h18v11H3zM2 10l3-6h14l3 6M9 21v-7h6v7"/> @break
+                        @case('kds') <rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 22h8M12 18v4M7 9h10m-10 4h6"/> @break
+                        @case('production') <circle cx="12" cy="12" r="3"/><path d="m10 2-.5 2.4-2 1-2.3-1.1-2 3.5 1.8 1.6v2.2l-1.8 1.6 2 3.5 2.3-1.1 2 1 .5 2.4h4l.5-2.4 2-1 2.3 1.1 2-3.5-1.8-1.6V9.4l1.8-1.6-2-3.5-2.3 1.1-2-1L14 2z"/> @break
+                        @case('quality') <rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2h6v2m-7 9 3 3 5-6"/> @break
+                        @case('purchasing') <path d="M4 8h16l-1 13H5zM9 9V6a3 3 0 0 1 6 0v3"/> @break
+                    @endswitch
+                </svg></span>
                 <span class="dahab-shortcut-label">{{ $shortcut['label'] }}</span>
-                <span class="dahab-shortcut-selected" aria-hidden="true"><i class="bi bi-check-circle-fill"></i></span>
+                <span class="dahab-shortcut-selected" aria-hidden="true">✓</span>
             </a>
             @endforeach
         </div>
@@ -55,7 +69,7 @@
 .dahab-shortcut:hover{transform:translateY(-4px);box-shadow:0 10px 22px rgba(30,35,43,.08);border-color:rgba(180,133,35,.5)}
 .dahab-shortcut:focus-visible{outline:2px solid var(--gold,#d4a017);outline-offset:3px}
 .dahab-shortcut-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:rgba(212,160,23,.1);color:var(--gold-deep,#a77b16);font-size:1.2rem}
-.dahab-shortcut-label{text-align:center;font-size:.78rem;font-weight:800;line-height:1.5}
+.dahab-shortcut-icon svg{width:23px;height:23px;display:block}\n.dahab-shortcut-label{text-align:center;font-size:.78rem;font-weight:800;line-height:1.5}
 .dahab-shortcut-selected{display:none;position:absolute;inset-block-start:6px;inset-inline-start:8px;color:#168545}
 .dahab-shortcuts.is-editing .dahab-shortcut-selected{display:block}
 .dahab-shortcuts.is-editing .dahab-shortcut.is-hidden{display:flex;opacity:.4;border-style:dashed}
@@ -88,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     button.addEventListener('click', () => {
         const editing = box.classList.toggle('is-editing');
-        button.innerHTML = editing ? '<i class="bi bi-check2" aria-hidden="true"></i> تم' : '<i class="bi bi-sliders" aria-hidden="true"></i> تخصيص';
+        button.innerHTML = editing ? '✓ تم' : '⚙ تخصيص';
         button.setAttribute('aria-pressed',String(editing));
         help.hidden = !editing;
         if (!editing) { try { localStorage.setItem(storageKey, JSON.stringify(hidden)); } catch (_) {} }
