@@ -31,6 +31,37 @@ class Category extends Model
         return $this->hasMany(Product::class);
     }
 
+    /**
+     * Categories allowed in branch sweets production requests:
+     * Eastern sweets and every Kunafa / Knafeh variety only.
+     *
+     * This category-level filter intentionally excludes unrelated products,
+     * even if their product names mention Kunafa.
+     */
+    public function scopeForBranchSweetsOrders($query): \Illuminate\Database\Eloquent\Builder
+    {
+        return $query->where('is_active', true)
+            ->where(function ($categories) {
+                $categories
+                    ->where('name_ar', 'like', '%شرقي%')
+                    ->orWhere('name', 'like', '%oriental%')
+                    ->orWhere('name', 'like', '%eastern%')
+                    ->orWhere('slug', 'like', '%oriental%')
+                    ->orWhere('slug', 'like', '%eastern%');
+
+                foreach (['%كناف%', '%كنائ%', '%كوناف%'] as $arabic) {
+                    $categories->orWhere('name_ar', 'like', $arabic)
+                        ->orWhere('name', 'like', $arabic)
+                        ->orWhere('slug', 'like', $arabic);
+                }
+
+                foreach (['%kunaf%', '%kunef%', '%knafe%', '%knafa%', '%kanafe%', '%konaf%'] as $english) {
+                    $categories->orWhere('name', 'like', $english)
+                        ->orWhere('slug', 'like', $english);
+                }
+            });
+    }
+
     public function scopeActive($query): \Illuminate\Database\Eloquent\Builder
     {
         return $query->where('is_active', true);

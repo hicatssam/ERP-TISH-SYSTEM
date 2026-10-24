@@ -96,7 +96,7 @@
         <div class="card">
             <div class="card-header"><span class="card-title">كتالوج حلويات الفروع</span></div>
             <div class="card-body">
-                <p class="ssr-catalog-hint">منتجات فئة الحلويات الشرقية فقط تظهر هنا بصورها الأصلية. اختر المنتجات المطلوبة وحدد كمية المعرض والمحجوز للعملاء.</p>
+                <p class="ssr-catalog-hint">يعرض الكتالوج فئتين فقط: الحلويات الشرقية والكنافة بجميع أنواعها. اختر الأصناف المطلوبة وحدد كمية المعرض والمحجوز للعملاء.</p>
                 <input id="sweetsCatalogSearch" class="form-input" type="search" placeholder="ابحث باسم المنتج..." aria-label="بحث في الحلويات">
                 <div class="ssr-catalog-list" id="sweetsCatalog">
                     @forelse($sweetProducts as $product)
@@ -139,7 +139,7 @@
                             </div>
                         </div>
                     @empty
-                        <p>لا توجد منتجات نشطة ضمن فئة الحلويات الشرقية. تأكد من تصنيف المنتجات داخل الكتالوج.</p>
+                        <p>لا توجد منتجات نشطة ضمن فئتي الحلويات الشرقية والكنافة. تأكد من تصنيف منتجات الكنافة ضمن فئتها الصحيحة في الكتالوج.</p>
                     @endforelse
                 </div>
                 <div class="ssr-catalog-summary" aria-live="polite">منتجات مختارة: <strong id="ssrSelected">0</strong> — للمعرض: <strong id="ssrShowroomTotal">0</strong> — محجوز: <strong id="ssrReservedTotal">0</strong></div>

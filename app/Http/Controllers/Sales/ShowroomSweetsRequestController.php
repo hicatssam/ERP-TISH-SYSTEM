@@ -159,8 +159,7 @@ class ShowroomSweetsRequestController extends Controller
         $sweetProducts = Product::query()
             ->active()
             ->where('is_raw_material', false)
-            ->whereHas('category', fn ($category) => $category
-                ->where(function ($q) { $q->where('name_ar', 'like', '%شرقي%')->orWhere('name', 'like', '%oriental%')->orWhere('name', 'like', '%eastern%')->orWhere('slug', 'like', '%oriental%')->orWhere('slug', 'like', '%eastern%'); }))
+            ->whereHas('category', fn ($category) => $category->forBranchSweetsOrders())
             ->with(['category', 'unitDefinition'])
             ->orderBy('created_at')
             ->orderBy('id')
@@ -191,7 +190,7 @@ class ShowroomSweetsRequestController extends Controller
         $query = Product::query()
             ->active()
             ->where('is_raw_material', false)
-            ->whereHas('category', fn ($category) => $category->where(function ($q) { $q->where('name_ar', 'like', '%شرقي%')->orWhere('name', 'like', '%oriental%')->orWhere('name', 'like', '%eastern%')->orWhere('slug', 'like', '%oriental%')->orWhere('slug', 'like', '%eastern%'); }));
+            ->whereHas('category', fn ($category) => $category->forBranchSweetsOrders());
 
         if (isset($data['id'])) {
             $query->whereKey($data['id']);
@@ -410,11 +409,7 @@ class ShowroomSweetsRequestController extends Controller
                 'id',
                 $productIds
             )
-            ->whereHas(
-                'category',
-                fn ($q) =>
-                    $q->where(function ($query) { $query->where('name_ar', 'like', '%شرقي%')->orWhere('name', 'like', '%oriental%')->orWhere('name', 'like', '%eastern%')->orWhere('slug', 'like', '%oriental%')->orWhere('slug', 'like', '%eastern%'); })
-            )
+            ->whereHas('category', fn ($category) => $category->forBranchSweetsOrders())
             ->get()
             ->keyBy('id');
 
@@ -426,7 +421,7 @@ class ShowroomSweetsRequestController extends Controller
                 ->withInput()
                 ->withErrors([
                     'items' =>
-                        'يجب اختيار منتجات من فئة الحلويات الشرقية فقط.',
+                        'يُسمح فقط بمنتجات فئتي الحلويات الشرقية والكنافة بأنواعها.',
                 ]);
         }
 
@@ -684,16 +679,7 @@ class ShowroomSweetsRequestController extends Controller
             ->active()
             ->where('is_raw_material', false)
             ->whereIn('id', $productIds)
-            ->whereHas(
-                'category',
-                fn ($q) => $q->where(function ($query) {
-                    $query->where('name_ar', 'like', '%شرقي%')
-                        ->orWhere('name', 'like', '%oriental%')
-                        ->orWhere('name', 'like', '%eastern%')
-                        ->orWhere('slug', 'like', '%oriental%')
-                        ->orWhere('slug', 'like', '%eastern%');
-                })
-            )
+            ->whereHas('category', fn ($category) => $category->forBranchSweetsOrders())
             ->get()
             ->keyBy('id');
 
@@ -701,7 +687,7 @@ class ShowroomSweetsRequestController extends Controller
             return back()
                 ->withInput()
                 ->withErrors([
-                    'items' => 'يجب اختيار أصناف حلويات فعالة فقط من كتالوج المنتجات.',
+                    'items' => 'يُسمح فقط بأصناف نشطة من الحلويات الشرقية والكنافة بأنواعها.',
                 ]);
         }
 
