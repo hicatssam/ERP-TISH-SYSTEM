@@ -107,9 +107,9 @@
         <div class="card">
             <div class="card-header"><span class="card-title">منتجات الكيك المتاحة للطلب</span></div>
             <div class="card-body">
-                <p class="scr-catalog-help">جميع منتجات فئة الكيك تظهر تلقائيًا. اختر الحجم وحدد كمية المعرض والمحجوز للعملاء لكل صنف. الأصناف غير المختارة لن تُرسل.</p>
+                <p class="scr-catalog-help">حدد الحجم والكميات مباشرة؛ المنتجات غير المختارة لن تدخل الطلب.</p>
                 <input id="cakeCatalogSearch" class="form-input" type="search" placeholder="بحث باسم المنتج..." aria-label="بحث في منتجات الكيك" style="margin-bottom:1rem">
-                <p class="scr-catalog-muted">لكل حجم: حدّد كمية المعرض، المحجوز للعملاء، وعدد الطبقات (اختياري).</p>
+                <p class="scr-catalog-muted">عدد الطبقات اختياري لكل حجم.</p>
                 <div id="cakeCatalogRows" class="scr-catalog-list">
                     @forelse($cakeProducts as $product)
                         @php
@@ -129,9 +129,10 @@
                                 @endif
                                 <div>
                                     <strong>{{ $cakeName }}</strong>
-                                    <div class="scr-catalog-muted">{{ $cakeVariants->isNotEmpty() ? 'اختر الحجم المطلوب' : 'الحجم الافتراضي' }}</div>
+                                    <div class="scr-catalog-muted">{{ $cakeVariants->isNotEmpty() ? $cakeVariants->count() . ' أحجام متاحة' : 'حجم واحد' }}</div>
                                 </div>
                             </div>
+                            <div class="scr-catalog-columns" aria-hidden="true"><span>الحجم</span><span>للمعرض</span><span>محجوز للعملاء</span><span>عدد الطبقات</span></div>
                             @if($cakeVariants->isNotEmpty())
                                 @foreach($cakeVariants as $variant)
                                     <div class="scr-catalog-line" data-cake-line data-product-id="{{ $product->id }}" data-variant-id="{{ $variant->id }}" data-cake-type="{{ $cakeName }}" data-cake-size="{{ $variant->size?->displayName() ?: $variant->displayName() }}">
@@ -179,24 +180,38 @@
 </form>
 
 <style>
-.scr-catalog-help,.scr-catalog-muted{font-size:.83rem;color:var(--text-muted)}
-.scr-catalog-list{display:grid;gap:.85rem}
-.scr-catalog-product{padding:1rem;border:1px solid var(--border-light);border-radius:14px;background:var(--surface,#fff)}
-.scr-catalog-title{display:flex;align-items:center;gap:.8rem;margin-bottom:.7rem}
-.scr-catalog-image{height:56px;width:56px;object-fit:cover;border-radius:10px;flex-shrink:0}
-.scr-catalog-image-empty{display:grid;place-items:center;background:rgba(212,160,23,.1)}
-.scr-catalog-line{display:grid;grid-template-columns:minmax(140px,1.2fr) minmax(100px,1fr) minmax(100px,1fr);align-items:center;gap:.75rem;padding:.65rem .75rem;border-top:1px solid var(--border-light)}
-.scr-catalog-line label{font-size:.8rem;font-weight:700;display:flex;align-items:center;gap:.55rem}
-.scr-catalog-line input[type=number]{min-width:0;max-width:110px}
-.scr-catalog-size{min-width:0}
-.scr-catalog-size input{accent-color:#b68c2b;width:18px;height:18px}
-.scr-catalog-line:has(.scr-catalog-check:checked){background:rgba(212,160,23,.05);border-radius:8px}
-.scr-catalog-summary{display:flex;flex-wrap:wrap;gap:1rem;padding:1rem 0 0;font-size:.84rem}
+.scr-catalog-help,.scr-catalog-muted{font-size:.82rem;color:var(--text-muted);line-height:1.6}
+.scr-catalog-list{display:grid;gap:1rem}
+.scr-catalog-product{padding:.85rem 1rem;border:1px solid var(--border-light);border-radius:16px;background:var(--surface,#fff);box-shadow:0 2px 10px rgba(15,23,42,.035);overflow:hidden}
+.scr-catalog-title{display:flex;align-items:center;gap:.85rem;padding-bottom:.75rem;margin-bottom:.35rem;border-bottom:1px solid var(--border-light)}
+.scr-catalog-title strong{font-size:1rem;color:var(--text);font-weight:850}
+.scr-catalog-image{height:60px;width:60px;object-fit:cover;border-radius:12px;flex-shrink:0;border:1px solid var(--border-light)}
+.scr-catalog-image-empty{display:grid;place-items:center;background:rgba(212,160,23,.1);font-size:1.5rem}
+.scr-catalog-columns,.scr-catalog-line{display:grid;grid-template-columns:minmax(135px,1.35fr) repeat(3,minmax(110px,1fr));gap:.75rem;align-items:center}
+.scr-catalog-columns{padding:.5rem .75rem;color:var(--text-muted);font-size:.73rem;font-weight:800}
+.scr-catalog-line{padding:.5rem .75rem;border-top:1px solid var(--border-light);border-radius:8px;transition:background .18s ease}
+.scr-catalog-line label{display:flex;align-items:center;gap:.45rem;min-width:0;font-size:.81rem;font-weight:700}
+.scr-catalog-line label:not(.scr-catalog-size){font-size:0}
+.scr-catalog-line .form-input{width:100%;min-width:0;max-width:150px;height:40px;text-align:center;font-size:.9rem;font-weight:700;border-radius:10px}
+.scr-catalog-size{min-width:0;color:var(--text)}
+.scr-catalog-size input{accent-color:#b68c2b;width:19px;height:19px;flex-shrink:0}
+.scr-catalog-line:has(.scr-catalog-check:checked){background:rgba(212,160,23,.08)}
+.scr-catalog-line:focus-within{background:rgba(212,160,23,.055)}
+.scr-catalog-summary{display:flex;flex-wrap:wrap;gap:1rem;margin-top:1.1rem;padding:1rem;border:1px solid rgba(212,160,23,.22);border-radius:12px;background:rgba(212,160,23,.055);font-size:.85rem}
 .scr-catalog-summary strong{color:var(--gold-deep,#a77b16)}
 .scr-errors{max-width:1000px;margin-bottom:1.25rem;padding:1rem 1.25rem;border:1px solid #dc3545;border-radius:12px;background:rgba(220,53,69,.12);color:#dc3545}
 .scr-grid{display:grid;gap:1rem}.scr-grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
 .form-error{display:block;color:#dc3545;margin-top:.35rem;font-size:.82rem}
-@media(max-width:680px){.scr-grid-2{grid-template-columns:1fr}.scr-catalog-line{grid-template-columns:1fr 1fr}.scr-catalog-size{grid-column:1/-1}}
+@media(max-width:780px){
+.scr-grid-2{grid-template-columns:1fr}
+.scr-catalog-columns{display:none}
+.scr-catalog-line{grid-template-columns:repeat(3,minmax(0,1fr));gap:.5rem;padding:.8rem .15rem}
+.scr-catalog-size{grid-column:1/-1}
+.scr-catalog-line label:not(.scr-catalog-size){font-size:.7rem;display:flex;flex-direction:column;align-items:stretch;gap:.25rem}
+.scr-catalog-line .form-input{width:100%;max-width:none}
+.scr-catalog-product{padding:.75rem}
+}
+@media(prefers-reduced-motion:reduce){.scr-catalog-line{transition:none}}
 </style>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
