@@ -296,7 +296,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data.product_id) loadProducts({id: data.product_id}, data.product_id);
         else loadProducts({q: ''});
         quantity.value = data.quantity ?? 1;
-        unit.value = data.requested_unit ?? 'صدر';
+        const arabicUnits = {pcs:'حبة', pc:'حبة', piece:'حبة', pieces:'حبة', unit:'حبة', units:'حبة', each:'حبة', tray:'صينية', trays:'صينية', box:'علبة', boxes:'علبة', kg:'كغم', kgs:'كغم', kilogram:'كغم', kilograms:'كغم', bundle:'ربطة', bundles:'ربطة', plate:'صدر', plates:'صدر'};
+        const requestedUnit = data.requested_unit ?? 'صدر';
+        unit.value = arabicUnits[String(requestedUnit).toLowerCase().trim()] ?? requestedUnit;
         reserved.value = data.reserved_quantity ?? 0;
         reservationNotes.value = data.reservation_notes ?? '';
         notes.value = data.notes ?? '';

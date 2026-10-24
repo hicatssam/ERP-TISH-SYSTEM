@@ -1413,7 +1413,7 @@
                                             {{ number_format((float) $item->quantity, 3) + 0 }}
 
                                             <span>
-                                                {{ $item->requested_unit }}
+                                                {{ $item->displayRequestedUnit() }}
                                             </span>
 
                                         </div>

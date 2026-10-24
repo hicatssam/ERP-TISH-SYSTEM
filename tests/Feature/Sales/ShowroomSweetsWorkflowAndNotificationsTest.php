@@ -355,7 +355,7 @@ class ShowroomSweetsWorkflowAndNotificationsTest extends TestCase
 
         $category = \App\Models\Category::query()->firstOrCreate(
             ['slug' => 'edit-form-regression'],
-            ['name' => 'حلويات', 'is_active' => true]
+            ['name' => 'Eastern Sweets', 'name_ar' => 'حلويات شرقية', 'is_active' => true]
         );
         $sku = 'EDIT-' . Str::upper(Str::random(8));
         $product = \App\Models\Product::query()->create([

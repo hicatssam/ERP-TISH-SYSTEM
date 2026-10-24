@@ -78,7 +78,7 @@ class BranchCakeAndSweetsNotificationFlowTest extends TestCase
     #[Test]
     public function sweets_picker_search_is_limited_and_respects_creation_permission_and_catalog_rules(): void
     {
-        $sweets = Category::query()->create(['name' => 'Sweets', 'slug' => 'sweets', 'is_active' => true]);
+        $sweets = Category::query()->create(['name' => 'Eastern Sweets', 'name_ar' => 'حلويات شرقية', 'slug' => 'eastern-sweets', 'is_active' => true]);
         $cakes = Category::query()->create(['name' => 'Cakes', 'slug' => 'cakes', 'is_active' => true]);
         foreach (range(1, 35) as $number) {
             Product::query()->create([

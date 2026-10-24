@@ -434,7 +434,7 @@
             <td>
                 <span class="qty">
                     {{ number_format((float) $item->quantity, 3) }}
-                    {{ $item->requested_unit }}
+                    {{ $item->displayRequestedUnit() }}
                 </span>
                 <br>
                 <span class="muted">

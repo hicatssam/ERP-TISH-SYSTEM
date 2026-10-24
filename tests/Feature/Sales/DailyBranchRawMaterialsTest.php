@@ -384,8 +384,9 @@ class DailyBranchRawMaterialsTest extends TestCase
 
     private function product(string $name, bool $raw): Product
     {
-        $category = Category::query()->firstOrCreate(['slug' => $raw ? 'raw-materials' : 'sweets'], [
-            'name' => $raw ? 'Raw materials' : 'Sweets',
+        $category = Category::query()->firstOrCreate(['slug' => $raw ? 'raw-materials' : 'eastern-sweets'], [
+            'name' => $raw ? 'Raw materials' : 'Eastern Sweets',
+            'name_ar' => $raw ? 'مواد خام' : 'حلويات شرقية',
             'is_active' => true,
         ]);
         $unit = Unit::query()->where('code', 'piece')->firstOrFail();

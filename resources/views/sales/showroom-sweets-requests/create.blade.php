@@ -96,18 +96,29 @@
         <div class="card">
             <div class="card-header"><span class="card-title">كتالوج حلويات الفروع</span></div>
             <div class="card-body">
-                <p class="ssr-catalog-hint">كل المنتجات المسجلة ضمن فئات الحلويات تظهر هنا بصورة المنتج الأصلية. اختر المنتجات المطلوبة وحدد كمية المعرض والمحجوز للعملاء.</p>
+                <p class="ssr-catalog-hint">منتجات فئة الحلويات الشرقية فقط تظهر هنا بصورها الأصلية. اختر المنتجات المطلوبة وحدد كمية المعرض والمحجوز للعملاء.</p>
                 <input id="sweetsCatalogSearch" class="form-input" type="search" placeholder="ابحث باسم المنتج..." aria-label="بحث في الحلويات">
                 <div class="ssr-catalog-list" id="sweetsCatalog">
                     @forelse($sweetProducts as $product)
                         @php
                             $name = $product->name_ar ?: $product->name;
+                            $unitNames = [
+                                'pcs' => 'حبة', 'pc' => 'حبة', 'piece' => 'حبة', 'pieces' => 'حبة',
+                                'unit' => 'حبة', 'units' => 'حبة', 'each' => 'حبة',
+                                'tray' => 'صينية', 'trays' => 'صينية',
+                                'box' => 'علبة', 'boxes' => 'علبة',
+                                'kg' => 'كغم', 'kgs' => 'كغم', 'kilogram' => 'كغم', 'kilograms' => 'كغم',
+                                'bundle' => 'ربطة', 'bundles' => 'ربطة',
+                                'plate' => 'صدر', 'plates' => 'صدر',
+                            ];
+                            $rawUnit = trim((string) ($product->unitDefinition?->displayName() ?: $product->unit ?: 'حبة'));
+                            $arabicUnit = $unitNames[strtolower($rawUnit)] ?? $rawUnit;
                             $image = $product->image
                                 ? (\Illuminate\Support\Str::startsWith($product->image, ['http://', 'https://', '/'])
                                     ? $product->image : asset('storage/' . $product->image))
                                 : null;
                         @endphp
-                        <div class="ssr-catalog-item" data-sweet-product data-name="{{ mb_strtolower($name) }}" data-id="{{ $product->id }}" data-unit="{{ $product->unit ?: 'حبة' }}">
+                        <div class="ssr-catalog-item" data-sweet-product data-name="{{ mb_strtolower($name) }}" data-id="{{ $product->id }}" data-unit="{{ $arabicUnit }}">
                             <div class="ssr-catalog-identity">
                                 <label class="ssr-catalog-name">
                                     <input class="ssr-selected" type="checkbox" aria-label="اختيار {{ $name }}">
@@ -122,13 +133,13 @@
                             <div class="ssr-catalog-fields">
                                 <label>للمعرض <input type="number" class="form-input ssr-showroom" min="0" step="0.001" value="0"></label>
                                 <label>محجوز للعملاء <input type="number" class="form-input ssr-reserved" min="0" step="0.001" value="0"></label>
-                                <label>الوحدة <input type="text" class="form-input ssr-unit" list="requestUnitOptions" value="{{ $product->unit ?: 'حبة' }}" maxlength="50" required></label>
+                                <label>الوحدة <input type="text" class="form-input ssr-unit" list="requestUnitOptions" value="{{ $arabicUnit }}" maxlength="50" required></label>
                                 <label>تفاصيل الحجز <input type="text" class="form-input ssr-reservation-notes" maxlength="1000" placeholder="اختياري"></label>
                                 <label>ملاحظة <input type="text" class="form-input ssr-notes" maxlength="500" placeholder="اختياري"></label>
                             </div>
                         </div>
                     @empty
-                        <p>لا توجد منتجات حلويات نشطة في الكتالوج.</p>
+                        <p>لا توجد منتجات نشطة ضمن فئة الحلويات الشرقية. تأكد من تصنيف المنتجات داخل الكتالوج.</p>
                     @endforelse
                 </div>
                 <div class="ssr-catalog-summary" aria-live="polite">منتجات مختارة: <strong id="ssrSelected">0</strong> — للمعرض: <strong id="ssrShowroomTotal">0</strong> — محجوز: <strong id="ssrReservedTotal">0</strong></div>

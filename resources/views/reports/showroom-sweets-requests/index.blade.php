@@ -270,7 +270,7 @@
                                     <span class="ssr-product-chip">
                                         {{ $item->displayProductName() }}
                                         <b>{{ number_format((float) $item->quantity, 3) }}</b>
-                                        <small>{{ $item->requested_unit }}</small>
+                                        <small>{{ $item->displayRequestedUnit() }}</small>
                                     </span>
                                 @endforeach
 

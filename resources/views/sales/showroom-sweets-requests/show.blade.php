@@ -1649,7 +1649,7 @@
                                         {{ $quantity }}
 
                                         <span>
-                                            {{ $item->requested_unit }}
+                                            {{ $item->displayRequestedUnit() }}
                                         </span>
 
                                     </div>
@@ -1659,7 +1659,7 @@
                                             محجوز للعملاء:
                                             <strong>
                                                 {{ $reservedQuantity }}
-                                                {{ $item->requested_unit }}
+                                                {{ $item->displayRequestedUnit() }}
                                             </strong>
                                         </span>
 
@@ -1667,7 +1667,7 @@
                                             متاح للعرض:
                                             <strong>
                                                 {{ $availableQuantity }}
-                                                {{ $item->requested_unit }}
+                                                {{ $item->displayRequestedUnit() }}
                                             </strong>
                                         </span>
                                     </div>
@@ -1701,7 +1701,7 @@
                                                 @method('PATCH')
 
                                                 <label>
-                                                    محجوز من {{ $quantity }} {{ $item->requested_unit }}
+                                                    محجوز من {{ $quantity }} {{ $item->displayRequestedUnit() }}
                                                     <input
                                                         type="number"
                                                         name="reserved_quantity"

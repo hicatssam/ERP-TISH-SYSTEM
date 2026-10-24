@@ -106,7 +106,7 @@
                         <td>{{ $showroomRequest->status->label() }}</td>
                         <td style="text-align:right">{{ $item->displayProductName() }}</td>
                         <td>{{ number_format((float) $item->quantity, 3) }}</td>
-                        <td>{{ $item->requested_unit }}</td>
+                        <td>{{ $item->displayRequestedUnit() }}</td>
                         <td>{{ number_format((float) $item->reserved_quantity, 3) }}</td>
                         <td>{{ $showroomRequest->creator?->display_name ?? '—' }}</td>
                     </tr>

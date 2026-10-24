@@ -146,8 +146,8 @@ class ShowroomSweetsRequestController extends Controller
             ->active()
             ->where('is_raw_material', false)
             ->whereHas('category', fn ($category) => $category
-                ->whereNotIn('slug', ['cakes', 'drinks', 'gifts']))
-            ->with(['category'])
+                ->where(function ($q) { $q->where('name_ar', 'like', '%شرقي%')->orWhere('name', 'like', '%oriental%')->orWhere('name', 'like', '%eastern%')->orWhere('slug', 'like', '%oriental%')->orWhere('slug', 'like', '%eastern%'); }))
+            ->with(['category', 'unitDefinition'])
             ->orderBy('created_at')
             ->orderBy('id')
             ->get();
@@ -177,9 +177,7 @@ class ShowroomSweetsRequestController extends Controller
         $query = Product::query()
             ->active()
             ->where('is_raw_material', false)
-            ->whereHas('category', fn ($category) => $category->whereNotIn('slug', [
-                'cakes', 'drinks', 'gifts',
-            ]));
+            ->whereHas('category', fn ($category) => $category->where(function ($q) { $q->where('name_ar', 'like', '%شرقي%')->orWhere('name', 'like', '%oriental%')->orWhere('name', 'like', '%eastern%')->orWhere('slug', 'like', '%oriental%')->orWhere('slug', 'like', '%eastern%'); }));
 
         if (isset($data['id'])) {
             $query->whereKey($data['id']);
@@ -200,7 +198,14 @@ class ShowroomSweetsRequestController extends Controller
                 'label' => ($product->name_ar ?: $product->name)
                     .' — '.($product->category->name_ar ?: $product->category->name)
                     .($product->sku ? " ({$product->sku})" : ''),
-                'unit' => $product->unit,
+                'unit' => $product->unitDefinition?->displayName() ?: match (strtolower(trim((string) $product->unit))) {
+                    'piece', 'pieces', 'pcs', 'pc', 'unit', 'each' => 'حبة',
+                    'tray', 'trays' => 'صينية',
+                    'box', 'boxes' => 'علبة',
+                    'kg', 'kgs', 'kilogram' => 'كغم',
+                    'plate', 'plates' => 'صدر',
+                    default => $product->unit ?: 'حبة',
+                },
             ])->values());
     }
 
@@ -394,14 +399,7 @@ class ShowroomSweetsRequestController extends Controller
             ->whereHas(
                 'category',
                 fn ($q) =>
-                    $q->whereNotIn(
-                        'slug',
-                        [
-                            'cakes',
-                            'drinks',
-                            'gifts',
-                        ]
-                    )
+                    $q->where(function ($query) { $query->where('name_ar', 'like', '%شرقي%')->orWhere('name', 'like', '%oriental%')->orWhere('name', 'like', '%eastern%')->orWhere('slug', 'like', '%oriental%')->orWhere('slug', 'like', '%eastern%'); })
             )
             ->get()
             ->keyBy('id');
@@ -414,7 +412,7 @@ class ShowroomSweetsRequestController extends Controller
                 ->withInput()
                 ->withErrors([
                     'items' =>
-                        'يجب اختيار أصناف حلويات فعالة فقط من كتالوج المنتجات.',
+                        'يجب اختيار منتجات من فئة الحلويات الشرقية فقط.',
                 ]);
         }
 
@@ -670,10 +668,17 @@ class ShowroomSweetsRequestController extends Controller
 
         $products = Product::query()
             ->active()
+            ->where('is_raw_material', false)
             ->whereIn('id', $productIds)
             ->whereHas(
                 'category',
-                fn ($q) => $q->whereNotIn('slug', ['cakes', 'drinks', 'gifts'])
+                fn ($q) => $q->where(function ($query) {
+                    $query->where('name_ar', 'like', '%شرقي%')
+                        ->orWhere('name', 'like', '%oriental%')
+                        ->orWhere('name', 'like', '%eastern%')
+                        ->orWhere('slug', 'like', '%oriental%')
+                        ->orWhere('slug', 'like', '%eastern%');
+                })
             )
             ->get()
             ->keyBy('id');

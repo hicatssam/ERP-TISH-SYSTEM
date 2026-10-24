@@ -45,6 +45,21 @@ class ShowroomSweetsRequestItem extends Model
         return $this->belongsTo(Product::class)->withTrashed();
     }
 
+    public function displayRequestedUnit(): string
+    {
+        $value = trim((string) $this->requested_unit);
+
+        return [
+            'pcs' => 'حبة', 'pc' => 'حبة', 'piece' => 'حبة', 'pieces' => 'حبة',
+            'unit' => 'حبة', 'units' => 'حبة', 'each' => 'حبة',
+            'tray' => 'صينية', 'trays' => 'صينية',
+            'box' => 'علبة', 'boxes' => 'علبة',
+            'kg' => 'كغم', 'kgs' => 'كغم', 'kilogram' => 'كغم', 'kilograms' => 'كغم',
+            'bundle' => 'ربطة', 'bundles' => 'ربطة',
+            'plate' => 'صدر', 'plates' => 'صدر',
+        ][strtolower($value)] ?? ($value ?: 'حبة');
+    }
+
     public function displayProductName(): string
     {
         return $this->product?->name_ar

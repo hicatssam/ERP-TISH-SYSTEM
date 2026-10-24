@@ -84,8 +84,9 @@ class ShowroomSweetsProductChronologicalOrderingTest extends TestCase
     private function category(): Category
     {
         return Category::query()->create([
-            'slug' => 'chronological-sweets-products',
-            'name' => 'Sweets',
+            'slug' => 'eastern-sweets-products',
+            'name' => 'Eastern Sweets',
+            'name_ar' => 'حلويات شرقية',
             'is_active' => true,
         ]);
     }
