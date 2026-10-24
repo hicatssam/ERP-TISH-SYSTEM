@@ -47,7 +47,7 @@ class ShowroomCakeBranchManagerCancellationTest extends TestCase
                 'factory_location_id' => $factory->id,
                 'needed_by' => now()->addDays(4)->toDateString(),
                 'items' => [
-                    ['cake_type' => 'vanilla', 'cake_size' => 'medium', 'quantity' => 5],
+                    ['cake_type' => 'vanilla', 'cake_size' => 'medium', 'shape' => 'round', 'layer_count' => 3, 'flavor' => 'نوتيلا', 'quantity' => 5],
                 ],
             ])->assertSessionHasNoErrors();
 

@@ -86,9 +86,9 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">تاريخ الحاجة (اختياري)</label>
+                    <label class="form-label">تاريخ الحاجة *</label>
                     <input type="date"
-                           name="needed_by"
+                           name="needed_by" required
                            class="form-input @error('needed_by') is-invalid @enderror"
                            value="{{ old('needed_by', optional($showroomCakeRequest->needed_by)->format('Y-m-d')) }}">
                     @error('needed_by')<span class="form-error">{{ $message }}</span>@enderror
@@ -156,16 +156,16 @@
             </select>
         </div>
         <div class="form-group">
-            <label class="form-label">عدد الطبقات</label>
-            <input type="number" name="items[__IDX__][layer_count]" class="form-input" min="1" max="20" placeholder="عدد الطبقات">
+            <label class="form-label">عدد الطبقات *</label>
+            <input type="number" name="items[__IDX__][layer_count]" class="form-input" min="1" max="20" placeholder="عدد الطبقات" required>
         </div>
         <div class="form-group">
-            <label class="form-label">النكهة</label>
-            <input type="text" name="items[__IDX__][flavor]" class="form-input" placeholder="مثال: نوتيلا، فراولة...">
+            <label class="form-label">النكهة *</label>
+            <input type="text" name="items[__IDX__][flavor]" class="form-input" placeholder="مثال: نوتيلا، فراولة..." required>
         </div>
         <div class="form-group">
-            <label class="form-label">الشكل</label>
-            <select name="items[__IDX__][shape]" class="form-select">
+            <label class="form-label">الشكل *</label>
+            <select name="items[__IDX__][shape]" class="form-select" required>
                 <option value="">—</option>
                 <option value="round">دائري</option>
                 <option value="slab">بلاطة</option>

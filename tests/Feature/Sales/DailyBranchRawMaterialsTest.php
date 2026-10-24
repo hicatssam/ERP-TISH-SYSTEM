@@ -52,8 +52,9 @@ class DailyBranchRawMaterialsTest extends TestCase
         $raw = $this->product('Raw cocoa', true);
 
         $this->actingAs($user)->post(route('showroom-cake-requests.store'), [
+            'needed_by' => '2026-10-25',
             'factory_location_id' => $factory->id,
-            'items' => [['cake_type' => 'chocolate', 'quantity' => 4]],
+            'items' => [['cake_type' => 'chocolate', 'cake_size' => 'large', 'shape' => 'round', 'layer_count' => 3, 'flavor' => 'نوتيلا', 'quantity' => 4]],
             'raw_materials' => [
                 ['product_id' => $raw->id, 'quantity' => '3.500', 'note' => 'Cocoa powder'],
             ],
@@ -106,8 +107,9 @@ class DailyBranchRawMaterialsTest extends TestCase
         [, $factory, $user] = $this->locationsAndUser();
 
         $this->actingAs($user)->post(route('showroom-cake-requests.store'), [
+            'needed_by' => '2026-10-25',
             'factory_location_id' => $factory->id,
-            'items' => [['cake_type' => 'vanilla', 'quantity' => 1]],
+            'items' => [['cake_type' => 'vanilla', 'cake_size' => 'large', 'shape' => 'round', 'layer_count' => 3, 'flavor' => 'نوتيلا', 'quantity' => 1]],
         ])->assertSessionHasNoErrors();
 
         $this->assertSame(1, ShowroomCakeRequest::query()->count());
@@ -122,8 +124,9 @@ class DailyBranchRawMaterialsTest extends TestCase
         $finished = $this->product('Finished cake', false);
 
         $this->actingAs($user)->post(route('showroom-cake-requests.store'), [
+            'needed_by' => '2026-10-25',
             'factory_location_id' => $factory->id,
-            'items' => [['cake_type' => 'vanilla', 'quantity' => 2]],
+            'items' => [['cake_type' => 'vanilla', 'cake_size' => 'large', 'shape' => 'round', 'layer_count' => 3, 'flavor' => 'نوتيلا', 'quantity' => 2]],
             'raw_materials' => [['product_id' => $finished->id, 'quantity' => 2]],
         ])->assertSessionHasErrors('raw_materials.0.product_id');
 
@@ -144,9 +147,10 @@ class DailyBranchRawMaterialsTest extends TestCase
         $raw = $this->product('Raw milk', true);
 
         $this->actingAs($user)->post(route('showroom-cake-requests.store'), [
+            'needed_by' => '2026-10-25',
             'requesting_location_id' => $other->id,
             'factory_location_id' => $factory->id,
-            'items' => [['cake_type' => 'caramel', 'quantity' => 1]],
+            'items' => [['cake_type' => 'caramel', 'cake_size' => 'large', 'shape' => 'round', 'layer_count' => 3, 'flavor' => 'نوتيلا', 'quantity' => 1]],
             'raw_materials' => [['product_id' => $raw->id, 'quantity' => 1]],
         ])->assertSessionHasNoErrors();
 
@@ -216,8 +220,9 @@ class DailyBranchRawMaterialsTest extends TestCase
         [, $factory, $user] = $this->locationsAndUser();
         $raw = $this->product('Sugar', true);
         $this->actingAs($user)->post(route('showroom-cake-requests.store'), [
+            'needed_by' => '2026-10-25',
             'factory_location_id' => $factory->id,
-            'items' => [['cake_type' => 'vanilla', 'quantity' => 1]],
+            'items' => [['cake_type' => 'vanilla', 'cake_size' => 'large', 'shape' => 'round', 'layer_count' => 3, 'flavor' => 'نوتيلا', 'quantity' => 1]],
             'raw_materials' => [
                 ['product_id' => $raw->id, 'quantity' => 2],
                 ['product_id' => $raw->id, 'quantity' => 1],
@@ -328,8 +333,9 @@ class DailyBranchRawMaterialsTest extends TestCase
                 ->assertOk()->assertDontSee('id="addRawMaterial"', false);
             $this->actingAs($user)->post(route("showroom-{$kind}-requests.store"), [
                 'factory_location_id' => $factory->id,
+                'needed_by' => '2026-10-25',
                 'items' => $kind === 'cake'
-                    ? [['cake_type' => 'vanilla', 'quantity' => 1]]
+                    ? [['cake_type' => 'vanilla', 'cake_size' => 'large', 'shape' => 'round', 'layer_count' => 3, 'flavor' => 'نوتيلا', 'quantity' => 1]]
                     : [['product_id' => $sweet->id, 'quantity' => 1, 'requested_unit' => 'tray']],
                 'raw_materials' => [['product_id' => $raw->id, 'quantity' => 1]],
             ])->assertForbidden();
@@ -348,8 +354,9 @@ class DailyBranchRawMaterialsTest extends TestCase
         $user->revokePermissionTo('stock_requests.create');
         app(PermissionRegistrar::class)->forgetCachedPermissions();
         $this->actingAs($user->fresh())->post(route('showroom-cake-requests.store'), [
+            'needed_by' => '2026-10-25',
             'factory_location_id' => $factory->id,
-            'items' => [['cake_type' => 'vanilla', 'quantity' => 1]],
+            'items' => [['cake_type' => 'vanilla', 'cake_size' => 'large', 'shape' => 'round', 'layer_count' => 3, 'flavor' => 'نوتيلا', 'quantity' => 1]],
         ])->assertSessionHasNoErrors()->assertSessionHas('success');
         $this->assertDatabaseCount('showroom_cake_requests', 1);
         $this->assertDatabaseCount('stock_requests', 0);
