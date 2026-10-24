@@ -274,7 +274,7 @@ class SpecialCakeOrderCreationFlowTest extends TestCase
     }
 
     #[Test]
-    public function special_cake_can_store_and_edit_multiple_sizes_while_preserving_legacy_primary_size(): void
+    public function special_cake_rejects_multiple_sizes_and_stores_one_selected_size(): void
     {
         Notification::fake();
 
@@ -327,6 +327,22 @@ class SpecialCakeOrderCreationFlowTest extends TestCase
             ->assertSee('cake_sizes_submitted')
             ->assertSee('cake_sizes[]');
 
+        // Browser radio buttons allow one size, and the backend rejects
+        // tampered payloads containing more than one size.
+        $this->actingAs($creator)
+            ->post(route('cake-orders.store'), [
+                'customer_id' => $customer->id,
+                'required_date' => now()->addDays(3)->toDateString(),
+                'cake_type' => 'chocolate',
+                'shape' => 'round',
+                'cake_sizes_submitted' => 1,
+                'cake_sizes' => ['small', 'large'],
+                'total_price' => 150,
+                'payment_arrangement' => 'pay_on_pickup',
+                'payment_method_id' => $cash->id,
+                'image_cover_type' => 'none',
+            ])->assertSessionHasErrors('cake_sizes');
+
         $this->actingAs($creator)
             ->post(route('cake-orders.store'), [
                 'customer_id' => $customer->id,
@@ -356,8 +372,8 @@ class SpecialCakeOrderCreationFlowTest extends TestCase
                 'cake_type' => 'chocolate',
                 'shape' => 'round',
                 'cake_sizes_submitted' => 1,
-                'cake_sizes' => ['small', 'large'],
-                'cake_size' => 'large',
+                'cake_sizes' => ['small'],
+                'cake_size' => 'small',
                 'total_price' => 150,
                 'payment_arrangement' => 'pay_on_pickup',
                 'payment_method_id' => $cash->id,
@@ -367,13 +383,13 @@ class SpecialCakeOrderCreationFlowTest extends TestCase
             ])->assertSessionHasNoErrors();
 
         $order = SpecialCakeOrder::query()->sole();
-        $this->assertSame(['small', 'large'], $order->cake_sizes);
+        $this->assertSame(['small'], $order->cake_sizes);
         $this->assertSame('small', $order->cake_size);
 
         $this->actingAs($creator)
             ->get(route('cake-orders.show', $order))
             ->assertOk()
-            ->assertSee('صغير، كبير');
+            ->assertSee('صغير');
 
         // The edit form is only available for pending or draft cake orders.
         $order->update(['status' => CakeOrderStatus::Pending]);
@@ -392,11 +408,11 @@ class SpecialCakeOrderCreationFlowTest extends TestCase
                 'cake_type' => 'chocolate',
                 'shape' => 'round',
                 'cake_sizes_submitted' => 1,
-                'cake_sizes' => ['medium', 'large'],
+                'cake_sizes' => ['medium'],
                 'total_price' => 180,
             ])->assertSessionHasNoErrors();
 
-        $this->assertSame(['medium', 'large'], $order->fresh()->cake_sizes);
+        $this->assertSame(['medium'], $order->fresh()->cake_sizes);
         $this->assertSame('medium', $order->fresh()->cake_size);
 
         $this->actingAs($creator)->post(route('cake-orders.store'), [
@@ -406,7 +422,7 @@ class SpecialCakeOrderCreationFlowTest extends TestCase
             'cake_type' => 'chocolate',
             'shape' => 'slab',
             'cake_sizes_submitted' => 1,
-            'cake_sizes' => ['40x30', '60x40'],
+            'cake_sizes' => ['40x30'],
             'total_price' => 250,
             'payment_arrangement' => 'pay_on_pickup',
             'payment_method_id' => $cash->id,
@@ -417,10 +433,10 @@ class SpecialCakeOrderCreationFlowTest extends TestCase
 
         $slab = SpecialCakeOrder::query()->whereKeyNot($order->id)->sole();
         $this->assertSame('slab', $slab->shape);
-        $this->assertSame(['40x30', '60x40'], $slab->cake_sizes);
+        $this->assertSame(['40x30'], $slab->cake_sizes);
         $this->assertSame('40x30', $slab->cake_size);
         $this->actingAs($creator)->get(route('cake-orders.show', $slab))
-            ->assertOk()->assertSee('بلاطة')->assertSee('40 × 30 سم')->assertSee('60 × 40 سم');
+            ->assertOk()->assertSee('بلاطة')->assertSee('40 × 30 سم');
 
         $this->actingAs($creator)->post(route('cake-orders.store'), [
             'customer_id' => $customer->id,

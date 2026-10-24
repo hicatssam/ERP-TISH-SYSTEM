@@ -204,11 +204,11 @@
                         @error('shape')<span class="form-error">{{ $message }}</span>@enderror
                     </div>
                     <div class="form-group" id="sizeGroup" hidden>
-                        <label class="form-label" id="sizeLabel">الأحجام * (يمكن اختيار أكثر من حجم)</label>
+                        <label class="form-label" id="sizeLabel">الحجم * (اختر حجمًا واحدًا)</label>
                         <input type="hidden" name="cake_sizes_submitted" value="1">
                         <input type="hidden" name="cake_size" id="cakeSize">
-                        <div id="cakeSizeChoices" class="cake-size-choices" role="group" aria-label="الأحجام المطلوبة"></div>
-                        <small class="form-help">اختر حجمًا أو أكثر للطلب نفسه.</small>
+                        <div id="cakeSizeChoices" class="cake-size-choices" role="group" aria-label="الحجم المطلوب"></div>
+                        <small class="form-help">اختر حجمًا واحدًا فقط.</small>
                         @error('cake_sizes')<span class="form-error">{{ $message }}</span>@enderror
                         @error('cake_sizes.*')<span class="form-error">{{ $message }}</span>@enderror
                     </div>
@@ -795,7 +795,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     function syncSizes() {
-        const checked = [...sizeChoices.querySelectorAll('input[type="checkbox"]:checked')];
+        const checked = [...sizeChoices.querySelectorAll('input[type="radio"]:checked')];
         size.value = checked[0]?.value ?? (shape.value === 'wedding_tiers' ? 'standard' : '');
     }
 
@@ -811,17 +811,17 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        sizeLabel.textContent = (config.label || 'الأحجام *') + ' (يمكن اختيار أكثر من حجم)';
+        sizeLabel.textContent = (config.label || 'الأحجام *') + ' (اختر حجمًا واحدًا)';
         const selected = Array.isArray(oldSizes) ? oldSizes.map(String) : [];
         if (config.showSize) {
             Object.entries(config.values).forEach(([value, label]) => {
                 const wrapper = document.createElement('label');
                 wrapper.className = 'cake-size-option';
                 const input = document.createElement('input');
-                input.type = 'checkbox';
+                input.type = 'radio';
                 input.name = 'cake_sizes[]';
                 input.value = value;
-                input.checked = selected.includes(value);
+                input.checked = selected[0] === value;
                 input.addEventListener('change', syncSizes);
                 wrapper.append(input, document.createTextNode(' ' + label));
                 sizeChoices.append(wrapper);

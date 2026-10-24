@@ -519,7 +519,7 @@ class SpecialCakeOrderController extends Controller
         ),
         'nullable',
         'array',
-        'max:8',
+        'size:1',
     ],
     'layers_count' => [
         Rule::requiredIf(fn () => $request->input('shape') === 'wedding_tiers'),
@@ -876,7 +876,7 @@ if (
                 ),
                 'nullable',
                 'array',
-                'max:8',
+                'size:1',
             ],
             'layers_count' => [
                 Rule::requiredIf(fn () => $request->input('shape') === 'wedding_tiers'),
@@ -1024,6 +1024,11 @@ if (
         }
 
         $sizes = array_values(array_unique($validated['cake_sizes'] ?? []));
+        if (count($validated['cake_sizes'] ?? []) > 1) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'cake_sizes' => 'يُسمح باختيار حجم واحد فقط لكل طلب كيك.',
+            ]);
+        }
         if (array_diff($sizes, $available)) {
             throw \Illuminate\Validation\ValidationException::withMessages([
                 'cake_sizes' => 'المقاسات المحددة لا تتوافق مع شكل الكيك.',

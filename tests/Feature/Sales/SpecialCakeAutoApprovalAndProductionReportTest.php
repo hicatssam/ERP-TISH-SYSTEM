@@ -524,7 +524,7 @@ class SpecialCakeAutoApprovalAndProductionReportTest extends TestCase
             'required_date' => now()->addDays(3)->toDateString(),
             'shape' => 'round',
             'cake_sizes_submitted' => '1',
-            'cake_sizes' => ['small', 'large'],
+            'cake_sizes' => ['small'],
             'total_price' => '200.00',
         ])->assertSessionHasNoErrors();
 
@@ -532,7 +532,7 @@ class SpecialCakeAutoApprovalAndProductionReportTest extends TestCase
         $this->assertSame('200.00', $fresh->total_price);
         $this->assertSame('20.00', $fresh->discount_amount);
         $this->assertSame('180.00', $fresh->net_price);
-        $this->assertSame(['small', 'large'], $fresh->cake_sizes);
+        $this->assertSame(['small'], $fresh->cake_sizes);
         $this->assertSame('small', $fresh->cake_size);
     }
 

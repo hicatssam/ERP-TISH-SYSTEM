@@ -112,11 +112,11 @@
                         @error('cake_type')<span class="form-error">{{ $message }}</span>@enderror
                     </div>
                     <div class="form-group" id="sizeGroup">
-                        <label class="form-label">الأحجام (يمكن اختيار أكثر من حجم)</label>
+                        <label class="form-label">الحجم (اختر حجمًا واحدًا)</label>
                         <input type="hidden" name="cake_sizes_submitted" value="1">
                         <input type="hidden" name="cake_size" id="cakeSize" value="{{ old('cake_size', $cakeOrder->cake_size) }}">
-                        <div id="cakeSizeChoices" class="cake-size-choices" role="group" aria-label="الأحجام المطلوبة"></div>
-                        <small class="form-help">حدد حجمًا أو أكثر. الاختيارات تتغير حسب شكل الكيك.</small>
+                        <div id="cakeSizeChoices" class="cake-size-choices" role="group" aria-label="الحجم المطلوب"></div>
+                        <small class="form-help">حدد حجمًا واحدًا فقط حسب شكل الكيك.</small>
                         @error('cake_sizes')<span class="form-error">{{ $message }}</span>@enderror
                         @error('cake_sizes.*')<span class="form-error">{{ $message }}</span>@enderror
                     </div>
@@ -308,7 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     function syncSizes() {
-        const picked = [...sizeChoices.querySelectorAll('input[type="checkbox"]:checked')];
+        const picked = [...sizeChoices.querySelectorAll('input[type="radio"]:checked')];
         primarySize.value = picked[0]?.value ?? (cakeShape.value === 'wedding_tiers' ? 'standard' : '');
     }
 
@@ -323,10 +323,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const wrapper = document.createElement('label');
                 wrapper.className = 'cake-size-option';
                 const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
+                checkbox.type = 'radio';
                 checkbox.name = 'cake_sizes[]';
                 checkbox.value = value;
-                checkbox.checked = previous.includes(value);
+                checkbox.checked = previous[0] === value;
                 checkbox.addEventListener('change', syncSizes);
                 wrapper.append(checkbox, document.createTextNode(' ' + label));
                 sizeChoices.append(wrapper);
