@@ -186,9 +186,6 @@
                             <option value="chocolate" @selected(old('cake_type') === 'chocolate')>شوكولاتة</option>
                             <option value="vanilla"   @selected(old('cake_type') === 'vanilla')>فانيلا</option>
                             <option value="red_velvet" @selected(old('cake_type') === 'red_velvet')>ريد فيلفيت</option>
-                            <option value="caramel"   @selected(old('cake_type') === 'caramel')>كراميل</option>
-                            <option value="fruit"     @selected(old('cake_type') === 'fruit')>فاكهة</option>
-                            <option value="other"     @selected(old('cake_type') === 'other')>أخرى</option>
                         </select>
                         @error('cake_type')<span class="form-error">{{ $message }}</span>@enderror
                     </div>

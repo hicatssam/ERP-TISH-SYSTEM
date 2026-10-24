@@ -14,7 +14,7 @@ class StoreSpecialCakeOrderRequest extends FormRequest
             'customer_id'          => ['required', 'exists:customers,id'],
             'required_date'        => ['required', 'date', 'after:today'],
             'required_time'        => ['nullable', 'date_format:H:i'],
-            'cake_type'            => ['nullable', 'string', 'max:100'],
+            'cake_type'            => ['nullable', 'in:chocolate,red_velvet,vanilla'],
             'cake_size'            => ['nullable', 'string', 'max:50'],
             'cake_weight'          => ['nullable', 'numeric', 'min:0'],
             'covering_type'        => ['nullable', 'in:cream,sugar'],

@@ -41,6 +41,30 @@ class BranchOrderAdminBulkDeletionTest extends TestCase
     }
 
     #[Test]
+    public function admin_sees_delete_action_on_cancelled_sweets_details_and_soft_deletes_safely(): void
+    {
+        [$admin, $branch, $factory] = $this->setupRolesAndLocations();
+        $cancelled = $this->sweets($branch, $factory, $admin, 'cancelled');
+        $completed = $this->sweets($branch, $factory, $admin, 'completed');
+
+        $this->actingAs($admin)->get(route('showroom-sweets-requests.show', $cancelled))
+            ->assertOk()
+            ->assertSee('حذف الطلب الملغى')
+            ->assertSee(route('showroom-sweets-requests.destroy', $cancelled), false);
+
+        $this->actingAs($admin)->get(route('showroom-sweets-requests.show', $completed))
+            ->assertOk()
+            ->assertDontSee('حذف الطلب الملغى');
+
+        $this->actingAs($admin)->delete(route('showroom-sweets-requests.destroy', $cancelled))
+            ->assertRedirect(route('showroom-sweets-requests.index'))
+            ->assertSessionHas('success');
+
+        $this->assertSoftDeleted('showroom_sweets_requests', ['id' => $cancelled->id]);
+        $this->assertDatabaseHas('showroom_sweets_requests', ['id' => $completed->id, 'deleted_at' => null]);
+    }
+
+    #[Test]
     public function admin_can_delete_all_eligible_sweets_after_typed_confirmation(): void
     {
         [$admin, $branch, $factory] = $this->setupRolesAndLocations();

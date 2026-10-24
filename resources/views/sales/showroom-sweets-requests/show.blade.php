@@ -1289,6 +1289,20 @@
             @endif
 
 
+            @if($canDeleteCancelled)
+                <form action="{{ route('showroom-sweets-requests.destroy', $showroomSweetsRequest) }}"
+                      method="POST"
+                      data-confirm="هل تريد حذف طلب الحلويات الملغى {{ $showroomSweetsRequest->request_number }} من القائمة؟ هذا حذف منطقي ولا يمكن إجراؤه إذا وُجدت شحنات أو طلبات مخزون مرتبطة."
+                      data-confirm-title="تأكيد حذف الطلب الملغى"
+                      data-confirm-type="danger">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-danger btn-sm">
+                        حذف الطلب الملغى
+                    </button>
+                </form>
+            @endif
+
             <a
                 href="{{ route('showroom-sweets-requests.index') }}"
                 class="btn btn-ghost btn-sm"

@@ -778,6 +778,9 @@ class ShowroomSweetsRequestController extends Controller
             $showroomSweetsRequest
         );
 
+        $canDeleteCancelled = $user->isAdmin()
+            && app(BranchOrderDeletionService::class)->eligible($showroomSweetsRequest);
+
         $canManageReservations =
             $user->isAdmin()
             || (
@@ -799,7 +802,8 @@ class ShowroomSweetsRequestController extends Controller
                 'allowedTransitions',
                 'canCancel',
                 'canEditRequest',
-                'canManageReservations'
+                'canManageReservations',
+                'canDeleteCancelled'
             )
         );
     }

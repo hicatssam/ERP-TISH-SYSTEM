@@ -103,9 +103,9 @@
                 <div class="cake-grid cake-grid-3">
                     <div class="form-group">
                         <label class="form-label">نوع الكيك</label>
-                        <select name="cake_type" class="form-select @error('cake_type') is-invalid @enderror">
+                        <select name="cake_type" class="form-select @error('cake_type') is-invalid @enderror" required>
                             <option value="">اختر النوع</option>
-                            @foreach(['chocolate'=>'شوكولاتة','vanilla'=>'فانيلا','red_velvet'=>'ريد فيلفيت','caramel'=>'كراميل','fruit'=>'فاكهة','other'=>'أخرى'] as $value => $label)
+                            @foreach(['chocolate'=>'شوكولاتة','vanilla'=>'فانيلا','red_velvet'=>'ريد فيلفيت'] as $value => $label)
                                 <option value="{{ $value }}" @selected(old('cake_type', $cakeOrder->cake_type) === $value)>{{ $label }}</option>
                             @endforeach
                         </select>

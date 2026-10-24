@@ -1550,10 +1550,10 @@
 
 
                         @if(auth()->user()->isAdmin() && $req->status->workflowValue() === 'cancelled' && ! $req->branchShipment && ! $req->rawMaterialStockRequest)
-                            <form action="{{ route('showroom-sweets-requests.destroy', $req) }}" method="POST" onsubmit="return confirm('أرشفة هذا الطلب الملغى؟')">
+                            <form action="{{ route('showroom-sweets-requests.destroy', $req) }}" method="POST" data-confirm="هل تريد حذف طلب الحلويات الملغى {{ $req->request_number }} من القائمة؟ سيُحذف منطقيًا فقط." data-confirm-title="تأكيد حذف الطلب الملغى" data-confirm-type="danger">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn btn-danger btn-sm">حذف</button>
+                                <button type="submit" class="btn btn-danger btn-sm">حذف الطلب الملغى</button>
                             </form>
                         @endif
 

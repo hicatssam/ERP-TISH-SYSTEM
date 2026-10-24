@@ -502,8 +502,7 @@ class SpecialCakeOrderController extends Controller
 
     'cake_type' => [
         'nullable',
-        'string',
-        'max:100',
+        Rule::in(['chocolate', 'red_velvet', 'vanilla']),
     ],
 
     'covering_type' => ['nullable', Rule::in(['cream', 'sugar'])],
@@ -868,7 +867,7 @@ if (
                 'string',
                 'max:500',
             ],
-            'cake_type' => ['nullable', 'string', 'max:100'],
+            'cake_type' => ['nullable', Rule::in(['chocolate', 'red_velvet', 'vanilla'])],
             'cake_size' => ['nullable', 'string', 'max:50'],
             'cake_sizes_submitted' => ['sometimes', 'boolean'],
             'cake_sizes' => [
