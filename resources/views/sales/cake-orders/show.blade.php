@@ -348,13 +348,25 @@
             @endcan
         @endif
 
-        @if($cakeOrder->status === \App\Enums\CakeOrderStatus::Cancelled && ! $cakeOrder->archived_at)
+        @if(in_array($cakeOrder->status, [\App\Enums\CakeOrderStatus::Draft, \App\Enums\CakeOrderStatus::Cancelled], true) && ! $cakeOrder->archived_at)
             @can('delete', $cakeOrder)
-                <form action="{{ route('cake-orders.destroy', $cakeOrder) }}" method="POST" data-confirm="هل تريد حذف هذا الطلب الملغى؟ لن يتم حذف السجلات المالية، وأي طلب مرتبط بها سيُرفض حذفه." data-confirm-title="تأكيد حذف الطلب الملغى" data-confirm-type="danger" style="display:inline">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn btn-danger btn-sm">حذف الطلب الملغى</button>
-                </form>
+                @php
+                    $cakeDeleteBlocked = $cakeOrder->payments()->exists()
+                        || $cakeOrder->invoice()->exists()
+                        || $cakeOrder->branchShipment()->exists()
+                        || $cakeOrder->receivingIssues()->exists();
+                @endphp
+                @if(! $cakeDeleteBlocked)
+                    <form action="{{ route('cake-orders.destroy', $cakeOrder) }}" method="POST"
+                          data-confirm="هل تريد حذف طلب الكيك؟ سيتم إخفاؤه من سجلات الطلبات، ولا يمكن التراجع عن هذا الإجراء من الصفحة."
+                          data-confirm-title="تأكيد حذف طلب الكيك" data-confirm-type="danger" style="display:inline">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-danger btn-sm">حذف طلب الكيك</button>
+                    </form>
+                @else
+                    <span class="text-muted" style="font-size:.8rem">الحذف غير متاح لوجود سجلات مالية أو تسليم مرتبطة بالطلب. استخدم الأرشفة للطلب الملغي.</span>
+                @endif
             @endcan
         @endif
 
