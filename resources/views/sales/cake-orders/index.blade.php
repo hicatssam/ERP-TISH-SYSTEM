@@ -651,13 +651,30 @@
                         @can('update', $order)
                             <a href="{{ route('cake-orders.edit', $order) }}" class="btn btn-outline btn-sm">تعديل</a>
                         @endcan
-                        @if($statusValue === 'cancelled')
+                        @if(in_array($statusValue, ['draft', 'cancelled'], true) && ! $order->archived_at)
                             @can('delete', $order)
-                                <form action="{{ route('cake-orders.destroy', $order) }}" method="POST" data-confirm="هل تريد حذف الطلب الملغى «{{ $order->order_number }}»؟ لا يمكن التراجع عن إخفائه من القائمة." data-confirm-title="تأكيد حذف طلب ملغى" data-confirm-type="danger">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-danger btn-sm">حذف</button>
-                                </form>
+                                @php
+                                    $hasProtectedCakeLinks = $order->payments()->exists()
+                                        || $order->invoice()->exists()
+                                        || $order->branchShipment()->exists()
+                                        || $order->receivingIssues()->exists();
+                                @endphp
+                                @if(! $hasProtectedCakeLinks)
+                                    <form action="{{ route('cake-orders.destroy', $order) }}" method="POST"
+                                          data-confirm="هل تريد حذف طلب الكيك «{{ $order->order_number }}»؟ سيُخفى من قائمة الطلبات، ولا يمكن التراجع عن هذا الإجراء من الصفحة."
+                                          data-confirm-title="تأكيد حذف طلب الكيك" data-confirm-type="danger">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-danger btn-sm">حذف</button>
+                                    </form>
+                                @elseif($statusValue === 'cancelled')
+                                    <form action="{{ route('cake-orders.archive', $order) }}" method="POST"
+                                          data-confirm="الطلب مرتبط بسجلات مالية أو تشغيلية. هل تريد أرشفته مع الاحتفاظ بها؟"
+                                          data-confirm-title="أرشفة طلب الكيك">
+                                        @csrf
+                                        <button type="submit" class="btn btn-outline btn-sm">أرشفة</button>
+                                    </form>
+                                @endif
                             @endcan
                         @endif
                     </div>
