@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Sales;
 use App\Enums\ShowroomCakeRequestStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Location;
+use App\Models\Product;
 use App\Models\ShowroomCakeRequest;
 use App\Models\ShowroomCakeRequestItem;
 use App\Models\User;
@@ -158,6 +159,22 @@ class ShowroomCakeRequestController extends Controller
 
         $rawMaterials = app(DailyRawMaterialRequestService::class)->availableMaterials();
 
+        // Keep catalogue items sourced from active products, not hardcoded cake names.
+        $cakeProducts = Product::query()
+            ->active()
+            ->whereHas('category', function ($query) {
+                $query->where('is_active', true)
+                    ->where(function ($query) {
+                        $query->where('slug', 'like', '%cake%')
+                            ->orWhere('name', 'like', '%cake%')
+                            ->orWhere('name_ar', 'like', '%كيك%')
+                            ->orWhere('name_ar', 'like', '%تورت%');
+                    });
+            })
+            ->with(['activeVariants.size'])
+            ->orderBy('name')
+            ->get();
+
         return view(
             'sales.showroom-cake-requests.create',
             compact(
@@ -165,7 +182,8 @@ class ShowroomCakeRequestController extends Controller
                 'branches',
                 'factories',
                 'canChooseBranch',
-                'rawMaterials'
+                'rawMaterials',
+                'cakeProducts'
             )
         );
     }
@@ -223,6 +241,8 @@ class ShowroomCakeRequestController extends Controller
                 'array',
                 'min:1',
             ],
+            'items.*.product_id' => ['nullable', 'integer', 'exists:products,id'],
+            'items.*.product_variant_id' => ['nullable', 'integer', 'exists:product_variants,id'],
             'items.*.cake_type' => [
                 'required',
                 'string',
@@ -269,6 +289,32 @@ class ShowroomCakeRequestController extends Controller
         ], app(DailyRawMaterialRequestService::class)->validationMessages());
 
         foreach ($validated['items'] as $index => $item) {
+            if (! empty($item['product_id'])) {
+                $product = Product::query()->active()
+                    ->whereHas('category', function ($query) {
+                        $query->where('is_active', true)->where(function ($query) {
+                            $query->where('slug', 'like', '%cake%')
+                                ->orWhere('name', 'like', '%cake%')
+                                ->orWhere('name_ar', 'like', '%كيك%')
+                                ->orWhere('name_ar', 'like', '%تورت%');
+                        });
+                    })->find($item['product_id']);
+                $variant = null;
+                if ($product && ! empty($item['product_variant_id'])) {
+                    $variant = $product->activeVariants()->with('size')
+                        ->find($item['product_variant_id']);
+                }
+                if (! $product || (! empty($item['product_variant_id']) && ! $variant)
+                    || (empty($item['product_variant_id']) && $product->activeVariants()->exists())) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        "items.{$index}.product_id" => 'المنتج أو الحجم المختار غير متاح في كتالوج الكيك.',
+                    ]);
+                }
+                $validated['items'][$index]['cake_type'] = $product->name_ar ?: $product->name;
+                $validated['items'][$index]['cake_size'] = $variant
+                    ? ($variant->size?->displayName() ?: $variant->displayName())
+                    : null;
+            }
             $reserved =
                 (int) ($item['reserved_quantity'] ?? 0);
 
