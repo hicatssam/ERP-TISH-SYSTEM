@@ -107,7 +107,7 @@
         <div class="card">
             <div class="card-header"><span class="card-title">منتجات الكيك المتاحة للطلب</span></div>
             <div class="card-body">
-                <p class="scr-catalog-help">حدد الحجم والكميات مباشرة؛ المنتجات غير المختارة لن تدخل الطلب.</p>
+                <p class="scr-catalog-help">اختر فقط الأصناف والأحجام المطلوبة. اترك أي حجم لا تريده بكمية صفر، ولن يُضاف للطلب حتى لو كان محددًا. يكفي طلب قطعة واحدة على الأقل من أي حجم.</p>
                 <input id="cakeCatalogSearch" class="form-input" type="search" placeholder="بحث باسم المنتج..." aria-label="بحث في منتجات الكيك" style="margin-bottom:1rem">
                 <p class="scr-catalog-muted">عدد الطبقات اختياري لكل حجم.</p>
                 <div id="cakeCatalogRows" class="scr-catalog-list">
@@ -159,7 +159,7 @@
                     @endforelse
                 </div>
                 <div class="scr-catalog-summary" role="status" aria-live="polite">
-                    <span>الأصناف المختارة: <strong id="cakeChosenCount">0</strong></span>
+                    <span>الأحجام المطلوبة فعليًا: <strong id="cakeChosenCount">0</strong></span>
                     <span>إجمالي المعرض: <strong id="cakeShowroomCount">0</strong></span>
                     <span>إجمالي المحجوز: <strong id="cakeReservedCount">0</strong></span>
                 </div>
@@ -223,9 +223,12 @@ document.addEventListener('DOMContentLoaded', () => {
         let count=0, showroom=0, reserved=0;
         rows.forEach(row => {
             if (!row.querySelector('.scr-catalog-check').checked) return;
+            const rowShowroom = Number(row.querySelector('.scr-qty-showroom').value)||0;
+            const rowReserved = Number(row.querySelector('.scr-qty-reserved').value)||0;
+            if (rowShowroom + rowReserved <= 0) return;
             count++;
-            showroom += Number(row.querySelector('.scr-qty-showroom').value)||0;
-            reserved += Number(row.querySelector('.scr-qty-reserved').value)||0;
+            showroom += rowShowroom;
+            reserved += rowReserved;
         });
         document.getElementById('cakeChosenCount').textContent=count;
         document.getElementById('cakeShowroomCount').textContent=showroom;
@@ -256,9 +259,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if(!row.querySelector('.scr-catalog-check').checked) continue;
             const showroom=Number(row.querySelector('.scr-qty-showroom').value);
             const reserved=Number(row.querySelector('.scr-qty-reserved').value);
-            if(!Number.isSafeInteger(showroom)||!Number.isSafeInteger(reserved)||showroom<0||reserved<0||showroom+reserved<1||showroom+reserved>99999){
-                event.preventDefault();error.textContent='أدخل كميات صحيحة للأصناف المختارة، على الأقل قطعة واحدة لكل حجم.';error.hidden=false;error.focus();return;
+            if(!Number.isSafeInteger(showroom)||!Number.isSafeInteger(reserved)||showroom<0||reserved<0||showroom+reserved>99999){
+                event.preventDefault();error.textContent='أدخل كميات صحيحة غير سالبة للأحجام المطلوبة.';error.hidden=false;error.focus();return;
             }
+            // A checked size with both quantities at zero is intentionally omitted.
+            if (showroom + reserved === 0) continue;
             append('product_id',row.dataset.productId);
             if(row.dataset.variantId) append('product_variant_id',row.dataset.variantId);
             append('cake_type',row.dataset.cakeType);
@@ -269,7 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (layer && layer.value !== '') append('layer_count', layer.value);
             index++;
         }
-        if(!index){event.preventDefault();error.textContent='اختر منتج كيك واحدًا على الأقل وحدد الكمية المطلوبة.';error.hidden=false;error.focus();return;}
+        if(!index){event.preventDefault();error.textContent='حدد كمية أكبر من صفر لصنف وحجم واحد على الأقل؛ الأحجام التي كميتها صفر لا تُضاف للطلب.';error.hidden=false;error.focus();return;}
         error.hidden=true;
     });
     updateSummary();
