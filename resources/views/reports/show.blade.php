@@ -170,6 +170,16 @@
 
             </div>
 
+            @if($type === 'cake-production')
+            <div class="filter-group" style="min-width:185px">
+                <label class="filter-label" for="filter-cake-mode">نوع التقرير</label>
+                <select name="mode" id="filter-cake-mode" class="form-input">
+                    <option value="plan" @selected($cakeMode === 'plan')>خطة العمل المفتوحة</option>
+                    <option value="all" @selected($cakeMode === 'all')>جميع الطلبات (السجل)</option>
+                </select>
+            </div>
+            @endif
+
             @if($locations->count() > 0)
 
             <div class="filter-group">
@@ -241,6 +251,7 @@
     const elTo        = document.getElementById('filter-date-to');
 
     const elLocation  = document.getElementById('filter-location-id');
+    const elMode = document.getElementById('filter-cake-mode');
 
     let debounce;
 
@@ -253,6 +264,7 @@
         if (elTo?.value)       p.set('date_to',     elTo.value);
 
         if (elLocation?.value) p.set('location_id', elLocation.value);
+        if (reportType === 'cake-production' && elMode?.value) p.set('mode', elMode.value);
 
         return p;
 
@@ -337,7 +349,7 @@
 
     }
 
-    [elFrom, elTo, elLocation].forEach(el => {
+    [elFrom, elTo, elLocation, elMode].forEach(el => {
 
         if (el) el.addEventListener('change', onFilterChange);
 
@@ -352,6 +364,23 @@
 </script>
 
 @endpush
+
+@if($type === 'cake-production')
+<div style="padding:14px 17px;background:#f7f8fa;border:1px solid #e6e8ed;border-right:4px solid #bd9134;border-radius:11px;color:#273b52;margin-bottom:17px;line-height:1.85">
+    <strong>{{ $cakeMode === 'plan' ? 'خطة العمل المفتوحة' : 'سجل الطلبات الكامل' }}</strong>
+    <div style="font-size:.85rem;margin-top:3px">
+        @if($cakeMode === 'plan')
+            يعرض الطلبات المفتوحة وقيد التحضير بحسب أقرب تاريخ حاجة، ولا يشمل الجاهزة أو المكتملة أو المستلمة.
+            <strong>هذه كميات الطلبات المفتوحة وليست رصيد الإنتاج المتبقي بعد خصم ما تم تصنيعه.</strong>
+        @else
+            يعرض الطلبات السارية خلال الفترة، بما فيها الطلبات التي تم تجهيزها أو استلامها، للمراجعة التاريخية.
+        @endif
+        المحجوز للعملاء جزء من طلبات الفروع وليس كمية إضافية؛ الإجمالي = المعرض + المحجوز + الطلبات الخاصة.
+        الطلبات الخاصة متعددة الطوابق تُحسب طلبًا واحدًا، ولا تُحوّل تلقائيًا إلى عدة قطع.
+        <strong>المواصفات غير المحددة تُعرض للمراجعة ولا يجري تخمينها.</strong>
+    </div>
+</div>
+@endif
 
 {{-- ── Summary KPIs ── --}}
 
@@ -389,7 +418,7 @@
 
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
 
-            {{ $type === 'cake-production' ? 'ملخص إنتاج الكيك حسب المواصفات' : 'بيانات التقرير' }}
+            {{ $type === 'cake-production' ? ($cakeMode === 'plan' ? 'خطة الكيك حسب موعد الحاجة والمواصفات' : 'تجميع طلبات الكيك حسب المواصفات') : 'بيانات التقرير' }}
 
         </span>
 
@@ -419,6 +448,9 @@
 
     @else
 
+    @if($type === 'cake-production')
+        @include('reports.partials.cake-production-groups', ['cakeRows' => $data, 'cakeMode' => $cakeMode, 'cakePrint' => false])
+    @else
     <div class="table-wrap" style="border:none;border-radius:0">
 
         <table class="data-table">
@@ -464,6 +496,8 @@
 
 
 
+
+    @endif
 
     <div>
 

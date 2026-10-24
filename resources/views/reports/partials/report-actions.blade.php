@@ -8,6 +8,7 @@
         'date_from'  => $dateFrom ?? null,
         'date_to'    => $dateTo ?? null,
         'location_id'=> $locationId ?? null,
+        'mode'       => ($type ?? '') === 'cake-production' ? ($cakeMode ?? 'all') : null,
     ], static fn ($value) => $value !== null && $value !== '');
 
     $reportRouteParams = ['type' => $type] + $reportFilterParams;

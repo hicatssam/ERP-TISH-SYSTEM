@@ -123,13 +123,14 @@ class ReportController extends Controller
                     : collect()
             );
 
-        [$columns, $data, $summary] = $this->buildReportData($type, $locationIds, $dateFrom, $dateTo, true);
+        $cakeMode = $this->cakeReportMode($request, $type);
+        [$columns, $data, $summary] = $this->buildReportData($type, $locationIds, $dateFrom, $dateTo, true, $cakeMode);
 
-        $rowFormatter = fn ($row) => $this->formatRowForExport($type, $row);
+        $rowFormatter = fn ($row) => $this->formatRowForExport($type, $row, $cakeMode);
 
         return view('reports.show', compact(
             'type', 'title', 'data', 'columns', 'summary',
-            'dateFrom', 'dateTo', 'locations', 'locationId', 'rowFormatter'
+            'dateFrom', 'dateTo', 'locations', 'locationId', 'rowFormatter', 'cakeMode'
         ));
     }
 
@@ -161,7 +162,7 @@ class ReportController extends Controller
 
         $locationIds = $this->resolveLocationIds($user, $locationId, $type);
 
-        [, $query] = $this->buildExportQuery($type, $locationIds, $dateFrom, $dateTo);
+        [, $query] = $this->buildExportQuery($type, $locationIds, $dateFrom, $dateTo, $this->cakeReportMode($request, $type));
 
         $total = $this->countExportRows(clone $query);
 
@@ -186,20 +187,21 @@ class ReportController extends Controller
         $dateTo     = $request->input('date_to',   $this->defaultDateTo($type));
         $locationId = $request->input('location_id');
         $title      = $this->reportTypes[$type];
+        $cakeMode = $this->cakeReportMode($request, $type);
 
         $locationIds = $this->resolveLocationIds($user, $locationId, $type);
 
         $cap = (int) config('reports.xlsx_row_cap', self::XLSX_ROW_CAP);
 
-        [$columns, $query] = $this->buildExportQuery($type, $locationIds, $dateFrom, $dateTo);
+        [$columns, $query] = $this->buildExportQuery($type, $locationIds, $dateFrom, $dateTo, $this->cakeReportMode($request, $type));
 
         // Count the number of output rows (groups for aggregate reports, records otherwise).
         // The actual cap is enforced inside ChunkedQueryReportExport via lazy()->take($cap).
         $total     = $this->countExportRows(clone $query);
         $truncated = $total > $cap;
 
-        $mapper   = fn ($row) => $this->formatRowForExport($type, $row);
-        $filename = "{$type}_{$dateFrom}_{$dateTo}.xlsx";
+        $mapper   = fn ($row) => $this->formatRowForExport($type, $row, $cakeMode);
+        $filename = "{$type}_{$dateFrom}_{$dateTo}" . ($type === 'cake-production' && $cakeMode === 'plan' ? '_plan' : '') . '.xlsx';
 
 
         return Excel::download(
@@ -233,14 +235,17 @@ class ReportController extends Controller
             $type,
             $locationIds,
             $dateFrom,
-            $dateTo
+            $dateTo,
+            $this->cakeReportMode($request, $type)
         );
 
+        $cakeMode = $this->cakeReportMode($request, $type);
         $summary = $this->buildReportSummary(
             $type,
             $locationIds,
             $dateFrom,
-            $dateTo
+            $dateTo,
+            $cakeMode
         );
 
         $total     = $this->countExportRows(clone $query);
@@ -256,7 +261,8 @@ class ReportController extends Controller
                 fn ($row) =>
                     $this->formatRowForExport(
                         $type,
-                        $row
+                        $row,
+                        $cakeMode
                     )
             )
             ->values();
@@ -286,6 +292,7 @@ class ReportController extends Controller
             'cap',
             'total',
             'pdfMode',
+            'cakeMode',
         ))->render();
 
         $tempDir = storage_path('app/mpdf');
@@ -307,7 +314,7 @@ class ReportController extends Controller
         $mpdf->SetDisplayMode('fullpage');
         $mpdf->WriteHTML($html);
 
-        $filename = "{$type}_{$dateFrom}_{$dateTo}.pdf";
+        $filename = "{$type}_{$dateFrom}_{$dateTo}" . ($type === 'cake-production' ? '_'.$cakeMode : '') . '.pdf';
         $pdf = $mpdf->Output(
             '',
             \Mpdf\Output\Destination::STRING_RETURN
@@ -379,12 +386,14 @@ class ReportController extends Controller
          * نفس مصدر بيانات صفحة التقرير.
          * paginate = false => نحصل على كامل الصفوف للطباعة.
          */
+        $cakeMode = $this->cakeReportMode($request, $type);
         [$columns, $rows, $summary] = $this->buildReportData(
             $type,
             $locationIds,
             $dateFrom,
             $dateTo,
-            false
+            false,
+            $cakeMode
         );
 
         /*
@@ -398,7 +407,8 @@ class ReportController extends Controller
                 fn ($row) =>
                     $this->formatRowForExport(
                         $type,
-                        $row
+                        $row,
+                        $cakeMode
                     )
             )
             ->values();
@@ -423,13 +433,24 @@ class ReportController extends Controller
             'truncated',
             'cap',
             'total',
-            'pdfMode'
+            'pdfMode',
+            'cakeMode'
         ));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
     //  Helpers
     // ─────────────────────────────────────────────────────────────────────────
+
+    private function cakeReportMode(Request $request, string $type): string
+    {
+        if ($type !== 'cake-production') return 'all';
+
+        $mode = $request->input('mode', 'all');
+        abort_unless(in_array($mode, ['all', 'plan'], true), 422, 'وضع التقرير غير صالح.');
+
+        return $mode;
+    }
 
     private function validateFilters(Request $request, string $type): void
     {
@@ -736,6 +757,7 @@ class ReportController extends Controller
         Collection $locationIds,
         string $dateFrom,
         string $dateTo,
+        string $cakeMode = 'all',
     ): array {
         $columns = [];
         $end     = $dateTo . ' 23:59:59';
@@ -959,10 +981,12 @@ class ReportController extends Controller
                     'طلبات خاصة',
                     'الإجمالي',
                 ];
+                if ($cakeMode === 'plan') array_unshift($columns, 'تاريخ الحاجة');
                 $query = $this->cakeProductionQuery(
                     $locationIds,
                     $dateFrom,
-                    $dateTo
+                    $dateTo,
+                    $cakeMode
                 );
                 break;
 
@@ -990,7 +1014,8 @@ class ReportController extends Controller
     private function cakeDemandUnion(
         Collection $locationIds,
         string $dateFrom,
-        string $dateTo
+        string $dateTo,
+        string $cakeMode = 'all'
     ): \Illuminate\Database\Query\Builder {
         $ids = $locationIds
             ->map(fn ($id) => (int) $id)
@@ -1097,6 +1122,20 @@ class ReportController extends Controller
             )
             ->whereNull('requests.deleted_at');
 
+        if ($cakeMode === 'plan') {
+            // An operational queue: not the unproduced physical balance.
+            // Ready, delivered and completed orders stay in the historical view.
+            $special->whereIn('special_cake_orders.status', [
+                'pending', 'in_progress', 'pending_factory_review',
+                'modification_requested', 'accepted', 'scheduled',
+                'in_preparation', 'decorating', 'quality_check',
+                'delayed', 'issue_open',
+            ]);
+            $showroom->whereIn('requests.status', [
+                'pending', 'submitted', 'in_progress',
+            ]);
+        }
+
         return $special->unionAll($showroom);
     }
 
@@ -1159,19 +1198,32 @@ class ReportController extends Controller
     private function cakeProductionQuery(
         Collection $locationIds,
         string $dateFrom,
-        string $dateTo
+        string $dateTo,
+        string $cakeMode = 'all'
     ): \Illuminate\Database\Query\Builder {
-        return DB::query()
-            ->fromSub($this->cakeDemandUnion($locationIds, $dateFrom, $dateTo), 'cake_demand')
+        $query = DB::query()
+            ->fromSub($this->cakeDemandUnion($locationIds, $dateFrom, $dateTo, $cakeMode), 'cake_demand')
             ->select('cake_type', 'cake_size', 'shape', 'layer_count', 'detail_flavor')
+            ->selectRaw('DATE(MIN(detail_date)) as first_needed_date')
             ->selectRaw("SUM(CASE WHEN source = 'special' THEN quantity ELSE 0 END) as special_quantity")
             ->selectRaw("SUM(CASE WHEN source = 'showroom' THEN quantity ELSE 0 END) as showroom_quantity")
             ->selectRaw("SUM(CASE WHEN source = 'showroom' THEN reserved_quantity ELSE 0 END) as reserved_quantity")
             ->selectRaw("SUM(CASE WHEN source = 'showroom' THEN quantity - reserved_quantity ELSE 0 END) as display_quantity")
             ->selectRaw('SUM(quantity) as total_quantity')
-            ->groupBy('cake_type', 'cake_size', 'shape', 'layer_count', 'detail_flavor')
-            ->orderBy('cake_type')->orderBy('cake_size')->orderBy('shape')
-            ->orderBy('layer_count')->orderBy('detail_flavor');
+            ->groupBy('cake_type', 'cake_size', 'shape', 'layer_count', 'detail_flavor');
+
+        if ($cakeMode === 'plan') {
+            // Never combine a cake needed tomorrow with the same recipe due next week.
+            $query->groupBy('detail_date');
+        }
+
+        return $query
+            ->orderBy('first_needed_date')
+            ->orderBy('cake_type')
+            ->orderBy('cake_size')
+            ->orderBy('shape')
+            ->orderBy('layer_count')
+            ->orderBy('detail_flavor');
     }
 
     /**
@@ -1182,14 +1234,16 @@ class ReportController extends Controller
     private function cakeProductionSummary(
         Collection $locationIds,
         string $dateFrom,
-        string $dateTo
+        string $dateTo,
+        string $cakeMode = 'all'
     ): array {
         $demand = DB::query()
             ->fromSub(
                 $this->cakeDemandUnion(
                     $locationIds,
                     $dateFrom,
-                    $dateTo
+                    $dateTo,
+                    $cakeMode
                 ),
                 'cake_demand'
             );
@@ -1213,7 +1267,8 @@ class ReportController extends Controller
                     $this->cakeProductionQuery(
                         $locationIds,
                         $dateFrom,
-                        $dateTo
+                        $dateTo,
+                        $cakeMode
                     )
                 ),
         ];
@@ -1232,6 +1287,7 @@ class ReportController extends Controller
         Collection $locationIds,
         string $dateFrom,
         string $dateTo,
+        string $cakeMode = 'all',
     ): array {
         $end = $dateTo . ' 23:59:59';
 
@@ -1291,7 +1347,8 @@ class ReportController extends Controller
             'cake-production' => $this->cakeProductionSummary(
                 $locationIds,
                 $dateFrom,
-                $dateTo
+                $dateTo,
+                $cakeMode
             ),
             // Types whose summaries are not displayed in the PDF header.
             default => [],
@@ -1308,10 +1365,11 @@ class ReportController extends Controller
         Collection $locationIds,
         string $dateFrom,
         string $dateTo,
-        bool $paginate
+        bool $paginate,
+        string $cakeMode = 'all'
     ): array {
-        [$columns, $query] = $this->buildExportQuery($type, $locationIds, $dateFrom, $dateTo);
-        $summary = $this->buildReportSummary($type, $locationIds, $dateFrom, $dateTo);
+        [$columns, $query] = $this->buildExportQuery($type, $locationIds, $dateFrom, $dateTo, $cakeMode);
+        $summary = $this->buildReportSummary($type, $locationIds, $dateFrom, $dateTo, $cakeMode);
         $data = $paginate ? $query->paginate(25)->withQueryString() : $query->get();
 
         return [$columns, $data, $summary];
@@ -1343,7 +1401,7 @@ class ReportController extends Controller
     /**
      * Convert a report row to a flat array suitable for Excel export.
      */
-    private function formatRowForExport(string $type, mixed $row): array
+    private function formatRowForExport(string $type, mixed $row, string $cakeMode = 'all'): array
     {
         return match ($type) {
             'orders' => [
@@ -1469,6 +1527,7 @@ class ReportController extends Controller
                 ArabicDate::date($row->created_at, false),
             ],
             'cake-production' => [
+                ...($cakeMode === 'plan' ? [(string) ($row->first_needed_date ?? '—')] : []),
                 CakeProductionLabels::type($row->cake_type ?? null),
                 CakeProductionLabels::size($row->cake_size ?? null),
                 CakeProductionLabels::shape($row->shape ?? null),

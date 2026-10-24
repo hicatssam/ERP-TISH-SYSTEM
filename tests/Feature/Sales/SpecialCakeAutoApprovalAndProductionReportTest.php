@@ -391,6 +391,92 @@ class SpecialCakeAutoApprovalAndProductionReportTest extends TestCase
     }
 
     #[Test]
+    public function cake_production_plan_excludes_ready_and_completed_orders_and_preserves_due_dates_and_totals(): void
+    {
+        $this->user->givePermissionTo(Permission::findOrCreate('reports.export', 'web'));
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        $earlyDate = '2026-09-27';
+        $lateDate = '2026-09-28';
+        $pending = $this->makeShowroomRequest($this->branch, ShowroomCakeRequestStatus::Pending, $earlyDate);
+        $progress = $this->makeShowroomRequest($this->branch, ShowroomCakeRequestStatus::InProgress, $lateDate);
+        $ready = $this->makeShowroomRequest($this->branch, ShowroomCakeRequestStatus::Ready, $lateDate);
+
+        foreach ([[$pending, 2, 1], [$progress, 3, 0], [$ready, 7, 0]] as [$order, $qty, $reserved]) {
+            ShowroomCakeRequestItem::query()->create([
+                'showroom_cake_request_id' => $order->id,
+                'cake_type' => 'chocolate', 'cake_size' => 'large',
+                'shape' => 'round', 'layer_count' => 3, 'flavor' => 'nutella',
+                'quantity' => $qty, 'reserved_quantity' => $reserved,
+            ]);
+        }
+
+        $params = [
+            'type' => 'cake-production', 'date_from' => $earlyDate,
+            'date_to' => $lateDate, 'location_id' => $this->branch->id,
+        ];
+
+        $historical = $this->actingAs($this->user)->get(route('reports.show', $params))->assertOk();
+        $this->assertSame(12, (int) $historical->viewData('summary')['إجمالي قطع الكيك']);
+        $this->assertCount(1, $historical->viewData('data')->items());
+
+        $planParams = $params + ['mode' => 'plan'];
+        $screen = $this->get(route('reports.show', $planParams))->assertOk()
+            ->assertSee('خطة العمل المفتوحة')
+            ->assertSee('النكهة، الشكل، الطبقات')
+            ->assertSee('نوتيلا');
+        $this->assertSame(5, (int) $screen->viewData('summary')['إجمالي قطع الكيك']);
+        $this->assertCount(2, $screen->viewData('data')->items());
+        $rows = collect($screen->viewData('data')->items())->values();
+        $this->assertSame($earlyDate, $rows[0]->first_needed_date);
+        $this->assertSame($lateDate, $rows[1]->first_needed_date);
+        $this->assertEqualsCanonicalizing([2, 3], $rows->pluck('total_quantity')->map(fn ($q) => (int) $q)->all());
+
+        $print = $this->get(route('reports.print', $planParams))->assertOk()
+            ->assertSee('خطة العمل المفتوحة')->assertSee('تاريخ الحاجة');
+        $this->assertSame(10, count($print->viewData('formattedRows')->first()));
+        $this->assertSame($earlyDate, $print->viewData('formattedRows')->first()[0]);
+
+        $this->getJson(route('reports.count', $planParams))
+            ->assertOk()->assertJsonPath('count', 2);
+
+        \Maatwebsite\Excel\Facades\Excel::fake();
+        $this->get(route('reports.export.xlsx', $planParams))->assertOk();
+        \Maatwebsite\Excel\Facades\Excel::assertDownloaded(
+            'cake-production_'.$earlyDate.'_'.$lateDate.'_plan.xlsx'
+        );
+    }
+
+    #[Test]
+    public function cake_production_rejects_invalid_modes_and_uses_a_single_shared_pdf_table(): void
+    {
+        $this->user->givePermissionTo(Permission::findOrCreate('reports.export', 'web'));
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        $params = [
+            'type' => 'cake-production', 'date_from' => '2026-09-28',
+            'date_to' => '2026-09-28', 'location_id' => $this->branch->id,
+        ];
+        $this->actingAs($this->user)->get(route('reports.show', $params + ['mode' => 'unexpected']))
+            ->assertStatus(422);
+
+        $ready = $this->makeShowroomRequest($this->branch, ShowroomCakeRequestStatus::Ready, '2026-09-28');
+        ShowroomCakeRequestItem::query()->create([
+            'showroom_cake_request_id' => $ready->id,
+            'cake_type' => 'vanilla', 'cake_size' => 'medium', 'shape' => 'round',
+            'flavor' => 'lotus', 'layer_count' => 2, 'quantity' => 2,
+        ]);
+
+        $this->get(route('reports.print', $params))->assertOk()
+            ->assertSee('فانيلا — وسط')
+            ->assertSee('لوتس')
+            ->assertSee('مجموع التشكيلات');
+        $pdf = $this->get(route('reports.export.pdf', $params))->assertOk()->streamedContent();
+        $this->assertStringStartsWith('%PDF', $pdf);
+        $this->assertMatchesRegularExpression('/\\/Type\\s*\\/Page\\b/', $pdf);
+    }
+
+    #[Test]
     public function unified_cake_production_uses_arabic_labels_on_screen_and_print(): void
     {
         $date = '2026-09-28';

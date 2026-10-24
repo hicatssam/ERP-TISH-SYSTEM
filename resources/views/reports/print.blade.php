@@ -305,6 +305,7 @@
 @section(
     'document_subtitle',
     'الفترة: ' . $dateFromFormatted . ' — ' . $dateToFormatted
+    . (($type ?? '') === 'cake-production' ? (' | ' . (($cakeMode ?? 'all') === 'plan' ? 'خطة العمل المفتوحة' : 'سجل الطلبات الكامل')) : '')
 )
 
 @section(
@@ -390,8 +391,18 @@
         </div>
     @endif
 
+    @if($type === 'cake-production')
+        <div class="print-section" style="font-size:9pt;color:#374151;margin:6px 0 12px">
+            {{ ($cakeMode ?? 'all') === 'plan' ? 'خطة العمل المفتوحة: الطلبات الجارية وليست رصيد القطع غير المصنعة.' : 'جميع الطلبات خلال الفترة، بما فيها الطلبات الجاهزة والمكتملة.' }}
+            المحجوز ضمن كميات الفروع، والطلبات الخاصة متعددة الطبقات تُحسب طلبًا واحدًا. القيم غير المحددة تتطلب مراجعة.
+        </div>
+    @endif
+
     <div class="print-section">
         @if($formattedRows->isNotEmpty())
+            @if($type === 'cake-production')
+                @include('reports.partials.cake-production-groups', ['cakeRows' => $rows, 'cakeMode' => $cakeMode ?? 'all', 'cakePrint' => true])
+            @else
             <table
                 class="print-table"
                 cellpadding="0"
@@ -419,6 +430,7 @@
                     @endforeach
                 </tbody>
             </table>
+            @endif
         @else
             <div class="print-soft-box print-empty">
                 لا توجد بيانات للفترة المحددة.
