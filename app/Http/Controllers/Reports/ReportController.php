@@ -966,8 +966,11 @@ class ReportController extends Controller
                     'نوع الكيك',
                     'الحجم',
                     'الشكل',
+                    'الطبقات',
+                    'النكهة',
+                    'للمعرض',
+                    'محجوز للعملاء',
                     'طلبات خاصة',
-                    'طلبات الفروع',
                     'الإجمالي',
                 ];
                 $query = $this->cakeProductionQuery(
@@ -1021,8 +1024,9 @@ class ReportController extends Controller
                 "COALESCE(NULLIF(TRIM(shape), ''), 'غير محدد') as shape"
             )
             ->selectRaw('1 as quantity')
+            ->selectRaw('0 as reserved_quantity')
             ->selectRaw("special_cake_orders.order_number as detail_number, detail_branch.name as detail_branch, special_cake_orders.required_date as detail_date")
-            ->selectRaw("NULL as layer_count, special_cake_orders.flavor as detail_flavor, special_cake_orders.filling as detail_filling")
+            ->selectRaw("special_cake_orders.layers_count as layer_count, special_cake_orders.flavor as detail_flavor, special_cake_orders.filling as detail_filling")
             ->selectRaw("special_cake_orders.cake_weight as detail_weight, special_cake_orders.persons_count as detail_persons")
             ->selectRaw("special_cake_orders.color as detail_color, special_cake_orders.cake_text as detail_text, special_cake_orders.theme as detail_theme")
             ->selectRaw("special_cake_orders.special_instructions as detail_notes, NULL as detail_reservation, special_cake_orders.cake_sizes as detail_sizes, NULL as detail_general_notes")
@@ -1081,6 +1085,7 @@ class ReportController extends Controller
             )
             ->leftJoin('locations as detail_branch', 'detail_branch.id', '=', 'requests.requesting_location_id')
             ->selectRaw('items.quantity as quantity')
+            ->selectRaw('COALESCE(items.reserved_quantity, 0) as reserved_quantity')
             ->selectRaw("requests.request_number as detail_number, detail_branch.name as detail_branch, COALESCE(requests.needed_by, DATE(requests.created_at)) as detail_date")
             ->selectRaw("items.layer_count as layer_count, items.flavor as detail_flavor, NULL as detail_filling")
             ->selectRaw("NULL as detail_weight, NULL as detail_persons, NULL as detail_color, NULL as detail_text, NULL as detail_theme")
@@ -1119,7 +1124,7 @@ class ReportController extends Controller
 
     private function cakeDetailColumns(): array
     {
-        return ['المصدر', 'رقم الطلب', 'الفرع', 'تاريخ الحاجة', 'نوع الكيك', 'الحجم', 'الشكل', 'عدد الطبقات', 'النكهة', 'الكمية', 'تفاصيل التصنيع والملاحظات'];
+        return ['المصدر', 'رقم الطلب', 'الفرع', 'تاريخ الحاجة', 'نوع الكيك', 'الحجم', 'الشكل', 'عدد الطبقات', 'النكهة', 'للمعرض', 'محجوز للعملاء', 'إجمالي الكمية', 'تفاصيل التصنيع والملاحظات'];
     }
 
     private function cakeProductionDetailRows(Collection $locationIds, string $from, string $to, int $limit): Collection
@@ -1154,6 +1159,8 @@ class ReportController extends Controller
                     CakeProductionLabels::size($item->cake_size),
                     CakeProductionLabels::shape($item->shape),
                     $item->layer_count ?? '—', CakeProductionLabels::flavor($item->detail_flavor),
+                    $item->source === 'showroom' ? max(0, (int) $item->quantity - (int) $item->reserved_quantity) : '—',
+                    $item->source === 'showroom' ? (int) $item->reserved_quantity : '—',
                     (int) $item->quantity,
                     implode(' | ', $notes) ?: '—',
                 ];
@@ -1169,37 +1176,16 @@ class ReportController extends Controller
         string $dateTo
     ): \Illuminate\Database\Query\Builder {
         return DB::query()
-            ->fromSub(
-                $this->cakeDemandUnion(
-                    $locationIds,
-                    $dateFrom,
-                    $dateTo
-                ),
-                'cake_demand'
-            )
-            ->select(
-                'cake_type',
-                'cake_size',
-                'shape'
-            )
-            ->selectRaw(
-                "SUM(CASE WHEN source = 'special' THEN quantity ELSE 0 END) as special_quantity"
-            )
-            ->selectRaw(
-                "SUM(CASE WHEN source = 'showroom' THEN quantity ELSE 0 END) as showroom_quantity"
-            )
-            ->selectRaw(
-                'SUM(quantity) as total_quantity'
-            )
-            ->groupBy(
-                'cake_type',
-                'cake_size',
-                'shape'
-            )
-            ->orderByDesc('total_quantity')
-            ->orderBy('cake_type')
-            ->orderBy('cake_size')
-            ->orderBy('shape');
+            ->fromSub($this->cakeDemandUnion($locationIds, $dateFrom, $dateTo), 'cake_demand')
+            ->select('cake_type', 'cake_size', 'shape', 'layer_count', 'detail_flavor')
+            ->selectRaw("SUM(CASE WHEN source = 'special' THEN quantity ELSE 0 END) as special_quantity")
+            ->selectRaw("SUM(CASE WHEN source = 'showroom' THEN quantity ELSE 0 END) as showroom_quantity")
+            ->selectRaw("SUM(CASE WHEN source = 'showroom' THEN reserved_quantity ELSE 0 END) as reserved_quantity")
+            ->selectRaw("SUM(CASE WHEN source = 'showroom' THEN quantity - reserved_quantity ELSE 0 END) as display_quantity")
+            ->selectRaw('SUM(quantity) as total_quantity')
+            ->groupBy('cake_type', 'cake_size', 'shape', 'layer_count', 'detail_flavor')
+            ->orderBy('cake_type')->orderBy('cake_size')->orderBy('shape')
+            ->orderBy('layer_count')->orderBy('detail_flavor');
     }
 
     /**
@@ -1500,8 +1486,11 @@ class ReportController extends Controller
                 CakeProductionLabels::type($row->cake_type ?? null),
                 CakeProductionLabels::size($row->cake_size ?? null),
                 CakeProductionLabels::shape($row->shape ?? null),
+                $row->layer_count ?? '—',
+                CakeProductionLabels::flavor($row->detail_flavor ?? null),
+                (int) ($row->display_quantity ?? 0),
+                (int) ($row->reserved_quantity ?? 0),
                 (int) ($row->special_quantity ?? 0),
-                (int) ($row->showroom_quantity ?? 0),
                 (int) ($row->total_quantity ?? 0),
             ],
             'inventory' => [

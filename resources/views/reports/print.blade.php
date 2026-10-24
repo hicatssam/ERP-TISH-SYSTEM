@@ -227,8 +227,11 @@
                     \App\Support\CakeProductionLabels::type($row->cake_type ?? null),
                     \App\Support\CakeProductionLabels::size($row->cake_size ?? null),
                     \App\Support\CakeProductionLabels::shape($row->shape ?? null),
+                    $row->layer_count ?? '—',
+                    \App\Support\CakeProductionLabels::flavor($row->detail_flavor ?? null),
+                    (int) ($row->display_quantity ?? 0),
+                    (int) ($row->reserved_quantity ?? 0),
                     (int) ($row->special_quantity ?? 0),
-                    (int) ($row->showroom_quantity ?? 0),
                     (int) ($row->total_quantity ?? 0),
                 ],
 
@@ -440,7 +443,7 @@
         <h3 style="text-align:right">تفاصيل طلبات إنتاج الكيك</h3>
         <table class="print-table">
             <thead><tr>
-                @foreach(['المصدر','رقم الطلب','الفرع','تاريخ الحاجة','نوع الكيك','الحجم','الشكل','عدد الطبقات','النكهة','الكمية','تفاصيل التصنيع والملاحظات'] as $label)
+                @foreach(['المصدر','رقم الطلب','الفرع','تاريخ الحاجة','نوع الكيك','الحجم','الشكل','عدد الطبقات','النكهة','للمعرض','محجوز للعملاء','إجمالي الكمية','تفاصيل التصنيع والملاحظات'] as $label)
                     <th>{{ $label }}</th>
                 @endforeach
             </tr></thead>
@@ -448,7 +451,7 @@
                 @forelse($cakeDetails ?? [] as $detail)
                     <tr>@foreach($detail as $value)<td>{{ $value }}</td>@endforeach</tr>
                 @empty
-                    <tr><td colspan="11">لا توجد تفاصيل إنتاج لهذه الفترة.</td></tr>
+                    <tr><td colspan="13">لا توجد تفاصيل إنتاج لهذه الفترة.</td></tr>
                 @endforelse
             </tbody>
         </table>
