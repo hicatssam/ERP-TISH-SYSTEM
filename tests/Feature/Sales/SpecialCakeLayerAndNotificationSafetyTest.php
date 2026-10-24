@@ -18,7 +18,7 @@ class SpecialCakeLayerAndNotificationSafetyTest extends TestCase
         $show = file_get_contents(resource_path('views/sales/cake-orders/show.blade.php'));
 
         $this->assertStringContainsString("'layers_count' => [", $controller);
-        $this->assertStringContainsString("Rule::in([3, 4, 5, 6])", $controller);
+        $this->assertStringContainsString("? [3, 4, 5, 6] : [1, 2, 3, 4, 5, 6]", $controller);
         $this->assertStringContainsString("'layers_count'           => \$data['layers_count'] ?? null", $service);
         $this->assertStringContainsString("'layers_count'        => 'integer'", $model);
         $this->assertStringContainsString('name="layers_count"', $create);

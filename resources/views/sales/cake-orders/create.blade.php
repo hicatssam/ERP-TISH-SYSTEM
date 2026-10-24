@@ -213,7 +213,7 @@
                         @error('cake_sizes.*')<span class="form-error">{{ $message }}</span>@enderror
                     </div>
                     <div class="form-group" id="layersGroup" hidden>
-                        <label class="form-label">عدد الطبقات *</label>
+                        <label class="form-label">عدد الطبقات (إلزامي لطوابق الأفراح)</label>
                         <select name="layers_count" id="layersCount" class="form-select @error('layers_count') is-invalid @enderror"></select>
                         @error('layers_count')<span class="form-error">{{ $message }}</span>@enderror
                     </div>
@@ -788,10 +788,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let oldLayers = @json(old('layers_count'));
 
     const choices = {
-        round: { showSize:true, label:'الأحجام *', values:{small:'صغير',medium:'وسط',large:'كبير'}, layers:{standard:'ستاندر','4':'4 طبقات','5':'5 طبقات','6':'6 طبقات'} },
-        slab: { showSize:true, label:'مقاسات البلاطة *', values:{'30x30':'30×30','40x30':'40×30','60x40':'60×40','120x30':'120×30','120x80':'120×80'}, layers:null },
-        wedding_tiers: { showSize:false, values:{standard:'ستاندر'}, layers:{'3':'3 طوابق','4':'4 طوابق','5':'5 طوابق','6':'6 طوابق'} },
-        standard_tiers: { showSize:true, label:'أحجام طوابق الستاندر *', values:{small:'صغير',medium:'وسط',large:'كبير'}, layers:null },
+        round: { showSize:true, label:'الأحجام *', values:{small:'صغير',medium:'وسط',large:'كبير'}, layers:true },
+        slab: { showSize:true, label:'مقاسات البلاطة *', values:{'30x30':'30×30','40x30':'40×30','60x40':'60×40','120x30':'120×30','120x80':'120×80'}, layers:true },
+        wedding_tiers: { showSize:false, values:{standard:'ستاندر'}, layers:true },
+        standard_tiers: { showSize:true, label:'أحجام طوابق الستاندر *', values:{small:'صغير',medium:'وسط',large:'كبير'}, layers:true },
     };
 
     function syncSizes() {
@@ -831,12 +831,14 @@ document.addEventListener('DOMContentLoaded', () => {
         sizeGroup.hidden = !config.showSize;
         syncSizes();
         layers.innerHTML = '<option value="">اختر</option>';
-        if (config.layers) {
-            Object.entries(config.layers).forEach(([v, label]) => layers.add(new Option(label, v)));
+        const isWedding = shape.value === 'wedding_tiers';
+        const minLayers = isWedding ? 3 : 1;
+        for (let count = minLayers; count <= 6; count++) {
+            layers.add(new Option(count + (isWedding ? ' طوابق' : ' طبقات'), String(count)));
         }
-        layersGroup.hidden = !config.layers;
-        layers.required = Boolean(config.layers);
-        layers.value = config.layers ? (oldLayers || '') : '';
+        layersGroup.hidden = false;
+        layers.required = isWedding;
+        layers.value = oldLayers == null ? '' : String(oldLayers);
     }
 
     shape.addEventListener('change', () => { oldSizes = []; oldLayers = null; updateOptions(); });

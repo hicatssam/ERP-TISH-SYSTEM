@@ -150,12 +150,12 @@
                         </select>
                         @error('shape')<span class="form-error">{{ $message }}</span>@enderror
                     </div>
-                    <div class="form-group" id="cakeLayersGroup" @if(old('shape', $cakeOrder->shape) !== 'wedding_tiers') hidden @endif>
-                        <label class="form-label" for="cakeLayersCount">عدد الطبقات (طوابق أفراح)</label>
+                    <div class="form-group" id="cakeLayersGroup">
+                        <label class="form-label" for="cakeLayersCount">عدد الطبقات (إلزامي لطوابق الأفراح)</label>
                         <select name="layers_count" id="cakeLayersCount" class="form-select @error('layers_count') is-invalid @enderror">
                             <option value="">اختر عدد الطبقات</option>
-                            @foreach([3, 4, 5, 6] as $tierCount)
-                                <option value="{{ $tierCount }}" @selected((string) old('layers_count', $cakeOrder->layers_count) === (string) $tierCount)>{{ $tierCount }} طوابق</option>
+                            @foreach([1, 2, 3, 4, 5, 6] as $tierCount)
+                                <option value="{{ $tierCount }}" @selected((string) old('layers_count', $cakeOrder->layers_count) === (string) $tierCount)>{{ $tierCount }} طبقات</option>
                             @endforeach
                         </select>
                         @error('layers_count')<span class="form-error">{{ $message }}</span>@enderror
@@ -346,9 +346,12 @@ document.getElementById('cakeShape')?.addEventListener('change', function () {
     const group = document.getElementById('cakeLayersGroup');
     const select = document.getElementById('cakeLayersCount');
     if (!group || !select) return;
-    group.hidden = this.value !== 'wedding_tiers';
+    group.hidden = !this.value;
     select.required = this.value === 'wedding_tiers';
-    if (group.hidden) select.value = '';
+    if (this.value === 'wedding_tiers' && Number(select.value) < 3) select.value = '';
+    for (const option of select.options) {
+        if (option.value) option.hidden = this.value === 'wedding_tiers' && Number(option.value) < 3;
+    }
 });
 document.getElementById('cakeShape')?.dispatchEvent(new Event('change'));
 </script>
