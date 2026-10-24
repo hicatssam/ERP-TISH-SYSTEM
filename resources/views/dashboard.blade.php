@@ -304,6 +304,45 @@
         }
     }
 
+
+    /* Dashboard density pass: keep all existing KPIs and business logic intact. */
+    .dashboard-tasks-card .card-body { padding: 1rem; }
+    .dashboard-task-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 245px), 1fr));
+        gap: .85rem;
+    }
+    .dashboard-task-card { min-height: 148px; }
+    /* Avoid a lonely task taking a tiny fraction of a huge full-width panel. */
+    .dashboard-tasks-card:has(.dashboard-task-card:only-child) {
+        width: min(100%, 470px);
+        margin-inline-start: 0;
+        margin-inline-end: auto;
+    }
+    .dashboard-tasks-card:has(.dashboard-task-card:only-child) .dashboard-task-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .stats-grid { gap: .85rem; }
+    .stats-grid .stat-card {
+        min-width: 0;
+        border: 1px solid var(--border-light);
+        border-radius: 14px;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, .035);
+    }
+    .stats-grid .stat-card .stat-value { font-variant-numeric: tabular-nums; }
+    .dashboard-module-grid { gap: .85rem; }
+    .dashboard-module-card { min-height: 110px; }
+    .dashboard-module-card-label, .dashboard-module-card-value { overflow-wrap: anywhere; }
+    @media (max-width: 700px) {
+        .dashboard-tasks-card:has(.dashboard-task-card:only-child) { width: 100%; }
+        .dashboard-task-grid { grid-template-columns: 1fr; }
+        .dashboard-task-card { min-height: 132px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .dashboard-task-card, .dashboard-module-card, .stats-grid .stat-card { transition: none !important; }
+        .dashboard-task-card:hover, .dashboard-module-card:hover, .stats-grid .stat-card:hover { transform: none; }
+    }
+
 </style>
 @endpush
 
