@@ -142,6 +142,16 @@ class ShowroomSweetsRequestController extends Controller
             ->orderBy('name')
             ->get();
 
+        $sweetProducts = Product::query()
+            ->active()
+            ->where('is_raw_material', false)
+            ->whereHas('category', fn ($category) => $category
+                ->whereNotIn('slug', ['cakes', 'drinks', 'gifts']))
+            ->with(['category'])
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get();
+
         $rawMaterials = app(DailyRawMaterialRequestService::class)->availableMaterials();
 
         return view(
@@ -151,7 +161,8 @@ class ShowroomSweetsRequestController extends Controller
                 'branches',
                 'factories',
                 'canChooseBranch',
-                'rawMaterials'
+                'rawMaterials',
+                'sweetProducts'
             )
         );
     }
