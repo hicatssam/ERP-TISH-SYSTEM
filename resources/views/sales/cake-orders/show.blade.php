@@ -220,6 +220,7 @@
     $cakeSpecFields = [
         'cake_type' => 'النوع',
         'cake_size' => 'الحجم',
+        'layers_count' => 'عدد الطبقات',
         'cake_weight' => 'الوزن (كغم)',
         'flavor' => 'النكهة',
         'filling' => 'الحشو',
@@ -808,7 +809,10 @@
 
             @foreach($cakeSpecFields as $field => $label)
 
-                @if($cakeOrder->$field !== null && $cakeOrder->$field !== '')
+                @if(
+                    ($field === 'cake_size' && is_array($cakeOrder->cake_sizes) && count($cakeOrder->cake_sizes))
+                    || ($cakeOrder->$field !== null && $cakeOrder->$field !== '')
+                )
 
                     <tr>
 

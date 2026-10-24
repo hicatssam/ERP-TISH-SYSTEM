@@ -521,6 +521,13 @@ class SpecialCakeOrderController extends Controller
         'array',
         'max:8',
     ],
+    'layers_count' => [
+        Rule::requiredIf(fn () => $request->input('shape') === 'wedding_tiers'),
+        'nullable',
+        'integer',
+        Rule::in([3, 4, 5, 6]),
+    ],
+
     'cake_sizes.*' => [
         'string',
         'distinct',
@@ -606,6 +613,10 @@ class SpecialCakeOrderController extends Controller
     'max:10240',
 ],
 ]);
+
+        if ($request->input('shape') !== 'wedding_tiers') {
+            $validated['layers_count'] = null;
+        }
 
         $validated = $this->enforceDeliveryTiming(
             $request,
@@ -871,6 +882,12 @@ if (
                 'array',
                 'max:8',
             ],
+            'layers_count' => [
+                Rule::requiredIf(fn () => $request->input('shape') === 'wedding_tiers'),
+                'nullable',
+                'integer',
+                Rule::in([3, 4, 5, 6]),
+            ],
             'cake_sizes.*' => [
                 'string',
                 'distinct',
@@ -916,6 +933,10 @@ if (
 
         // Price, discount and net amount are linked. Do not silently leave an old
         // net price after changing the total. Paid/invoiced orders are guarded below.
+        if ($request->input('shape') !== 'wedding_tiers') {
+            $validated['layers_count'] = null;
+        }
+
         DB::transaction(function () use ($cakeOrder, $validated, $request, $editType, $editReason): void {
             $locked = SpecialCakeOrder::query()->lockForUpdate()->findOrFail($cakeOrder->id);
             $this->authorize('update', $locked);

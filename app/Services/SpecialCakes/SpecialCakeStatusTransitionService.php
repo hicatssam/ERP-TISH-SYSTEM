@@ -154,13 +154,25 @@ class SpecialCakeStatusTransitionService
             ],
         );
 
-        SpecialCakeOrderTransitioned::dispatch(
-            $order->fresh(),
-            $fromStatus,
-            $toStatus,
-            $user,
-            $note
-        );
+        // The order and its status history are already persisted here.
+        // A notification delivery failure must not turn a successful order
+        // submission into a 500 response (and cause duplicate resubmission).
+        try {
+            SpecialCakeOrderTransitioned::dispatch(
+                $order->fresh(),
+                $fromStatus,
+                $toStatus,
+                $user,
+                $note
+            );
+        } catch (\Throwable $exception) {
+            \Illuminate\Support\Facades\Log::error('Special cake notification dispatch failed after order persistence', [
+                'order_id' => $order->id,
+                'from' => $fromStatus,
+                'to' => $toStatus,
+                'exception' => $exception,
+            ]);
+        }
     }
 
     /**

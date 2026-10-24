@@ -150,6 +150,16 @@
                         </select>
                         @error('shape')<span class="form-error">{{ $message }}</span>@enderror
                     </div>
+                    <div class="form-group" id="cakeLayersGroup" @if(old('shape', $cakeOrder->shape) !== 'wedding_tiers') hidden @endif>
+                        <label class="form-label" for="cakeLayersCount">عدد الطبقات (طوابق أفراح)</label>
+                        <select name="layers_count" id="cakeLayersCount" class="form-select @error('layers_count') is-invalid @enderror">
+                            <option value="">اختر عدد الطبقات</option>
+                            @foreach([3, 4, 5, 6] as $tierCount)
+                                <option value="{{ $tierCount }}" @selected((string) old('layers_count', $cakeOrder->layers_count) === (string) $tierCount)>{{ $tierCount }} طوابق</option>
+                            @endforeach
+                        </select>
+                        @error('layers_count')<span class="form-error">{{ $message }}</span>@enderror
+                    </div>
                     <div class="form-group">
                         <label class="form-label">اللون</label>
                         <input name="color" class="form-input @error('color') is-invalid @enderror" value="{{ old('color', $cakeOrder->color) }}">
@@ -332,5 +342,14 @@ document.addEventListener('DOMContentLoaded', () => {
     urgentToggle?.addEventListener('change', syncUrgentDelivery);
     syncUrgentDelivery();
 });
+document.getElementById('cakeShape')?.addEventListener('change', function () {
+    const group = document.getElementById('cakeLayersGroup');
+    const select = document.getElementById('cakeLayersCount');
+    if (!group || !select) return;
+    group.hidden = this.value !== 'wedding_tiers';
+    select.required = this.value === 'wedding_tiers';
+    if (group.hidden) select.value = '';
+});
+document.getElementById('cakeShape')?.dispatchEvent(new Event('change'));
 </script>
 @endsection
