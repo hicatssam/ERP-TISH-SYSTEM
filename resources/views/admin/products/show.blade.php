@@ -87,7 +87,7 @@
         @if($variantsEnabled && Route::has('products.variants.index'))
         <a href="{{ route('products.variants.index', $product) }}" class="btn btn-gold btn-sm">المتغيرات ({{ $product->variants->count() }})</a>
         @endif
-        <a href="{{ route('products.edit', $product) }}" class="btn btn-outline btn-sm">تعديل</a>
+        <a href="{{ route('products.edit', [$product, 'return_query' => request('return_query', '')]) }}" class="btn btn-outline btn-sm">تعديل</a>
         <form action="{{ route('products.toggle-status', $product) }}" method="POST" style="display:inline">
             @csrf
             <input type="hidden" name="expected_active" value="{{ $product->is_active ? 1 : 0 }}">
@@ -98,7 +98,7 @@
             </x-action-dialog>
         </form>
         @endcan
-        <a href="{{ route('products.index') }}" class="btn btn-ghost btn-sm">رجوع</a>
+        <a href="{{ route('products.index') . (request('return_query') ? '?' . request('return_query') : '') }}" class="btn btn-ghost btn-sm">رجوع</a>
     </div>
 </div>
 

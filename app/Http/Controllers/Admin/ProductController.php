@@ -332,7 +332,13 @@ class ProductController extends Controller
             $this->deleteProductImage($oldProduct);
         }
 
-        return redirect()->route('products.show', $product)->with('success', 'تم تحديث المنتج بنجاح.');
+        return redirect()->route('products.show', [$product, 'return_query' => $this->productListReturnQuery($request)])->with('success', 'تم تحديث المنتج بنجاح.');
+    }
+
+    private function productListReturnQuery(Request $request): string
+    {
+        parse_str((string) $request->input('return_query', ''), $params);
+        return http_build_query(array_filter(array_intersect_key($params, array_flip(['q', 'category_id', 'status', 'location_id', 'page'])), 'is_scalar'));
     }
 
     public function destroy(Request $request, Product $product)

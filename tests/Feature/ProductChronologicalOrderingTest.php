@@ -67,6 +67,30 @@ class ProductChronologicalOrderingTest extends TestCase
         $second->assertDontSee('name="sort"', false);
     }
 
+    #[Test]
+    public function filtered_product_list_context_survives_view_and_edit_navigation(): void
+    {
+        [$user, $branch, $category, $unit] = $this->setupCatalog();
+        $user->givePermissionTo(Permission::findOrCreate('products.update', 'web'));
+        $product = $this->product('FILTER-PERSIST', $branch, $category, $unit, '2026-10-12 12:00:00');
+        $filters = ['q' => 'FILTER-PERSIST', 'category_id' => $category->id, 'status' => 'active', 'page' => 1];
+        $returnQuery = http_build_query($filters);
+
+        $this->actingAs($user)->get(route('products.index', $filters))
+            ->assertOk()
+            ->assertSee(route('products.show', [$product, 'return_query' => $returnQuery]))
+            ->assertSee(route('products.edit', [$product, 'return_query' => $returnQuery]));
+
+        $this->actingAs($user)->get(route('products.show', [$product, 'return_query' => $returnQuery]))
+            ->assertOk()
+            ->assertSee(route('products.index') . '?' . $returnQuery);
+
+        $this->actingAs($user)->get(route('products.edit', [$product, 'return_query' => $returnQuery]))
+            ->assertOk()
+            ->assertSee('name="return_query"', false)
+            ->assertSee(route('products.show', [$product, 'return_query' => $returnQuery]));
+    }
+
     /** @return array{User, Location, Category, Unit} */
     private function setupCatalog(): array
     {

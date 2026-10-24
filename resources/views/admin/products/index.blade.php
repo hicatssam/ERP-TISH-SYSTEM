@@ -347,10 +347,10 @@
                 <td><span class="badge {{ $product->is_active ? 'badge-active' : 'badge-inactive' }}">{{ $product->is_active ? 'نشط' : 'معطل' }}</span></td>
                 <td>
                     <div class="actions">
-                        <a href="{{ route('products.show', $product) }}" class="btn btn-ghost btn-sm">عرض</a>
+                        <a href="{{ route('products.show', [$product, 'return_query' => http_build_query(request()->only(['q', 'category_id', 'status', 'location_id', 'page']))]) }}" class="btn btn-ghost btn-sm">عرض</a>
 
                         @can('products.update')
-                            <a href="{{ route('products.edit', $product) }}" class="btn btn-outline btn-sm">تعديل</a>
+                            <a href="{{ route('products.edit', [$product, 'return_query' => http_build_query(request()->only(['q', 'category_id', 'status', 'location_id', 'page']))]) }}" class="btn btn-outline btn-sm">تعديل</a>
                         @endcan
 
                         @if($isAdmin ?? false)
