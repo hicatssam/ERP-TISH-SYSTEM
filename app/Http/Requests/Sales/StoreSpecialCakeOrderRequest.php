@@ -17,7 +17,7 @@ class StoreSpecialCakeOrderRequest extends FormRequest
             'cake_type'            => ['nullable', 'string', 'max:100'],
             'cake_size'            => ['nullable', 'string', 'max:50'],
             'cake_weight'          => ['nullable', 'numeric', 'min:0'],
-            'persons_count'        => ['nullable', 'integer', 'min:1'],
+            'covering_type'        => ['nullable', 'in:cream,sugar'],
             'flavor'               => ['nullable', 'string', 'max:100'],
             'filling'              => ['nullable', 'string', 'max:100'],
             'shape'                => ['nullable', 'string', 'max:100'],

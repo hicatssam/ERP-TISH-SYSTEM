@@ -105,6 +105,7 @@
             'none' => 'بدون حشو',
         ],
 
+        'covering_type' => ['cream' => 'كريمي', 'sugar' => 'سكر'],
         'shape' => [
             'round' => 'دائري',
             'slab' => 'بلاطة',
@@ -114,6 +115,7 @@
             'rectangle' => 'مستطيل',
             'rectangular' => 'مستطيل',
             'heart' => 'قلب',
+            'heart_head' => 'رأس قلب',
             'oval' => 'بيضاوي',
             'custom' => 'شكل خاص',
         ],
@@ -228,7 +230,7 @@
         'color' => 'اللون',
         'theme' => 'الثيم',
         'cake_text' => 'النص على الكيك',
-        'persons_count' => 'عدد الأشخاص',
+        'covering_type' => 'نوع التغليف',
         'special_instructions' => 'تعليمات خاصة',
     ];
 
@@ -242,6 +244,7 @@
         'flavor',
         'filling',
         'shape',
+        'covering_type',
         'color',
     ];
 @endphp

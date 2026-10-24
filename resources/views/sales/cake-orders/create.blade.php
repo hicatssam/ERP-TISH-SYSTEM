@@ -198,6 +198,7 @@
                             <option value="">اختر الشكل</option>
                             <option value="round"          @selected(old('shape') === 'round')>دائري</option>
                             <option value="slab"           @selected(old('shape') === 'slab')>بلاطة</option>
+                            <option value="heart_head" @selected(old('shape') === 'heart_head')>رأس قلب</option>
                             <option value="wedding_tiers"  @selected(old('shape') === 'wedding_tiers')>طوابق أفراح</option>
                             <option value="standard_tiers" @selected(old('shape') === 'standard_tiers')>طوابق ستاندر</option>
                         </select>
@@ -218,11 +219,12 @@
                         @error('layers_count')<span class="form-error">{{ $message }}</span>@enderror
                     </div>
                     <div class="form-group">
-                        <label class="form-label">عدد الأشخاص</label>
-                        <input type="number" min="1" name="persons_count"
-                               class="form-input @error('persons_count') is-invalid @enderror"
-                               value="{{ old('persons_count') }}">
-                        @error('persons_count')<span class="form-error">{{ $message }}</span>@enderror
+                        <label class="form-label">نوع التغليف</label>
+                        <div role="radiogroup" aria-label="نوع التغليف" style="display:flex;gap:1.25rem;align-items:center;min-height:40px">
+                            <label><input type="radio" name="covering_type" value="cream" @checked(old('covering_type') === 'cream')> كريمي</label>
+                            <label><input type="radio" name="covering_type" value="sugar" @checked(old('covering_type') === 'sugar')> سكر</label>
+                        </div>
+                        @error('covering_type')<span class="form-error">{{ $message }}</span>@enderror
                     </div>
                     <div class="form-group">
                         <label class="form-label">الثيم/الموضوع</label>
@@ -788,6 +790,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let oldLayers = @json(old('layers_count'));
 
     const choices = {
+        heart_head: { showSize:true, label:'أحجام رأس القلب *', values:{small:'صغير',medium:'وسط',large:'كبير'}, layers:true },
         round: { showSize:true, label:'الأحجام *', values:{small:'صغير',medium:'وسط',large:'كبير'}, layers:true },
         slab: { showSize:true, label:'مقاسات البلاطة *', values:{'30x30':'30×30','40x30':'40×30','60x40':'60×40','120x30':'120×30','120x80':'120×80'}, layers:true },
         wedding_tiers: { showSize:false, values:{standard:'ستاندر'}, layers:true },

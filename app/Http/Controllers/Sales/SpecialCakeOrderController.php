@@ -506,6 +506,8 @@ class SpecialCakeOrderController extends Controller
         'max:100',
     ],
 
+    'covering_type' => ['nullable', Rule::in(['cream', 'sugar'])],
+
     'cake_size' => [
         'nullable',
         'string',
@@ -515,7 +517,7 @@ class SpecialCakeOrderController extends Controller
     'cake_sizes' => [
         Rule::requiredIf(
             fn () => $request->boolean('cake_sizes_submitted')
-                && in_array($request->input('shape'), ['round', 'slab', 'standard_tiers'], true)
+                && in_array($request->input('shape'), ['round', 'slab', 'standard_tiers', 'heart_head'], true)
         ),
         'nullable',
         'array',
@@ -872,7 +874,7 @@ if (
             'cake_sizes' => [
                 Rule::requiredIf(
                     fn () => $request->boolean('cake_sizes_submitted')
-                        && in_array($request->input('shape'), ['round', 'slab', 'standard_tiers'], true)
+                        && in_array($request->input('shape'), ['round', 'slab', 'standard_tiers', 'heart_head'], true)
                 ),
                 'nullable',
                 'array',
@@ -890,7 +892,7 @@ if (
                 Rule::in(['small', 'medium', 'large', '30x30', '40x30', '60x40', '120x30', '120x80', 'standard']),
             ],
             'cake_weight' => ['nullable', 'numeric', 'min:0', 'max:1000'],
-            'persons_count' => ['nullable', 'integer', 'min:1', 'max:10000'],
+            'covering_type' => ['nullable', Rule::in(['cream', 'sugar'])],
             'flavor' => ['nullable', 'string', 'max:255'],
             'filling' => ['nullable', 'string', 'max:255'],
             'shape' => ['nullable', 'string', 'max:100'],
@@ -911,7 +913,7 @@ if (
         if ($request->boolean('cake_sizes_submitted') || $request->exists('cake_sizes')) {
             $shape = $validated['shape'] ?? null;
             $allowed = match ($shape) {
-                'round', 'standard_tiers' => ['small', 'medium', 'large'],
+                'round', 'standard_tiers', 'heart_head' => ['small', 'medium', 'large'],
                 'slab' => ['30x30', '40x30', '60x40', '120x30', '120x80'],
                 'wedding_tiers' => ['standard'],
                 default => null,
@@ -1012,7 +1014,7 @@ if (
 
         $shape = $validated['shape'] ?? $request->input('shape');
         $available = match ($shape) {
-            'round', 'standard_tiers' => ['small', 'medium', 'large'],
+            'round', 'standard_tiers', 'heart_head' => ['small', 'medium', 'large'],
             'slab' => ['30x30', '40x30', '60x40', '120x30', '120x80'],
             'wedding_tiers' => ['standard'],
             default => null,

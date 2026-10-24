@@ -17,7 +17,7 @@ class SpecialCakeOrder extends Model
     protected $fillable = [
         'order_number', 'customer_id', 'origin_branch_id', 'factory_location_id',
         'required_date', 'required_time', 'is_urgent', 'urgent_reason', 'cake_type', 'cake_size', 'cake_sizes', 'layers_count', 'cake_weight',
-        'persons_count', 'flavor', 'filling', 'shape', 'color', 'cake_text',
+        'persons_count', 'covering_type', 'flavor', 'filling', 'shape', 'color', 'cake_text',
         'theme', 'special_instructions', 'image_cover_type', 'total_price',
         'discount_type', 'discount_value', 'discount_amount', 'net_price',
         'status', 'payment_status', 'payment_arrangement', 'payment_channel',

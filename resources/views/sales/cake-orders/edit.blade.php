@@ -126,9 +126,12 @@
                         @error('cake_weight')<span class="form-error">{{ $message }}</span>@enderror
                     </div>
                     <div class="form-group">
-                        <label class="form-label">عدد الأشخاص</label>
-                        <input type="number" min="1" name="persons_count" class="form-input @error('persons_count') is-invalid @enderror" value="{{ old('persons_count', $cakeOrder->persons_count) }}">
-                        @error('persons_count')<span class="form-error">{{ $message }}</span>@enderror
+                        <label class="form-label">نوع التغليف</label>
+                        <div role="radiogroup" aria-label="نوع التغليف" style="display:flex;gap:1.25rem;align-items:center;min-height:40px">
+                            <label><input type="radio" name="covering_type" value="cream" @checked(old('covering_type', $cakeOrder->covering_type) === 'cream')> كريمي</label>
+                            <label><input type="radio" name="covering_type" value="sugar" @checked(old('covering_type', $cakeOrder->covering_type) === 'sugar')> سكر</label>
+                        </div>
+                        @error('covering_type')<span class="form-error">{{ $message }}</span>@enderror
                     </div>
                     <div class="form-group">
                         <label class="form-label">النكهة</label>
@@ -144,7 +147,7 @@
                         <label class="form-label">الشكل</label>
                         <select name="shape" id="cakeShape" class="form-select @error('shape') is-invalid @enderror">
                             <option value="">اختر الشكل</option>
-                            @foreach(['round'=>'دائري','slab'=>'بلاطة','wedding_tiers'=>'طوابق أفراح','standard_tiers'=>'طوابق ستاندر'] as $value => $label)
+                            @foreach(['round'=>'دائري','slab'=>'بلاطة','wedding_tiers'=>'طوابق أفراح','standard_tiers'=>'طوابق ستاندر','heart_head'=>'رأس قلب'] as $value => $label)
                                 <option value="{{ $value }}" @selected(old('shape', $cakeOrder->shape) === $value)>{{ $label }}</option>
                             @endforeach
                         </select>
@@ -301,6 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const primarySize = document.getElementById('cakeSize');
     let selectedSizes = @json($initialCakeSizes);
     const sizesByShape = {
+        heart_head: {small:'صغير',medium:'وسط',large:'كبير'},
         round: {small:'صغير',medium:'وسط',large:'كبير'},
         slab: {'30x30':'30×30','40x30':'40×30','60x40':'60×40','120x30':'120×30','120x80':'120×80'},
         wedding_tiers: null,

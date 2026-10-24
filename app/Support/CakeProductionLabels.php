@@ -42,6 +42,7 @@ final class CakeProductionLabels
         'rectangular' => 'مستطيل',
         'oval' => 'بيضاوي',
         'heart' => 'قلب',
+        'heart_head' => 'رأس قلب',
         'wedding_tiers' => 'طوابق أفراح',
         'standard_tiers' => 'طوابق ستاندر',
         'other' => 'أخرى',
