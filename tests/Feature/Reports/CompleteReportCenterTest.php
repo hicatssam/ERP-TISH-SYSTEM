@@ -84,6 +84,28 @@ class CompleteReportCenterTest extends TestCase
         $this->get(route('reports.native.export', ['report' => 'payroll', 'format' => 'print']))->assertForbidden();
     }
 
+    public function test_cake_production_v2_has_two_visible_entry_points_on_report_index(): void
+    {
+        $user = $this->reporter($this->branch('V2'), true);
+        $response = $this->actingAs($user)->get(route('reports.index'))->assertOk();
+
+        $response->assertSee('خطة الإنتاج المفتوحة');
+        $response->assertSee('سجل جميع الطلبات');
+        $response->assertSee(
+            route('reports.show', ['type' => 'cake-production', 'mode' => 'plan'])
+        );
+        $response->assertSee(
+            route('reports.show', ['type' => 'cake-production', 'mode' => 'all'])
+        );
+
+        $this->get(route('reports.show', ['type' => 'cake-production', 'mode' => 'plan']))
+            ->assertOk()
+            ->assertSee('خطة العمل المفتوحة');
+        $this->get(route('reports.show', ['type' => 'cake-production', 'mode' => 'all']))
+            ->assertOk()
+            ->assertSee('سجل الطلبات الكامل');
+    }
+
     public function test_native_reports_support_full_print_and_multisheet_excel(): void
     {
         $admin = $this->reporter($this->branch('A'), true);

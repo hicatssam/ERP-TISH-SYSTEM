@@ -44,7 +44,7 @@ class ReportCatalog
         $groups = [];
         foreach ($core as $group => $reports) {
             foreach ($reports as $type => $title) {
-                $groups[$group][] = ['title' => $title, 'url' => route('reports.show', $type), 'description' => 'عرض · Excel · PDF · طباعة'];
+                $groups[$group][] = ['type' => $type, 'title' => $title, 'url' => route('reports.show', $type), 'description' => 'عرض · Excel · PDF · طباعة'];
             }
         }
         foreach ($this->native() as $meta) {
