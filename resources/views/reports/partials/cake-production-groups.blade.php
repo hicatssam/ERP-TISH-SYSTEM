@@ -73,7 +73,7 @@
     @endif
 
     @forelse($cakeMatrix['sections'] as $section)
-        <div class="cake-sheet-section">
+        <div class="cake-sheet-section" data-cake-section>
             @if(! $isCakePrint)
                 <details open>
                     <summary class="cake-sheet-heading">
@@ -105,7 +105,14 @@
                     </thead>
                     <tbody>
                         @foreach($section['rows'] as $spec)
-                            <tr @if($spec['needs_review']) class="cake-sheet-review-row" @endif>
+                            <tr data-cake-spec-row
+                                data-cake-review="{{ $spec['needs_review'] ? '1' : '0' }}"
+                                data-cake-total="{{ (int) $spec['totals']['total'] }}"
+                                data-cake-search="{{ implode(' ', [
+                                    $spec['flavor'], $spec['type'], $spec['shape'], $spec['layers'],
+                                    implode(' ', array_keys($spec['cells'])),
+                                ]) }}"
+                                @if($spec['needs_review']) class="cake-sheet-review-row" @endif>
                                 <td class="cake-sheet-spec">
                                     <strong>{{ $spec['flavor'] }} — {{ $spec['type'] }}</strong>
                                     <small>الشكل: {{ $spec['shape'] }} · عدد الطبقات: {{ $spec['layers'] }}</small>

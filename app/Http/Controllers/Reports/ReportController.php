@@ -1382,7 +1382,8 @@ class ReportController extends Controller
     ): array {
         [$columns, $query] = $this->buildExportQuery($type, $locationIds, $dateFrom, $dateTo, $cakeMode);
         $summary = $this->buildReportSummary($type, $locationIds, $dateFrom, $dateTo, $cakeMode);
-        $data = $paginate ? $query->paginate(25)->withQueryString() : $query->get();
+        $perPage = $type === 'cake-production' ? 100 : 25;
+        $data = $paginate ? $query->paginate($perPage)->withQueryString() : $query->get();
 
         return [$columns, $data, $summary];
     }

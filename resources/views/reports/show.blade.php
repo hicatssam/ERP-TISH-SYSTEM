@@ -366,6 +366,85 @@
 @endpush
 
 @if($type === 'cake-production')
+<style>
+.cake-v2-controls { display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:14px;margin:0 0 14px;background:#fbfcfe;border:1px solid #e0e5ec;border-radius:10px;direction:rtl; }
+.cake-v2-control-label { font-weight:700;font-size:.85rem;color:#23364b; }
+.cake-v2-controls input[type=search] { flex:1;min-width:180px;max-width:420px; }
+.cake-v2-review-toggle { display:inline-flex;align-items:center;gap:7px;font-size:.85rem;font-weight:600;white-space:nowrap;cursor:pointer; }
+.cake-v2-review-toggle input { accent-color:#b48b33; }
+.cake-v2-control-buttons { display:flex;gap:6px;flex-wrap:wrap; }
+.cake-v2-control-buttons .btn { white-space:nowrap; }
+#cake-v2-search-status { font-size:.82rem;font-weight:700;color:#19324c; }
+.cake-v2-filter-note { flex-basis:100%;color:#5a6779;font-size:.76rem;line-height:1.65; }
+@media print { .cake-v2-controls { display:none!important; } }
+</style>
+@push('scripts')
+<script>
+(function () {
+    function initCakeV2Controls() {
+        const search = document.getElementById('cake-v2-search');
+        const review = document.getElementById('cake-v2-review');
+        const status = document.getElementById('cake-v2-search-status');
+        const groups = Array.from(document.querySelectorAll('[data-cake-section]'));
+        if (!search || !review || !status || groups.length === 0) return;
+
+        const normalize = (value) => String(value || '')
+            .normalize('NFKC')
+            .replace(/[\u064B-\u065F\u0670\u0640]/g, '')
+            .toLocaleLowerCase('ar');
+
+        function applyFilters() {
+            const term = normalize(search.value.trim());
+            let matches = 0;
+            let visiblePieces = 0;
+            groups.forEach(group => {
+                let groupMatches = 0;
+                group.querySelectorAll('[data-cake-spec-row]').forEach(row => {
+                    const text = normalize(row.dataset.cakeSearch);
+                    const show = (!term || text.includes(term))
+                        && (!review.checked || row.dataset.cakeReview === '1');
+                    row.style.display = show ? '' : 'none';
+                    if (show) {
+                        matches++;
+                        groupMatches++;
+                        visiblePieces += Number(row.dataset.cakeTotal || 0);
+                    }
+                });
+                group.style.display = groupMatches > 0 ? '' : 'none';
+                if (groupMatches && (term || review.checked)) {
+                    const details = group.querySelector('details');
+                    if (details) details.open = true;
+                }
+            });
+            status.textContent = matches + ' تشكيلة · ' + visiblePieces + ' قطعة ضمن النتائج الظاهرة';
+        }
+
+        search.addEventListener('input', applyFilters);
+        review.addEventListener('change', applyFilters);
+        document.getElementById('cake-v2-expand')?.addEventListener('click', () => {
+            groups.forEach(group => { const details = group.querySelector('details'); if (details) details.open = true; });
+        });
+        document.getElementById('cake-v2-collapse')?.addEventListener('click', () => {
+            groups.forEach(group => { const details = group.querySelector('details'); if (details) details.open = false; });
+        });
+        document.getElementById('cake-v2-reset')?.addEventListener('click', () => {
+            search.value = '';
+            review.checked = false;
+            applyFilters();
+        });
+        applyFilters();
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initCakeV2Controls);
+    } else {
+        initCakeV2Controls();
+    }
+})();
+</script>
+@endpush
+@endif
+
+@if($type === 'cake-production')
 <div style="padding:14px 17px;background:#f7f8fa;border:1px solid #e6e8ed;border-right:4px solid #bd9134;border-radius:11px;color:#273b52;margin-bottom:17px;line-height:1.85">
     <strong>{{ $cakeMode === 'plan' ? 'خطة العمل المفتوحة' : 'سجل الطلبات الكامل' }}</strong>
     <div style="font-size:.85rem;margin-top:3px">
@@ -449,6 +528,22 @@
     @else
 
     @if($type === 'cake-production')
+        <div class="cake-v2-controls" role="search" aria-label="البحث ضمن تشكيلات إنتاج الكيك">
+            <label for="cake-v2-search" class="cake-v2-control-label">ابحث في التشكيلات</label>
+            <input id="cake-v2-search" type="search" class="form-input"
+                   placeholder="ابحث بالنكهة، النوع، الشكل أو الحجم..." autocomplete="off">
+            <label for="cake-v2-review" class="cake-v2-review-toggle">
+                <input id="cake-v2-review" type="checkbox">
+                المواصفات الناقصة فقط
+            </label>
+            <div class="cake-v2-control-buttons">
+                <button type="button" id="cake-v2-expand" class="btn btn-sm btn-outline">فتح الكل</button>
+                <button type="button" id="cake-v2-collapse" class="btn btn-sm btn-outline">طيّ الكل</button>
+                <button type="button" id="cake-v2-reset" class="btn btn-sm btn-outline">مسح البحث</button>
+            </div>
+            <span id="cake-v2-search-status" role="status" aria-live="polite"></span>
+            <small class="cake-v2-filter-note">البحث ضمن تشكيلات الصفحة الحالية فقط (حتى 100 تشكيلة). الإجماليات لا تتغير بالتصفية السريعة؛ استخدم فلاتر الأعلى لتحديث بيانات التقرير والتصدير.</small>
+        </div>
         @include('reports.partials.cake-production-groups', ['cakeRows' => $data, 'cakeMode' => $cakeMode, 'cakePrint' => false])
     @else
     <div class="table-wrap" style="border:none;border-radius:0">

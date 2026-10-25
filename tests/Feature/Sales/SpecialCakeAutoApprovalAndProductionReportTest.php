@@ -391,6 +391,49 @@ class SpecialCakeAutoApprovalAndProductionReportTest extends TestCase
     }
 
     #[Test]
+    public function cake_production_v2_displays_up_to_one_hundred_recipe_rows_with_search_and_review_controls(): void
+    {
+        $date = '2026-09-28';
+        $branchOrder = $this->makeShowroomRequest(
+            $this->branch,
+            ShowroomCakeRequestStatus::Ready,
+            $date
+        );
+        for ($number = 1; $number <= 28; $number++) {
+            ShowroomCakeRequestItem::query()->create([
+                'showroom_cake_request_id' => $branchOrder->id,
+                'cake_type' => 'chocolate',
+                'cake_size' => 'large',
+                'shape' => 'round',
+                'layer_count' => 3,
+                'flavor' => 'recipe-'.$number,
+                'quantity' => 1,
+            ]);
+        }
+
+        $params = [
+            'type' => 'cake-production',
+            'date_from' => $date,
+            'date_to' => $date,
+            'location_id' => $this->branch->id,
+        ];
+
+        $screen = $this->actingAs($this->user)->get(route('reports.show', $params))
+            ->assertOk()
+            ->assertSee('id="cake-v2-search"', false)
+            ->assertSee('id="cake-v2-review"', false)
+            ->assertSee('id="cake-v2-expand"', false)
+            ->assertSee('id="cake-v2-collapse"', false)
+            ->assertSee('data-cake-spec-row', false)
+            ->assertSee('المواصفات الناقصة فقط')
+            ->assertSee('البحث ضمن تشكيلات الصفحة الحالية فقط');
+
+        $this->assertSame(28, $screen->viewData('data')->count());
+        $this->assertSame(28, $screen->viewData('data')->total());
+        $this->assertSame(28, $screen->viewData('summary')['إجمالي قطع الكيك']);
+    }
+
+    #[Test]
     public function cake_production_plan_excludes_ready_and_completed_orders_and_preserves_due_dates_and_totals(): void
     {
         $this->user->givePermissionTo(Permission::findOrCreate('reports.export', 'web'));
