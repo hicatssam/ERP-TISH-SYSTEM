@@ -6,20 +6,45 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '../..');
 const products = [{product_id: 1, name: 'Cake', price: 10, available: true, is_variant_product: true,
     variants: [{id: 2, name: 'Large', price: 18, modifier_groups: [{id: 3, modifiers: [{id: 4, name: 'Extra', price_delta: 2}]}]}], modifier_groups: []}];
+function makeClassList() {
+    const names = new Set();
+    return {
+        add(name) { names.add(name); },
+        remove(name) { names.delete(name); },
+        contains(name) { return names.has(name); },
+        toggle(name, force) {
+            const shouldAdd = force === undefined ? !names.has(name) : Boolean(force);
+            if (shouldAdd) names.add(name); else names.delete(name);
+            return shouldAdd;
+        },
+    };
+}
 function cart(blocked = false, saved = {}, table = null) {
     const values = new Map([['dahab_cart_B01', JSON.stringify(saved)]]);
+    const stickyCart = {hidden: true, attributes: {}, classList: makeClassList(), setAttribute(name, value) { this.attributes[name] = value; }};
+    const stickyCount = {textContent: ''};
+    const stickyTotal = {textContent: ''};
+    const bodyClassList = makeClassList();
+    const menuClassList = makeClassList();
+    const nodes = {cmStickyCart: stickyCart, cmStickyCartCount: stickyCount, cmStickyCartTotal: stickyTotal};
     let source = fs.readFileSync(path.join(root, 'resources/views/customer-menu/partials/cart-engine.blade.php'), 'utf8');
     source = source.slice(source.indexOf('<script>') + 8, source.indexOf('</script>'));
     source = source.replace('@json($menuItems ?? [])', JSON.stringify(products))
         .replace('@json($location->code)', '"B01"')
         .replace('@json($selectedTable ?? null)', JSON.stringify(table))
         .replace(/@json\(app\([^\n]+\)/, '"₪"');
-    const context = {window: {}, document: {addEventListener() {}, dispatchEvent() {}, querySelectorAll() { return []; }, getElementById() { return null; }},
+    const context = {window: {}, document: {body: {classList: bodyClassList}, addEventListener() {}, dispatchEvent() {},
+        querySelectorAll() { return []; }, querySelector(selector) { return selector === 'main.menu-area' ? {classList: menuClassList} : null; },
+        getElementById(id) { return nodes[id] || null; }},
         localStorage: {getItem(k) {return values.get(k) || null;}, setItem(k, v) {if(blocked) throw Error('blocked'); values.set(k, v);}},
         sessionStorage: {getItem(k) {return values.get(k) || null;}, setItem(k, v) {values.set(k, v);}, removeItem(k) {values.delete(k);}},
         CustomEvent: class {}, setTimeout, clearTimeout};
     vm.runInNewContext(source, context);
-    return context.window.CustomerMenu;
+    const customerMenu = context.window.CustomerMenu;
+    customerMenu.__testNodes = nodes;
+    customerMenu.__testBodyClassList = bodyClassList;
+    customerMenu.__testMenuClassList = menuClassList;
+    return customerMenu;
 }
 test('variant-only add-ons keep the same price through cart reload', () => {
     const cm = cart();
@@ -28,6 +53,30 @@ test('variant-only add-ons keep the same price through cart reload', () => {
     const reloaded = cart(false, Object.fromEntries(cm.cartRows().map(row => [row.key, row])));
     assert.equal(reloaded.cartTotal(), 40);
     assert.equal(reloaded.cartRows()[0].modifiers[0].modifier_id, 4);
+});
+test('mobile cart summary mirrors quantity and total, then hides when empty', () => {
+    const cm = cart();
+    const {cmStickyCart, cmStickyCartCount, cmStickyCartTotal} = cm.__testNodes;
+    cm.addToCart(1, 2, {variantId: 2});
+    assert.equal(cmStickyCart.hidden, false);
+    assert.equal(cmStickyCartCount.textContent, 'قطعتان');
+    assert.equal(cmStickyCartTotal.textContent, '36.00 ₪');
+    assert.equal(cmStickyCart.attributes['aria-label'], 'عرض السلة، قطعتان، الإجمالي 36.00 ₪');
+    assert.equal(cm.__testBodyClassList.contains('cm-has-sticky-cart'), true);
+    cm.removeFromCart(cm.cartRows()[0].key);
+    assert.equal(cmStickyCart.hidden, true);
+    assert.equal(cm.__testBodyClassList.contains('cm-has-sticky-cart'), false);
+});
+test('sticky cart pulses only after a real change to count or total', () => {
+    const cm = cart();
+    const sticky = cm.__testNodes.cmStickyCart;
+    cm.addToCart(1, 2, {variantId: 2});
+    assert.equal(sticky.classList.contains('cm-cart-pulse'), false);
+    cm.syncBadges();
+    assert.equal(sticky.classList.contains('cm-cart-pulse'), false);
+    cm.changeCart(cm.cartRows()[0].key, -1);
+    assert.equal(sticky.classList.contains('cm-cart-pulse'), true);
+    assert.equal(cm.__testNodes.cmStickyCartCount.textContent, 'قطعة واحدة');
 });
 test('cart quantity stops at the server limit and can be removed', () => {
     const cm = cart(); cm.addToCart(1, 50, {variantId: 2});

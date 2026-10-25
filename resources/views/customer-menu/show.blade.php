@@ -202,7 +202,7 @@
 .reference-home .details:active{transform:scale(.96)}
 @media(prefers-reduced-motion:reduce){
  .intro:not(.hide) .intro-logo,.intro:not(.hide) .intro-box small,.intro:not(.hide) .intro-box h1,.intro:not(.hide) .intro-box p,.intro:not(.hide) .intro-enter,.reference-home .product.cm-reveal,.reference-home .banner-slide .banner-copy{animation:none!important}
- .reference-home .cat,.reference-home .product-media img,.reference-home .details{transition:none!important}
+ .reference-home .cat,.reference-home .product-media img,.reference-home .details,.reference-home .banner-track{transition:none!important}
  .reference-home .reference-hero,.reference-home .reference-hero-fallback,.reference-home .reference-banner,.reference-home .reference-section-head{animation:none!important}
  .reference-home .cat.active{transform:none}
 }
@@ -537,14 +537,41 @@
     }
 
     if (track && dots.length > 1) {
+        const hero = track.closest('.reference-hero');
+        let hovered = false;
+        let focused = false;
+
+        function syncBannerTimer() {
+            clearInterval(bannerTimer);
+            bannerTimer = null;
+            if (reducedMotion.matches || document.hidden || hovered || focused) return;
+            bannerTimer = setInterval(function () { showBanner(bannerIndex + 1); }, 5500);
+        }
+
+        if (hero) {
+            hero.addEventListener('mouseenter', function () { hovered = true; syncBannerTimer(); });
+            hero.addEventListener('mouseleave', function () { hovered = false; syncBannerTimer(); });
+            hero.addEventListener('focusin', function () { focused = true; syncBannerTimer(); });
+            hero.addEventListener('focusout', function () {
+                window.setTimeout(function () {
+                    focused = hero.contains(document.activeElement);
+                    syncBannerTimer();
+                }, 0);
+            });
+        }
+        document.addEventListener('visibilitychange', syncBannerTimer);
+        if (typeof reducedMotion.addEventListener === 'function') {
+            reducedMotion.addEventListener('change', syncBannerTimer);
+        } else if (typeof reducedMotion.addListener === 'function') {
+            reducedMotion.addListener(syncBannerTimer);
+        }
         dots.forEach(function (dot, index) {
             dot.addEventListener('click', function () {
                 showBanner(index);
-                clearInterval(bannerTimer);
-                bannerTimer = setInterval(function () { showBanner(bannerIndex + 1); }, 5500);
+                syncBannerTimer();
             });
         });
-        bannerTimer = setInterval(function () { showBanner(bannerIndex + 1); }, 5500);
+        syncBannerTimer();
     }
 
     const intro = document.getElementById('intro');

@@ -324,6 +324,35 @@ window.CustomerMenu = (function () {
         document.querySelectorAll('#favBadgeTop, #favBadgeNav').forEach(el => el.textContent = f);
         const detailCount = document.getElementById('detailCartCount');
         if (detailCount) detailCount.textContent = c;
+
+        const stickyCart = document.getElementById('cmStickyCart');
+        if (stickyCart) {
+            const wasHidden = stickyCart.hidden;
+            const countLabel = c === 1 ? 'قطعة واحدة' : (c === 2 ? 'قطعتان' : c + ' قطع');
+            const totalLabel = money(cartTotal());
+            stickyCart.hidden = c === 0;
+            stickyCart.setAttribute('aria-label', 'عرض السلة، ' + countLabel + '، الإجمالي ' + totalLabel);
+            const stickyCount = document.getElementById('cmStickyCartCount');
+            const stickyTotal = document.getElementById('cmStickyCartTotal');
+            if (stickyCount) stickyCount.textContent = countLabel;
+            if (stickyTotal) stickyTotal.textContent = totalLabel;
+
+            // Animate only on an actual quantity/total update, not on unrelated
+            // UI updates such as favoriting a product.
+            const snapshot = c + '|' + totalLabel;
+            const previousSnapshot = stickyCart._cmCartSnapshot;
+            stickyCart._cmCartSnapshot = snapshot;
+            if (c > 0 && !wasHidden && previousSnapshot !== undefined && previousSnapshot !== snapshot) {
+                stickyCart.classList.remove('cm-cart-pulse');
+                void stickyCart.offsetWidth;
+                stickyCart.classList.add('cm-cart-pulse');
+                clearTimeout(stickyCart._cmPulseTimer);
+                stickyCart._cmPulseTimer = setTimeout(() => stickyCart.classList.remove('cm-cart-pulse'), 450);
+            }
+
+            document.body?.classList?.toggle('cm-has-sticky-cart', c > 0);
+            document.querySelector?.('main.menu-area')?.classList?.toggle('cm-has-sticky-cart', c > 0);
+        }
     }
 
     document.addEventListener('DOMContentLoaded', syncBadges);
@@ -338,5 +367,5 @@ window.CustomerMenu = (function () {
     };
 })();
 </script>
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
