@@ -203,6 +203,18 @@ class ReportController extends Controller
         $mapper   = fn ($row) => $this->formatRowForExport($type, $row, $cakeMode);
         $filename = "{$type}_{$dateFrom}_{$dateTo}" . ($type === 'cake-production' && $cakeMode === 'plan' ? '_plan' : '') . '.xlsx';
 
+        if ($type === 'cake-production') {
+            // The factory receives the same size-by-flavor matrix as print/PDF.
+            // Query the aggregate dataset once up to the configured export cap.
+            return Excel::download(
+                new \App\Exports\CakeProductionMatrixExport(
+                    $query->lazy()->take($cap)->collect(),
+                    $cakeMode,
+                    $truncated
+                ),
+                $filename
+            );
+        }
 
         return Excel::download(
             new ChunkedQueryReportExport($query, $columns, $title, $mapper, $cap, $truncated),

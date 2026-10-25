@@ -423,7 +423,7 @@ class SpecialCakeAutoApprovalAndProductionReportTest extends TestCase
         $planParams = $params + ['mode' => 'plan'];
         $screen = $this->get(route('reports.show', $planParams))->assertOk()
             ->assertSee('خطة العمل المفتوحة')
-            ->assertSee('النكهة، الشكل، الطبقات')
+            ->assertSee('الصنف / المواصفات')
             ->assertSee('نوتيلا');
         $this->assertSame(5, (int) $screen->viewData('summary')['إجمالي قطع الكيك']);
         $this->assertCount(2, $screen->viewData('data')->items());
@@ -468,9 +468,9 @@ class SpecialCakeAutoApprovalAndProductionReportTest extends TestCase
         ]);
 
         $this->get(route('reports.print', $params))->assertOk()
-            ->assertSee('فانيلا — وسط')
+            ->assertSee('لوتس — فانيلا')
             ->assertSee('لوتس')
-            ->assertSee('مجموع التشكيلات');
+            ->assertSee('إجمالي الكيك بالأحجام');
         $pdf = $this->get(route('reports.export.pdf', $params))->assertOk()->streamedContent();
         $this->assertStringStartsWith('%PDF', $pdf);
         $this->assertMatchesRegularExpression('/\\/Type\\s*\\/Page\\b/', $pdf);
