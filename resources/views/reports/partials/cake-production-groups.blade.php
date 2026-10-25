@@ -27,7 +27,9 @@
     .cake-sheet-spec { text-align:right!important; }
     .cake-sheet-spec strong { display:block; font-size:12px; }
     .cake-sheet-spec small { display:block; color:#69778a; font-size:11px; line-height:1.5; padding-top:3px; }
-    .cake-sheet-alert { color:#ab6613!important; font-weight:700; }
+    .cake-sheet-alert { color:#9a4b00!important; font-weight:700; }
+    .cake-sheet-review-banner { background:#fff3de; border:1px solid #e6b960; border-right:4px solid #c18513; color:#55380c; padding:10px 13px; border-radius:9px; margin:0 0 12px; font-size:12px; line-height:1.75; }
+    .cake-sheet-review-row td { background:#fff9ed!important; }
     .cake-sheet-number { font-weight:800; color:#17344f; font-size:14px; }
     .cake-sheet-blank { color:#a4afba; }
     .cake-sheet-breakdown { display:block; color:#738195; font-size:10px; padding-top:3px; line-height:1.4; white-space:normal; }
@@ -58,6 +60,17 @@
         </div>
         <strong>{{ number_format($cakeMatrix['totals']['total']) }} قطعة{{ $isCakePaged ? ' في الصفحة' : '' }}</strong>
     </div>
+
+    @if(($cakeMatrix['review']['rows'] ?? 0) > 0)
+        <div class="cake-sheet-review-banner" role="note">
+            <strong>مواصفات غير محددة تحتاج مراجعة:</strong>
+            {{ number_format($cakeMatrix['review']['pieces']) }} قطعة ضمن
+            {{ number_format($cakeMatrix['review']['rows']) }} تشكيلة
+            {{ $isCakePaged ? '(في الصفحة الحالية)' : '' }}.
+            الحقول المفقودة موضحة تحت كل تشكيلة؛ لا يتم افتراض نكهة أو حجم أو شكل أو عدد طبقات.
+            راجع الطلب الأصلي لاستكمال بياناته.
+        </div>
+    @endif
 
     @forelse($cakeMatrix['sections'] as $section)
         <div class="cake-sheet-section">
@@ -92,12 +105,14 @@
                     </thead>
                     <tbody>
                         @foreach($section['rows'] as $spec)
-                            <tr>
+                            <tr @if($spec['needs_review']) class="cake-sheet-review-row" @endif>
                                 <td class="cake-sheet-spec">
                                     <strong>{{ $spec['flavor'] }} — {{ $spec['type'] }}</strong>
                                     <small>الشكل: {{ $spec['shape'] }} · عدد الطبقات: {{ $spec['layers'] }}</small>
                                     @if($spec['needs_review'])
-                                        <small class="cake-sheet-alert">تنبيه: مواصفات غير مكتملة</small>
+                                        <small class="cake-sheet-alert">
+                                            غير محدد: {{ implode('، ', $spec['missing_fields']) }} — راجع الطلب الأصلي
+                                        </small>
                                     @endif
                                 </td>
                                 @foreach($section['columns'] as $size => $label)
@@ -144,5 +159,5 @@
             <span>للمعرض: {{ $cakeMatrix['totals']['display'] }} | محجوز: {{ $cakeMatrix['totals']['reserved'] }} | خاص: {{ $cakeMatrix['totals']['special'] }}</span>
         </div>
     @endif
-    <div class="cake-sheet-key">الرقم الكبير هو مجموع القطع بالحجم المحدد؛ وتفصيل «معرض / محجوز / خاص» أسفله للتوزيع فقط، ولا يُضاف إليه مرة ثانية. الأحجام والأشكال غير المعروفة لا تُدمج تلقائيًا مع أحجام أخرى.</div>
+    <div class="cake-sheet-key">الرقم الكبير هو مجموع القطع بالحجم المحدد؛ وتفصيل «معرض / محجوز / خاص» أسفله للتوزيع فقط، ولا يُضاف إليه مرة ثانية. الأحجام والأشكال غير المعروفة لا تُدمج تلقائيًا مع أحجام أخرى، وتبقى معلّمة «غير محدد» حتى تُصحّح من الطلب الأصلي.</div>
 </div>

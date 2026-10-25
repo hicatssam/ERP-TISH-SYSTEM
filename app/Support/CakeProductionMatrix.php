@@ -36,6 +36,7 @@ final class CakeProductionMatrix
         $sections = [];
         $totals = self::emptyAmounts();
         $lineCount = 0;
+        $reviewPieces = 0;
 
         foreach ($rows as $entry) {
             $lineCount++;
@@ -95,16 +96,31 @@ final class CakeProductionMatrix
                     'shape' => $shape,
                     'layers' => $layers,
                     'needs_review' => false,
+                    'missing_fields' => [],
                     'cells' => [],
                     'totals' => self::emptyAmounts(),
                 ];
             }
 
-            $review = $flavor === 'غير محدد'
-                || $shape === 'غير محدد'
-                || ($layers === 'غير محدد' && (int) ($entry->showroom_quantity ?? 0) > 0);
-            $sections[$sectionId]['rows'][$rowId]['needs_review'] =
-                $sections[$sectionId]['rows'][$rowId]['needs_review'] || $review;
+            // Do not guess missing historical values. Report each missing
+            // manufacturing attribute explicitly, including the cake type
+            // and size (which were previously not included in review flags).
+            $missing = [];
+            if ($type === 'غير محدد') $missing[] = 'نوع الكيك';
+            if ($size === 'غير محدد') $missing[] = 'الحجم';
+            if ($flavor === 'غير محدد') $missing[] = 'النكهة';
+            if ($shape === 'غير محدد') $missing[] = 'الشكل';
+            if ($layers === 'غير محدد') $missing[] = 'عدد الطبقات';
+            if ($mode === 'plan' && $date === 'غير محدد') $missing[] = 'تاريخ الحاجة';
+
+            if ($missing !== []) {
+                $sections[$sectionId]['rows'][$rowId]['needs_review'] = true;
+                $sections[$sectionId]['rows'][$rowId]['missing_fields'] =
+                    array_values(array_unique(array_merge(
+                        $sections[$sectionId]['rows'][$rowId]['missing_fields'],
+                        $missing
+                    )));
+            }
 
             $amounts = [
                 'display' => (int) ($entry->display_quantity ?? 0),
@@ -128,6 +144,11 @@ final class CakeProductionMatrix
             self::add($sections[$sectionId]['rows'][$rowId]['totals'], $amounts);
             self::add($sections[$sectionId]['totals'], $amounts);
             self::add($totals, $amounts);
+            if ($missing !== []) {
+                // Count only source quantities with incomplete specs, not
+                // other valid sizes later merged into the same matrix row.
+                $reviewPieces += $amounts['total'];
+            }
         }
 
         $sections = array_values($sections);
@@ -136,6 +157,7 @@ final class CakeProductionMatrix
             <=> [$b['date'], array_search($b['kind'], array_keys(self::KINDS), true)]
         );
 
+        $reviewRows = 0;
         foreach ($sections as &$section) {
             if ($section['kind'] === 'slab') {
                 // Preset paper-sheet dimensions first, additional real
@@ -148,6 +170,8 @@ final class CakeProductionMatrix
             }
 
             $section['rows'] = array_values($section['rows']);
+            $section['review_rows'] = count(array_filter($section['rows'], fn ($row) => $row['needs_review']));
+            $reviewRows += $section['review_rows'];
             usort($section['rows'], static fn ($a, $b) =>
                 [$a['type'], $a['flavor'], $a['shape'], $a['layers']]
                 <=> [$b['type'], $b['flavor'], $b['shape'], $b['layers']]
@@ -159,6 +183,7 @@ final class CakeProductionMatrix
             'sections' => $sections,
             'totals' => $totals,
             'row_count' => $lineCount,
+            'review' => ['rows' => $reviewRows, 'pieces' => $reviewPieces],
         ];
     }
 

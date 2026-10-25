@@ -33,6 +33,9 @@ final class CakeProductionMatrixExport implements FromArray, WithTitle, WithStyl
         if ($truncated) {
             $this->sheetRows[] = ['تنبيه: التصدير محدود بالعدد الأقصى من التشكيلات؛ المجاميع أدناه خاصة بالمُصدّر فقط.'];
         }
+        if (($matrix['review']['rows'] ?? 0) > 0) {
+            $this->sheetRows[] = ['مواصفات غير محددة: '.$matrix['review']['pieces'].' قطعة ضمن '.$matrix['review']['rows'].' تشكيلة — راجع الطلبات الأصلية'];
+        }
         $this->sheetRows[] = [];
 
         foreach ($matrix['sections'] as $section) {
@@ -51,7 +54,7 @@ final class CakeProductionMatrixExport implements FromArray, WithTitle, WithStyl
             foreach ($section['rows'] as $spec) {
                 $line = [$spec['flavor'].' — '.$spec['type']
                     .' | الشكل: '.$spec['shape'].' | الطبقات: '.$spec['layers']
-                    .($spec['needs_review'] ? ' | مراجعة المواصفات' : '')];
+                    .($spec['needs_review'] ? ' | غير محدد: '.implode('، ', $spec['missing_fields']) : '')];
                 foreach (array_keys($section['columns']) as $size) {
                     $line[] = $spec['cells'][$size]['total'] ?? 0;
                 }
