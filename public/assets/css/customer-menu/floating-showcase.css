@@ -1,0 +1,53 @@
+/* Homepage showcase: brand-aware and accessible, no duplicated product logic. */
+.reference-home .cm-featured-showcase {position:relative;isolation:isolate;min-height:450px;padding:0 54px 36px}
+.reference-home .cm-showcase-stage {position:relative;height:410px;perspective:1150px;overflow:hidden;isolation:isolate}
+.reference-home .cm-showcase-slide {position:absolute;top:50%;left:50%;width:clamp(238px,32vw,328px);height:365px;transform-origin:center center;transition:transform .68s cubic-bezier(.22,.8,.21,1),opacity .55s ease,filter .55s ease,visibility .55s;will-change:transform;visibility:hidden;opacity:0;pointer-events:none}
+.reference-home .cm-showcase-slide[data-offset="0"] {transform:translate(-50%,-50%) translateX(0) scale(1) rotateY(0);opacity:1;filter:none;visibility:visible;z-index:6;pointer-events:auto}
+.reference-home .cm-showcase-slide[data-offset="-1"] {transform:translate(-50%,-50%) translateX(-72%) scale(.83) rotateY(-12deg);opacity:.73;filter:brightness(.72);visibility:visible;z-index:4}
+.reference-home .cm-showcase-slide[data-offset="1"] {transform:translate(-50%,-50%) translateX(72%) scale(.83) rotateY(12deg);opacity:.73;filter:brightness(.72);visibility:visible;z-index:4}
+.reference-home .cm-showcase-slide[data-offset="-2"] {transform:translate(-50%,-50%) translateX(-124%) scale(.68) rotateY(-16deg);opacity:.37;filter:brightness(.6);visibility:visible;z-index:2}
+.reference-home .cm-showcase-slide[data-offset="2"] {transform:translate(-50%,-50%) translateX(124%) scale(.68) rotateY(16deg);opacity:.37;filter:brightness(.6);visibility:visible;z-index:2}
+.reference-home .cm-showcase-slide .product {height:100%;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);box-shadow:0 18px 46px rgba(18,12,25,.15);overflow:hidden}
+.reference-home .cm-showcase-slide[data-offset="0"] .product {animation:cmShowcaseFloat 7s ease-in-out infinite}
+.reference-home .cm-showcase-slide .product-media {flex:0 0 auto;aspect-ratio:1.7/1;min-height:0}
+.reference-home .cm-showcase-slide .product-body {flex:1;display:flex;flex-direction:column;justify-content:space-between;min-height:0}
+.reference-home .cm-showcase-slide .product-desc {min-height:0;margin:5px 0 10px}
+.reference-home .cm-showcase-slide .product-ribbon {font-size:.65rem}
+.reference-home .cm-showcase-nav {position:absolute;top:43%;z-index:10;width:48px;height:48px;border-radius:50%;border:1px solid var(--line);background:color-mix(in srgb,var(--surface) 95%,transparent);color:var(--primary);display:grid;place-items:center;cursor:pointer;box-shadow:0 8px 30px rgba(0,0,0,.10);transition:transform .2s ease,box-shadow .2s ease}
+.reference-home .cm-showcase-prev {right:0}
+.reference-home .cm-showcase-next {left:0}
+.reference-home .cm-showcase-nav:hover {transform:scale(1.07);box-shadow:0 12px 30px rgba(0,0,0,.16)}
+.reference-home .cm-showcase-nav:focus-visible,.reference-home .cm-showcase-dot:focus-visible{outline:3px solid var(--primary);outline-offset:3px}
+.reference-home .cm-showcase-nav[hidden],.reference-home .cm-showcase-dots[hidden]{display:none!important}
+.reference-home .cm-showcase-dots{display:flex;justify-content:center;align-items:center;gap:8px;min-height:24px;margin-top:-8px;direction:ltr}
+.reference-home .cm-showcase-dot{width:9px;height:9px;border:0;border-radius:99px;padding:0;background:color-mix(in srgb,var(--muted) 38%,transparent);cursor:pointer;transition:width .25s,background-color .25s}
+.reference-home .cm-showcase-dot[aria-current="true"]{width:26px;background:var(--primary)}
+.reference-home .cm-featured-empty{padding:26px;text-align:center;color:var(--muted)}
+@keyframes cmShowcaseFloat {0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+/* All background logos are the uploaded, currently configured Branding asset. */
+.reference-home .cm-brand-watermark{z-index:0;position:fixed;inset:0;pointer-events:none}
+.reference-home .cm-brand-watermark img{position:absolute;max-height:none;width:clamp(280px,49vw,640px);height:auto;opacity:.065;object-fit:contain;filter:saturate(.75)}
+.reference-home .cm-brand-watermark .cm-brand-core{top:50%;left:50%;transform:translate(-50%,-50%);animation:cmBrandHover 20s ease-in-out infinite}
+.reference-home .cm-brand-watermark .cm-brand-echo-left{width:clamp(290px,38vw,520px);left:-13%;top:10%;opacity:.04;animation:cmBrandEchoLeft 26s ease-in-out infinite}
+.reference-home .cm-brand-watermark .cm-brand-echo-right{width:clamp(300px,39vw,530px);right:-10%;bottom:0;opacity:.04;animation:cmBrandEchoRight 29s ease-in-out infinite}
+@keyframes cmBrandHover{0%,100%{transform:translate3d(-50%,-50%,0) rotate(-9deg) scale(1)}50%{transform:translate3d(-48%,-54%,0) rotate(5deg) scale(1.06)}}
+@keyframes cmBrandEchoLeft{0%,100%{transform:translate3d(0,0,0) rotate(-19deg)}50%{transform:translate3d(40px,24px,0) rotate(-8deg)}}
+@keyframes cmBrandEchoRight{0%,100%{transform:translate3d(0,0,0) rotate(17deg)}50%{transform:translate3d(-27px,-33px,0) rotate(7deg)}}
+@media(max-width:700px){
+ .reference-home .cm-featured-showcase{padding:0 34px 25px;min-height:375px}
+ .reference-home .cm-showcase-stage{height:340px}
+ .reference-home .cm-showcase-slide{width:min(70vw,265px);height:315px}
+ .reference-home .cm-showcase-slide .product-media{aspect-ratio:1.7/1}
+ .reference-home .cm-showcase-nav{width:36px;height:36px;top:42%}
+ .reference-home .cm-showcase-slide[data-offset="-1"]{transform:translate(-50%,-50%) translateX(-65%) scale(.82) rotateY(-10deg)}
+ .reference-home .cm-showcase-slide[data-offset="1"]{transform:translate(-50%,-50%) translateX(65%) scale(.82) rotateY(10deg)}
+ .reference-home .cm-brand-watermark img{opacity:.045}
+ .reference-home .cm-brand-watermark .cm-brand-echo-left,.reference-home .cm-brand-watermark .cm-brand-echo-right{opacity:.025}
+}
+@media(prefers-reduced-motion:reduce){
+ .reference-home .cm-showcase-slide{transition:none!important;will-change:auto}
+ .reference-home .cm-showcase-slide[data-offset="0"] .product{animation:none!important}
+ .reference-home .cm-brand-watermark img{animation:none!important;will-change:auto}
+ .reference-home .cm-brand-watermark .cm-brand-core{transform:translate(-50%,-50%);opacity:.04}
+ .reference-home .cm-showcase-nav,.reference-home .cm-showcase-dot{transition:none!important}
+}

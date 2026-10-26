@@ -7,6 +7,7 @@
 <title>{{ $branding['name'] ?? config('app.name') }} - {{ $location->name }}</title>
 @if(!empty($branding['favicon']))<link rel="icon" href="{{ $branding['favicon'] }}">@endif
 @include('customer-menu.partials.styles')
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/floating-showcase.css') }}?v=1">
 @include('customer-menu.partials.pwa-head')
 <script src="{{ asset('assets/js/customer-menu/branch-entry.js') }}?v=1"
         data-branch-code="{{ $location->code }}"
@@ -210,6 +211,9 @@
 </style>
 </head>
 <body class="crisp-customer-menu reference-home">
+@php
+ $floatingBrandingEnabled = true;
+@endphp
 @include('customer-menu.partials.brand-watermark')
 
 @if($introMode !== 'off')
@@ -348,7 +352,19 @@
     </div>
     <a class="reference-see-all" href="{{ route('customer-menu.products', $location->code) }}">عرض الكل <i class="fa-solid fa-chevron-left"></i></a>
    </div>
-   <div class="grid" id="featuredGrid"></div>
+   <div class="cm-featured-showcase" id="featuredShowcase"
+        role="region" aria-roledescription="carousel" aria-label="{{ $featuredTitle }}" tabindex="0">
+     <button class="cm-showcase-nav cm-showcase-prev" type="button" data-showcase-prev
+             aria-label="الصنف السابق" aria-controls="featuredGrid">
+       <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+     </button>
+     <div class="cm-showcase-stage" id="featuredGrid" aria-live="off"></div>
+     <button class="cm-showcase-nav cm-showcase-next" type="button" data-showcase-next
+             aria-label="الصنف التالي" aria-controls="featuredGrid">
+       <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+     </button>
+     <div class="cm-showcase-dots" id="featuredDots" aria-label="صفحات الأصناف المميزة"></div>
+   </div>
   </section>
   @endif
 
@@ -366,6 +382,7 @@
 @include('customer-menu.partials.bottom-nav', ['activeNav' => 'home'])
 @include('customer-menu.partials.pwa-install')
 @include('customer-menu.partials.cart-engine')
+<script src="{{ asset('assets/js/customer-menu/featured-carousel.js') }}?v=1"></script>
 
 <script>
 (function () {
@@ -422,7 +439,7 @@
     let revealObserver = null;
     function animateVisibleCards() {
         if (revealObserver) revealObserver.disconnect();
-        const cards = document.querySelectorAll('.reference-home .product');
+        const cards = document.querySelectorAll('.reference-home .catalog-section .product');
         if (reducedMotion.matches || !('IntersectionObserver' in window)) return;
         revealObserver = new IntersectionObserver(function (entries) {
             entries.forEach(function (entry) {
@@ -454,10 +471,14 @@
 
         if (featuredGrid) {
             featuredGrid.innerHTML = featured.length
-                ? featured.map(function (product) { return renderCard(product, true); }).join('')
-                : '<div class="empty">لا توجد أصناف مميزة متاحة حالياً.</div>';
+                ? featured.map(function (product) {
+                    return '<div class="cm-showcase-slide" data-showcase-slide data-offset="outside">' +
+                        renderCard(product, true) + '</div>';
+                }).join('')
+                : '<div class="cm-featured-empty">لا توجد أصناف مميزة متاحة حالياً.</div>';
         }
         if (featuredSection) featuredSection.hidden = hasFocus;
+        window.CustomerMenuFeaturedCarousel?.refresh();
 
         document.getElementById('productGrid').innerHTML = rows.length
             ? rows.map(function (product) { return renderCard(product, false); }).join('')
