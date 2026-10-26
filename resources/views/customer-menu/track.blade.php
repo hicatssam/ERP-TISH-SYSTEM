@@ -1,11 +1,12 @@
 @php
+    $location = $order->location;
     $menuCurrencySymbol = app(\App\Services\PrintThemeService::class)->settings()['currency_symbol'];
 @endphp
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
     @php
         $brandLogo = null;
         $logoCandidates = [
@@ -60,7 +61,8 @@
     @if(!empty($branding['favicon']))
         <link rel="icon" href="{{ $branding['favicon'] }}">
     @endif
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    @include('customer-menu.partials.styles')
+    @include('customer-menu.partials.pwa-head')
     <style>
         :root{
             --primary:{{ $theme['primary'] ?? '#704C34' }};
@@ -80,6 +82,7 @@
                 var(--bg);
             color:var(--text);
             font-family:Cairo,Tajawal,Arial,sans-serif;
+            padding-bottom:calc(102px + var(--safe-bottom));
         }
         a{color:inherit;text-decoration:none}
         .wrap{width:min(820px,calc(100% - 30px));margin:auto}
@@ -336,6 +339,11 @@
             </div>
         </section>
     </main>
+
+    {{-- Tracking belongs to My Orders; all destinations use the order's branch. --}}
+    @include('customer-menu.partials.bottom-nav', ['activeNav' => 'orders'])
+    @include('customer-menu.partials.nav-badge-sync')
+    @include('customer-menu.partials.pwa-install')
 
     <script>
         const url = @json(route('customer-menu.status',$order->public_token));

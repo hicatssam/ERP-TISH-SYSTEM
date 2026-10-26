@@ -37,6 +37,79 @@ class CustomerMenuBranchIsolationTest extends TestCase
             ->assertSee(route('customer-menu.products', $branch->code));
     }
 
+    public function test_my_orders_uses_the_same_five_tab_bottom_navigation_as_other_menu_pages(): void
+    {
+        $branch = $this->branch();
+        $response = $this->get(route('customer-menu.my-orders', $branch->code))
+            ->assertOk()
+            ->assertSee('class="bottom-nav" aria-label="التنقل"', false)
+            ->assertSee('class="nav-btn active"', false)
+            ->assertDontSee('class="mobileNav"', false)
+            ->assertSee("const cartKey = 'dahab_cart_' + locationCode;", false)
+            ->assertSee("const favoriteKey = 'dahab_favorites_' + locationCode;", false)
+            ->assertDontSee('window.CustomerMenu =', false);
+
+        $html = $response->getContent();
+        $this->assertSame(5, substr_count($html, '<a class="nav-btn '));
+        foreach (['show', 'products', 'cart', 'favorites', 'my-orders'] as $page) {
+            $this->assertStringContainsString(
+                route('customer-menu.'.$page, $branch->code),
+                $html
+            );
+        }
+        $this->assertStringContainsString('height:calc(76px + var(--safe-bottom))', $html);
+        $this->assertStringContainsString('padding-bottom:calc(102px + var(--safe-bottom))', $html);
+    }
+
+    public function test_tracking_page_keeps_the_five_tab_navigation_on_the_orders_tab(): void
+    {
+        [$branch, $product, $cash, $actor, $payload] = $this->orderFixture();
+        $result = $this->postJson(route('customer-menu.orders.store', $branch->code), $payload)
+            ->assertCreated()->json();
+
+        $response = $this->get($result['track_url'])
+            ->assertOk()
+            ->assertSee('class="bottom-nav" aria-label="التنقل"', false)
+            ->assertSee('class="nav-btn active"', false)
+            ->assertSee("const cartKey = 'dahab_cart_' + locationCode;", false)
+            ->assertSee("const favoriteKey = 'dahab_favorites_' + locationCode;", false)
+            ->assertSee('padding-bottom:calc(102px + var(--safe-bottom))', false)
+            ->assertSee('viewport-fit=cover', false)
+            ->assertDontSee('window.CustomerMenu =', false);
+
+        $html = $response->getContent();
+        $this->assertSame(5, substr_count($html, '<a class="nav-btn '));
+        foreach (['show', 'products', 'cart', 'favorites', 'my-orders'] as $page) {
+            $this->assertStringContainsString(route('customer-menu.'.$page, $branch->code), $html);
+        }
+        $this->assertStringContainsString(
+            'href="'.route('customer-menu.my-orders', $branch->code).'"><i class="fa-solid fa-receipt"',
+            $html
+        );
+    }
+
+    public function test_all_branch_based_pages_share_one_bottom_navigation_component(): void
+    {
+        $files = [
+            'show.blade.php', 'products.blade.php', 'favorites.blade.php',
+            'product.blade.php', 'my-orders.blade.php', 'track.blade.php',
+            'cart/cart.blade.php', 'checkout/checkout.blade.php',
+        ];
+        foreach ($files as $file) {
+            $view = file_get_contents(resource_path('views/customer-menu/'.$file));
+            $this->assertStringContainsString(
+                "@include('customer-menu.partials.bottom-nav'",
+                $view,
+                'Missing shared navigation in '.$file
+            );
+        }
+
+        // The branch chooser has no selected location yet, so route links
+        // to five branch-specific tabs must not render on that screen.
+        $chooser = file_get_contents(resource_path('views/customer-menu/branches.blade.php'));
+        $this->assertStringNotContainsString('partials.bottom-nav', $chooser);
+    }
+
     public function test_branch_catalog_prices_categories_and_availability_are_isolated(): void
     {
         $a = $this->branch();
