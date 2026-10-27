@@ -13,6 +13,7 @@ use App\Models\PaymentMethod;
 use App\Models\LocationPaymentAccount;
 use App\Models\SystemSetting;
 use App\Services\ModuleService;
+use App\Support\CustomerMenuLanguage;
 use App\Services\Restaurant\CustomerOrderingService;
 use App\Services\Restaurant\CustomerOrderStatusService;
 use Illuminate\Http\JsonResponse;
@@ -188,7 +189,7 @@ class CustomerMenuController extends Controller
 
                 return [
                     'id' => (int) $method->id,
-                    'name' => (string) ($method->name_ar ?: $method->name),
+                    'name' => CustomerMenuLanguage::name($method->name, $method->name_ar),
                     'code' => (string) $method->code,
                     'type' => (string) $method->type,
                     'logo' => $this->assetFromPath($method->logo ?: $method->logo_path),

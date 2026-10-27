@@ -32,6 +32,8 @@ return Application::configure(basePath: dirname(__DIR__))
             ->onOneServer();
     })
     ->withMiddleware(function (Middleware $middleware) {
+        // Non-sensitive locale preference must be readable by browser JS and Laravel.
+        $middleware->encryptCookies(except: ['dahab_menu_lang']);
         $middleware->alias([
             'password.changed' => \App\Http\Middleware\EnsurePasswordChanged::class,
             'location.scope'   => \App\Http\Middleware\CheckLocationScope::class,

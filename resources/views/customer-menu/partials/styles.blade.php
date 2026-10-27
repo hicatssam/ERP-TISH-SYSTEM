@@ -363,3 +363,26 @@ body.crisp-customer-menu > .app{position:relative;z-index:1}
 }
 
 </style>
+
+<style>
+/* Customer menu language control; respects the document's direction. */
+.cm-language-switch {
+ appearance:none; display:inline-flex; align-items:center; justify-content:center;
+ flex-shrink:0; padding:7px 11px; min-height:36px;
+ color:var(--text,#212529); background:var(--surface,#fff);
+ border:1px solid var(--line,#d8dce4); border-radius:999px;
+ font:700 12px/1.2 Cairo,Tajawal,Arial,sans-serif;
+ cursor:pointer; white-space:nowrap; box-shadow:0 2px 9px rgba(0,0,0,.07);
+}
+.cm-language-switch:focus-visible{outline:3px solid var(--primary,#b07b20);outline-offset:3px}
+.cm-language-switch:hover{border-color:var(--primary,#b07b20)}
+.reference-actions .cm-language-switch { margin-inline-start:3px; }
+.page-head .cm-language-switch { margin-inline-start:8px; }
+.cm-language-floating {position:fixed;top:calc(12px + env(safe-area-inset-top,0px));inset-inline-end:12px;z-index:210}
+[dir="ltr"] .crisp-customer-menu .page-head,
+[dir="ltr"] .crisp-customer-menu .reference-header-row,
+[dir="ltr"] .crisp-customer-menu .bottom-nav { direction:ltr; }
+[dir="ltr"] .crisp-customer-menu .page-back i { transform:scaleX(-1); }
+@media (max-width:420px){.cm-language-switch {padding:6px 9px;font-size:11px}}
+</style>
+<script defer src="{{ asset('assets/js/customer-menu/i18n.js') }}?v=1"></script>

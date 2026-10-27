@@ -11,6 +11,7 @@ use App\Models\RestaurantMenuItem;
 use App\Models\RestaurantTable;
 use App\Models\SystemSetting;
 use App\Support\PublicImageUrl;
+use App\Support\CustomerMenuLanguage;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
 
@@ -45,9 +46,9 @@ trait ResolvesCustomerMenuBranding
         $logoSmall = $logoSmall ?: $logo;
 
         return [
-            'name' => $name,
+            'name' => CustomerMenuLanguage::isEnglish() ? ($nameEn ?: $name) : $name,
             'name_en' => $nameEn,
-            'tagline' => $tagline,
+            'tagline' => CustomerMenuLanguage::isEnglish() ? ($taglineEn ?: $tagline) : $tagline,
             'tagline_en' => $taglineEn,
 
             'logo' => $logo,
@@ -187,7 +188,9 @@ trait ResolvesCustomerMenuBranding
                     ? $product->activeVariants
                         ->map(fn ($variant): array => [
                             'id' => (int) $variant->id,
-                            'name' => $variant->displayName(),
+                            'name' => CustomerMenuLanguage::isEnglish()
+                                ? CustomerMenuLanguage::englishName($variant->name, $variant->size?->name, $variant->color?->name)
+                                : $variant->displayName(),
                             'price' => $variant->selling_price !== null
                                 ? (float) $variant->selling_price
                                 : (float) $product->getEffectivePriceForLocation((int) $location->id),
@@ -229,7 +232,7 @@ trait ResolvesCustomerMenuBranding
                         return [
                             'variant_id' => $link->product_variant_id ? (int) $link->product_variant_id : null,
                             'id' => (int) $group->id,
-                            'name' => $group->name_ar ?: $group->name,
+                            'name' => CustomerMenuLanguage::name($group->name, $group->name_ar),
                             'selection_type' => $group->selection_type->value,
                             'required' => $required,
                             'min' => $min,
@@ -237,7 +240,7 @@ trait ResolvesCustomerMenuBranding
                             'modifiers' => $group->modifiers
                                 ->map(fn ($modifier): array => [
                                     'id' => (int) $modifier->id,
-                                    'name' => $modifier->name_ar ?: $modifier->name,
+                                    'name' => CustomerMenuLanguage::name($modifier->name, $modifier->name_ar),
                                     'price_delta' => (float) $modifier->price_delta,
                                     'allow_quantity' => (bool) $modifier->allow_quantity,
                                     'max_quantity' => max(1, (int) $modifier->max_quantity),
@@ -264,7 +267,9 @@ trait ResolvesCustomerMenuBranding
                 return [
                     'menu_item_id' => (int) $menuItem->id,
                     'product_id' => (int) $product->id,
-                    'name' => $menuItem->displayName(),
+                    'name' => CustomerMenuLanguage::isEnglish()
+                        ? CustomerMenuLanguage::englishName($menuItem->display_name, $product->name, $menuItem->displayName())
+                        : $menuItem->displayName(),
                     'description' => trim((string) ($menuItem->effectiveDescription() ?? '')),
                     'image' => $this->assetFromPath(
                         // Prefer the photo uploaded on the product itself
@@ -278,9 +283,7 @@ trait ResolvesCustomerMenuBranding
                         ?: $menuItem->image
                     ) ?: $fallbackVariantImage,
                     'category_id' => $product->category?->id,
-                    'category' => $product->category?->name_ar
-                        ?: $product->category?->name
-                        ?: 'أخرى',
+                    'category' => CustomerMenuLanguage::name($product->category?->name, $product->category?->name_ar) ?: (CustomerMenuLanguage::isEnglish() ? 'Other' : 'أخرى'),
                     'category_icon' => $product->category?->icon_key
                         ?: $this->guessCategoryIcon(
                             $product->category?->name_ar ?: $product->category?->name ?: 'أخرى'
@@ -339,7 +342,7 @@ trait ResolvesCustomerMenuBranding
             ->orderByRaw("COALESCE(NULLIF(name_ar, ''), name)")
             ->get($categoryColumns)
             ->map(function (Category $category): array {
-                $name = filled($category->name_ar) ? $category->name_ar : $category->name;
+                $name = CustomerMenuLanguage::name($category->name, $category->name_ar);
 
                 return [
                     'id' => $category->id,
