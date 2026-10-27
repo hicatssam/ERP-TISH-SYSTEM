@@ -18,7 +18,7 @@ class BranchManagerShowroomCakePermissionsTest extends TestCase
     use RefreshDatabase;
 
     #[Test]
-    public function branch_manager_gets_showroom_cake_access_without_factory_status_or_special_cake_permissions(): void
+    public function branch_manager_gets_showroom_cake_access_without_factory_or_all_branch_permissions(): void
     {
         $branch = Location::query()->create([
             'name' => 'Showroom cakes branch',
@@ -48,7 +48,8 @@ class BranchManagerShowroomCakePermissionsTest extends TestCase
         $this->assertTrue($user->can('products.view'));
         $this->assertFalse($user->can('showroom_cake_requests.update_status'));
         $this->assertFalse($user->can('showroom_cake_requests.view_all'));
-        $this->assertFalse($user->can('cake_orders.create'));
+        $this->assertTrue($user->can('cake_orders.create'));
+        $this->assertFalse($user->can('cake_orders.view_all'));
 
         $this->actingAs($user)
             ->get(route('showroom-cake-requests.index'))
@@ -60,7 +61,7 @@ class BranchManagerShowroomCakePermissionsTest extends TestCase
 
         $this->actingAs($user)
             ->get(route('cake-orders.create'))
-            ->assertForbidden();
+            ->assertOk();
     }
 
     #[Test]

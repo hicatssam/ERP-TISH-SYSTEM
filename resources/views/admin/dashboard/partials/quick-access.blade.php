@@ -3,9 +3,11 @@
     $dashboardShortcuts = collect([
         ['key' => 'orders', 'label' => 'إنشاء طلب', 'icon' => 'bi-plus-circle', 'module' => 'sales', 'permission' => 'orders.create', 'route' => 'orders.create'],
         ['key' => 'cakes', 'label' => 'طلب كيك خاص', 'icon' => 'bi-cake2', 'module' => 'cake_orders', 'permission' => 'cake_orders.create', 'route' => 'cake-orders.create'],
+        ['key' => 'branch-cakes', 'label' => 'طلب كيك للمعرض', 'icon' => 'bi-box2-heart', 'module' => 'cake_orders', 'permission' => 'showroom_cake_requests.create', 'route' => 'showroom-cake-requests.create'],
         ['key' => 'stock', 'label' => 'طلب مخزون', 'icon' => 'bi-box-seam', 'module' => 'inventory', 'permission' => 'stock_requests.create', 'route' => 'stock-requests.create'],
         ['key' => 'cash', 'label' => 'جلسة الكاش', 'icon' => 'bi-wallet2', 'module' => 'finance', 'permission' => 'cash_sessions.manage', 'route' => 'cash-sessions.index'],
-        ['key' => 'sweets', 'label' => 'طلب حلويات', 'icon' => 'bi-bag-plus', 'module' => null, 'permission' => 'showroom_sweets_requests.create', 'route' => 'showroom-sweets-requests.create'],
+        ['key' => 'sweets', 'label' => 'طلب حلويات للمعرض', 'icon' => 'bi-bag-plus', 'module' => 'bakery', 'permission' => 'showroom_sweets_requests.create', 'route' => 'showroom-sweets-requests.create'],
+        ['key' => 'daily-report', 'label' => 'ترحيل التقرير اليومي للمحاسبة', 'icon' => 'bi-journal-check', 'module' => 'inventory', 'permission' => 'showroom_daily_reports.manage_branch', 'route' => 'showroom-daily-reports.index'],
         ['key' => 'pos', 'label' => 'نقطة البيع', 'icon' => 'bi-cart3', 'module' => 'restaurant_pos', 'permission' => 'restaurant_pos.use', 'route' => 'restaurant.pos.index'],
         ['key' => 'hall', 'label' => 'تشغيل الطلبات', 'icon' => 'bi-shop', 'module' => 'restaurant', 'permission' => 'restaurant.view', 'route' => 'restaurant.dashboard'],
         ['key' => 'kds', 'label' => 'شاشة المطبخ', 'icon' => 'bi-display', 'module' => 'kds', 'permission' => 'kds.view', 'route' => 'kds.index'],
@@ -36,6 +38,8 @@
                     @switch($shortcut['key'])
                         @case('orders') <path d="M12 5v14M5 12h14"/> @break
                         @case('cakes') <path d="M4 11h16v9H4zM4 15h16M7 11V8m5 3V8m5 3V8M7 5v1m5-1v1m5-1v1"/> @break
+                        @case('branch-cakes') <path d="M3 8h18v13H3zM6 8l6-5 6 5M8 14h8m-8 4h8"/> @break
+                        @case('daily-report') <rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6m-6 4 2 2 4-4"/> @break
                         @case('stock') <path d="m3 7 9-4 9 4v10l-9 4-9-4zM3 7l9 4 9-4M12 11v10"/> @break
                         @case('cash') <rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M16 15h2"/> @break
                         @case('sweets') <path d="M5 8h14l-1 13H6zM9 9V6a3 3 0 0 1 6 0v3M9 15h6m-3-3v6"/> @break

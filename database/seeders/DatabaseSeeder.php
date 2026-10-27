@@ -2273,7 +2273,11 @@ SVG;
             'attendance.','chat.','crm.','loyalty.','delivery.','customer_display.','cash_sessions.',
         ], ['users.manage','financial.cash.view','accounting.employee_accounts.view','accounting.employee_accounts.create','accounting.employee_accounts.receive','accounting.books.view','accounting.vouchers.create',
             'showroom_cake_requests.view','showroom_cake_requests.create','showroom_cake_requests.edit',
-            'showroom_cake_requests.reservations','showroom_cake_requests.cancel'], ['orders.confirm','orders.cancel','customers.view_all','employees.view_all','hr.documents.manage','hr.organization.manage']);
+            'showroom_cake_requests.reservations','showroom_cake_requests.cancel',
+            // Four branch manager daily workflows: sweets, special cakes, branch cakes, and sales report submission.
+            'showroom_sweets_requests.view','showroom_sweets_requests.create',
+            'cake_orders.view','cake_orders.create',
+            'showroom_daily_reports.view','showroom_daily_reports.manage_branch'], ['orders.confirm','orders.cancel','customers.view_all','employees.view_all','hr.documents.manage','hr.organization.manage']);
         $grantByPrefixes('Cashier', ['orders.','customers.','payments.','invoices.','restaurant.pos.'], [
             'products.view','categories.view','payment_methods.view',
         ], ['orders.confirm','orders.cancel','orders.delete','customers.view_all']);
