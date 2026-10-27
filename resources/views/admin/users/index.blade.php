@@ -55,7 +55,7 @@
                 <td>
                     <div class="user-table-identity">
                         <a
-                            href="{{ route('users.edit', $user) }}"
+                            href="{{ auth()->user()->can('users.update') ? route('users.edit', $user) : route('users.index') }}"
                             class="user-table-avatar-link"
                             title="تعديل {{ $user->username }}"
                         >
@@ -83,7 +83,7 @@
 
                         <div class="user-table-main-info">
                             <a
-                                href="{{ route('users.edit', $user) }}"
+                                href="{{ auth()->user()->can('users.update') ? route('users.edit', $user) : route('users.index') }}"
                                 class="user-table-username"
                             >
                                 {{ $user->username }}
@@ -194,7 +194,7 @@
                 {{-- الإجراءات --}}
                 <td>
                     <div class="actions">
-                        @can('users.manage')
+                        @can('users.update')
                             <a
                                 href="{{ route('users.edit', $user) }}"
                                 class="btn btn-outline btn-sm"
@@ -202,6 +202,8 @@
                                 تعديل
                             </a>
 
+                        @endcan
+                        @can('users.toggle')
                             <form
                                 action="{{ route('users.toggle', $user) }}"
                                 method="POST"
@@ -225,6 +227,8 @@
                                 </button>
                             </form>
 
+                        @endcan
+                        @can('users.reset_password')
                             <form
                                 action="{{ route('users.reset-password', $user) }}"
                                 method="POST"
@@ -239,6 +243,21 @@
                                 >
                                     ضبط كلمة المرور
                                 </button>
+                            </form>
+                        @endcan
+                        @can('users.assign_role')
+                            <form action="{{ route('users.assign-role', $user) }}" method="POST" style="display:inline-flex;gap:.35rem;align-items:center;flex-wrap:wrap">
+                                @csrf
+                                @method('PATCH')
+                                <label class="sr-only" for="user-role-{{ $user->id }}">الدور</label>
+                                <select class="form-select" style="max-width:170px" id="user-role-{{ $user->id }}" name="role" aria-label="اختيار الدور">
+                                    @foreach($roles as $role)
+                                        @if(auth()->user()->isAdmin() || (! in_array(strtolower($role->name), ['admin', 'super-admin'], true) && $role->permissions->pluck('name')->diff(auth()->user()->getAllPermissions()->pluck('name'))->isEmpty()))
+                                            <option value="{{ $role->name }}" @selected($user->roles->contains('id', $role->id))>{{ \App\Support\PermissionUi::roleLabels()[$role->name] ?? $role->name }}</option>
+                                        @endif
+                                    @endforeach
+                                </select>
+                                <button class="btn btn-outline btn-sm" type="submit" data-confirm="تأكيد تغيير دور المستخدم؟">تغيير الدور</button>
                             </form>
                         @endcan
                     </div>

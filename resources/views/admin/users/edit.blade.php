@@ -178,7 +178,7 @@
                     @enderror
                 </div>
 
-                @can('users.manage')
+                @can('users.update')
                     @php
                         $assistantEnabled = old('assistant_enabled', $assistantSetting->enabled);
                         $assistantTopicMode = old('assistant_topic_mode', $assistantSetting->topic_mode ?: 'inherit');
@@ -279,7 +279,7 @@
             </div>
         </form>
 
-        @can('roles.manage')
+        @can('users.assign_role')
             <hr style="margin:2rem 0;border-color:var(--border)">
 
             <h3 style="font-size:.9rem;font-weight:700;margin-bottom:1rem">

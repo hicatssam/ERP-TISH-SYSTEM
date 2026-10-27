@@ -44,7 +44,7 @@ class ProfileImageDeliveryTest extends TestCase
         Storage::disk('public')->put('users/profile-images/admin.png', 'admin-image');
         $manager = User::factory()->create();
         $this->assignBranch($manager);
-        $manager->givePermissionTo(Permission::findOrCreate('users.manage', 'web'));
+        $manager->givePermissionTo(Permission::findOrCreate('users.view', 'web'));
         $pictured = User::factory()->create(['profile_image' => 'users/profile-images/admin.png']);
         $this->assignBranch($pictured);
         $pictured->employee->locations()->sync([
@@ -71,8 +71,11 @@ class ProfileImageDeliveryTest extends TestCase
     {
         $manager = User::factory()->create();
         $this->assignBranch($manager);
-        $manager->givePermissionTo(Permission::findOrCreate('users.manage', 'web'));
+        $manager->givePermissionTo(Permission::findOrCreate('users.view', 'web'));
         $manager->givePermissionTo(Permission::findOrCreate('employees.view_all', 'web'));
+        foreach (['users.update', 'users.reset_password', 'users.assign_role'] as $name) {
+            $manager->givePermissionTo(Permission::findOrCreate($name, 'web'));
+        }
         $manager->assignRole(\Spatie\Permission\Models\Role::findOrCreate('Branch Manager', 'web'));
 
         $local = User::factory()->create();

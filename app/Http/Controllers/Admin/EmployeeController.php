@@ -378,7 +378,7 @@ class EmployeeController extends Controller
         $user = $request->user();
 
         // إنشاء حساب نظام مستقل عن صلاحية تعديل الموظف.
-        $this->requirePermission($user, ['users.manage']);
+        $this->requirePermission($user, ['users.create']);
         $this->ensureEmployeeAccess($employee, $user);
 
         if ($employee->user) {
@@ -411,6 +411,15 @@ class EmployeeController extends Controller
             ! $user->isAdmin() && in_array(strtolower($selectedRole->name), ['admin', 'super-admin'], true),
             403
         );
+
+        if (! $user->isAdmin()) {
+            $rights = $user->getAllPermissions()->pluck('name');
+            abort_unless(
+                $selectedRole->permissions()->pluck('name')->diff($rights)->isEmpty(),
+                403,
+                'لا يمكنك إنشاء حساب بدور يحتوي على صلاحيات أعلى من صلاحياتك.'
+            );
+        }
 
         $tempPassword = Str::random(12) . '!1A';
 

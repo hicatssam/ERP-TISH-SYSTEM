@@ -1142,7 +1142,7 @@ a.app-page-btn:hover {
                 @endif
             @endauth
 
-            @canany(['locations.manage', 'employees.view', 'employees.manage', 'users.manage', 'attendance.view', 'attendance.approve', 'attendance.leaves.view', 'hr.dashboard.view', 'hr.organization.view'])
+            @canany(['locations.manage', 'employees.view', 'employees.manage', 'users.view', 'attendance.view', 'attendance.approve', 'attendance.leaves.view', 'hr.dashboard.view', 'hr.organization.view'])
 
                 <div class="nav-section">
 
@@ -1214,7 +1214,7 @@ a.app-page-btn:hover {
 
                      @include('layouts.partials.attendance-navigation')
 
-                    @can('users.manage')
+                    @can('users.view')
 
                         <a href="{{ route('users.index') }}" class="nav-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
 
@@ -2371,13 +2371,13 @@ a.app-page-btn:hover {
 
             @endif
 
-            @canany(['settings.manage', 'payment_methods.view', 'roles.manage', 'sales_channels.view'])
+            @canany(['settings.manage', 'payment_methods.view', 'roles.view', 'sales_channels.view'])
 
                 <div class="nav-section">
 
                     <div class="nav-section-title">النظام</div>
 
-                    @can('roles.manage')
+                    @can('roles.view')
 
                         <a href="{{ route('roles.index') }}" class="nav-item {{ request()->routeIs('roles.*') ? 'active' : '' }}">
 

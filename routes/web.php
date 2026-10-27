@@ -135,23 +135,42 @@ Route::middleware(['auth', 'location.scope'])->group(function () {
         Route::middleware('can:employees.manage')->group(function () {
             Route::resource('employees', EmployeeController::class);
             Route::post('employees/{employee}/toggle', [EmployeeController::class, 'toggleStatus'])->name('employees.toggle');
-            Route::post('employees/{employee}/create-user', [EmployeeController::class, 'createUser'])->name('employees.create-user');
         });
 
-        // ─── Users ─────────────────────────────────────────────────────────
-        Route::middleware('can:users.manage')->group(function () {
+        Route::post('employees/{employee}/create-user', [EmployeeController::class, 'createUser'])
+            ->name('employees.create-user')->middleware('can:users.create');
+
+        // ─── Users — every action is separately authorized ────────────────
+        Route::middleware('can:users.view')->group(function () {
+            Route::resource('users', UserController::class)->only(['index']);
             Route::get('users/{user}/image', [UserController::class, 'image'])->name('users.image');
-            Route::resource('users', UserController::class)->except(['show']);
-            Route::post('users/{user}/toggle', [UserController::class, 'toggleStatus'])->name('users.toggle');
-            Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
-            Route::post('users/{user}/assign-role', [UserController::class, 'assignRole'])->name('users.assign-role');
         });
+        Route::resource('users', UserController::class)->only(['create', 'store'])
+            ->middleware('can:users.create');
+        Route::resource('users', UserController::class)->only(['edit', 'update'])
+            ->middleware('can:users.update');
+        Route::resource('users', UserController::class)->only(['destroy'])
+            ->middleware('can:users.delete');
+        Route::post('users/{user}/toggle', [UserController::class, 'toggleStatus'])
+            ->name('users.toggle')->middleware('can:users.toggle');
+        Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword'])
+            ->name('users.reset-password')->middleware('can:users.reset_password');
+        Route::match(['POST', 'PATCH'], 'users/{user}/assign-role', [UserController::class, 'assignRole'])
+            ->name('users.assign-role')->middleware('can:users.assign_role');
 
-        // ─── Roles & Permissions ───────────────────────────────────────────
-        Route::middleware('can:roles.manage')->group(function () {
-            Route::get('roles/audit', [RoleController::class, 'audit'])->name('roles.audit');
-            Route::resource('roles', RoleController::class);
-        });
+        // ─── Roles — separate list, audit, add, edit and deletion ─────────
+        Route::get('roles/audit', [RoleController::class, 'audit'])
+            ->name('roles.audit')->middleware('can:roles.audit');
+        // Register /create before /{role}, otherwise the static URI would
+        // be consumed by the model-bound show endpoint.
+        Route::resource('roles', RoleController::class)->only(['create', 'store'])
+            ->middleware('can:roles.create');
+        Route::resource('roles', RoleController::class)->only(['index', 'show'])
+            ->middleware('can:roles.view');
+        Route::resource('roles', RoleController::class)->only(['edit', 'update'])
+            ->middleware('can:roles.update');
+        Route::resource('roles', RoleController::class)->only(['destroy'])
+            ->middleware('can:roles.delete');
 
         // ─── Payment Methods ────────────────────────────────────────────────
 Route::middleware('can:payment_methods.manage')->group(function () {

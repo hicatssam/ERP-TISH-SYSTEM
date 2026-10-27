@@ -27,7 +27,7 @@
     </div>
 
     <div class="page-header-actions">
-        @can('roles.manage')
+        @can('roles.update')
             @if(!in_array(strtolower($role->name), ['admin', 'super-admin'], true))
                 <a href="{{ route('roles.edit', $role) }}" class="btn btn-outline btn-sm">
                     تعديل الدور

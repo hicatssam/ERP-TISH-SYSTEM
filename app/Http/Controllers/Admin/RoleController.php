@@ -206,6 +206,7 @@ class RoleController extends Controller
             ],
         ]);
 
+        $this->ensureGrantablePermissions($request, $validated['permissions'] ?? []);
         $roleName = trim($validated['name']);
 
         if (in_array(strtolower($roleName), ['admin', 'super-admin'], true)) {
@@ -302,6 +303,8 @@ class RoleController extends Controller
         ]);
 
         $isAdminRole = $this->isAdminRole($role);
+        abort_if($isAdminRole && ! $request->user()->isAdmin(), 403);
+        $this->ensureGrantablePermissions($request, $validated['permissions'] ?? []);
 
         if (
             !$isAdminRole &&
@@ -373,6 +376,22 @@ class RoleController extends Controller
         return redirect()
             ->route('roles.index')
             ->with('success', 'تم حذف الدور بنجاح.');
+    }
+
+    /**
+     * Delegated role managers cannot add privileges they do not hold.
+     * The server enforces this even if the form is manually tampered with.
+     */
+    private function ensureGrantablePermissions(Request $request, array $requested): void
+    {
+        $actor = $request->user();
+        if ($actor->isAdmin()) {
+            return;
+        }
+
+        $granted = $actor->getAllPermissions()->pluck('name');
+        abort_unless(collect($requested)->diff($granted)->isEmpty(), 403,
+            'لا يمكنك منح صلاحيات أعلى من صلاحياتك.');
     }
 
     private function getGroupedPermissions()

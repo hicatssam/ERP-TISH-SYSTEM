@@ -12,8 +12,10 @@
     <div class="page-actions-title">الأدوار والصلاحيات</div>
 
     <div class="action-btns">
-        @can('roles.manage')
+        @can('roles.audit')
             <a href="{{ route('roles.audit') }}" class="btn btn-outline">تدقيق الصلاحيات</a>
+        @endcan
+        @can('roles.create')
             <a href="{{ route('roles.create') }}" class="btn btn-gold">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="12" y1="5" x2="12" y2="19"/>
@@ -56,12 +58,14 @@
                                 عرض
                             </a>
 
-                            @can('roles.manage')
-                                @unless($isAdminRole)
+                            @unless($isAdminRole)
+                                @can('roles.update')
                                     <a href="{{ route('roles.edit', $role) }}" class="btn btn-outline btn-sm">
                                         تعديل
                                     </a>
 
+                                @endcan
+                                @can('roles.delete')
                                     <form action="{{ route('roles.destroy', $role) }}" method="POST" style="display:inline">
                                         @csrf
                                         @method('DELETE')
@@ -75,8 +79,8 @@
                                             حذف
                                         </button>
                                     </form>
-                                @endunless
-                            @endcan
+                                @endcan
+                            @endunless
                         </div>
                     </td>
                 </tr>

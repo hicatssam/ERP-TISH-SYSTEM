@@ -161,9 +161,12 @@ class DatabaseSeeder extends Seeder
     'hr.organization.view',
     'hr.organization.manage',
 
-    // Users & Roles
+    // Users & Roles (legacy broad rights retained for existing integrations)
     'users.manage',
+    'users.view', 'users.create', 'users.update', 'users.toggle',
+    'users.reset_password', 'users.assign_role', 'users.delete',
     'roles.manage',
+    'roles.view', 'roles.audit', 'roles.create', 'roles.update', 'roles.delete',
 
     // Products
     'products.view',

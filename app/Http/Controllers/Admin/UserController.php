@@ -39,14 +39,27 @@ class UserController extends Controller
         }
         $users = $users->paginate(20);
 
-        return view('admin.users.index', compact('users'));
+        $roles = auth()->user()->can('users.assign_role')
+            ? Role::query()->where('guard_name', 'web')->with('permissions')->orderBy('name')->get()
+            : collect();
+
+        return view('admin.users.index', compact('users', 'roles'));
     }
 
     public function create()
     {
-        $roles = Role::orderBy('name')->get();
+        $roles = Role::query()->where('guard_name', 'web')
+            ->with('permissions')->orderBy('name')->get();
+        if (! auth()->user()->isAdmin()) {
+            $actorRights = auth()->user()->getAllPermissions()->pluck('name');
+            $roles = $roles->filter(fn (Role $role) =>
+                ! in_array(strtolower($role->name), ['admin', 'super-admin'], true)
+                && $role->permissions->pluck('name')->diff($actorRights)->isEmpty()
+            )->values();
+        }
 
-        return view('admin.users.create', compact('roles'));
+        return redirect()->route('users.index')
+            ->with('info', 'يتم إنشاء حساب المستخدم من ملف الموظف.');
     }
 
     public function store(Request $request)
@@ -231,6 +244,18 @@ class UserController extends Controller
             ->where('guard_name', 'web')
             ->firstOrFail();
 
+        // Do not allow a delegated role manager to grant powers they lack.
+        // Administrators continue to manage all roles, but staff may only
+        // assign non-admin roles whose permissions they already hold.
+        if (! auth()->user()->isAdmin()) {
+            $actorPermissionNames = auth()->user()->getAllPermissions()->pluck('name');
+            abort_unless(
+                $targetRole->permissions()->pluck('name')->diff($actorPermissionNames)->isEmpty(),
+                403,
+                'لا يمكنك إسناد دور يحتوي على صلاحيات أوسع من صلاحياتك.'
+            );
+        }
+
         // Managing branch users does not grant permission to create administrators.
         abort_unless(
             auth()->user()->isAdmin()
@@ -258,6 +283,9 @@ class UserController extends Controller
     private function ensureAccessible(User $target): void
     {
         $actor = auth()->user();
+        // Delegated account operators may never edit, reset, disable or
+        // reassign an Admin account, even when they can see all branches.
+        abort_if(! $actor->isAdmin() && $target->isAdmin(), 403);
         if ($actor->isAdmin() || $actor->hasRole('General Manager')) {
             return;
         }

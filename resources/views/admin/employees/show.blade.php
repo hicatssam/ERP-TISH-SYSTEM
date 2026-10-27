@@ -388,7 +388,7 @@
                     </div>
                 </div>
 
-                @can('users.manage')
+                @can('users.create')
                     <div style="margin-top:1.25rem">
                         <a
                             href="{{ route('users.edit', $employee->user) }}"
@@ -464,7 +464,8 @@
                                 >
                                     <option value="">اختر الدور</option>
 
-                                    @foreach(\Spatie\Permission\Models\Role::orderBy('name')->get() as $role)
+                                    @foreach(\Spatie\Permission\Models\Role::where('guard_name', 'web')->with('permissions')->orderBy('name')->get() as $role)
+                                        @if(auth()->user()->isAdmin() || (! in_array(strtolower($role->name), ['admin', 'super-admin'], true) && $role->permissions->pluck('name')->diff(auth()->user()->getAllPermissions()->pluck('name'))->isEmpty()))
                                         <option
                                             value="{{ $role->name }}"
                                             {{ old('role') === $role->name
@@ -473,6 +474,7 @@
                                         >
                                             {{ $role->name }}
                                         </option>
+                                        @endif
                                     @endforeach
                                 </select>
 
