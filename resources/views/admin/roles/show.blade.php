@@ -8,13 +8,15 @@
     $groupLabels = \App\Support\PermissionUi::groupLabels();
     $permissionLabels = \App\Support\PermissionUi::permissionLabels();
 
-    $grouped = $role->permissions
-        ->groupBy(fn($p) => explode('.', $p->name)[0]);
-
+    $selectedRolePermissionNames = $role->permissions->pluck('name')->all();
     $allPermissions = \Spatie\Permission\Models\Permission::query()
         ->where('guard_name', 'web')
+        ->orderBy('name')
         ->get()
-        ->groupBy(fn($p) => explode('.', $p->name)[0]);
+        ->groupBy(fn($p) => explode('.', $p->name)[0])
+        ->map(fn ($items) => $items->groupBy(
+            fn ($permission) => \App\Support\PermissionUi::permissionSection($permission->name)
+        ));
 @endphp
 
 @section('content')
@@ -132,52 +134,41 @@
         @if($allPermissions->isEmpty())
             <div class="empty-state-sm">لا توجد صلاحيات مسجلة في النظام</div>
         @else
-            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.25rem">
-                @foreach($allPermissions as $group => $allPerms)
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:1rem">
+                @foreach($allPermissions as $group => $sections)
                     @php
-                        $rolePerms = $grouped->get($group, collect())->pluck('name')->toArray();
+                        $allGroupPermissions = $sections->flatMap(fn ($items) => $items);
+                        $grantedCount = $allGroupPermissions->filter(
+                            fn ($item) => in_array($item->name, $selectedRolePermissionNames, true)
+                        )->count();
                     @endphp
-
-                    <div style="border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
-                        <div style="background:var(--surface);padding:.625rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
-                            <span style="font-size:.75rem;font-weight:800;color:var(--text-mid)">
-                                {{ \App\Support\PermissionUi::groupLabel($group) }}
-                            </span>
-
-                            <span style="font-size:.7rem;color:var(--text-muted)">
-                                {{ count($rolePerms) }}/{{ $allPerms->count() }}
+                    <div style="border:1px solid var(--border);border-radius:12px;overflow:hidden">
+                        <div style="background:var(--surface);padding:.75rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+                            <strong style="font-size:.82rem">{{ \App\Support\PermissionUi::groupLabel($group) }}</strong>
+                            <span style="font-size:.75rem;color:var(--text-muted)">
+                                {{ $grantedCount }}/{{ $allGroupPermissions->count() }}
                             </span>
                         </div>
-
-                        <div style="padding:.75rem 1rem;display:flex;flex-direction:column;gap:.5rem">
-                            @foreach($allPerms as $perm)
-                                @php
-                                    $has = in_array($perm->name, $rolePerms, true);
-                                @endphp
-
-                                <div style="display:flex;align-items:center;gap:.5rem;font-size:.82rem">
-                                    @if($has)
-                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5">
-                                            <polyline points="20 6 9 17 4 12"/>
-                                        </svg>
-
-                                        <span style="color:var(--text)">
+                        @foreach($sections as $sectionName => $sectionPermissions)
+                            <div style="padding:12px;border-top:1px solid var(--border)">
+                                <strong style="display:block;color:var(--gold-deep);font-size:.78rem;margin-bottom:7px">
+                                    {{ $sectionName }}
+                                </strong>
+                                @foreach($sectionPermissions as $perm)
+                                    @php($has = in_array($perm->name, $selectedRolePermissionNames, true))
+                                    <div style="display:flex;align-items:flex-start;gap:.5rem;margin-top:.5rem;font-size:.79rem;color:{{ $has ? 'var(--text)' : 'var(--text-subtle)' }}">
+                                        <span aria-hidden="true">{{ $has ? '✓' : '×' }}</span>
+                                        <span>
                                             {{ \App\Support\PermissionUi::permissionLabel($perm->name) }}
+                                            <small dir="ltr" style="display:block;font-size:.69rem;color:var(--text-muted)">{{ $perm->name }}</small>
+                                            @if(\App\Support\PermissionUi::isBroadPermission($perm->name) && $has)
+                                                <small style="display:block;color:var(--text-muted)">صلاحية واسعة أو حساسة</small>
+                                            @endif
                                         </span>
-                                    @else
-                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" stroke-width="2">
-                                            <circle cx="12" cy="12" r="10"/>
-                                            <line x1="15" y1="9" x2="9" y2="15"/>
-                                            <line x1="9" y1="9" x2="15" y2="15"/>
-                                        </svg>
-
-                                        <span style="color:var(--text-subtle)">
-                                            {{ \App\Support\PermissionUi::permissionLabel($perm->name) }}
-                                        </span>
-                                    @endif
-                                </div>
-                            @endforeach
-                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endforeach
                     </div>
                 @endforeach
             </div>

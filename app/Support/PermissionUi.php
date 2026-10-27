@@ -464,6 +464,158 @@ class PermissionUi
         ];
     }
 
+    /**
+     * Subsections are presentation only. They never rename permission codes,
+     * change the Spatie permission IDs, or combine grants across modules.
+     */
+    public static function permissionSection(string $permission): string
+    {
+        if (self::isLegacyPermission($permission)) {
+            return 'صلاحيات قديمة — للمراجعة';
+        }
+
+        [$group, $action] = array_pad(explode('.', $permission, 2), 2, '');
+
+        $sections = [
+            'cake_orders' => [
+                'عرض وإدارة الطلب الخاص' => ['view', 'view_all', 'create', 'edit', 'delete'],
+                'أرشفة الطلب الخاص ومرفقاته' => ['archive', 'restore', 'comment', 'attachment'],
+                'المراجعة والتصنيع' => ['review', 'accept', 'reject', 'request_modification', 'schedule', 'prepare', 'decorate', 'quality_check'],
+                'الإلغاء والتسليم' => ['cancel', 'complete', 'dispatch', 'receive'],
+            ],
+            'showroom_cake_requests' => [
+                'طلبات كيك الفروع والكمية المحجوزة' => ['view', 'view_all', 'create', 'edit', 'reservations'],
+                'تصنيع كيك الفروع' => ['accept', 'ready'],
+                'الإلغاء والحذف' => ['cancel', 'cancel_factory', 'delete'],
+            ],
+            'showroom_sweets_requests' => [
+                'عرض وإنشاء طلبات حلويات الفروع' => ['view', 'view_all', 'create'],
+                'مراحل تصنيع وتوصيل الحلويات' => ['start', 'ready', 'dispatch', 'receive'],
+                'الرفض والإلغاء والحذف' => ['reject', 'cancel', 'delete'],
+            ],
+            'attendance' => [
+                'سجلات الحضور' => ['view', 'manage', 'approve'],
+                'الورديات' => ['shifts'],
+                'الإجازات' => ['leaves'],
+                'أجهزة البصمة' => ['devices'],
+            ],
+            'payroll' => [
+                'الكشوف والصرف' => ['view', 'manage', 'approve', 'pay'],
+                'السلف والتسويات' => ['advances', 'adjustments'],
+                'دفعات الرواتب والتحقق' => ['payments'],
+                'التقارير والمستندات' => ['reports', 'documents'],
+                'مزامنة الحضور' => ['attendance'],
+            ],
+            'hr' => [
+                'ملفات ووثائق الموظفين' => ['documents'],
+                'الهيكل التنظيمي' => ['organization'],
+                'لوحة الموارد البشرية' => ['dashboard'],
+            ],
+            'expenses' => [
+                'المصروفات — العرض والإنشاء' => ['view', 'view_all_locations', 'create', 'update'],
+                'اعتماد وترحيل المصروفات' => ['submit', 'approve', 'approve_own', 'post'],
+                'إلغاء القيد' => ['void'],
+            ],
+            'financial' => [
+                'الصندوق المالي' => ['cash'],
+                'الفترات المالية' => ['periods'],
+                'التسويات' => ['adjustments'],
+                'التقارير المالية' => ['reports'],
+                'الوصول والمبيعات والتحصيلات' => ['dashboard', 'branch', 'global', 'sales', 'collections', 'outstanding', 'refunds'],
+            ],
+            'accounting' => [
+                'حسابات الموظفين' => ['employee_accounts'],
+                'شجرة الحسابات والدفاتر' => ['accounts', 'books'],
+                'القيود والسندات' => ['vouchers', 'journals'],
+                'التقارير المحاسبية' => ['reports'],
+            ],
+            'inventory' => [
+                'الجرد والتسويات' => ['view', 'count', 'adjust'],
+                'تنبيهات الصلاحية والاستلام' => ['expiry-alerts'],
+            ],
+            'kitchen' => [
+                'عرض وإدارة المطبخ' => ['view', 'view_all_locations', 'manage', 'stations', 'tickets'],
+                'مراحل تذاكر المطبخ' => ['ticket'],
+            ],
+            'restaurant_tables' => [
+                'الطاولات ومناطق الجلوس' => ['view', 'manage'],
+                'جلسات الطاولات' => ['open_session', 'close_session'],
+            ],
+            'recipes' => [
+                'عرض وتحرير الوصفات' => ['view', 'create', 'update', 'manage'],
+                'اعتماد الوصفات' => ['approve'],
+                'تكلفة الوصفات' => ['cost'],
+            ],
+            'production' => [
+                'عرض دفعات الإنتاج' => ['view', 'view_all_locations'],
+                'مراحل تشغيل الإنتاج' => ['create', 'release', 'start', 'finish', 'complete', 'cancel'],
+                'تكاليف الإنتاج' => ['cost'],
+            ],
+            'chat' => [
+                'محادثات الفروع' => ['view', 'send', 'attachments', 'view_all_branches', 'manage'],
+                'المحادثات المباشرة' => ['direct'],
+            ],
+            'delivery' => [
+                'مهام التوصيل' => ['view', 'view_all_locations', 'create', 'assign', 'update_status'],
+                'مناطق ورسوم التوصيل' => ['zones'],
+            ],
+            'crm' => [
+                'ملف العميل' => ['view', 'view_all', 'manage'],
+                'التفاعلات والمتابعات' => ['interactions'],
+            ],
+            'dashboard' => [
+                'الوصول للوحة التحكم' => ['view'],
+                'مؤشرات المبيعات والكيك' => ['orders', 'sales', 'revenue_chart', 'cake_orders', 'cake_pipeline', 'branch_comparison'],
+                'مؤشرات المخزون والمشتريات' => ['inventory', 'procurement', 'products_chart', 'stock_requests'],
+                'مؤشرات المالية' => ['cash', 'collections', 'profit'],
+            ],
+            'stock_requests' => [
+                'عرض وإنشاء طلبات المخزون' => ['view', 'create'],
+                'مراجعة طلبات المخزون' => ['review'],
+            ],
+            'stock_transfers' => [
+                'عرض التحويلات' => ['view'],
+                'إرسال واستلام التحويلات' => ['dispatch', 'receive'],
+            ],
+            'quality_control' => [
+                'متابعة وفحص الجودة' => ['view', 'inspect'],
+                'قرارات الجودة' => ['decide'],
+            ],
+        ];
+
+        foreach ($sections[$group] ?? [] as $section => $actions) {
+            foreach ($actions as $prefix) {
+                if ($action === $prefix || str_starts_with($action, $prefix . '.')) {
+                    return $section;
+                }
+            }
+        }
+
+        // Applies to every remaining section without losing any permission.
+        $first = explode('.', $action)[0];
+        return match (true) {
+            in_array($first, ['view', 'view_all', 'list', 'read'], true) => 'العرض والاطلاع',
+            in_array($first, ['create', 'store', 'add', 'record'], true) => 'الإنشاء والإضافة',
+            in_array($first, ['update', 'edit', 'manage', 'settings', 'activate'], true) => 'التعديل والإدارة',
+            in_array($first, ['approve', 'review', 'verify', 'submit', 'post', 'start', 'ready', 'release', 'finish', 'pay', 'receive', 'dispatch', 'assign'], true) => 'الاعتماد ومراحل العمل',
+            in_array($first, ['delete', 'cancel', 'refund', 'void', 'reverse'], true) => 'الحذف والإلغاء والتراجع',
+            in_array($first, ['export', 'reports', 'print'], true) => 'التقارير والطباعة والتصدير',
+            default => 'صلاحيات وإجراءات إضافية',
+        };
+    }
+
+    public static function isBroadPermission(string $permission): bool
+    {
+        return str_contains($permission, '.view_all')
+            || str_contains($permission, '.receive_all')
+            || in_array($permission, [
+                'roles.manage', 'users.manage', 'settings.manage',
+                'financial.global.view', 'financial.periods.override_close',
+                'payroll.pay', 'payments.refund', 'chat.manage',
+                'chat.direct.start_all', 'cake_orders.manage',
+            ], true);
+    }
+
     public static function roleLabel(string $role): string
     {
         return self::roleLabels()[$role] ?? $role;
@@ -485,6 +637,7 @@ class PermissionUi
             'cake_orders.manage',
             'employees.manage',
             'showroom_sweets_requests.update_status',
+            'showroom_cake_requests.update_status',
         ], true);
     }
 }

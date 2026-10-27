@@ -52,36 +52,13 @@
                         <span class="form-error" style="display:block;margin-bottom:.75rem">{{ $message }}</span>
                     @enderror
 
-                    @forelse($permissions as $group => $groupPerms)
-                        <div style="margin-bottom:1rem;border:1px solid var(--border);border-radius:12px;overflow:hidden">
-                            <div style="padding:.7rem 1rem;background:var(--surface);font-size:.82rem;font-weight:800;color:var(--gold-deep)">
-                                {{ \App\Support\PermissionUi::groupLabel($group) }}
-                            </div>
-
-                            <div style="padding:.85rem 1rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:.65rem">
-                                @foreach($groupPerms as $perm)
-                                        <label style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:var(--text-mid);cursor:pointer">
-                                            <input
-                                                type="checkbox"
-                                                name="permissions[]"
-                                                value="{{ $perm->name }}"
-                                                @checked(in_array($perm->name, old('permissions', []), true))
-                                            >
-
-                                            <span>
-                                                {{ \App\Support\PermissionUi::permissionLabel($perm->name) }}
-                                                @if(\App\Support\PermissionUi::isLegacyPermission($perm->name))
-                                                    <small style="display:block;color:var(--text-muted)">صلاحية قديمة — معروضة لتجنّب حذفها بلا قصد عند حفظ الدور</small>
-                                                @endif
-                                                <small dir="ltr" style="display:block;color:var(--text-muted);font-size:.7rem">{{ $perm->name }}</small>
-                                            </span>
-                                        </label>
-                                @endforeach
-                            </div>
-                        </div>
-                    @empty
-                        <div class="empty-state-sm">لا توجد صلاحيات مسجلة في النظام.</div>
-                    @endforelse
+                    <p style="font-size:.83rem;color:var(--text-muted);margin-bottom:10px">
+                        جميع صلاحيات النظام مفصولة حسب القسم والإجراء، بما فيها صلاحيات الكيك الخاص وكيك الفروع وحلويات الفروع. الأكواد لا تتغير، والبحث لا يحذف صلاحيات الدور.
+                    </p>
+                    @include('admin.roles.partials.permission-matrix', [
+                        'permissions' => $permissions,
+                        'selectedPermissions' => old('permissions', []),
+                    ])
                 </div>
 
                 <div style="display:flex;gap:.75rem">

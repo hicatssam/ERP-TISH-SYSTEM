@@ -34,6 +34,18 @@
     </div></div>
 </div>
 
+<div class="card" style="margin-bottom:1rem">
+    <div class="card-body" style="line-height:1.8;font-size:.84rem">
+        <strong>منهج المراجعة:</strong> التقرير يعرض الأدوار وصلاحياتها <strong>الفعلية في قاعدة البيانات</strong>،
+        ويكشف الأكواد غير الموثقة وصلاحيات المسارات الناقصة والصلاحيات الواسعة.
+        لا يقوم بإلغاء أو منح أو إعادة تسمية صلاحيات أي مستخدم.
+        <div style="margin-top:5px;color:var(--text-muted)">
+            صلاحيات واسعة أو حساسة مسجلة: {{ $highRisk->count() }}؛ راجع من يملكها حسب الدور قبل اعتماد أي تغيير.
+            فصل الإجراءات في واجهة الإدارة لا يغيّر مفاتيح التفويض أو مستويات الوصول.
+        </div>
+    </div>
+</div>
+
 @if($unlabelled->isNotEmpty() || $ungrouped->isNotEmpty() || $missingRegistered->isNotEmpty())
     <div class="card" style="margin-bottom:1rem">
         <div class="card-header"><span class="card-title">ملاحظات تحتاج متابعة</span></div>
@@ -67,6 +79,50 @@
         </div>
     </div>
 @endif
+
+<div class="card" style="margin-bottom:1rem">
+    <div class="card-header"><span class="card-title">مراجعة التداخل والمسميات</span></div>
+    <div class="card-body" style="font-size:.84rem;line-height:1.85">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px">
+            <div>
+                <strong>أدوار بدون اسم عربي موثّق: {{ $unlabelledRoles->count() }}</strong>
+                <div style="color:var(--text-muted)">
+                    @forelse($unlabelledRoles as $entry)
+                        <code dir="ltr">{{ $entry['role']->name }}</code>
+                    @empty
+                        جميع أسماء الأدوار المسجلة موثّقة.
+                    @endforelse
+                </div>
+            </div>
+            <div>
+                <strong>أدوار تجمع صلاحيات نوعَي الكيك: {{ $cakeCrossModuleRoles->count() }}</strong>
+                <div style="color:var(--text-muted)">
+                    @forelse($cakeCrossModuleRoles as $entry)
+                        {{ \App\Support\PermissionUi::roleLabel($entry['role']->name) }}
+                        <small dir="ltr">({{ $entry['role']->name }})</small>
+                        @unless($loop->last)، @endunless
+                    @empty
+                        لا توجد أدوار غير إدارية تجمع النوعين.
+                    @endforelse
+                </div>
+                <small style="color:var(--text-muted)">التداخل قد يكون مقصودًا لمدير المصنع؛ يتطلب مراجعة فقط ولا يلغيه التقرير.</small>
+            </div>
+            <div>
+                <strong>صلاحيات غير مضافة لأي دور: {{ $notGrantedToRoles->count() }}</strong>
+                <p style="color:var(--text-muted);margin:.25rem 0">قد تكون جديدة أو ممنوحة لمستخدمين بشكل مباشر. لا يتم حذفها.</p>
+                @if($notGrantedToRoles->isNotEmpty())
+                    <details><summary style="cursor:pointer">عرض الأكواد</summary>
+                        <div style="max-height:210px;overflow:auto">
+                        @foreach($notGrantedToRoles as $permission)
+                            <code dir="ltr" style="display:block">{{ $permission->name }}</code>
+                        @endforeach
+                        </div>
+                    </details>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
 
 <div class="card">
     <div class="card-header">
@@ -119,15 +175,20 @@
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;margin-top:1rem">
                     @foreach($groups as $group => $groupPermissions)
                         <div style="padding:.8rem;border:1px solid var(--border);border-radius:10px">
-                            <strong>{{ \App\Support\PermissionUi::groupLabel($group) }} ({{ $groupPermissions->count() }})</strong>
-                            <ul style="padding-inline-start:1rem;margin:.5rem 0 0;font-size:.82rem">
-                                @foreach($groupPermissions as $permission)
-                                    <li style="margin:.4rem 0">
-                                        {{ \App\Support\PermissionUi::permissionLabel($permission->name) }}
-                                        <small dir="ltr" style="display:block;color:var(--text-muted)">{{ $permission->name }}</small>
-                                    </li>
-                                @endforeach
-                            </ul>
+                            <strong>{{ \App\Support\PermissionUi::groupLabel($group) }} ({{ $groupPermissions->sum(fn ($items) => $items->count()) }})</strong>
+                            @foreach($groupPermissions as $sectionName => $sectionPermissions)
+                                <div style="margin-top:.7rem;border-top:1px solid var(--border);padding-top:.55rem">
+                                    <strong style="font-size:.76rem;color:var(--gold-deep)">{{ $sectionName }}</strong>
+                                    <ul style="padding-inline-start:1rem;margin:.5rem 0 0;font-size:.82rem">
+                                        @foreach($sectionPermissions as $permission)
+                                            <li style="margin:.4rem 0">
+                                                {{ \App\Support\PermissionUi::permissionLabel($permission->name) }}
+                                                <small dir="ltr" style="display:block;color:var(--text-muted)">{{ $permission->name }}</small>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endforeach
                         </div>
                     @endforeach
                 </div>

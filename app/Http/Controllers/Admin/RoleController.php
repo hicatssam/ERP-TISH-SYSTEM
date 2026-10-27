@@ -82,7 +82,8 @@ class RoleController extends Controller
                     ? collect()
                     : $role->permissions
                         ->filter(fn (Permission $permission) =>
-                            in_array($permission->name, $reviewCandidates, true))
+                            in_array($permission->name, $reviewCandidates, true)
+                            || PermissionUi::isBroadPermission($permission->name))
                         ->values();
 
                 return [
@@ -91,7 +92,9 @@ class RoleController extends Controller
                     'review' => $sensitive,
                     'groups' => $role->permissions->groupBy(
                         fn (Permission $permission) => explode('.', $permission->name)[0]
-                    ),
+                    )->map(fn ($items) => $items->groupBy(
+                        fn (Permission $permission) => PermissionUi::permissionSection($permission->name)
+                    )),
                 ];
             });
 
@@ -122,9 +125,38 @@ class RoleController extends Controller
             ->diff($permissions->pluck('name'))
             ->values();
 
+        // These are potential review items, not automatic revocations.
+        $highRisk = $permissions
+            ->filter(fn (Permission $permission) => PermissionUi::isBroadPermission($permission->name))
+            ->values();
+
+        $unlabelledRoles = $roleReports
+            ->filter(fn (array $report) =>
+                ! array_key_exists($report['role']->name, PermissionUi::roleLabels()))
+            ->values();
+
+        // Both cake modules may be legitimately assigned to a factory role.
+        // Surface these cross-module grants for explicit human confirmation.
+        $cakeCrossModuleRoles = $roleReports->filter(function (array $report): bool {
+            if (in_array($report['role']->name, ['Admin', 'super-admin'], true)) {
+                return false;
+            }
+            $names = $report['role']->permissions->pluck('name');
+            return $names->contains(fn ($code) => str_starts_with($code, 'cake_orders.'))
+                && $names->contains(fn ($code) => str_starts_with($code, 'showroom_cake_requests.'));
+        })->values();
+
+        $rolePermissionIds = $roleReports->flatMap(
+            fn (array $report) => $report['role']->permissions->pluck('id')
+        )->unique();
+        $notGrantedToRoles = $permissions
+            ->reject(fn (Permission $permission) => $rolePermissionIds->contains($permission->id))
+            ->values();
+
         return view('admin.roles.audit', compact(
             'permissions', 'roleReports', 'unlabelled',
-            'ungrouped', 'missingRegistered'
+            'ungrouped', 'missingRegistered', 'highRisk',
+            'unlabelledRoles', 'cakeCrossModuleRoles', 'notGrantedToRoles'
         ));
     }
 
@@ -349,9 +381,10 @@ class RoleController extends Controller
             ->where('guard_name', self::GUARD_NAME)
             ->orderBy('name')
             ->get()
-            ->groupBy(function (Permission $permission) {
-                return explode('.', $permission->name)[0];
-            });
+            ->groupBy(fn (Permission $permission) => explode('.', $permission->name)[0])
+            ->map(fn ($items) => $items->groupBy(
+                fn (Permission $permission) => PermissionUi::permissionSection($permission->name)
+            ));
     }
 
     private function ensureWebGuard(Role $role): void
