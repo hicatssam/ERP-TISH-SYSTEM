@@ -132,6 +132,34 @@
         </div>
     </div>
 
+    @can('restaurant_menu.manage')
+        @php
+            $pageItems = $menuItems->getCollection();
+            $missingProductEnglish = $pageItems->filter(fn ($item) =>
+                ! \App\Support\CustomerMenuLanguage::hasEnglishName(
+                    $item->display_name, $item->product?->name
+                )
+            )->count();
+            $missingCategoryEnglish = $pageItems
+                ->filter(fn ($item) => $item->product?->category
+                    && ! \App\Support\CustomerMenuLanguage::hasEnglishName(
+                        $item->product->category->name, $item->product->category->name_ar
+                    ))
+                ->pluck('product.category.id')->unique()->count();
+        @endphp
+        @if($missingProductEnglish || $missingCategoryEnglish)
+            <div role="status" style="margin:14px 0;padding:14px 17px;border:1px solid #e8d29a;border-right:4px solid #b9851c;border-radius:12px;background:#fffbef;line-height:1.9;color:#5f461a">
+                <strong>الترجمات الإنجليزية الناقصة في هذه الصفحة</strong>
+                <p style="margin:4px 0 7px">
+                    {{ $missingProductEnglish }} صنف يحتاج اسمًا إنجليزيًا، و{{ $missingCategoryEnglish }} فئة تحتاج اسمًا إنجليزيًا.
+                    تبديل لغة المنيو لا يترجم أسماء المنتجات تلقائيًا؛ يجب تسجيل الاسم الصحيح مرة واحدة في الكتالوج أو اسم العرض الإنجليزي.
+                </p>
+                <a href="{{ route('categories.index') }}" style="font-weight:700;text-decoration:underline">تعديل أسماء الفئات</a>
+                · استخدم زر «تعديل» بجانب المنتج أدناه لوضع اسم العرض بالإنجليزية.
+            </div>
+        @endif
+    @endcan
+
     <div class="rm-grid">
         @forelse($menuItems as $menuItem)
             @php
@@ -140,6 +168,13 @@
                 $image = $resolveImage($menuItem->effectiveImage());
                 $name = $menuItem->displayName();
                 $category = $product->category?->name_ar ?: $product->category?->name ?: 'بدون فئة';
+                $missingEnglishProduct = ! \App\Support\CustomerMenuLanguage::hasEnglishName(
+                    $menuItem->display_name, $product->name
+                );
+                $missingEnglishCategory = $product->category
+                    && ! \App\Support\CustomerMenuLanguage::hasEnglishName(
+                        $product->category->name, $product->category->name_ar
+                    );
                 $price = $locationProduct?->local_selling_price ?? $product->base_selling_price;
                 $available = (bool) ($locationProduct?->is_available ?? false);
                 $inventoryModeLabel = match($menuItem->inventory_mode ?? 'auto') {
@@ -150,6 +185,18 @@
             @endphp
 
             <article class="rm-card {{ ! $menuItem->is_active ? 'is-inactive' : '' }}">
+                @can('restaurant_menu.manage')
+                    @if($missingEnglishProduct || $missingEnglishCategory)
+                        <div style="padding:7px 12px;background:#fff8e8;color:#885615;font-size:12px;border-bottom:1px solid #efdcb9">
+                            ناقص اسم إنجليزي: {{ $missingEnglishProduct ? 'المنتج' : '' }}
+                            {{ $missingEnglishProduct && $missingEnglishCategory ? 'و' : '' }}
+                            {{ $missingEnglishCategory ? 'الفئة' : '' }}
+                            @if($missingEnglishCategory)
+                                · <a href="{{ route('categories.edit', $product->category) }}" style="text-decoration:underline">تعديل الفئة</a>
+                            @endif
+                        </div>
+                    @endif
+                @endcan
                 <div class="rm-card-main">
                     <div class="rm-card-image">
                         @if($image)
@@ -263,6 +310,9 @@
 
                                     <div>
                                         <label>اسم العرض بالإنجليزية</label>
+                        @if($missingEnglishProduct)
+                            <small style="display:block;color:#a15e11;margin:4px 0">الاسم الإنجليزي مفقود أو مكتوب بالعربية. أدخل الترجمة هنا ليظهر الاسم بالإنجليزية للعميل.</small>
+                        @endif
                                         <input
                                             class="rm-control"
                                             type="text"

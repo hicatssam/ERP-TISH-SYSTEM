@@ -69,6 +69,64 @@ class CustomerMenuBilingualTest extends TestCase
     }
 
     #[Test]
+    public function legacy_arabic_only_category_and_birds_nest_product_get_confirmed_english_names(): void
+    {
+        $branch = Location::query()->create([
+            'name' => 'فرع النصر', 'code' => 'B01',
+            'type' => 'branch', 'is_active' => true,
+        ]);
+        $category = Category::query()->create([
+            'name' => 'حلويات شرقية',
+            'name_ar' => 'حلويات شرقية',
+            'slug' => 'legacy-oriental-sweets', 'is_active' => true,
+        ]);
+        $product = Product::query()->create([
+            'category_id' => $category->id,
+            'name' => 'عش بلبل أصابع', 'name_ar' => 'عش بلبل أصابع',
+            'sku' => 'MENU-BIRDS-NEST', 'barcode' => 'MENU-BIRDS-NEST',
+            'product_type' => 'standard', 'is_active' => true,
+        ]);
+        LocationProduct::query()->create([
+            'location_id' => $branch->id, 'product_id' => $product->id,
+            'local_selling_price' => 230, 'is_available' => true,
+        ]);
+        RestaurantMenuItem::query()->create([
+            'location_id' => $branch->id, 'product_id' => $product->id,
+            'display_name' => 'عش بلبل أصابع',
+            'display_name_ar' => 'عش بلبل أصابع',
+            'is_active' => true, 'show_in_qr' => true,
+        ]);
+
+        (require database_path('migrations/2026_10_28_160000_backfill_legacy_customer_menu_english_names.php'))->up();
+
+        $this->assertSame('Eastern Sweets', $category->fresh()->name);
+        $this->assertSame('حلويات شرقية', $category->fresh()->name_ar);
+        $this->assertSame("Bird's Nest Pastry Fingers", $product->fresh()->name);
+        $this->assertSame('عش بلبل أصابع', $product->fresh()->name_ar);
+
+        $english = $this->get(route('customer-menu.show', [$branch->code, 'lang' => 'en']))->assertOk();
+        $item = $english->viewData('menuItems')->first();
+        $this->assertSame("Bird's Nest Pastry Fingers", $item['name']);
+        $this->assertSame('Eastern Sweets', $item['category']);
+        $this->assertSame('Eastern Sweets', $english->viewData('categories')->first()['name']);
+        $this->assertSame(230.0, $item['price']);
+
+        $arabic = $this->get(route('customer-menu.show', [$branch->code, 'lang' => 'ar']))->assertOk();
+        $this->assertSame('عش بلبل أصابع', $arabic->viewData('menuItems')->first()['name']);
+        $this->assertSame('حلويات شرقية', $arabic->viewData('menuItems')->first()['category']);
+    }
+
+    #[Test]
+    public function english_menu_prefers_real_latin_names_even_if_translations_are_inverted(): void
+    {
+        $this->get(route('customer-menu.index', ['lang' => 'en']))->assertOk();
+        $this->assertSame('Eastern Sweets', \App\Support\CustomerMenuLanguage::name('حلويات شرقية', 'Eastern Sweets'));
+        $this->assertTrue(\App\Support\CustomerMenuLanguage::hasEnglishName('عش بلبل', 'Bird Nest'));
+        $this->assertFalse(\App\Support\CustomerMenuLanguage::hasEnglishName('عش بلبل', 'حلويات شرقية'));
+        $this->assertSame('عش بلبل', \App\Support\CustomerMenuLanguage::englishName('عش بلبل'));
+    }
+
+    #[Test]
     public function menu_banners_use_explicit_english_fields_and_preserve_legacy_arabic_fallback(): void
     {
         $branch = Location::query()->create([

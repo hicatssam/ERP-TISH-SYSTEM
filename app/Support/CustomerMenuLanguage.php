@@ -31,10 +31,22 @@ final class CustomerMenuLanguage
     /** Use the catalog's existing English and Arabic fields; never machine-translate product names. */
     public static function name(?string $english, ?string $arabic): string
     {
-        $first = self::isEnglish() ? $english : $arabic;
-        $fallback = self::isEnglish() ? $arabic : $english;
+        if (self::isEnglish()) {
+            return self::englishName($english, $arabic);
+        }
 
-        return trim((string) ($first ?: $fallback));
+        return trim((string) ($arabic ?: $english));
+    }
+
+    public static function hasEnglishName(?string ...$candidates): bool
+    {
+        foreach ($candidates as $candidate) {
+            if (filled($candidate) && ! preg_match('/\\p{Arabic}/u', trim((string) $candidate))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static function englishName(?string ...$candidates): string
