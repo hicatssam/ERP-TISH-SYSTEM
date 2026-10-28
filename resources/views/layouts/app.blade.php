@@ -2419,6 +2419,16 @@ a.app-page-btn:hover {
 
                     @can('settings.manage')
 
+                        <a href="{{ route('banners.index') }}"
+                           class="nav-item {{ request()->routeIs('banners.*') ? 'active' : '' }}">
+                            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="16" rx="2" />
+                                <circle cx="8" cy="9" r="1.5" />
+                                <path d="M4 17l5-5 4 3 3-4 4 5" />
+                            </svg>
+                            <span>إعلانات المنيو الإلكتروني</span>
+                        </a>
+
                         <a href="{{ route('settings.index') }}"
 
                             class="nav-item {{ request()->routeIs('settings.*') && !request()->routeIs('settings.sales-channels.*') ? 'active' : '' }}">

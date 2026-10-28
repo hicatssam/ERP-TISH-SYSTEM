@@ -12,7 +12,8 @@
 
     <div class="full">
         <label>صورة الإعلان</label>
-        <input type="file" name="image" id="{{ $prefix }}_image" accept="image/*">
+        <input type="file" name="image" id="{{ $prefix }}_image" accept="image/jpeg,image/png,image/webp" @if($prefix === 'create') required @endif>
+        <small style="display:block;margin-top:.35rem;color:var(--text-muted,#64748b);line-height:1.6">صورة الإعلان مطلوبة عند الإضافة (JPG أو PNG أو WebP، حتى 4MB). تظهر أعلى المنيو الإلكتروني بعد تفعيل الإعلان، حسب الفرع وتواريخ العرض.</small>
         <div class="bn-current-image" id="{{ $prefix }}_current_image"></div>
     </div>
 

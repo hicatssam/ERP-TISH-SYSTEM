@@ -971,6 +971,13 @@ Route::post(
                 ->name('report-schedules.test-send');
         });
 
+        // Ads stored in the banners table and shown in the public electronic menu.
+        // Only users authorized to manage system settings may publish or edit them.
+        Route::middleware('can:settings.manage')->group(function (): void {
+            Route::resource('banners', \App\Http\Controllers\Admin\BannerController::class)
+                ->only(['index', 'store', 'update', 'destroy']);
+        });
+
         // ─── Settings ──────────────────────────────────────────────────────
         Route::middleware('can:settings.manage')->group(function () {
             Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');

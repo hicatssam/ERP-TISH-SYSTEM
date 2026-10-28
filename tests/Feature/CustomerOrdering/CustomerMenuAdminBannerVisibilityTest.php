@@ -6,8 +6,11 @@ use App\Models\Banner;
 use App\Models\Location;
 use App\Models\MenuBanner;
 use App\Models\SystemSetting;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\UploadedFile;
+use Spatie\Permission\Models\Permission;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -118,6 +121,84 @@ class CustomerMenuAdminBannerVisibilityTest extends TestCase
             ['عرض عام لجميع الفروع', 'فرع آخر فقط'],
             $otherPage->viewData('banners')->pluck('title')->all()
         );
+    }
+
+    #[Test]
+    public function admin_banner_upload_is_saved_in_banners_and_appears_only_in_the_selected_branch_menu(): void
+    {
+        Storage::fake('public');
+        $branch = $this->branch('ADMIN-BANNER-A');
+        $another = $this->branch('ADMIN-BANNER-B');
+        $admin = User::factory()->create();
+        $admin->employee->locations()->attach($branch->id, ['is_primary' => true]);
+        $admin->givePermissionTo(Permission::findOrCreate('settings.manage', 'web'));
+
+        $this->actingAs($admin)->get(route('banners.index'))
+            ->assertOk()
+            ->assertSee('إعلانات المنيو')
+            ->assertSee('+ إضافة إعلان');
+
+        $this->actingAs($admin)->post(route('banners.store'), [
+            'location_id' => $branch->id,
+            'title' => 'عرض افتتاح الموسم',
+            'kicker' => 'حصري',
+            'subtitle' => 'خصم على الحلويات',
+            'cta_text' => 'شاهد الأصناف',
+            'cta_link' => '#products',
+            'sort_order' => 2,
+            'is_active' => 1,
+            'image' => UploadedFile::fake()->image('offer.jpg'),
+        ])->assertSessionHasNoErrors()->assertRedirect();
+
+        $banner = Banner::query()->sole();
+        $this->actingAs($admin)->get(route('banners.index'))
+            ->assertOk()->assertSee('معاينة المنيو')
+            ->assertSee(route('customer-menu.show', $branch->code));
+        $this->assertSame('عرض افتتاح الموسم', $banner->title);
+        $this->assertStringStartsWith('banners/', $banner->image);
+        Storage::disk('public')->assertExists($banner->image);
+
+        $this->get(route('customer-menu.show', $branch->code))
+            ->assertOk()
+            ->assertSee('عرض افتتاح الموسم')
+            ->assertSee('خصم على الحلويات')
+            ->assertSee('شاهد الأصناف')
+            ->assertSee(route('customer-menu.assets.show', ['path' => $banner->image], false));
+
+        $this->get(route('customer-menu.assets.show', ['path' => $banner->image]))
+            ->assertOk();
+
+        $this->get(route('customer-menu.show', $another->code))
+            ->assertOk()
+            ->assertDontSee('عرض افتتاح الموسم');
+
+        $this->actingAs($admin)->put(route('banners.update', $banner), [
+            'location_id' => $branch->id,
+            'title' => 'عرض محدّث',
+            'is_active' => 0,
+        ])->assertSessionHasNoErrors();
+        $this->get(route('customer-menu.show', $branch->code))
+            ->assertOk()->assertDontSee('عرض محدّث');
+    }
+
+    #[Test]
+    public function banner_creation_requires_an_image_and_is_protected_by_settings_permission(): void
+    {
+        $branch = $this->branch('BANNER-PERMISSIONS-A');
+        $user = User::factory()->create();
+        $user->employee->locations()->attach($branch->id, ['is_primary' => true]);
+
+        $this->actingAs($user)->get(route('banners.index'))->assertForbidden();
+        $this->actingAs($user)->post(route('banners.store'), [
+            'title' => 'إعلان بدون صلاحية',
+        ])->assertForbidden();
+
+        $user->givePermissionTo(Permission::findOrCreate('settings.manage', 'web'));
+        $this->actingAs($user)->post(route('banners.store'), [
+            'title' => 'إعلان دون صورة',
+            'is_active' => 1,
+        ])->assertSessionHasErrors('image');
+        $this->assertDatabaseCount('banners', 0);
     }
 
     #[Test]

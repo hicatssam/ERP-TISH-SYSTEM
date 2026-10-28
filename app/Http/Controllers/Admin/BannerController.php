@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Banner;
 use App\Models\Location;
+use App\Models\SystemSetting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -22,17 +23,18 @@ class BannerController extends Controller
 
         $locations = Location::query()
             ->orderBy('name')
-            ->get(['id', 'name']);
+            ->get(['id', 'name', 'code']);
 
         return view('admin.banners.index', [
             'banners' => $banners,
             'locations' => $locations,
+            'heroEnabled' => (bool) SystemSetting::get('customer_menu_show_hero', true),
         ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $data = $this->validateBanner($request);
+        $data = $this->validateBanner($request, requireImage: true);
 
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('banners', 'public');
@@ -48,7 +50,7 @@ class BannerController extends Controller
 
     public function update(Request $request, Banner $banner): RedirectResponse
     {
-        $data = $this->validateBanner($request);
+        $data = $this->validateBanner($request, requireImage: ! $banner->image);
 
         if ($request->hasFile('image')) {
             if ($banner->image && !preg_match('#^https?://#i', $banner->image)) {
@@ -77,7 +79,7 @@ class BannerController extends Controller
         return back()->with('success', 'تم حذف الإعلان.');
     }
 
-    private function validateBanner(Request $request): array
+    private function validateBanner(Request $request, bool $requireImage = false): array
     {
         return $request->validate([
             'location_id' => ['nullable', 'exists:locations,id'],
@@ -86,7 +88,7 @@ class BannerController extends Controller
             'subtitle' => ['nullable', 'string', 'max:255'],
             'cta_text' => ['nullable', 'string', 'max:60'],
             'cta_link' => ['nullable', 'string', 'max:255'],
-            'image' => ['nullable', 'image', 'max:4096'],
+            'image' => [$requireImage ? 'required' : 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
             'is_active' => ['nullable', 'boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'starts_at' => ['nullable', 'date'],

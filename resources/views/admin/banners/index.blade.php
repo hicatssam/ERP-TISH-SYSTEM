@@ -25,6 +25,13 @@
 </div>
 
 
+@unless($heroEnabled)
+<div class="alert alert-warning" style="margin-bottom:1rem">
+    إعلانات المنيو مخفية حاليًا لأن خيار «إظهار البنر الرئيسي» مُعطّل في إعدادات المنيو.
+    <a href="{{ route('settings.index') }}" style="text-decoration:underline">مراجعة إعدادات المنيو</a>
+</div>
+@endunless
+
 @if(session('success'))
     <div class="alert alert-success" style="margin-bottom:1rem">
         {{ session('success') }}
@@ -51,13 +58,14 @@
             $now = now();
             $isScheduledOut = ($banner->starts_at && $banner->starts_at->isFuture())
                 || ($banner->ends_at && $banner->ends_at->isPast());
+            $publicBannerImage = \App\Support\PublicImageUrl::url($banner->image);
         @endphp
 
         <div class="bn-card">
 
             <div class="bn-media">
-                @if($banner->image_url)
-                    <img src="{{ $banner->image_url }}" alt="{{ $banner->title }}">
+                @if($publicBannerImage)
+                    <img src="{{ $publicBannerImage }}" alt="{{ $banner->title }}">
                 @else
                     <div class="bn-media-placeholder">
                         <i class="fa-solid fa-image"></i>
@@ -97,8 +105,12 @@
 
                 <div class="bn-meta">
 
-                    @if($banner->is_active && !$isScheduledOut)
-                        <span class="badge badge-success">فعال</span>
+                    @if(! $publicBannerImage)
+                        <span class="badge badge-warning">الصورة غير متاحة — لن يظهر بالمنيو</span>
+                    @elseif(! $heroEnabled)
+                        <span class="badge badge-warning">المنيو يخفي البنرات من الإعدادات</span>
+                    @elseif($banner->is_active && !$isScheduledOut)
+                        <span class="badge badge-success">ظاهر بالمنيو</span>
                     @elseif($banner->is_active && $isScheduledOut)
                         <span class="badge badge-warning">مجدول - غير ظاهر الآن</span>
                     @else
@@ -110,6 +122,10 @@
                 </div>
 
                 <div class="bn-actions">
+                    <a href="{{ $banner->location && $banner->location->isBranch() && $banner->location->is_active ? route('customer-menu.show', $banner->location->code) : route('customer-menu.index') }}"
+                       target="_blank" rel="noopener" class="btn btn-ghost btn-sm">
+                        معاينة المنيو
+                    </a>
 
                     <button
                         type="button"
@@ -126,7 +142,7 @@
                             is_active: {{ $banner->is_active ? 'true' : 'false' }},
                             starts_at: '{{ optional($banner->starts_at)->format('Y-m-d\TH:i') }}',
                             ends_at: '{{ optional($banner->ends_at)->format('Y-m-d\TH:i') }}',
-                            imageUrl: '{{ $banner->image_url }}',
+                            imageUrl: '{{ $publicBannerImage }}',
                             updateUrl: '{{ route('banners.update', $banner) }}'
                         })"
                     >
