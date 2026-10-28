@@ -512,9 +512,9 @@ trait ResolvesCustomerMenuBranding
             ->map(fn ($banner): array => [
                 'id' => (int) $banner->id,
                 'image' => $this->assetFromPath($banner->image),
-                'title' => $banner->title,
-                'subtitle' => $banner->subtitle,
-                'badge_text' => $banner->badge_text,
+                'title' => CustomerMenuLanguage::isEnglish() ? ($banner->title_en ?: $banner->title) : $banner->title,
+                'subtitle' => CustomerMenuLanguage::isEnglish() ? ($banner->subtitle_en ?: $banner->subtitle) : $banner->subtitle,
+                'badge_text' => CustomerMenuLanguage::isEnglish() ? ($banner->badge_text_en ?: $banner->badge_text) : $banner->badge_text,
                 'link_url' => $banner->link_url,
             ])
             ->filter(fn (array $banner) => filled($banner['image']))

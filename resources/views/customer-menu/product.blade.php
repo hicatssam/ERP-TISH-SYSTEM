@@ -77,6 +77,8 @@
 
 <script>
 const CM = window.CustomerMenu;
+const menuT = text => window.CustomerMenuI18n.t(text);
+const menuF = (key, values) => window.CustomerMenuI18n.format(key, values);
 const PRODUCT_ID = @json($product['product_id']);
 const PRODUCT = CM.product(PRODUCT_ID);
 let qty = 1;
@@ -154,8 +156,8 @@ function renderPicker() {
     modifierGroups.forEach(group => {
         const isSingle = group.selection_type === 'single' || group.max === 1;
         const hint = group.required
-            ? (group.max && group.max > 1 ? `اختر من ${group.min} إلى ${group.max}` : 'اختيار مطلوب')
-            : (group.max ? `اختر حتى ${group.max}` : 'اختياري');
+            ? (group.max && group.max > 1 ? menuF('اختر من {min} إلى {max}', {min:group.min, max:group.max}) : 'اختيار مطلوب')
+            : (group.max ? menuF('اختر حتى {max}', {max:group.max}) : 'اختياري');
 
         html += `<div class="picker-group" data-group="${group.id}" data-min="${group.min}" data-max="${group.max ?? ''}" data-required="${group.required ? 1 : 0}">
           <div class="picker-group-head">
@@ -187,13 +189,13 @@ function renderPicker() {
 
 function validateSelection() {
     if (PRODUCT.isVariantProduct && variants.length && !selectedVariantId) {
-        return 'اختر الحجم/النوع أولاً.';
+        return menuT('اختر الحجم/النوع أولاً.');
     }
     for (const group of modifierGroups) {
         const count = (group.modifiers || []).filter(m => selectedModifiers[m.id]).length;
         const min = group.required ? Math.max(1, group.min) : group.min;
-        if (count < min) return `مجموعة "${group.name}" تتطلب اختيار ${min} على الأقل.`;
-        if (group.max && count > group.max) return `مجموعة "${group.name}" تسمح بحد أقصى ${group.max}.`;
+        if (count < min) return menuF('مجموعة "{name}" تتطلب اختيار {min} على الأقل.', {name:group.name, min});
+        if (group.max && count > group.max) return menuF('مجموعة "{name}" تسمح بحد أقصى {max}.', {name:group.name, max:group.max});
     }
     return null;
 }

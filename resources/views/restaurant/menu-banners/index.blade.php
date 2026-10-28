@@ -38,6 +38,11 @@
                 <div class="mb-card-body">
                     <strong>{{ $banner->title ?: 'بدون عنوان' }}</strong>
                     @if($banner->subtitle)<small>{{ $banner->subtitle }}</small>@endif
+                    @if(($banner->title && blank($banner->title_en))
+                        || ($banner->subtitle && blank($banner->subtitle_en))
+                        || ($banner->badge_text && blank($banner->badge_text_en)))
+                        <small style="color:#986a19;font-weight:700">الترجمة الإنجليزية غير مكتملة لهذا الإعلان</small>
+                    @endif
                     <div class="mb-card-meta">
                         <span class="mb-chip">{{ $banner->location?->name ?? 'كل الفروع' }}</span>
                         <span class="mb-chip">ترتيب {{ $banner->sort_order }}</span>
@@ -100,6 +105,23 @@
             </div>
 
             <label class="mb-field">الوصف<input type="text" name="subtitle" id="mbSubtitle" maxlength="200" placeholder="على أول طلب إلك اليوم"></label>
+            <div style="padding:12px 14px;margin-bottom:14px;background:var(--mb-bg);border:1px solid var(--mb-border);border-radius:12px">
+                <strong style="display:block;font-size:.87rem;margin-bottom:8px">ترجمة الإعلان للإنجليزية (اختياري)</strong>
+                <small style="display:block;margin-bottom:10px;color:var(--mb-muted);font-size:.75rem">
+                    تظهر النصوص الإنجليزية عند اختيار English في منيو الزبائن. إذا تُرك حقل فارغًا، يظهر النص العربي الموجود بدلًا منه.
+                </small>
+                <div class="mb-field-row">
+                    <label class="mb-field">العنوان بالإنجليزي
+                        <input dir="ltr" lang="en" type="text" name="title_en" id="mbTitleEn" maxlength="120" placeholder="Today's Special">
+                    </label>
+                    <label class="mb-field">الشارة بالإنجليزي
+                        <input dir="ltr" lang="en" type="text" name="badge_text_en" id="mbBadgeTextEn" maxlength="30" placeholder="Special offer">
+                    </label>
+                </div>
+                <label class="mb-field">الوصف بالإنجليزي
+                    <input dir="ltr" lang="en" type="text" name="subtitle_en" id="mbSubtitleEn" maxlength="200" placeholder="Available today only">
+                </label>
+            </div>
 
             <div class="mb-field-row">
                 <label class="mb-field">الفرع
@@ -198,8 +220,11 @@ function mbOpenModal(banner) {
     document.getElementById('mbImage').required = !isEdit;
 
     document.getElementById('mbTitle').value = banner?.title || '';
+    document.getElementById('mbTitleEn').value = banner?.title_en || '';
     document.getElementById('mbBadgeText').value = banner?.badge_text || '';
+    document.getElementById('mbBadgeTextEn').value = banner?.badge_text_en || '';
     document.getElementById('mbSubtitle').value = banner?.subtitle || '';
+    document.getElementById('mbSubtitleEn').value = banner?.subtitle_en || '';
     document.getElementById('mbLocation').value = banner?.location_id || '';
     document.getElementById('mbSortOrder').value = banner?.sort_order ?? 0;
     document.getElementById('mbIsActive').checked = banner ? !!banner.is_active : true;

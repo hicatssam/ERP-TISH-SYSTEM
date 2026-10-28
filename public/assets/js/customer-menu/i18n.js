@@ -165,7 +165,53 @@
   "كل اللي بتحبه": "Everything you love",
   "للتوصيل": "For delivery",
   "للسفري": "Takeaway",
-  "لحجز الطاولة": "Reserve a table"
+  "لحجز الطاولة": "Reserve a table",
+  "اختر فرعك": "Choose your branch",
+  "العودة": "Back",
+  "طلباتي ←": "My orders ←",
+  "التنقل": "Navigation",
+  "اختار صنفك المفضل واطلبه مباشرة من المنيو.": "Pick your favorite treat and order from the menu.",
+  "صنف متاح": "item available",
+  "عرض": "View",
+  "عرض {name}": "View {name}",
+  "صنف": "Item",
+  "حساب": "Account",
+  "استلام من الباب": "Curbside pickup",
+  "طلب مطعم": "Restaurant order",
+  "بطاقة": "Card",
+  "نقداً": "Cash",
+  "نقدي": "Cash",
+  "نقد": "Cash",
+  "تحويل بنكي": "Bank transfer",
+  "محفظة إلكترونية": "Electronic wallet",
+  "تعذر تحميل طرق الدفع. حدّث الصفحة أو راجع إعدادات الفرع.": "Unable to load payment methods. Refresh the page or contact the branch.",
+  "حجم إثبات الدفع أكبر من المسموح على السيرفر. جرّب ملفاً أصغر.": "Payment proof exceeds the server limit. Try a smaller file.",
+  "تعذر قراءة نتيجة الطلب. أعد المحاولة بنفس الصفحة.": "Could not read the order confirmation. Please retry from this page.",
+  "الوقت المتوقع لتجهيز طلبك: حوالي {minutes} دقيقة": "Estimated preparation time: about {minutes} minutes",
+  "رسالة من الفرع: {message}": "Message from the branch: {message}",
+  "طلب #{number}": "Order #{number}",
+  "اختر من {min} إلى {max}": "Choose {min} to {max}",
+  "اختر حتى {max}": "Choose up to {max}",
+  "مجموعة \"{name}\" تتطلب اختيار {min} على الأقل.": "Choose at least {min} option(s) in \"{name}\".",
+  "مجموعة \"{name}\" تسمح بحد أقصى {max}.": "Choose no more than {max} option(s) in \"{name}\".",
+  "تم إلغاء الطلب. تواصل مع الفرع إذا احتجت للمساعدة.": "Your order was cancelled. Contact the branch if you need help.",
+  "تم تسليم طلبك. شكراً لاختيارك لنا.": "Your order was delivered. Thank you for choosing us.",
+  "طلبك جاهز الآن للاستلام. نتمنى لك وجبة شهية!": "Your order is ready for pickup. Enjoy!",
+  "تم استلام طلبك وبدأنا بمراجعته.": "We received your order and are reviewing it.",
+  "تم قبول طلبك ويجري تحضيره.": "Your order is confirmed and being prepared.",
+  "طلبك قيد التحضير الآن.": "Your order is now being prepared.",
+  "تم استلام الطلب.": "Order received.",
+  "عدد {count} أصناف": "{count} items",
+  "تم استلام طلبك": "Your order was received",
+  "تم قبول الطلب": "Order confirmed",
+  "طلبك قيد التحضير": "Your order is being prepared",
+  "فريقنا يجهز طلبك الآن.": "Our team is preparing your order now.",
+  "تم قبول طلبك وسيدخل التحضير الآن.": "Your order was accepted and will be prepared shortly.",
+  "وصل طلبك للفرع وهو بانتظار القبول.": "Your order has reached the branch and is awaiting confirmation.",
+  "اطلب أسرع من تطبيق": "Order faster with the app",
+  "اختار صنفك المفضل واطلبه مباشرة من المنيو.": "Choose your favorite item and order from the menu."
+
+
 };
  const allowed = ['ar','en'];
  const cookieName = 'dahab_menu_lang';
@@ -188,7 +234,12 @@
    if (!translated) return input;
    return input.replace(trimmed, translated);
  };
- window.CustomerMenuI18n = {lang:language, isEnglish, t:translate, dictionary};
+ const format = (key, values = {}) => {
+   const template = translate(key);
+   return template.replace(/\{([a-zA-Z_]+)\}/g, (match, name) =>
+     Object.prototype.hasOwnProperty.call(values, name) ? String(values[name]) : match);
+ };
+ window.CustomerMenuI18n = {lang:language, isEnglish, t:translate, format, dictionary};
  function updateText(root) {
    if (language !== 'en' || !root || !document.createTreeWalker) return;
    const visitor = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
@@ -219,6 +270,7 @@
    document.cookie = cookieName + '=' + language + '; Path=/; Max-Age=31536000; SameSite=Lax';
    if (language === 'en') {
      document.title = document.title.replace(/^(المنيو|المفضلة|اختر فرعك|سلة الطلب|إتمام الطلب|طلباتي)\s*([-—])/, (_,key,sep) => translate(key) + ' ' + sep);
+     document.title = document.title.replace(/^تتبع\s+/, 'Track ');
      updateText(document.body);
    }
    const host = document.querySelector('.reference-actions,.page-head,.branch-brand') || document.body;

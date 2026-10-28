@@ -273,7 +273,7 @@
       @else
        <article class="banner-slide">
       @endif
-        <img src="{{ $banner['image'] }}" alt="{{ $banner['title'] ?: 'عرض من '.$branding['name'] }}">
+        <img src="{{ $banner['image'] }}" alt="{{ $banner['title'] ?: ((\App\Support\CustomerMenuLanguage::isEnglish() ? 'Offer from ' : 'عرض من ') . $branding['name']) }}">
         <div class="banner-copy">
          @if($banner['badge_text'])<span class="tag">{{ $banner['badge_text'] }}</span>@endif
          <h2>{{ $banner['title'] ?: 'مذاق يستحق أن تعود إليه' }}</h2>
@@ -290,7 +290,7 @@
     @if($banners->count() > 1)
      <div class="banner-dots" id="bannerDots">
       @foreach($banners as $index => $banner)
-       <button type="button" class="{{ $index === 0 ? 'active' : '' }}" data-banner-dot="{{ $index }}" aria-label="العرض {{ $index + 1 }}"></button>
+       <button type="button" class="{{ $index === 0 ? 'active' : '' }}" data-banner-dot="{{ $index }}" aria-label="{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Slide ' . ($index + 1) : 'العرض ' . ($index + 1) }}"></button>
       @endforeach
      </div>
     @endif
@@ -387,6 +387,7 @@
 <script>
 (function () {
     const CM = window.CustomerMenu;
+    const menuF = (key, values) => window.CustomerMenuI18n.format(key, values);
     const productUrlBase = @json(route('customer-menu.product.show', [$location->code, '__ID__']));
     const productsUrl = @json(route('customer-menu.products', $location->code));
     const featuredLimit = @json($featuredLimit);
@@ -413,7 +414,7 @@
         const favoriteLabel = CM.isFavorite(product.id) ? 'إزالة من المفضلة' : 'إضافة للمفضلة';
 
         return '<article class="product" data-id="' + CM.esc(product.id) + '">' +
-            '<a class="product-media" href="' + productUrl(product.id) + '" aria-label="عرض ' + CM.esc(product.name) + '">' + CM.image(product) + '</a>' +
+            '<a class="product-media" href="' + productUrl(product.id) + '" aria-label="' + CM.esc(menuF('عرض {name}', {name:product.name})) + '">' + CM.image(product) + '</a>' +
             status +
             '<button class="fav ' + (CM.isFavorite(product.id) ? 'active' : '') + '" type="button" data-fav="' + CM.esc(product.id) + '" aria-label="' + favoriteLabel + '"><i class="' + (CM.isFavorite(product.id) ? 'fa-solid' : 'fa-regular') + ' fa-heart"></i></button>' +
             '<div class="product-body">' +
@@ -488,7 +489,7 @@
         document.getElementById('catalogTitle').textContent = activeCat === 'all'
             ? 'كل الأصناف'
             : (selected?.dataset.catName || 'الأصناف');
-        document.getElementById('catalogSubtitle').textContent = rows.length + ' صنف متاح';
+        document.getElementById('catalogSubtitle').textContent = menuF('عدد {count} أصناف', {count:rows.length});
         animateVisibleCards();
     }
 

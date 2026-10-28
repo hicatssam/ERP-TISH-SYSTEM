@@ -102,6 +102,8 @@
 
 <script>
 const CM = window.CustomerMenu;
+const menuT = text => window.CustomerMenuI18n.t(text);
+const menuF = (key, values) => window.CustomerMenuI18n.format(key, values);
 const ORDER_URL = @json(route('customer-menu.orders.store', $location->code));
 const PAYMENT_URL = @json(route('customer-menu.payment-options', $location->code));
 const QUEUE_URL = @json(route('customer-menu.queue-status', $location->code));
@@ -175,7 +177,7 @@ async function loadPayments() {
         methods = [];
         document.getElementById('checkoutSubmit').disabled = true;
         document.getElementById('paymentMethods').innerHTML =
-            '<div class="error">تعذر تحميل طرق الدفع. حدّث الصفحة أو راجع إعدادات الفرع.</div>';
+            '<div class="error">' + menuT('تعذر تحميل طرق الدفع. حدّث الصفحة أو راجع إعدادات الفرع.') + '</div>';
     }
 }
 
@@ -195,7 +197,7 @@ function renderPayments() {
           <button class="payment-card" type="button" data-pay="${m.id}">
             <span class="radio"></span>
             <span class="p-icon">${m.logo ? `<img src="${CM.esc(m.logo)}" alt="${CM.esc(m.name)}">` : `<i class="${paymentIcon(m.type)}"></i>`}</span>
-            <span class="p-copy"><strong>${CM.esc(m.name)}</strong><small>${CM.esc(m.type || '')}</small></span>
+            <span class="p-copy"><strong>${CM.esc(m.name)}</strong><small>${CM.esc(menuT(({cash:'نقد',card_pos:'بطاقة',bank_transfer:'تحويل بنكي',electronic_wallet:'محفظة إلكترونية'})[m.type] || m.type || ''))}</small></span>
           </button>`).join('')
         : 'لا توجد طرق دفع مفعلة.';
 }
@@ -339,9 +341,9 @@ document.getElementById('checkoutForm').addEventListener('submit', async e => {
                 : response.status === 419
                     ? 'انتهت صلاحية الصفحة. حدّث الصفحة وحاول مرة أخرى.'
                     : 'تعذر إرسال الطلب. حاول مرة أخرى.';
-            throw new Error(Object.values(data.errors || {}).flat()[0] || data.message || fallback);
+            throw new Error(menuT(Object.values(data.errors || {}).flat()[0] || data.message || fallback));
         }
-        if (!data.track_url) throw new Error('تعذر قراءة نتيجة الطلب. أعد المحاولة بنفس الصفحة.');
+        if (!data.track_url) throw new Error(menuT('تعذر قراءة نتيجة الطلب. أعد المحاولة بنفس الصفحة.'));
         checkoutSucceeded = true;
 
         CM.pushOrder({
@@ -352,14 +354,14 @@ document.getElementById('checkoutForm').addEventListener('submit', async e => {
             status_url: data.status_url || null,
             state: data.state || 'received',
             status_label: data.status_label || 'تم استلام الطلب',
-            created_at: data.created_at || new Date().toLocaleString('ar'),
+            created_at: data.created_at || new Date().toLocaleString(window.CustomerMenuI18n.isEnglish ? 'en' : 'ar'),
         });
 
         CM.clearCart();
         CM.toast('تم استلام طلبك بنجاح');
         setTimeout(() => { window.location.href = data.track_url || TRACK_BASE; }, 700);
     } catch (err) {
-        error.textContent = err.message;
+        error.textContent = menuT(err.message);
         error.focus();
     } finally {
         if (!checkoutSucceeded) {
@@ -387,7 +389,7 @@ renderSummary();
         const basePrep = cartMax || Number(data.default_prep_minutes) || 12;
         const totalMinutes = basePrep + (Number(data.queue_count) || 0) * (Number(data.queue_minutes_per_order) || 0);
 
-        document.getElementById('etaText').textContent = `الوقت المتوقع لتجهيز طلبك: حوالي ${totalMinutes} دقيقة`;
+        document.getElementById('etaText').textContent = menuF('الوقت المتوقع لتجهيز طلبك: حوالي {minutes} دقيقة', {minutes:totalMinutes});
         document.getElementById('etaBanner').hidden = false;
     } catch (e) {
         // Silently skip the ETA banner if the queue endpoint is unreachable —

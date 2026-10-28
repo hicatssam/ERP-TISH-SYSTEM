@@ -346,6 +346,8 @@
     @include('customer-menu.partials.pwa-install')
 
     <script>
+        const menuT = text => window.CustomerMenuI18n.t(text);
+        const menuF = (key, values) => window.CustomerMenuI18n.format(key, values);
         const url = @json(route('customer-menu.status',$order->public_token));
         const initialStatus = @json($statusPayload ?? null);
         const label = document.querySelector('#label span:last-child');
@@ -380,8 +382,8 @@
             if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
 
             if ('Notification' in window && Notification.permission === 'granted') {
-                new Notification(data.label || 'طلبك جاهز 🎉', {
-                    body: data.description || 'طلبك جاهز الآن للاستلام.',
+                new Notification(menuT(data.label || 'طلبك جاهز 🎉'), {
+                    body: menuT(data.description || 'طلبك جاهز الآن للاستلام.'),
                     icon: @json($branding['favicon'] ?? $branding['logo'] ?? null) || undefined,
                     tag: 'order-status-' + @json($order->order_number),
                 });
@@ -409,12 +411,12 @@
             });
 
             card.classList.toggle('cancelled', cancelled);
-            label.textContent = data.label || statusText[state] || 'جاري تجهيز طلبك';
-            statusDescription.textContent = data.description || '';
+            label.textContent = menuT(data.label || statusText[state] || 'جاري تجهيز طلبك');
+            statusDescription.textContent = menuT(data.description || '');
             statusDescription.classList.toggle('show', Boolean(data.description));
 
             customerMessage.textContent = data.customer_message
-                ? `رسالة من الفرع: ${data.customer_message}`
+                ? menuF('رسالة من الفرع: {message}', {message:data.customer_message})
                 : '';
             customerMessage.classList.toggle('show', Boolean(data.customer_message));
 
@@ -425,7 +427,7 @@
 
             const minutes = Number(data.estimated_ready_minutes);
             const showEta = !cancelled && Number.isFinite(minutes) && minutes > 0;
-            eta.textContent = showEta ? `⏱️ الوقت المتوقع لتجهيز طلبك: حوالي ${minutes} دقيقة` : '';
+            eta.textContent = showEta ? '⏱️ ' + menuF('الوقت المتوقع لتجهيز طلبك: حوالي {minutes} دقيقة', {minutes}) : '';
             eta.classList.toggle('show', showEta);
 
             notifyIfReady(data);
@@ -438,7 +440,7 @@
                 if (!response.ok) throw data;
                 updateTracking(data);
             } catch (error) {
-                label.textContent = 'تعذر تحديث الحالة مؤقتًا';
+                label.textContent = menuT('تعذر تحديث الحالة مؤقتًا');
             }
         }
 

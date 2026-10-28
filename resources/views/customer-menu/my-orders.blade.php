@@ -44,6 +44,8 @@ main{padding:22px 0}.titleRow{margin-bottom:18px}.titleRow h1{margin:0 0 4px;fon
 @include('customer-menu.partials.nav-badge-sync')
 <script>
 const root=document.querySelector('#orders');
+const menuT = text => window.CustomerMenuI18n.t(text);
+const menuF = (key, values) => window.CustomerMenuI18n.format(key, values);
 const locationCode=@json($location->code);
 const menuUrl=@json(route('customer-menu.show',$location->code));
 const ordersKey='customer_menu_orders';
@@ -76,11 +78,11 @@ rows=rows
 
 root.innerHTML=rows.length?rows.map((item,index)=>{
     const state=String(item.state||'received').toLowerCase();
-    const status=item.status_label||fallbackLabels[state]||'جاري تحديث الحالة';
+    const status=menuT(item.status_label||fallbackLabels[state]||'جاري تحديث الحالة');
     return `<a class="order" href="${esc(localUrl(item.url))}" data-order-index="${index}">
         <span class="orderIcon">✓</span>
         <span class="orderInfo">
-            <strong>طلب #${esc(item.order_number||item.number||'—')}</strong>
+            <strong>${esc(menuF('طلب #{number}',{number:item.order_number||item.number||'—'}))}</strong>
             <small class="orderStatus" data-state="${esc(state)}">${esc(status)}</small>
             <small>اضغط لعرض التفاصيل وتتبع الحالة</small>
         </span>
@@ -104,7 +106,7 @@ async function refreshStatuses(){
 
         const state=String(data.state||'received').toLowerCase();
         element.dataset.state=state;
-        element.textContent=data.label||fallbackLabels[state]||'تم تحديث الطلب';
+        element.textContent=menuT(data.label||fallbackLabels[state]||'تم تحديث الطلب');
     }));
 }
 

@@ -385,4 +385,4 @@ body.crisp-customer-menu > .app{position:relative;z-index:1}
 [dir="ltr"] .crisp-customer-menu .page-back i { transform:scaleX(-1); }
 @media (max-width:420px){.cm-language-switch {padding:6px 9px;font-size:11px}}
 </style>
-<script defer src="{{ asset('assets/js/customer-menu/i18n.js') }}?v=1"></script>
+<script src="{{ asset('assets/js/customer-menu/i18n.js') }}?v=2"></script>

@@ -83,6 +83,7 @@
 
 <script>
 const CM = window.CustomerMenu;
+const menuF = (key, values) => window.CustomerMenuI18n.format(key, values);
 const PRODUCT_URL_BASE = @json(route('customer-menu.product.show', [$location->code, '__ID__']));
 function productUrl(id) { return PRODUCT_URL_BASE.replace('__ID__', encodeURIComponent(id)); }
 
@@ -96,7 +97,7 @@ function renderCard(p) {
     const addLabel = !p.available ? 'غير متوفر' : (p.requiresChoices ? 'اختر الخيارات' : 'إضافة');
 
     return `<article class="product" data-id="${CM.esc(p.id)}">
-      <a class="product-media" href="${productUrl(p.id)}" aria-label="عرض ${CM.esc(p.name)}">${CM.image(p)}</a>
+      <a class="product-media" href="${productUrl(p.id)}" aria-label="${CM.esc(menuF('عرض {name}', {name:p.name}))}">${CM.image(p)}</a>
       <span class="product-status${p.available ? '' : ' is-unavailable'}">${p.available ? 'متوفر' : 'غير متوفر'}</span>
       <button class="fav ${CM.isFavorite(p.id) ? 'active' : ''}" type="button" data-fav="${CM.esc(p.id)}" aria-label="${favoriteLabel}"><i class="${CM.isFavorite(p.id) ? 'fa-solid' : 'fa-regular'} fa-heart"></i></button>
       <div class="product-body">

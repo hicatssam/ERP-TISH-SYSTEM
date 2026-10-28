@@ -69,6 +69,43 @@ class CustomerMenuBilingualTest extends TestCase
     }
 
     #[Test]
+    public function menu_banners_use_explicit_english_fields_and_preserve_legacy_arabic_fallback(): void
+    {
+        $branch = Location::query()->create([
+            'name' => 'فرع الإعلانات', 'code' => 'L-EN-BANNER',
+            'type' => 'branch', 'is_active' => true,
+        ]);
+        $banner = \App\Models\MenuBanner::query()->create([
+            'location_id' => $branch->id,
+            'image' => 'https://example.com/banner.jpg',
+            'title' => 'عرض اليوم',
+            'subtitle' => 'حلاوة طازجة',
+            'badge_text' => 'لفترة محدودة',
+            'title_en' => 'Today\'s Special',
+            'subtitle_en' => 'Fresh sweets',
+            'badge_text_en' => 'Limited time',
+            'is_active' => true,
+        ]);
+
+        $arabic = $this->get(route('customer-menu.show', $branch->code))->assertOk();
+        $english = $this->get(route('customer-menu.show', [$branch->code, 'lang' => 'en']))->assertOk();
+        $this->assertSame('عرض اليوم', $arabic->viewData('banners')->first()['title']);
+        $this->assertSame('Today\'s Special', $english->viewData('banners')->first()['title']);
+        $this->assertSame('Fresh sweets', $english->viewData('banners')->first()['subtitle']);
+        $this->assertSame('Limited time', $english->viewData('banners')->first()['badge_text']);
+
+        $banner->update(['subtitle_en' => null]);
+        $this->assertSame('حلاوة طازجة',
+            $this->get(route('customer-menu.show', [$branch->code, 'lang' => 'en']))
+                ->assertOk()->viewData('banners')->first()['subtitle']);
+
+        $adminForm = file_get_contents(resource_path('views/restaurant/menu-banners/index.blade.php'));
+        foreach (['title_en', 'subtitle_en', 'badge_text_en'] as $field) {
+            $this->assertStringContainsString('name="'.$field.'"', $adminForm);
+        }
+    }
+
+    #[Test]
     public function english_preference_is_sticky_for_menu_pages_and_unknown_locales_fall_back_to_arabic(): void
     {
         $branch = Location::query()->create([
