@@ -17,7 +17,8 @@ class SettingsController extends Controller
         'minimum_deposit_percentage','minimum_deposit_amount','factory_can_accept_unpaid_cake_orders','special_cake_auto_approval',
         'require_active_cash_session_for_cash_payment','block_financial_period_close_with_open_cash_sessions',
         'notification_sound_enabled','chat_enabled','order_number_prefix','cake_order_prefix','stock_request_prefix','invoice_prefix',
-        'system_name_en','brand_tagline_ar','brand_tagline_en','brand_footer_text',
+        'system_name_en','brand_tagline_ar','brand_tagline_en',
+        'brand_custom_text_ar','brand_custom_text_en','brand_footer_text',
 
         // AI assistant
         'assistant_enabled','assistant_show_suggestions','assistant_read_only','assistant_max_items',
@@ -127,6 +128,7 @@ class SettingsController extends Controller
         ],
         'branding' => [
             'system_name', 'system_name_en', 'brand_tagline_ar', 'brand_tagline_en',
+            'brand_custom_text_ar', 'brand_custom_text_en',
             'brand_logo', 'brand_logo_small', 'brand_favicon', 'brand_login_background',
             'brand_report_logo', 'brand_stamp', 'brand_signature', 'brand_footer_text',
         ],
@@ -223,6 +225,8 @@ class SettingsController extends Controller
             'system_name_en' => ['nullable', 'string', 'max:120'],
             'brand_tagline_ar' => ['nullable', 'string', 'max:180'],
             'brand_tagline_en' => ['nullable', 'string', 'max:180'],
+            'brand_custom_text_ar' => ['nullable', 'string', 'max:2000'],
+            'brand_custom_text_en' => ['nullable', 'string', 'max:2000'],
             'brand_footer_text' => ['nullable', 'string', 'max:255'],
             'special_cake_auto_approval' => ['nullable', 'boolean'],
 

@@ -815,7 +815,9 @@
                                                 id="setting_{{ $setting->key }}"
                                                 name="{{ $setting->key }}"
                                                 class="form-textarea"
-                                                rows="3"
+                                                rows="{{ in_array($setting->key, ['brand_custom_text_ar', 'brand_custom_text_en'], true) ? 5 : 3 }}"
+                                                @if($setting->key === 'brand_custom_text_ar') dir="rtl" maxlength="2000" @endif
+                                                @if($setting->key === 'brand_custom_text_en') dir="ltr" maxlength="2000" @endif
                                             >{{ $value }}</textarea>
 
 

@@ -200,6 +200,61 @@ class SystemNavigationPwaSettingsNotificationTest extends TestCase
     }
 
     #[Test]
+    public function branding_custom_arabic_and_english_text_fields_are_visible_and_persist_multiline_copy(): void
+    {
+        $admin = $this->makeUser($this->branch, ['settings.manage'], true, 'Admin');
+
+        $this->actingAs($admin)->get(route('settings.index'))
+            ->assertOk()
+            ->assertSee('النص المخصص بالعربية')
+            ->assertSee('النص المخصص بالإنجليزية')
+            ->assertSee('name="brand_custom_text_ar"', false)
+            ->assertSee('name="brand_custom_text_en"', false);
+
+        $arabic = "حلويات دهب\\nجودة نعتز بها";
+        $english = "Dahab Sweets\\nA tradition of quality";
+
+        $this->actingAs($admin)->post(route('settings.update'), [
+            'active_settings_group' => 'branding',
+            'brand_custom_text_ar' => $arabic,
+            'brand_custom_text_en' => $english,
+        ])->assertRedirect()->assertSessionHasNoErrors()
+            ->assertSessionHas('active_settings_group', 'branding');
+
+        $this->assertSame($arabic, SystemSetting::get('brand_custom_text_ar'));
+        $this->assertSame($english, SystemSetting::get('brand_custom_text_en'));
+
+        $this->actingAs($admin)->get(route('settings.index'))
+            ->assertOk()
+            ->assertSee('جودة نعتز بها')
+            ->assertSee('A tradition of quality');
+
+        // A repeated migration must not reset text already written by the user.
+        $migration = require database_path('migrations/2026_10_28_161100_add_bilingual_brand_custom_text_settings.php');
+        $migration->up();
+        SystemSetting::flushCache();
+        $this->assertSame($arabic, SystemSetting::get('brand_custom_text_ar'));
+        $this->assertSame($english, SystemSetting::get('brand_custom_text_en'));
+    }
+
+    #[Test]
+    public function branding_custom_text_rejects_overlong_copy_without_overwriting_previous_values(): void
+    {
+        $admin = $this->makeUser($this->branch, ['settings.manage'], true, 'Admin');
+        SystemSetting::set('brand_custom_text_ar', 'نص محفوظ');
+        SystemSetting::set('brand_custom_text_en', 'Saved copy');
+
+        $this->actingAs($admin)->post(route('settings.update'), [
+            'active_settings_group' => 'branding',
+            'brand_custom_text_ar' => str_repeat('A', 2001),
+            'brand_custom_text_en' => 'New copy',
+        ])->assertSessionHasErrors('brand_custom_text_ar');
+
+        $this->assertSame('نص محفوظ', SystemSetting::get('brand_custom_text_ar'));
+        $this->assertSame('Saved copy', SystemSetting::get('brand_custom_text_en'));
+    }
+
+    #[Test]
     public function kitchen_settings_shown_in_the_main_form_can_be_saved(): void
     {
         $admin = $this->makeUser($this->branch, ['settings.manage'], true, 'Admin');
