@@ -103,6 +103,40 @@ class BranchSweetsEasternAndKunafaCatalogTest extends TestCase
         $this->assertEqualsCanonicalizing([$kunafa->id], $order->items()->pluck('product_id')->all());
     }
 
+    #[Test]
+    public function branch_sweets_create_and_edit_allow_selected_products_with_zero_quantities(): void
+    {
+        [, $factory, $user] = $this->actor();
+        $product = $this->product(
+            $this->category('oriental-zero-qty', 'حلويات شرقية', 'Eastern Sweets'),
+            'بقلاوة صفرية'
+        );
+
+        $payload = [
+            'factory_location_id' => $factory->id,
+            'items' => [[
+                'product_id' => $product->id,
+                'quantity' => 0,
+                'reserved_quantity' => 0,
+                'requested_unit' => 'صدر',
+            ]],
+        ];
+
+        $this->actingAs($user)->post(route('showroom-sweets-requests.store'), $payload)
+            ->assertSessionHasNoErrors();
+        $order = ShowroomSweetsRequest::query()->sole();
+        $this->assertSame(0.0, (float) $order->items()->sole()->quantity);
+
+        $this->actingAs($user)->put(route('showroom-sweets-requests.update', $order), $payload)
+            ->assertSessionHasNoErrors();
+        $this->assertSame(0.0, (float) $order->fresh()->items()->sole()->quantity);
+
+        $invalid = $payload;
+        $invalid['items'][0]['reserved_quantity'] = 1;
+        $this->actingAs($user)->put(route('showroom-sweets-requests.update', $order), $invalid)
+            ->assertSessionHasErrors('items.0.reserved_quantity');
+    }
+
     private function actor(): array
     {
         $branch = Location::query()->create([

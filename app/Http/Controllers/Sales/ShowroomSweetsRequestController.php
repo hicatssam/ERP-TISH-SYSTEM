@@ -329,7 +329,7 @@ class ShowroomSweetsRequestController extends Controller
             'items.*.quantity' => [
                 'required',
                 'numeric',
-                'min:0.001',
+                'min:0',
             ],
 
             'items.*.reserved_quantity' => [
@@ -653,7 +653,7 @@ class ShowroomSweetsRequestController extends Controller
                     fn ($q) => $q->where('is_active', true)->whereNull('deleted_at')
                 ),
             ],
-            'items.*.quantity' => ['required', 'numeric', 'min:0.001'],
+            'items.*.quantity' => ['required', 'numeric', 'min:0'],
             'items.*.reserved_quantity' => ['nullable', 'numeric', 'min:0'],
             'items.*.reservation_notes' => ['nullable', 'string', 'max:1000'],
             'items.*.requested_unit' => ['required', 'string', 'max:50'],

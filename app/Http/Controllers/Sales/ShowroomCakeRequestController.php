@@ -254,14 +254,14 @@ class ShowroomCakeRequestController extends Controller
                 'max:50',
                 'not_in:standard',
             ],
-            'items.*.layer_count' => ['required', 'integer', 'min:1', 'max:20'],
+            'items.*.layer_count' => ['nullable', 'integer', 'min:1', 'max:20'],
             'items.*.flavor' => [
-                'required',
+                'nullable',
                 'string',
                 'max:100',
             ],
             'items.*.shape' => [
-                'required',
+                'nullable',
                 'string',
                 'max:50',
                 'not_in:standard_tiers',
@@ -269,7 +269,7 @@ class ShowroomCakeRequestController extends Controller
             'items.*.quantity' => [
                 'required',
                 'integer',
-                'min:1',
+                'min:0',
             ],
             'items.*.reserved_quantity' => [
                 'nullable',
@@ -288,15 +288,11 @@ class ShowroomCakeRequestController extends Controller
             ],
         ], array_merge(app(DailyRawMaterialRequestService::class)->validationMessages(), [
             'needed_by.required' => 'تاريخ الحاجة مطلوب لإرسال طلب كيك الفرع.',
-            'items.*.layer_count.required' => 'حدد عدد الطبقات لكل صنف وحجم مطلوب.',
-            'items.*.flavor.required' => 'حدد نكهة كل صنف وحجم مطلوب.',
-            'items.*.shape.required' => 'حدد شكل كل صنف وحجم مطلوب.',
         ]));
 
         foreach ($validated['items'] as $index => $item) {
-            // Catalog items require exact manufacturing specifications;
-            // never silently invent a shape, layer count or flavor.
-            if (! empty($item['product_id'])) {
+            // The shape is required; flavor and layer count are optional for branch orders.
+            if ((int) $item['quantity'] > 0) {
                 $this->validateProductionSpecifications($item, $index);
             }
             if (! empty($item['product_id'])) {
@@ -566,21 +562,21 @@ class ShowroomCakeRequestController extends Controller
             'items' => ['required', 'array', 'min:1'],
             'items.*.cake_type' => ['required', 'string', 'max:100'],
             'items.*.cake_size' => ['nullable', 'string', 'max:50', 'not_in:standard'],
-            'items.*.layer_count' => ['required', 'integer', 'min:1', 'max:20'],
-            'items.*.flavor' => ['required', 'string', 'max:100'],
-            'items.*.shape' => ['required', 'string', 'max:50', 'not_in:standard_tiers'],
-            'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'items.*.layer_count' => ['nullable', 'integer', 'min:1', 'max:20'],
+            'items.*.flavor' => ['nullable', 'string', 'max:100'],
+            'items.*.shape' => ['nullable', 'string', 'max:50', 'not_in:standard_tiers'],
+            'items.*.quantity' => ['required', 'integer', 'min:0'],
             'items.*.reserved_quantity' => ['nullable', 'integer', 'min:0'],
             'items.*.reservation_notes' => ['nullable', 'string', 'max:1000'],
             'items.*.notes' => ['nullable', 'string', 'max:500'],
         ], [
             'needed_by.required' => 'تاريخ الحاجة مطلوب لإرسال طلب كيك الفرع.',
-            'items.*.layer_count.required' => 'حدد عدد الطبقات لكل صنف وحجم مطلوب.',
-            'items.*.flavor.required' => 'حدد نكهة كل صنف وحجم مطلوب.',
-            'items.*.shape.required' => 'حدد شكل كل صنف وحجم مطلوب.',
         ]);
 
         foreach ($validated['items'] as $index => $item) {
+            if ((int) $item['quantity'] > 0) {
+                $this->validateProductionSpecifications($item, $index);
+            }
             if ((int) ($item['reserved_quantity'] ?? 0) > (int) $item['quantity']) {
                 throw \Illuminate\Validation\ValidationException::withMessages([
                     "items.{$index}.reserved_quantity" =>
@@ -694,12 +690,6 @@ class ShowroomCakeRequestController extends Controller
     private function validateProductionSpecifications(array $item, int $index): void
     {
         $errors = [];
-        if (empty($item['layer_count'])) {
-            $errors["items.{$index}.layer_count"] = 'عدد الطبقات مطلوب لكل حجم كيك تختاره.';
-        }
-        if (trim((string) ($item['flavor'] ?? '')) === '') {
-            $errors["items.{$index}.flavor"] = 'النكهة مطلوبة لكل حجم كيك تختاره.';
-        }
         if (trim((string) ($item['shape'] ?? '')) === '') {
             $errors["items.{$index}.shape"] = 'الشكل مطلوب لكل حجم كيك تختاره.';
         }

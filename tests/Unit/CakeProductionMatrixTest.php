@@ -104,7 +104,7 @@ class CakeProductionMatrixTest extends TestCase
         $missingRow = $missingSection['rows'][0];
         $this->assertTrue($missingRow['needs_review']);
         $this->assertSame(
-            ['نوع الكيك', 'الحجم', 'النكهة', 'الشكل', 'عدد الطبقات', 'تاريخ الحاجة'],
+            ['نوع الكيك', 'الحجم', 'الشكل', 'تاريخ الحاجة'],
             $missingRow['missing_fields']
         );
         $this->assertSame('غير محدد', $missingRow['type']);
@@ -114,6 +114,17 @@ class CakeProductionMatrixTest extends TestCase
         $this->assertSame(0, $regular['review_rows']);
         $this->assertSame(6, $regular['totals']['total']);
         $this->assertSame([], $regular['rows'][0]['missing_fields']);
+    }
+
+    #[Test]
+    public function new_branch_cakes_without_flavor_and_layers_are_not_flagged_as_incomplete(): void
+    {
+        $branch = $this->cake('chocolate', '', 'round', 'large', null, '2026-10-25', 3, 0, 0);
+        $zero = $this->cake('vanilla', '', '', 'small', null, '2026-10-25', 0, 0, 0);
+        $matrix = CakeProductionMatrix::build([$branch, $zero]);
+
+        $this->assertSame(3, $matrix['totals']['total']);
+        $this->assertSame(['rows' => 0, 'pieces' => 0], $matrix['review']);
     }
 
     #[Test]

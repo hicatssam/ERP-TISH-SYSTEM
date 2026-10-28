@@ -8,11 +8,11 @@ use Tests\TestCase;
 class BranchCakeZeroQuantitySelectionTest extends TestCase
 {
     #[Test]
-    public function new_branch_cake_order_skips_checked_sizes_with_no_quantity(): void
+    public function new_branch_cake_order_preserves_checked_sizes_with_zero_quantity(): void
     {
         $blade = file_get_contents(resource_path('views/sales/showroom-cake-requests/create.blade.php'));
 
-        $this->assertStringContainsString(
+        $this->assertStringNotContainsString(
             'if (showroom + reserved === 0) continue;',
             $blade
         );
@@ -21,30 +21,25 @@ class BranchCakeZeroQuantitySelectionTest extends TestCase
             $blade
         );
         $this->assertStringContainsString(
-            'الأحجام التي كميتها صفر لا تُضاف للطلب',
+            'يمكن أن تكون كميته صفرًا',
             $blade
         );
 
-        $skip = strpos($blade, 'if (showroom + reserved === 0) continue;');
-        $createItem = strpos($blade, "append('product_id',row.dataset.productId);");
-        $this->assertNotFalse($skip);
-        $this->assertNotFalse($createItem);
-        $this->assertLessThan($createItem, $skip, 'Skip zero-quantity rows before generating item inputs.');
+        $this->assertStringContainsString("append('quantity',showroom+reserved);", $blade);
+        $this->assertStringContainsString("if (showroom + reserved > 0 && !shape?.value)", $blade);
     }
 
     #[Test]
-    public function summary_counts_only_sizes_with_a_positive_requested_quantity(): void
+    public function summary_counts_all_checked_sizes_even_when_quantities_are_zero(): void
     {
         $blade = file_get_contents(resource_path('views/sales/showroom-cake-requests/create.blade.php'));
 
-        $this->assertStringContainsString(
+        $this->assertStringNotContainsString(
             'if (rowShowroom + rowReserved <= 0) return;',
             $blade
         );
-        $this->assertStringContainsString('الأحجام المطلوبة فعليًا:', $blade);
-        $this->assertStringNotContainsString(
-            'على الأقل قطعة واحدة لكل حجم',
-            $blade
-        );
+        $this->assertStringContainsString('الأحجام المختارة:', $blade);
+        $this->assertStringNotContainsString('scr-layer-count', $blade);
+        $this->assertStringNotContainsString('scr-flavor', $blade);
     }
 }

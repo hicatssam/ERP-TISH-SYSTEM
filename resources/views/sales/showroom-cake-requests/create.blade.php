@@ -107,9 +107,9 @@
         <div class="card">
             <div class="card-header"><span class="card-title">منتجات الكيك المتاحة للطلب</span></div>
             <div class="card-body">
-                <p class="scr-catalog-help">اختر الأصناف والأحجام المطلوبة فقط. أي حجم كميته صفر لن يُضاف. لكل حجم تطلبه يجب تعبئة عدد الطبقات والنكهة والشكل، وتاريخ الحاجة في بيانات الطلب.</p>
+                <p class="scr-catalog-help">اختر الأصناف والأحجام التي تريد إدراجها في الطلب، حتى لو كانت الكمية صفرًا. حدد الشكل عند وجود كمية أكبر من صفر، وتاريخ الحاجة مطلوب؛ لا حاجة لعدد الطبقات أو النكهة.</p>
                 <input id="cakeCatalogSearch" class="form-input" type="search" placeholder="بحث باسم المنتج..." aria-label="بحث في منتجات الكيك" style="margin-bottom:1rem">
-                <p class="scr-catalog-muted">عدد الطبقات اختياري لكل حجم.</p>
+                <p class="scr-catalog-muted">يمكن ترك كميات المعرض والمحجوز صفرًا للأصناف المختارة.</p>
                 <div id="cakeCatalogRows" class="scr-catalog-list">
                     @forelse($cakeProducts as $product)
                         @php
@@ -132,7 +132,7 @@
                                     <div class="scr-catalog-muted">{{ $cakeVariants->isNotEmpty() ? $cakeVariants->count() . ' أحجام متاحة' : 'حجم واحد' }}</div>
                                 </div>
                             </div>
-                            <div class="scr-catalog-columns" aria-hidden="true"><span>الحجم</span><span>للمعرض</span><span>محجوز للعملاء</span><span>عدد الطبقات *</span><span>النكهة *</span><span>الشكل *</span></div>
+                            <div class="scr-catalog-columns" aria-hidden="true"><span>الحجم</span><span>للمعرض</span><span>محجوز للعملاء</span><span>الشكل (عند وجود كمية)</span></div>
                             @if($cakeVariants->isNotEmpty())
                                 @foreach($cakeVariants as $variant)
                                     <div class="scr-catalog-line" data-cake-line data-product-id="{{ $product->id }}" data-variant-id="{{ $variant->id }}" data-cake-type="{{ $cakeName }}" data-cake-size="{{ $variant->size?->displayName() ?: $variant->displayName() }}">
@@ -142,7 +142,7 @@
                                         </label>
                                         <label>للمعرض <input type="number" class="form-input scr-qty-showroom" value="0" min="0" max="99999" inputmode="numeric" aria-label="كمية المعرض {{ $cakeName }}"></label>
                                         <label>محجوز للعملاء <input type="number" class="form-input scr-qty-reserved" value="0" min="0" max="99999" inputmode="numeric" aria-label="الكمية المحجوزة {{ $cakeName }}"></label>
-                                        <label>عدد الطبقات <input type="number" class="form-input scr-layer-count" min="1" max="20" placeholder="مطلوب عند الطلب"></label><label>النكهة <input type="text" class="form-input scr-flavor" maxlength="100" placeholder="مثال: نوتيلا"></label><label>الشكل <select class="form-select scr-shape"><option value="">اختر الشكل</option><option value="round">دائري</option><option value="slab">بلاطة</option><option value="heart_head">رأس قلب</option><option value="wedding_tiers">طوابق</option></select></label>
+                                        <label>الشكل <select class="form-select scr-shape"><option value="">اختر الشكل</option><option value="round">دائري</option><option value="slab">بلاطة</option><option value="heart_head">رأس قلب</option><option value="wedding_tiers">طوابق</option></select></label>
                                     </div>
                                 @endforeach
                             @else
@@ -150,8 +150,6 @@
                                     <label class="scr-catalog-size"><input type="checkbox" class="scr-catalog-check"> <span>افتراضي</span></label>
                                     <label>للمعرض <input type="number" class="form-input scr-qty-showroom" value="0" min="0" max="99999" inputmode="numeric"></label>
                                     <label>محجوز للعملاء <input type="number" class="form-input scr-qty-reserved" value="0" min="0" max="99999" inputmode="numeric"></label>
-                                    <label>عدد الطبقات <input type="number" class="form-input scr-layer-count" min="1" max="20" placeholder="مطلوب عند الطلب"></label>
-                                    <label>النكهة <input type="text" class="form-input scr-flavor" maxlength="100" placeholder="مثال: نوتيلا"></label>
                                     <label>الشكل <select class="form-select scr-shape"><option value="">اختر الشكل</option><option value="round">دائري</option><option value="slab">بلاطة</option><option value="heart_head">رأس قلب</option><option value="wedding_tiers">طوابق</option></select></label>
                                 </div>
                             @endif
@@ -161,7 +159,7 @@
                     @endforelse
                 </div>
                 <div class="scr-catalog-summary" role="status" aria-live="polite">
-                    <span>الأحجام المطلوبة فعليًا: <strong id="cakeChosenCount">0</strong></span>
+                    <span>الأحجام المختارة: <strong id="cakeChosenCount">0</strong></span>
                     <span>إجمالي المعرض: <strong id="cakeShowroomCount">0</strong></span>
                     <span>إجمالي المحجوز: <strong id="cakeReservedCount">0</strong></span>
                 </div>
@@ -189,7 +187,7 @@
 .scr-catalog-title strong{font-size:1rem;color:var(--text);font-weight:850}
 .scr-catalog-image{height:60px;width:60px;object-fit:cover;border-radius:12px;flex-shrink:0;border:1px solid var(--border-light)}
 .scr-catalog-image-empty{display:grid;place-items:center;background:rgba(212,160,23,.1);font-size:1.5rem}
-.scr-catalog-columns,.scr-catalog-line{display:grid;grid-template-columns:minmax(135px,1.35fr) repeat(5,minmax(105px,1fr));gap:.75rem;align-items:center}
+.scr-catalog-columns,.scr-catalog-line{display:grid;grid-template-columns:minmax(135px,1.35fr) repeat(3,minmax(105px,1fr));gap:.75rem;align-items:center}
 .scr-catalog-columns{padding:.5rem .75rem;color:var(--text-muted);font-size:.73rem;font-weight:800}
 .scr-catalog-line{padding:.5rem .75rem;border-top:1px solid var(--border-light);border-radius:8px;transition:background .18s ease}
 .scr-catalog-line label{display:flex;align-items:center;gap:.45rem;min-width:0;font-size:.81rem;font-weight:700}
@@ -227,7 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!row.querySelector('.scr-catalog-check').checked) return;
             const rowShowroom = Number(row.querySelector('.scr-qty-showroom').value)||0;
             const rowReserved = Number(row.querySelector('.scr-qty-reserved').value)||0;
-            if (rowShowroom + rowReserved <= 0) return;
+            
             count++;
             showroom += rowShowroom;
             reserved += rowReserved;
@@ -264,17 +262,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if(!Number.isSafeInteger(showroom)||!Number.isSafeInteger(reserved)||showroom<0||reserved<0||showroom+reserved>99999){
                 event.preventDefault();error.textContent='أدخل كميات صحيحة غير سالبة للأحجام المطلوبة.';error.hidden=false;error.focus();return;
             }
-            // A checked size with both quantities at zero is intentionally omitted.
-            if (showroom + reserved === 0) continue;
-            const layer = row.querySelector('.scr-layer-count');
-            const flavor = row.querySelector('.scr-flavor');
             const shape = row.querySelector('.scr-shape');
-            if (!layer?.value || !Number.isInteger(Number(layer.value)) || Number(layer.value) < 1 || Number(layer.value) > 20
-                || !flavor?.value.trim() || !shape?.value) {
+            if (showroom + reserved > 0 && !shape?.value) {
                 event.preventDefault();
-                error.textContent='للحجم المطلوب يجب تعبئة عدد الطبقات والنكهة والشكل قبل إرسال الطلب.';
+                error.textContent='حدد الشكل لأي حجم كميته أكبر من صفر.';
                 error.hidden=false;error.focus();
-                ( !layer?.value ? layer : !flavor?.value.trim() ? flavor : shape )?.focus();
+                shape.focus();
                 return;
             }
             append('product_id',row.dataset.productId);
@@ -283,12 +276,10 @@ document.addEventListener('DOMContentLoaded', () => {
             append('cake_size',row.dataset.cakeSize);
             append('quantity',showroom+reserved);
             append('reserved_quantity',reserved);
-            append('layer_count', layer.value);
-            append('flavor', flavor.value.trim());
             append('shape', shape.value);
             index++;
         }
-        if(!index){event.preventDefault();error.textContent='حدد كمية أكبر من صفر لصنف وحجم واحد على الأقل؛ الأحجام التي كميتها صفر لا تُضاف للطلب.';error.hidden=false;error.focus();return;}
+        if(!index){event.preventDefault();error.textContent='اختر صنفًا وحجمًا واحدًا على الأقل، ويمكن أن تكون كميته صفرًا.';error.hidden=false;error.focus();return;}
         error.hidden=true;
     });
     updateSummary();

@@ -240,7 +240,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    if(!card.querySelector('.ssr-selected').checked)continue;
    const showroom=number(card.querySelector('.ssr-showroom').value),reserved=number(card.querySelector('.ssr-reserved').value);
    const unit=card.querySelector('.ssr-unit').value.trim();
-   if(!Number.isFinite(showroom)||!Number.isFinite(reserved)||showroom<0||reserved<0||showroom+reserved<.001||!unit){
+   if(!Number.isFinite(showroom)||!Number.isFinite(reserved)||showroom<0||reserved<0||!unit){
     event.preventDefault();error.textContent='تحقق من الكمية والوحدة لكل منتج مختار.';error.hidden=false;error.focus();return;
    }
    const values={product_id:card.dataset.id,quantity:(showroom+reserved).toFixed(3),reserved_quantity:reserved.toFixed(3),requested_unit:unit,reservation_notes:card.querySelector('.ssr-reservation-notes').value,notes:card.querySelector('.ssr-notes').value};

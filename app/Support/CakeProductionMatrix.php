@@ -108,9 +108,14 @@ final class CakeProductionMatrix
             $missing = [];
             if ($type === 'غير محدد') $missing[] = 'نوع الكيك';
             if ($size === 'غير محدد') $missing[] = 'الحجم';
-            if ($flavor === 'غير محدد') $missing[] = 'النكهة';
-            if ($shape === 'غير محدد') $missing[] = 'الشكل';
-            if ($layers === 'غير محدد') $missing[] = 'عدد الطبقات';
+            // Branch/showroom cake orders no longer collect flavor and layer
+            // count. Their absence is intentional, not an incomplete order.
+            // Keep review flags for special cake orders, where these details
+            // may still be needed for production.
+            $hasSpecialDemand = (int) ($entry->special_quantity ?? 0) > 0;
+            if ($hasSpecialDemand && $flavor === 'غير محدد') $missing[] = 'النكهة';
+            if ($shape === 'غير محدد' && (int) ($entry->total_quantity ?? 0) > 0) $missing[] = 'الشكل';
+            if ($hasSpecialDemand && $layers === 'غير محدد') $missing[] = 'عدد الطبقات';
             if ($mode === 'plan' && $date === 'غير محدد') $missing[] = 'تاريخ الحاجة';
 
             if ($missing !== []) {

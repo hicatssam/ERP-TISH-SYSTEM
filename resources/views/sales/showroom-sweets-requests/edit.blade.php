@@ -150,9 +150,9 @@
             <input type="number"
                    name="items[__IDX__][quantity]"
                    class="form-input quantity-input"
-                   min="0.001"
+                   min="0"
                    step="0.001"
-                   value="1"
+                   value="0"
                    required>
         </div>
 
@@ -295,7 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         if (data.product_id) loadProducts({id: data.product_id}, data.product_id);
         else loadProducts({q: ''});
-        quantity.value = data.quantity ?? 1;
+        quantity.value = data.quantity ?? 0;
         const arabicUnits = {pcs:'حبة', pc:'حبة', piece:'حبة', pieces:'حبة', unit:'حبة', units:'حبة', each:'حبة', tray:'صينية', trays:'صينية', box:'علبة', boxes:'علبة', kg:'كغم', kgs:'كغم', kilogram:'كغم', kilograms:'كغم', bundle:'ربطة', bundles:'ربطة', plate:'صدر', plates:'صدر'};
         const requestedUnit = data.requested_unit ?? 'صدر';
         unit.value = arabicUnits[String(requestedUnit).toLowerCase().trim()] ?? requestedUnit;

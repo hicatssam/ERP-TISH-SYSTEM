@@ -29,7 +29,8 @@ class ShowroomCakeRequestLayerCountTest extends TestCase
             ->assertOk()
             ->assertDontSee('value="standard"', false)
             ->assertDontSee('value="standard_tiers"', false)
-            ->assertSee('عدد الطبقات');
+            ->assertDontSee('class="scr-layer-count"', false)
+            ->assertDontSee('class="scr-flavor"', false);
 
         $this->actingAs($user)->post(route('showroom-cake-requests.store'), [
             'factory_location_id' => $factory->id,
@@ -126,7 +127,7 @@ class ShowroomCakeRequestLayerCountTest extends TestCase
     }
 
     #[Test]
-    public function new_branch_cake_order_requires_date_and_every_production_specification(): void
+    public function branch_cake_requires_date_and_shape_for_positive_quantities_only(): void
     {
         Notification::fake();
         [, $factory, $user] = $this->prepareBranchUser();
@@ -138,61 +139,62 @@ class ShowroomCakeRequestLayerCountTest extends TestCase
                 'cake_type' => 'chocolate',
                 'cake_size' => 'large',
                 'quantity' => 2,
-                'layer_count' => 3,
-                'flavor' => 'نوتيلا',
                 'shape' => 'round',
             ]],
         ];
 
-        foreach ([
-            ['needed_by', 'needed_by'],
-            ['items.0.layer_count', 'layer_count'],
-            ['items.0.flavor', 'flavor'],
-            ['items.0.shape', 'shape'],
-        ] as [$error, $field]) {
-            $invalid = $valid;
-            if ($field === 'needed_by') {
-                unset($invalid['needed_by']);
-            } else {
-                unset($invalid['items'][0][$field]);
-            }
+        $invalid = $valid;
+        unset($invalid['needed_by']);
+        $this->actingAs($user)->post(route('showroom-cake-requests.store'), $invalid)
+            ->assertSessionHasErrors('needed_by');
 
-            $this->actingAs($user)->post(route('showroom-cake-requests.store'), $invalid)
-                ->assertSessionHasErrors($error);
-        }
+        $invalid = $valid;
+        unset($invalid['items'][0]['shape']);
+        $this->actingAs($user)->post(route('showroom-cake-requests.store'), $invalid)
+            ->assertSessionHasErrors('items.0.shape');
 
-        $this->assertDatabaseCount('showroom_cake_requests', 0);
         $this->actingAs($user)->post(route('showroom-cake-requests.store'), $valid)
             ->assertSessionHasNoErrors();
-        $this->assertDatabaseCount('showroom_cake_requests', 1);
+        $item = ShowroomCakeRequest::query()->sole()->items()->sole();
+        $this->assertNull($item->layer_count);
+        $this->assertNull($item->flavor);
     }
 
     #[Test]
-    public function editing_branch_cake_request_cannot_erase_required_manufacturing_details(): void
+    public function branch_cake_create_and_edit_accept_zero_quantities_without_shape_or_flavor(): void
     {
         Notification::fake();
         [, $factory, $user] = $this->prepareBranchUser();
-        $valid = [
+        $payload = [
             'factory_location_id' => $factory->id,
             'needed_by' => '2026-10-25',
             'items' => [[
-                'cake_type' => 'vanilla',
-                'cake_size' => 'medium',
-                'shape' => 'round',
-                'layer_count' => 2,
-                'flavor' => 'لوتس',
-                'quantity' => 2,
+                'cake_type' => 'chocolate',
+                'cake_size' => 'small',
+                'quantity' => 0,
+                'reserved_quantity' => 0,
             ]],
         ];
-        $this->actingAs($user)->post(route('showroom-cake-requests.store'), $valid)
+
+        $this->actingAs($user)->post(route('showroom-cake-requests.store'), $payload)
             ->assertSessionHasNoErrors();
         $order = ShowroomCakeRequest::query()->sole();
+        $this->assertSame(0, (int) $order->items()->sole()->quantity);
+        $this->assertNull($order->items()->sole()->shape);
 
-        $invalid = $valid;
-        $invalid['items'][0]['flavor'] = '';
+        $this->actingAs($user)->get(route('showroom-cake-requests.edit', $order))
+            ->assertOk()
+            ->assertDontSee('label class="form-label">عدد الطبقات', false)
+            ->assertDontSee('label class="form-label">النكهة', false);
+
+        $this->actingAs($user)->put(route('showroom-cake-requests.update', $order), $payload)
+            ->assertSessionHasNoErrors();
+        $this->assertSame(0, (int) $order->fresh()->items()->sole()->quantity);
+
+        $invalid = $payload;
+        $invalid['items'][0]['reserved_quantity'] = 1;
         $this->actingAs($user)->put(route('showroom-cake-requests.update', $order), $invalid)
-            ->assertSessionHasErrors('items.0.flavor');
-        $this->assertSame('لوتس', $order->fresh()->items()->sole()->flavor);
+            ->assertSessionHasErrors('items.0.reserved_quantity');
     }
 
     /** @return array{Location, Location, User} */

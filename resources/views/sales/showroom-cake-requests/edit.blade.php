@@ -155,17 +155,12 @@
                 <option value="60x40">60 × 40</option>
             </select>
         </div>
+        {{-- Preserve legacy details without requiring them for branch cake orders. --}}
+        <input type="hidden" name="items[__IDX__][layer_count]" value="">
+        <input type="hidden" name="items[__IDX__][flavor]" value="">
         <div class="form-group">
-            <label class="form-label">عدد الطبقات *</label>
-            <input type="number" name="items[__IDX__][layer_count]" class="form-input" min="1" max="20" placeholder="عدد الطبقات" required>
-        </div>
-        <div class="form-group">
-            <label class="form-label">النكهة *</label>
-            <input type="text" name="items[__IDX__][flavor]" class="form-input" placeholder="مثال: نوتيلا، فراولة..." required>
-        </div>
-        <div class="form-group">
-            <label class="form-label">الشكل *</label>
-            <select name="items[__IDX__][shape]" class="form-select" required>
+            <label class="form-label">الشكل (إذا كانت الكمية أكبر من صفر)</label>
+            <select name="items[__IDX__][shape]" class="form-select">
                 <option value="">—</option>
                 <option value="round">دائري</option>
                 <option value="slab">بلاطة</option>
@@ -178,8 +173,8 @@
                 type="number"
                 name="items[__IDX__][quantity]"
                 class="form-input quantity-input"
-                min="1"
-                value="1"
+                min="0"
+                value="0"
                 required
             >
         </div>
@@ -271,7 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
         field('[name$="[layer_count]"]').value = data.layer_count ?? '';
         field('[name$="[flavor]"]').value = data.flavor ?? '';
         field('[name$="[shape]"]').value = data.shape ?? '';
-        field('.quantity-input').value = data.quantity ?? 1;
+        field('.quantity-input').value = data.quantity ?? 0;
         field('.reserved-input').value = data.reserved_quantity ?? 0;
         field('.reservation-notes-input').value = data.reservation_notes ?? '';
         field('.notes-input').value = data.notes ?? '';
@@ -290,9 +285,21 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('addItemBtn').addEventListener('click', addItem);
 
     document.getElementById('scrForm').addEventListener('submit', e => {
-        if (!container.querySelector('.scr-item-row')) {
+        const orderRows = Array.from(container.querySelectorAll('.scr-item-row'));
+        if (!orderRows.length) {
             e.preventDefault();
-            alert('يجب إضافة صنف كيك واحد على الأقل.');
+            alert('يجب اختيار صنف كيك واحد على الأقل.');
+            return;
+        }
+        for (const row of orderRows) {
+            const qty = Number(row.querySelector('.quantity-input').value);
+            const shape = row.querySelector('[name$="[shape]"]');
+            if (qty > 0 && !shape.value) {
+                e.preventDefault();
+                alert('يجب تحديد الشكل عند طلب كمية أكبر من صفر.');
+                shape.focus();
+                return;
+            }
         }
     });
 
