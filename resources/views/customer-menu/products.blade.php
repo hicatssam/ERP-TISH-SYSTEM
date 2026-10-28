@@ -26,7 +26,7 @@
 <main class="menu-area" id="menu">
  <div class="shell">
   <div class="tools">
-   <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input id="searchInput" type="search" placeholder="ابحث عن صنفك المفضل..." autocomplete="off" value="{{ $initialSearch }}"></div>
+   <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input id="searchInput" type="search" placeholder="{{ \App\Support\CustomerMenuCopy::searchPlaceholder() }}" autocomplete="off" value="{{ $initialSearch }}"></div>
    <button class="filter-square" type="button" id="openFilters" aria-label="تصفية الأصناف"><i class="fa-solid fa-sliders"></i></button>
   </div>
 

@@ -22,8 +22,8 @@
     $showFeatured = (bool) $cmSetting('customer_menu_show_featured', true);
     $featuredTitle = (string) $cmSetting('customer_menu_featured_title', 'الأكثر طلباً');
     $featuredLimit = max(2, min(8, (int) $cmSetting('customer_menu_featured_limit', 4)));
-    $homeTitle = (string) $cmSetting('customer_menu_title', 'أهلاً بك');
-    $homeSubtitle = (string) $cmSetting('customer_menu_subtitle', 'شو بتحب تأكل اليوم؟');
+    $homeTitle = \App\Support\CustomerMenuCopy::homeTitle();
+    $homeSubtitle = \App\Support\CustomerMenuCopy::homeSubtitle();
     $introMode = (string) $cmSetting('customer_menu_intro_mode', 'first_visit');
     $introTitle = (string) $cmSetting('customer_menu_intro_title', 'أهلاً بك');
     $introSubtitle = (string) $cmSetting('customer_menu_intro_subtitle', 'تجربة ألذ تبدأ من هنا');
@@ -257,7 +257,7 @@
 
   @if($showSearch)
   <div class="tools">
-   <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input id="searchInput" type="search" placeholder="ابحث عن صنفك المفضل..." autocomplete="off"></div>
+   <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input id="searchInput" type="search" placeholder="{{ \App\Support\CustomerMenuCopy::searchPlaceholder() }}" autocomplete="off"></div>
    <button class="filter-square" type="button" id="openFullMenu" aria-label="فلترة الأصناف"><i class="fa-solid fa-sliders"></i></button>
   </div>
   @endif

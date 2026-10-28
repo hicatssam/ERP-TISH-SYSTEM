@@ -645,9 +645,19 @@
                                 </div>
                             @endif
 
+                            @if($group === 'customer_menu')
+                                @include('admin.settings.partials.customer-menu-bilingual-copy')
+                            @endif
+
                             <div class="settings-grid">
 
                                 @foreach($groupSettings as $setting)
+                                    @continue($group === 'customer_menu' && in_array($setting->key, [
+                                        'customer_menu_title', 'customer_menu_title_en',
+                                        'customer_menu_subtitle', 'customer_menu_subtitle_en',
+                                        'customer_menu_search_placeholder_ar',
+                                        'customer_menu_search_placeholder_en',
+                                    ], true))
                                     @continue(in_array($setting->key, ['chat_theme_preset', 'system_theme_preset'], true))
                                     @php
                                         $value = old($setting->key, $setting->value);
