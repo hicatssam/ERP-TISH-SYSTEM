@@ -506,18 +506,44 @@ trait ResolvesCustomerMenuBranding
      */
     protected function bannersFor(Location $location): Collection
     {
-        return \App\Models\MenuBanner::query()
+        // Two existing admin screens publish banners: menu_banners (restaurant)
+        // and banners (general "إعلانات المنيو"). Both must reach the public
+        // branch menu, respecting active dates and location visibility.
+        $restaurantBanners = \App\Models\MenuBanner::query()
             ->visibleFor((int) $location->id)
             ->get()
             ->map(fn ($banner): array => [
-                'id' => (int) $banner->id,
+                'id' => 'menu-'.$banner->id,
                 'image' => $this->assetFromPath($banner->image),
                 'title' => CustomerMenuLanguage::isEnglish() ? ($banner->title_en ?: $banner->title) : $banner->title,
                 'subtitle' => CustomerMenuLanguage::isEnglish() ? ($banner->subtitle_en ?: $banner->subtitle) : $banner->subtitle,
                 'badge_text' => CustomerMenuLanguage::isEnglish() ? ($banner->badge_text_en ?: $banner->badge_text) : $banner->badge_text,
+                'cta_text' => CustomerMenuLanguage::isEnglish() ? 'Order now' : 'اطلب الآن',
                 'link_url' => $banner->link_url,
-            ])
+                'sort_order' => (int) $banner->sort_order,
+            ]);
+
+        $generalBanners = \App\Models\Banner::query()
+            ->activeNow()
+            ->forLocation((int) $location->id)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get()
+            ->map(fn ($banner): array => [
+                'id' => 'general-'.$banner->id,
+                'image' => $this->assetFromPath($banner->image),
+                'title' => $banner->title,
+                'subtitle' => $banner->subtitle,
+                'badge_text' => $banner->kicker,
+                'cta_text' => $banner->cta_text ?: (CustomerMenuLanguage::isEnglish() ? 'Order now' : 'اطلب الآن'),
+                'link_url' => $banner->cta_link,
+                'sort_order' => (int) $banner->sort_order,
+            ]);
+
+        return $restaurantBanners
+            ->concat($generalBanners)
             ->filter(fn (array $banner) => filled($banner['image']))
+            ->sortBy('sort_order')
             ->values();
     }
 

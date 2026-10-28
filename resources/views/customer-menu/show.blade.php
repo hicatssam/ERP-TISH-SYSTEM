@@ -278,7 +278,7 @@
          @if($banner['badge_text'])<span class="tag">{{ $banner['badge_text'] }}</span>@endif
          <h2>{{ $banner['title'] ?: 'مذاق يستحق أن تعود إليه' }}</h2>
          @if($banner['subtitle'])<p>{{ $banner['subtitle'] }}</p>@endif
-         <span class="banner-cta">اطلب الآن <i class="fa-solid fa-arrow-left"></i></span>
+         <span class="banner-cta">{{ $banner['cta_text'] ?? (\App\Support\CustomerMenuLanguage::isEnglish() ? 'Order now' : 'اطلب الآن') }} <i class="fa-solid fa-arrow-left"></i></span>
         </div>
       @if($banner['link_url'])
        </a>

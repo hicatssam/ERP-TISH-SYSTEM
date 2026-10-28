@@ -14,6 +14,7 @@ final class PublicImageUrl
         'customer-menu/',
         'customer-display/',
         'menu-banners/',
+        'banners/',
         'restaurant-menu/',
         'payment-methods/',
     ];
