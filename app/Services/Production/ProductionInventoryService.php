@@ -513,6 +513,12 @@ class ProductionInventoryService
                     '>',
                     0
                 )
+                // Never allocate expired material batches to production.
+                // Expiry is date-based: a batch dated today remains valid today.
+                ->where(function ($query) {
+                    $query->whereNull('expiry_date')
+                        ->orWhereDate('expiry_date', '>=', today());
+                })
                 ->orderByRaw(
                     'CASE WHEN expiry_date IS NULL THEN 1 ELSE 0 END'
                 )
