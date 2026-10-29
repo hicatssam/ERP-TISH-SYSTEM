@@ -3777,7 +3777,8 @@ a.app-page-btn:hover {
                 <h2 style="margin:0;font-size:1.3rem">🔔 طلبات تحتاج مراجعتك</h2>
                 <button type="button" id="pendingOrderClose" aria-label="إغلاق نافذة الطلبات" style="border:1px solid #d1d5db;border-radius:9px;background:#f8fafc;color:#152238;cursor:pointer;padding:8px 12px;font-weight:700">إغلاق ×</button>
             </div>
-            <p style="margin:0 0 16px">وصل طلب جديد ضمن مسؤولياتك. افتح الطلب لإيقاف تنبيهه.</p>
+            <p style="margin:0 0 12px">إنذار للطلبات الجديدة ضمن مسؤولياتك. اضغط إيقاف الإنذار بعد الاطلاع عليها أو افتح الطلب.</p>
+            <button type="button" id="pendingOrderSilence" style="background:#b91c1c;color:white;border:0;border-radius:10px;padding:10px 16px;font-weight:800;cursor:pointer;margin-bottom:12px">إيقاف إنذار الطلبات الظاهرة</button>
             <div id="pendingOrderItems" style="display:grid;gap:10px;max-height:55vh;overflow:auto"></div>
             <p id="pendingOrderAudioHint" style="font-size:.8rem;color:#7a4d00;margin:12px 0 0;display:none">لتفعيل صوت التنبيه اضغط على أي مكان في الصفحة مرة واحدة.</p>
         </div>
@@ -3789,6 +3790,10 @@ a.app-page-btn:hover {
         const hint = document.getElementById('pendingOrderAudioHint');
         const toggle = document.getElementById('pendingOrderToggle');
         const close = document.getElementById('pendingOrderClose');
+        const silence = document.getElementById('pendingOrderSilence');
+        const silencedKey = 'dahab:order-alerts:silenced:{{ auth()->id() }}';
+        let silenced = new Set();
+        try { silenced = new Set(JSON.parse(sessionStorage.getItem(silencedKey) || '[]')); } catch (_) {}
         const countBadge = document.getElementById('pendingOrderBadge');
         const dismissKey = 'dahab:order-alerts:dismissed:{{ auth()->id() }}';
         let dismissed = new Set();
@@ -3815,27 +3820,31 @@ a.app-page-btn:hover {
         window.addEventListener('pointerdown', enableSound);
         window.addEventListener('keydown', enableSound);
 
+        // Original two-tone emergency-style alert; repeats for unacknowledged orders.
         function ring() {
-            if (!pending.length || overlay.style.display !== 'flex' || !audioActivated || !ctx || document.hidden) return;
+            if (!pending.some(n => !silenced.has(n.id)) || !audioActivated || !ctx || document.hidden) return;
             const start = ctx.currentTime;
-            [740, 990].forEach((frequency, index) => {
-                const osc = ctx.createOscillator();
-                const volume = ctx.createGain();
-                const t = start + index * .22;
-                volume.gain.setValueAtTime(.0001, t);
-                volume.gain.exponentialRampToValueAtTime(.15, t + .02);
-                volume.gain.exponentialRampToValueAtTime(.0001, t + .19);
-                osc.frequency.value = frequency;
-                osc.connect(volume);
-                volume.connect(ctx.destination);
-                osc.start(t);
-                osc.stop(t + .21);
+            [700, 960, 700, 960].forEach((frequency, index) => {
+                const oscillator = ctx.createOscillator();
+                const gain = ctx.createGain();
+                const t = start + index * .28;
+                oscillator.type = 'sawtooth';
+                oscillator.frequency.setValueAtTime(frequency, t);
+                gain.gain.setValueAtTime(.0001, t);
+                gain.gain.exponentialRampToValueAtTime(.095, t + .035);
+                gain.gain.exponentialRampToValueAtTime(.0001, t + .25);
+                oscillator.connect(gain);
+                gain.connect(ctx.destination);
+                oscillator.start(t);
+                oscillator.stop(t + .26);
             });
         }
 
         function render() {
             const active = pending.filter(n => !dismissed.has(n.id));
             const visible = pending.length && (manuallyOpened || active.length);
+            silence.disabled = !pending.some(n => !silenced.has(n.id));
+            silence.textContent = silence.disabled ? 'تم إيقاف الإنذار لهذه الطلبات' : 'إيقاف إنذار الطلبات الظاهرة';
             overlay.style.display = visible ? 'flex' : 'none';
             toggle.setAttribute('aria-expanded', visible ? 'true' : 'false');
             countBadge.style.display = pending.length ? 'inline-flex' : 'none';
@@ -3877,6 +3886,11 @@ a.app-page-btn:hover {
             render();
         }
         close.addEventListener('click', closePanel);
+        silence.addEventListener('click', () => {
+            pending.forEach(n => silenced.add(n.id));
+            try { sessionStorage.setItem(silencedKey, JSON.stringify([...silenced])); } catch (_) {}
+            render();
+        });
         toggle.addEventListener('click', () => {
             if (overlay.style.display === 'flex') {
                 closePanel();
@@ -3903,6 +3917,7 @@ a.app-page-btn:hover {
                 pending = Array.isArray(data.items) ? data.items : [];
                 const activeIds = new Set(pending.map(n => n.id));
                 dismissed = new Set([...dismissed].filter(id => activeIds.has(id)));
+                silenced = new Set([...silenced].filter(id => activeIds.has(id)));
                 render();
             } catch (error) {
                 console.debug('Order alerts fetch failed', error);
@@ -3910,7 +3925,7 @@ a.app-page-btn:hover {
         }
         poll();
         setInterval(poll, 5000);
-        setInterval(ring, 4000);
+        setInterval(ring, 1800);
         document.addEventListener('visibilitychange', () => { if (!document.hidden) poll(); });
     });
     </script>
