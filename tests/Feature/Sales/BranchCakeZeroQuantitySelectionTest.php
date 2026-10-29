@@ -26,7 +26,8 @@ class BranchCakeZeroQuantitySelectionTest extends TestCase
         );
 
         $this->assertStringContainsString("append('quantity',showroom+reserved);", $blade);
-        $this->assertStringContainsString("if (showroom + reserved > 0 && !shape?.value)", $blade);
+        $this->assertStringNotContainsString('scr-shape', $blade);
+        $this->assertStringNotContainsString("append('shape',", $blade);
     }
 
     #[Test]

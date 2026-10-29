@@ -35,6 +35,43 @@ class Product extends Model
         ];
     }
 
+    /**
+     * Branch cake ordering catalogue: cakes/tortes and cake mould products.
+     * Non-cake categories and inactive categories remain excluded.
+     */
+    public function scopeForBranchCakeOrders(Builder $query): Builder
+    {
+        return $query->where('is_raw_material', false)
+            ->whereHas('category', fn (Builder $categories) =>
+                $categories->where('is_active', true)->where(function (Builder $names) {
+                    $names->where('slug', 'like', '%cake%')
+                        ->orWhere('name', 'like', '%cake%')
+                        ->orWhere('name_ar', 'like', '%كيك%')
+                        ->orWhere('name_ar', 'like', '%تورت%')
+                        ->orWhere('name_ar', 'like', '%قالب%')
+                        ->orWhere('name_ar', 'like', '%قوالب%')
+                        ->orWhere('name', 'like', '%mold%')
+                        ->orWhere('name', 'like', '%mould%')
+                        ->orWhere('slug', 'like', '%mold%')
+                        ->orWhere('slug', 'like', '%mould%');
+                })
+            );
+    }
+
+    /** Put cakes first, then cake moulds, even within mixed cake categories. */
+    public function branchCakeCatalogGroup(): string
+    {
+        $names = implode(' ', [
+            (string) ($this->name_ar ?? ''),
+            (string) ($this->name ?? ''),
+            (string) ($this->category?->name_ar ?? ''),
+            (string) ($this->category?->name ?? ''),
+            (string) ($this->category?->slug ?? ''),
+        ]);
+
+        return preg_match('/قالب|قوالب|mold|mould/iu', $names) ? 'القوالب' : 'الكيك';
+    }
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);

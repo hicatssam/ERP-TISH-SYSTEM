@@ -159,21 +159,20 @@ class ShowroomCakeRequestController extends Controller
 
         $rawMaterials = app(DailyRawMaterialRequestService::class)->availableMaterials();
 
-        // Keep catalogue items sourced from active products, not hardcoded cake names.
+        // Display cakes first, followed by cake moulds; preserve category boundaries.
         $cakeProducts = Product::query()
             ->active()
-            ->whereHas('category', function ($query) {
-                $query->where('is_active', true)
-                    ->where(function ($query) {
-                        $query->where('slug', 'like', '%cake%')
-                            ->orWhere('name', 'like', '%cake%')
-                            ->orWhere('name_ar', 'like', '%كيك%')
-                            ->orWhere('name_ar', 'like', '%تورت%');
-                    });
-            })
-            ->with(['activeVariants.size'])
+            ->forBranchCakeOrders()
+            ->with(['category', 'activeVariants.size'])
             ->orderBy('name')
-            ->get();
+            ->get()
+            ->sortBy(fn (Product $product) =>
+                ($product->branchCakeCatalogGroup() === 'الكيك' ? '0|' : '1|')
+                . mb_strtolower($product->name_ar ?: $product->name))
+            ->values();
+        $cakeProductGroups = $cakeProducts->groupBy(
+            fn (Product $product) => $product->branchCakeCatalogGroup()
+        );
 
         return view(
             'sales.showroom-cake-requests.create',
@@ -183,7 +182,8 @@ class ShowroomCakeRequestController extends Controller
                 'factories',
                 'canChooseBranch',
                 'rawMaterials',
-                'cakeProducts'
+                'cakeProducts',
+                'cakeProductGroups'
             )
         );
     }
@@ -291,20 +291,9 @@ class ShowroomCakeRequestController extends Controller
         ]));
 
         foreach ($validated['items'] as $index => $item) {
-            // The shape is required; flavor and layer count are optional for branch orders.
-            if ((int) $item['quantity'] > 0) {
-                $this->validateProductionSpecifications($item, $index);
-            }
             if (! empty($item['product_id'])) {
                 $product = Product::query()->active()
-                    ->whereHas('category', function ($query) {
-                        $query->where('is_active', true)->where(function ($query) {
-                            $query->where('slug', 'like', '%cake%')
-                                ->orWhere('name', 'like', '%cake%')
-                                ->orWhere('name_ar', 'like', '%كيك%')
-                                ->orWhere('name_ar', 'like', '%تورت%');
-                        });
-                    })->find($item['product_id']);
+                    ->forBranchCakeOrders()->find($item['product_id']);
                 $variant = null;
                 if ($product && ! empty($item['product_variant_id'])) {
                     $variant = $product->activeVariants()->with('size')
@@ -574,9 +563,6 @@ class ShowroomCakeRequestController extends Controller
         ]);
 
         foreach ($validated['items'] as $index => $item) {
-            if ((int) $item['quantity'] > 0) {
-                $this->validateProductionSpecifications($item, $index);
-            }
             if ((int) ($item['reserved_quantity'] ?? 0) > (int) $item['quantity']) {
                 throw \Illuminate\Validation\ValidationException::withMessages([
                     "items.{$index}.reserved_quantity" =>
@@ -685,17 +671,6 @@ class ShowroomCakeRequestController extends Controller
                 'canManageReservations'
             )
         );
-    }
-
-    private function validateProductionSpecifications(array $item, int $index): void
-    {
-        $errors = [];
-        if (trim((string) ($item['shape'] ?? '')) === '') {
-            $errors["items.{$index}.shape"] = 'الشكل مطلوب لكل حجم كيك تختاره.';
-        }
-        if ($errors !== []) {
-            throw \Illuminate\Validation\ValidationException::withMessages($errors);
-        }
     }
 
     public function updateItemReservation(

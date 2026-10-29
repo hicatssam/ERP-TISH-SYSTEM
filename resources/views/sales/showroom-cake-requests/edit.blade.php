@@ -158,15 +158,9 @@
         {{-- Preserve legacy details without requiring them for branch cake orders. --}}
         <input type="hidden" name="items[__IDX__][layer_count]" value="">
         <input type="hidden" name="items[__IDX__][flavor]" value="">
-        <div class="form-group">
-            <label class="form-label">الشكل (إذا كانت الكمية أكبر من صفر)</label>
-            <select name="items[__IDX__][shape]" class="form-select">
-                <option value="">—</option>
-                <option value="round">دائري</option>
-                <option value="slab">بلاطة</option>
-                <option value="wedding_tiers">طوابق أفراح</option>
-            </select>
-        </div>
+        {{-- Keep historical shape unchanged when editing an older request.
+             No new shape selection is required in branch cake orders. --}}
+        <input type="hidden" name="items[__IDX__][shape]" value="">
         <div class="form-group">
             <label class="form-label">الكمية المطلوبة *</label>
             <input
@@ -290,16 +284,6 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             alert('يجب اختيار صنف كيك واحد على الأقل.');
             return;
-        }
-        for (const row of orderRows) {
-            const qty = Number(row.querySelector('.quantity-input').value);
-            const shape = row.querySelector('[name$="[shape]"]');
-            if (qty > 0 && !shape.value) {
-                e.preventDefault();
-                alert('يجب تحديد الشكل عند طلب كمية أكبر من صفر.');
-                shape.focus();
-                return;
-            }
         }
     });
 

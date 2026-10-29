@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Sales;
 
+use App\Models\Category;
 use App\Models\Location;
+use App\Models\Product;
 use App\Models\ShowroomCakeRequest;
 use App\Models\ShowroomCakeRequestItem;
 use App\Models\User;
@@ -127,7 +129,7 @@ class ShowroomCakeRequestLayerCountTest extends TestCase
     }
 
     #[Test]
-    public function branch_cake_requires_date_and_shape_for_positive_quantities_only(): void
+    public function branch_cake_requires_date_but_not_shape_for_positive_quantities(): void
     {
         Notification::fake();
         [, $factory, $user] = $this->prepareBranchUser();
@@ -148,14 +150,11 @@ class ShowroomCakeRequestLayerCountTest extends TestCase
         $this->actingAs($user)->post(route('showroom-cake-requests.store'), $invalid)
             ->assertSessionHasErrors('needed_by');
 
-        $invalid = $valid;
-        unset($invalid['items'][0]['shape']);
-        $this->actingAs($user)->post(route('showroom-cake-requests.store'), $invalid)
-            ->assertSessionHasErrors('items.0.shape');
-
+        unset($valid['items'][0]['shape']);
         $this->actingAs($user)->post(route('showroom-cake-requests.store'), $valid)
             ->assertSessionHasNoErrors();
         $item = ShowroomCakeRequest::query()->sole()->items()->sole();
+        $this->assertNull($item->shape);
         $this->assertNull($item->layer_count);
         $this->assertNull($item->flavor);
     }
@@ -195,6 +194,88 @@ class ShowroomCakeRequestLayerCountTest extends TestCase
         $invalid['items'][0]['reserved_quantity'] = 1;
         $this->actingAs($user)->put(route('showroom-cake-requests.update', $order), $invalid)
             ->assertSessionHasErrors('items.0.reserved_quantity');
+    }
+
+    #[Test]
+    public function branch_cake_catalog_lists_cakes_then_moulds_and_excludes_unrelated_products(): void
+    {
+        [, , $user] = $this->prepareBranchUser();
+
+        $cakes = Category::query()->create([
+            'name' => 'Cakes', 'name_ar' => 'الكيك', 'slug' => 'cakes',
+            'is_active' => true,
+        ]);
+        $moulds = Category::query()->create([
+            'name' => 'Cake moulds', 'name_ar' => 'قوالب الكيك', 'slug' => 'cake-moulds',
+            'is_active' => true,
+        ]);
+        $other = Category::query()->create([
+            'name' => 'Sweets', 'name_ar' => 'حلويات شرقية', 'slug' => 'sweets',
+            'is_active' => true,
+        ]);
+
+        foreach ([
+            [$cakes, 'كيك شوكولاتة', false],
+            [$moulds, 'قالب دائري', false],
+            [$other, 'بقلاوة', false],
+            [$moulds, 'قالب خام', true],
+        ] as $entry) {
+            Product::query()->create([
+                'category_id' => $entry[0]->id,
+                'name' => $entry[1],
+                'name_ar' => $entry[1],
+                'sku' => 'CAKE-GROUP-'.Str::upper(Str::random(9)),
+                'barcode' => 'CAKE-GROUP-'.Str::upper(Str::random(9)),
+                'is_active' => true,
+                'is_raw_material' => $entry[2],
+            ]);
+        }
+
+        $html = $this->actingAs($user)
+            ->get(route('showroom-cake-requests.create'))
+            ->assertOk()
+            ->assertSee('كيك شوكولاتة')
+            ->assertSee('قالب دائري')
+            ->assertDontSee('بقلاوة')
+            ->assertDontSee('قالب خام')
+            ->assertDontSee('class="scr-shape"', false)
+            ->getContent();
+
+        $cakesPosition = strpos($html, '>الكيك</strong>');
+        $mouldsPosition = strpos($html, '>القوالب</strong>');
+        $this->assertNotFalse($cakesPosition);
+        $this->assertNotFalse($mouldsPosition);
+        $this->assertLessThan($mouldsPosition, $cakesPosition);
+    }
+
+    #[Test]
+    public function editing_a_legacy_cake_with_shape_preserves_it_without_exposing_shape_select(): void
+    {
+        Notification::fake();
+        [, $factory, $user] = $this->prepareBranchUser();
+        $payload = [
+            'factory_location_id' => $factory->id,
+            'needed_by' => '2026-10-25',
+            'items' => [[
+                'cake_type' => 'chocolate', 'cake_size' => 'large',
+                'quantity' => 2, 'shape' => 'round',
+            ]],
+        ];
+
+        $this->actingAs($user)->post(route('showroom-cake-requests.store'), $payload)
+            ->assertSessionHasNoErrors();
+        $request = ShowroomCakeRequest::query()->sole();
+
+        $this->actingAs($user)->get(route('showroom-cake-requests.edit', $request))
+            ->assertOk()
+            ->assertDontSee('الشكل (إذا كانت الكمية أكبر من صفر)')
+            ->assertSee('type="hidden" name="items[__IDX__][shape]"', false);
+
+        $payload['items'][0]['quantity'] = 3;
+        $this->actingAs($user)->put(route('showroom-cake-requests.update', $request), $payload)
+            ->assertSessionHasNoErrors();
+        $this->assertSame('round', $request->fresh()->items()->sole()->shape);
+        $this->assertSame(3, (int) $request->fresh()->items()->sole()->quantity);
     }
 
     /** @return array{Location, Location, User} */
