@@ -2652,6 +2652,10 @@ a.app-page-btn:hover {
 
                 @endif
 
+                <button type="button" id="pendingOrderToggle" class="notif-btn" aria-label="فتح تنبيهات الطلبات" aria-expanded="false" title="تنبيهات الطلبات" style="position:relative;margin-inline:6px">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22" aria-hidden="true"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h6"/></svg>
+                    <span id="pendingOrderBadge" class="notif-badge" style="display:none">0</span>
+                </button>
                 <div class="notif-wrapper" id="notifWrapper">
 
                     <button type="button" class="notif-btn" id="notifBtn" aria-label="الإشعارات">
@@ -3769,7 +3773,10 @@ a.app-page-btn:hover {
     <div id="pendingOrderOverlay" role="dialog" aria-modal="true" aria-label="طلبات جديدة تتطلب الفتح"
          style="display:none;position:fixed;inset:0;z-index:100000;background:rgba(12,20,32,.64);align-items:center;justify-content:center;padding:20px">
         <div style="background:#fff;color:#152238;border-radius:18px;max-width:520px;width:100%;padding:24px;box-shadow:0 20px 70px #0004" dir="rtl">
-            <h2 style="margin:0 0 10px;font-size:1.3rem">🔔 طلبات تحتاج مراجعتك</h2>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px">
+                <h2 style="margin:0;font-size:1.3rem">🔔 طلبات تحتاج مراجعتك</h2>
+                <button type="button" id="pendingOrderClose" aria-label="إغلاق نافذة الطلبات" style="border:1px solid #d1d5db;border-radius:9px;background:#f8fafc;color:#152238;cursor:pointer;padding:8px 12px;font-weight:700">إغلاق ×</button>
+            </div>
             <p style="margin:0 0 16px">وصل طلب جديد ضمن مسؤولياتك. افتح الطلب لإيقاف تنبيهه.</p>
             <div id="pendingOrderItems" style="display:grid;gap:10px;max-height:55vh;overflow:auto"></div>
             <p id="pendingOrderAudioHint" style="font-size:.8rem;color:#7a4d00;margin:12px 0 0;display:none">لتفعيل صوت التنبيه اضغط على أي مكان في الصفحة مرة واحدة.</p>
@@ -3780,6 +3787,13 @@ a.app-page-btn:hover {
         const overlay = document.getElementById('pendingOrderOverlay');
         const itemsEl = document.getElementById('pendingOrderItems');
         const hint = document.getElementById('pendingOrderAudioHint');
+        const toggle = document.getElementById('pendingOrderToggle');
+        const close = document.getElementById('pendingOrderClose');
+        const countBadge = document.getElementById('pendingOrderBadge');
+        const dismissKey = 'dahab:order-alerts:dismissed:{{ auth()->id() }}';
+        let dismissed = new Set();
+        try { dismissed = new Set(JSON.parse(sessionStorage.getItem(dismissKey) || '[]')); } catch (_) {}
+        let manuallyOpened = false;
         const feedUrl = @json(route('notifications.pending-order-alerts'));
         const markUrlTemplate = @json(route('notifications.read', ['id' => '__NOTIFICATION_ID__']));
         const token = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
@@ -3802,7 +3816,7 @@ a.app-page-btn:hover {
         window.addEventListener('keydown', enableSound);
 
         function ring() {
-            if (!pending.length || !audioActivated || !ctx || document.hidden) return;
+            if (!pending.length || overlay.style.display !== 'flex' || !audioActivated || !ctx || document.hidden) return;
             const start = ctx.currentTime;
             [740, 990].forEach((frequency, index) => {
                 const osc = ctx.createOscillator();
@@ -3820,8 +3834,13 @@ a.app-page-btn:hover {
         }
 
         function render() {
-            overlay.style.display = pending.length ? 'flex' : 'none';
-            hint.style.display = pending.length && !audioActivated ? 'block' : 'none';
+            const active = pending.filter(n => !dismissed.has(n.id));
+            const visible = pending.length && (manuallyOpened || active.length);
+            overlay.style.display = visible ? 'flex' : 'none';
+            toggle.setAttribute('aria-expanded', visible ? 'true' : 'false');
+            countBadge.style.display = pending.length ? 'inline-flex' : 'none';
+            countBadge.textContent = pending.length > 99 ? '99+' : String(pending.length);
+            hint.style.display = visible && !audioActivated ? 'block' : 'none';
             itemsEl.replaceChildren();
             for (const notification of pending) {
                 const row = document.createElement('div');
@@ -3851,6 +3870,25 @@ a.app-page-btn:hover {
                 itemsEl.appendChild(row);
             }
         }
+        function closePanel() {
+            pending.forEach(n => dismissed.add(n.id));
+            try { sessionStorage.setItem(dismissKey, JSON.stringify([...dismissed])); } catch (_) {}
+            manuallyOpened = false;
+            render();
+        }
+        close.addEventListener('click', closePanel);
+        toggle.addEventListener('click', () => {
+            if (overlay.style.display === 'flex') {
+                closePanel();
+            } else {
+                manuallyOpened = true;
+                render();
+                enableSound();
+            }
+        });
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape' && overlay.style.display === 'flex') closePanel();
+        });
         async function poll() {
             if (busy || document.hidden) return;
             busy = true;
@@ -3863,6 +3901,8 @@ a.app-page-btn:hover {
                 if (!response.ok) throw new Error('Order alerts unavailable');
                 const data = await response.json();
                 pending = Array.isArray(data.items) ? data.items : [];
+                const activeIds = new Set(pending.map(n => n.id));
+                dismissed = new Set([...dismissed].filter(id => activeIds.has(id)));
                 render();
             } catch (error) {
                 console.debug('Order alerts fetch failed', error);
