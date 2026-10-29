@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Inventory;
 use App\Http\Controllers\Controller;
 use App\Models\StockReceivingInvoice;
 use App\Services\PrintThemeService;
+use Illuminate\Support\Facades\Auth;
 
 class StockReceivingInvoiceController extends Controller
 {
     public function show(StockReceivingInvoice $stockReceivingInvoice)
     {
+        $this->authorizeInvoiceLocation($stockReceivingInvoice);
         $stockReceivingInvoice->load([
             'stockTransfer.items.product',
             'stockTransfer.discrepancies.product',
@@ -22,6 +24,7 @@ class StockReceivingInvoiceController extends Controller
 
     public function print(StockReceivingInvoice $stockReceivingInvoice)
     {
+        $this->authorizeInvoiceLocation($stockReceivingInvoice);
         $stockReceivingInvoice->load([
             'stockTransfer.items.product',
             'stockTransfer.discrepancies',
@@ -34,6 +37,7 @@ class StockReceivingInvoiceController extends Controller
 
     public function pdf(StockReceivingInvoice $stockReceivingInvoice)
     {
+        $this->authorizeInvoiceLocation($stockReceivingInvoice);
         $stockReceivingInvoice->load([
             'stockTransfer.items.product',
             'stockTransfer.discrepancies',
@@ -65,6 +69,12 @@ class StockReceivingInvoiceController extends Controller
         return response($mpdf->Output($filename, 'S'))
             ->header('Content-Type', 'application/pdf')
             ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+    }
+    private function authorizeInvoiceLocation(StockReceivingInvoice $invoice): void
+    {
+        $user = Auth::user();
+        abort_unless($user && ($user->isAdmin() ||
+            (int) $user->primaryLocation()?->id === (int) $invoice->receiving_location_id), 403);
     }
 }
 

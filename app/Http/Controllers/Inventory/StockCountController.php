@@ -161,6 +161,25 @@ class StockCountController extends Controller
                 ]);
             }
 
+            // Lock the current balances before comparing them to the count snapshot.
+            // Any movement after the snapshot requires a fresh physical count.
+            $currentBalances = Inventory::query()
+                ->where('location_id', $stockCount->location_id)
+                ->whereIn('product_id', $stockCount->items->pluck('product_id'))
+                ->orderBy('product_id')
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('product_id');
+
+            foreach ($stockCount->items as $item) {
+                $currentQuantity = (float) ($currentBalances->get($item->product_id)?->quantity ?? 0);
+                if (abs($currentQuantity - (float) $item->system_quantity) > 0.0005) {
+                    throw ValidationException::withMessages([
+                        'items' => 'تغير رصيد أحد الأصناف منذ بدء الجرد. يجب بدء جرد جديد ومطابقة الكميات قبل الاعتماد.',
+                    ]);
+                }
+            }
+
             $adjustments = 0;
             foreach ($stockCount->items as $item) {
                 if ((float) $item->actual_quantity === (float) $item->system_quantity) {
