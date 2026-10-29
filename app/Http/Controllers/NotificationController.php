@@ -128,6 +128,37 @@ class NotificationController extends Controller
         ]);
     }
 
+    /**
+     * Only unread, recipient-scoped notifications for cake/branch order details.
+     * Never expose notifications from other users or unrelated links.
+     */
+    public function pendingOrderAlerts(Request $request): JsonResponse
+    {
+        $notifications = $request->user()->unreadNotifications()
+            ->latest('created_at')
+            ->limit(100)
+            ->get()
+            ->filter(function (DatabaseNotification $notification): bool {
+                $url = (string) ($notification->data['url'] ?? '');
+                $path = parse_url($url, PHP_URL_PATH);
+
+                if (! is_string($path)) {
+                    return false;
+                }
+
+                return preg_match(
+                    '~^/(?:cake-orders|showroom-cake-requests)/[0-9]+/?$~',
+                    $path
+                ) === 1;
+            })
+            ->take(15)
+            ->values()
+            ->map(fn (DatabaseNotification $notification): array =>
+                $this->formatNotification($notification));
+
+        return response()->json(['items' => $notifications]);
+    }
+
     public function markRead(Request $request, string $id): JsonResponse|RedirectResponse
     {
         $notification = $request->user()

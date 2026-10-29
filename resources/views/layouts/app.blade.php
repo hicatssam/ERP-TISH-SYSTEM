@@ -3765,6 +3765,116 @@ a.app-page-btn:hover {
         });
     </script>
 
+    {{-- Persistent order alerts: recipient-scoped, never acknowledges without opening. --}}
+    <div id="pendingOrderOverlay" role="dialog" aria-modal="true" aria-label="طلبات جديدة تتطلب الفتح"
+         style="display:none;position:fixed;inset:0;z-index:100000;background:rgba(12,20,32,.64);align-items:center;justify-content:center;padding:20px">
+        <div style="background:#fff;color:#152238;border-radius:18px;max-width:520px;width:100%;padding:24px;box-shadow:0 20px 70px #0004" dir="rtl">
+            <h2 style="margin:0 0 10px;font-size:1.3rem">🔔 طلبات تحتاج مراجعتك</h2>
+            <p style="margin:0 0 16px">وصل طلب جديد ضمن مسؤولياتك. افتح الطلب لإيقاف تنبيهه.</p>
+            <div id="pendingOrderItems" style="display:grid;gap:10px;max-height:55vh;overflow:auto"></div>
+            <p id="pendingOrderAudioHint" style="font-size:.8rem;color:#7a4d00;margin:12px 0 0;display:none">لتفعيل صوت التنبيه اضغط على أي مكان في الصفحة مرة واحدة.</p>
+        </div>
+    </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const overlay = document.getElementById('pendingOrderOverlay');
+        const itemsEl = document.getElementById('pendingOrderItems');
+        const hint = document.getElementById('pendingOrderAudioHint');
+        const feedUrl = @json(route('notifications.pending-order-alerts'));
+        const markUrlTemplate = @json(route('notifications.read', ['id' => '__NOTIFICATION_ID__']));
+        const token = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+        let pending = [];
+        let busy = false;
+        let ctx = null;
+        let audioActivated = false;
+        const AudioClass = window.AudioContext || window.webkitAudioContext;
+
+        async function enableSound() {
+            if (!AudioClass) return;
+            ctx ??= new AudioClass();
+            try {
+                if (ctx.state === 'suspended') await ctx.resume();
+                audioActivated = ctx.state === 'running';
+            } catch (_) { audioActivated = false; }
+            hint.style.display = pending.length && !audioActivated ? 'block' : 'none';
+        }
+        window.addEventListener('pointerdown', enableSound);
+        window.addEventListener('keydown', enableSound);
+
+        function ring() {
+            if (!pending.length || !audioActivated || !ctx || document.hidden) return;
+            const start = ctx.currentTime;
+            [740, 990].forEach((frequency, index) => {
+                const osc = ctx.createOscillator();
+                const volume = ctx.createGain();
+                const t = start + index * .22;
+                volume.gain.setValueAtTime(.0001, t);
+                volume.gain.exponentialRampToValueAtTime(.15, t + .02);
+                volume.gain.exponentialRampToValueAtTime(.0001, t + .19);
+                osc.frequency.value = frequency;
+                osc.connect(volume);
+                volume.connect(ctx.destination);
+                osc.start(t);
+                osc.stop(t + .21);
+            });
+        }
+
+        function render() {
+            overlay.style.display = pending.length ? 'flex' : 'none';
+            hint.style.display = pending.length && !audioActivated ? 'block' : 'none';
+            itemsEl.replaceChildren();
+            for (const notification of pending) {
+                const row = document.createElement('div');
+                row.style.cssText = 'border:1px solid #ddd;border-radius:12px;padding:12px;display:grid;gap:8px';
+                const title = document.createElement('strong');
+                title.textContent = notification.title || 'طلب جديد';
+                const message = document.createElement('span');
+                message.textContent = notification.message || '';
+                const link = document.createElement('a');
+                link.textContent = 'فتح الطلب ومراجعته';
+                link.href = notification.url;
+                link.className = 'btn btn-gold';
+                link.addEventListener('click', async event => {
+                    event.preventDefault();
+                    // Only the signed-in recipient may mark their notification read.
+                    try {
+                        await fetch(markUrlTemplate.replace('__NOTIFICATION_ID__', encodeURIComponent(notification.id)), {
+                            method: 'POST',
+                            headers: {'X-CSRF-TOKEN': token, 'Accept': 'application/json'},
+                            credentials: 'same-origin'
+                        });
+                    } finally {
+                        window.location.assign(link.href);
+                    }
+                });
+                row.append(title, message, link);
+                itemsEl.appendChild(row);
+            }
+        }
+        async function poll() {
+            if (busy || document.hidden) return;
+            busy = true;
+            try {
+                const response = await fetch(feedUrl, {
+                    headers: {'Accept':'application/json'},
+                    credentials: 'same-origin',
+                    cache: 'no-store'
+                });
+                if (!response.ok) throw new Error('Order alerts unavailable');
+                const data = await response.json();
+                pending = Array.isArray(data.items) ? data.items : [];
+                render();
+            } catch (error) {
+                console.debug('Order alerts fetch failed', error);
+            } finally { busy = false; }
+        }
+        poll();
+        setInterval(poll, 5000);
+        setInterval(ring, 4000);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) poll(); });
+    });
+    </script>
+
     @stack('scripts')
 
 </body>

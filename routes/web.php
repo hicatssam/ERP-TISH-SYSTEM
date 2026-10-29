@@ -119,6 +119,7 @@ Route::middleware(['auth', 'location.scope'])->group(function () {
         Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
         Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.count');
         Route::get('/notifications/recent', [NotificationController::class, 'recent'])->name('notifications.recent');
+        Route::get('/notifications/pending-order-alerts', [NotificationController::class, 'pendingOrderAlerts'])->name('notifications.pending-order-alerts');
         Route::get('/notifications/check-new', [NotificationController::class, 'checkNew'])->name('notifications.check-new');
         Route::delete('/notifications/destroy-read', [NotificationController::class, 'destroyRead'])->name('notifications.destroy-read');
         Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
