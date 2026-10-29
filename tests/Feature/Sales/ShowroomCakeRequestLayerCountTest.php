@@ -242,7 +242,7 @@ class ShowroomCakeRequestLayerCountTest extends TestCase
             ->getContent();
 
         $cakesPosition = strpos($html, '>الكيك</strong>');
-        $mouldsPosition = strpos($html, '>قوالب الكيك</strong>');
+        $mouldsPosition = strpos($html, '>القوالب</strong>');
         $this->assertNotFalse($cakesPosition);
         $this->assertNotFalse($mouldsPosition);
         $this->assertLessThan($mouldsPosition, $cakesPosition);

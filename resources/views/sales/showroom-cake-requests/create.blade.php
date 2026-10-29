@@ -107,12 +107,12 @@
         <div class="card">
             <div class="card-header"><span class="card-title">منتجات الكيك المتاحة للطلب</span></div>
             <div class="card-body">
-                <p class="scr-catalog-help">الكيك أولًا ثم القوالب. اختر الأصناف والأحجام والكميات المطلوبة فقط، وتاريخ الحاجة إلزامي. لا حاجة لتحديد الشكل أو النكهة أو عدد الطبقات.</p>
+                <p class="scr-catalog-help">الكيك ثم قطع الكيك، والقوالب في قسم مستقل. اختر الأصناف والأحجام والكميات المطلوبة فقط، وتاريخ الحاجة إلزامي. لا حاجة لتحديد الشكل أو النكهة أو عدد الطبقات.</p>
                 <fieldset class="scr-category-filter" id="cakeCategoryFilter">
                     <legend>اختر الفئات لعرض منتجاتها تلقائيًا</legend>
                     <div class="scr-category-filter-options">
-                        @foreach($cakeProductGroups as $categoryId => $groupProducts)
-                            <label><input type="checkbox" class="scr-category-choice" value="{{ $categoryId }}" checked> <span>{{ $groupProducts->first()?->category?->name_ar ?: $groupProducts->first()?->category?->name }} ({{ $groupProducts->count() }})</span></label>
+                        @foreach($cakeProductGroups as $groupName => $groupProducts)
+                            <label><input type="checkbox" class="scr-category-choice" value="{{ $groupName }}" checked> <span>{{ $groupName }} ({{ $groupProducts->count() }})</span></label>
                         @endforeach
                     </div>
                     <small class="scr-catalog-muted">تظل الفئات المختارة محفوظة على هذا المتصفح حتى تغيّرها بنفسك.</small>
@@ -120,10 +120,10 @@
                 <input id="cakeCatalogSearch" class="form-input" type="search" placeholder="بحث باسم المنتج..." aria-label="بحث في منتجات الكيك" style="margin-bottom:1rem">
                 <p class="scr-catalog-muted">يمكن ترك كميات المعرض والمحجوز صفرًا للأصناف المختارة.</p>
                 <div id="cakeCatalogRows" class="scr-catalog-list">
-                    @forelse($cakeProductGroups as $categoryId => $groupProducts)
-                        <div class="scr-catalog-group" data-catalog-group data-group-name="{{ $categoryId }}">
+                    @forelse($cakeProductGroups as $groupName => $groupProducts)
+                        <div class="scr-catalog-group" data-catalog-group data-group-name="{{ $groupName }}">
                             <div class="scr-catalog-group-title">
-                                <strong>{{ $groupProducts->first()?->category?->name_ar ?: $groupProducts->first()?->category?->name }}</strong>
+                                <strong>{{ $groupName }}</strong>
                                 <span>{{ $groupProducts->count() }} منتج</span>
                             </div>
                             <div class="scr-catalog-group-products">
@@ -250,7 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const search = document.getElementById('cakeCatalogSearch');
     const groups = [...document.querySelectorAll('[data-catalog-group]')];
     const categoryChoices = [...document.querySelectorAll('.scr-category-choice')];
-    const preferencesKey = 'dahab:showroom-cake:visible-categories:user-{{ auth()->id() }}';
+    const preferencesKey = 'dahab:showroom-cake:visible-categories-v2:user-{{ auth()->id() }}';
     // Store category visibility only, never submitted order quantities or selection.
     try {
         const saved = JSON.parse(localStorage.getItem(preferencesKey) ?? 'null');

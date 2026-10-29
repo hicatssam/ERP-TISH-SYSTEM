@@ -175,8 +175,26 @@ class ShowroomCakeRequestController extends Controller
                 ($product->branchCakeCatalogGroup() === 'الكيك' ? '0|' : '1|')
                 . mb_strtolower($product->name_ar ?: $product->name))
             ->values();
-        // Use actual catalogue categories, not the two presentation groups.
-        $cakeProductGroups = $cakeProducts->groupBy('category_id');
+        // Keep cake moulds in their own section as before, even when a
+        // catalogue product happens to belong to a mixed cake category.
+        $cakeProductGroups = $cakeProducts->groupBy(function (Product $product): string {
+            if ($product->branchCakeCatalogGroup() === 'القوالب') {
+                return 'القوالب';
+            }
+
+            $category = $product->category;
+            $categoryLabel = mb_strtolower((string) ($category?->name_ar ?? $category?->name ?? ''));
+            $slug = (string) ($category?->slug ?? '');
+
+            return str_contains($categoryLabel, 'قطع الكيك')
+                || str_contains($categoryLabel, 'قطع كيك')
+                || in_array($slug, ['cake-slices', 'cake-pieces'], true)
+                    ? 'قطع الكيك'
+                    : 'الكيك';
+        })->sortKeysUsing(fn (string $a, string $b) =>
+            array_search($a, ['الكيك', 'قطع الكيك', 'القوالب'], true)
+            <=> array_search($b, ['الكيك', 'قطع الكيك', 'القوالب'], true)
+        );
 
         return view(
             'sales.showroom-cake-requests.create',
