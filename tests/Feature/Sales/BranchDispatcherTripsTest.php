@@ -189,6 +189,77 @@ class BranchDispatcherTripsTest extends TestCase
 
 
     #[Test]
+    public function each_branch_sees_only_its_incoming_dispatcher_trips_in_inventory_and_cannot_open_another_branch_trip(): void
+    {
+        [$branch, $factory, $dispatcher, $receiver, , $order] = $this->prepareOrder();
+
+        $ownShipment = app(BranchDeliveryService::class)->createShipment($order, $dispatcher);
+        $otherBranch = Location::query()->create([
+            'name' => 'Second Branch',
+            'code' => 'SECOND-'.Str::upper(Str::random(6)),
+            'type' => 'branch',
+            'is_active' => true,
+        ]);
+        $otherOrder = ShowroomCakeRequest::query()->create([
+            'request_number' => 'SCR-OTHER-'.Str::upper(Str::random(8)),
+            'requesting_location_id' => $otherBranch->id,
+            'factory_location_id' => $factory->id,
+            'status' => ShowroomCakeRequestStatus::Ready,
+            'created_by' => $dispatcher->id,
+        ]);
+        $otherOrder->items()->create([
+            'cake_type' => 'vanilla', 'cake_size' => 'medium', 'quantity' => 2,
+        ]);
+        $otherShipment = app(BranchDeliveryService::class)->createShipment($otherOrder, $dispatcher);
+
+        $this->actingAs($receiver)->get(route('branch-shipments.index'))
+            ->assertOk()
+            ->assertSee($order->request_number)
+            ->assertDontSee($otherOrder->request_number);
+        $this->actingAs($receiver)->get(route('branch-shipments.show', $ownShipment))
+            ->assertOk();
+        $this->actingAs($receiver)->get(route('branch-shipments.show', $otherShipment))
+            ->assertForbidden();
+
+        // Even a branch user with broad dispatcher management rights is
+        // restricted to deliveries to their assigned branch.
+        $receiver->givePermissionTo(Permission::findOrCreate('branch_shipments.manage', 'web'));
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        $this->actingAs($receiver->fresh())->get(route('branch-shipments.index'))
+            ->assertOk()
+            ->assertSee($order->request_number)
+            ->assertDontSee($otherOrder->request_number);
+        $this->actingAs($receiver)->get(route('branch-shipments.show', $otherShipment))
+            ->assertForbidden();
+        $this->actingAs($receiver)->post(route('branch-shipments.trips.store', $otherShipment), [
+            'driver_id' => $dispatcher->id, 'items' => [],
+        ])->assertForbidden();
+
+        // Factory dispatcher retains oversight of outgoing delivery trips.
+        $this->actingAs($dispatcher)->get(route('branch-shipments.index'))
+            ->assertOk()
+            ->assertSee($order->request_number)
+            ->assertSee($otherOrder->request_number);
+        $this->actingAs($dispatcher)->get(route('branch-shipments.show', $otherShipment))
+            ->assertOk();
+    }
+
+    #[Test]
+    public function branch_users_without_inventory_or_branch_request_permissions_cannot_browse_dispatcher_trips(): void
+    {
+        [$branch, , $dispatcher, , , $order] = $this->prepareOrder();
+        $shipment = app(BranchDeliveryService::class)->createShipment($order, $dispatcher);
+
+        $outsider = User::factory()->create();
+        $outsider->employee->locations()->attach($branch->id, ['is_primary' => true]);
+
+        $this->actingAs($outsider)->get(route('branch-shipments.index'))
+            ->assertForbidden();
+        $this->actingAs($outsider)->get(route('branch-shipments.show', $shipment))
+            ->assertForbidden();
+    }
+
+    #[Test]
     public function dispatcher_can_close_short_received_order_with_mandatory_reason_and_exact_invoice_difference(): void
     {
         [$branch, , $dispatcher, $receiver, $driver, $order] = $this->prepareOrder();

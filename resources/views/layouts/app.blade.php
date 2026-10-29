@@ -1323,6 +1323,12 @@ a.app-page-btn:hover {
                 'stock_transfers.receive',
 
                 'branch_shipments.manage',
+                'branch_shipments.view',
+                'showroom_cake_requests.view',
+                'showroom_cake_requests.create',
+                'showroom_sweets_requests.view',
+                'showroom_sweets_requests.receive',
+                'cake_orders.receive',
 
             ])
 
@@ -1458,7 +1464,13 @@ a.app-page-btn:hover {
 
                     @endcanany
 
-                    @can('branch_shipments.manage')
+                    @canany([
+                        'branch_shipments.view', 'branch_shipments.manage', 'branch_shipments.close_short',
+                        'inventory.view', 'showroom_cake_requests.view', 'showroom_cake_requests.create',
+                        'showroom_sweets_requests.view', 'showroom_sweets_requests.receive',
+                        'showroom_sweets_requests.dispatch', 'showroom_cake_requests.update_status',
+                        'cake_orders.receive'
+                    ])
                         <a href="{{ route('branch-shipments.index') }}" class="nav-item {{ request()->routeIs('branch-shipments.*') ? 'active' : '' }}">
                             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <rect x="2" y="7" width="20" height="14" rx="2"/>
@@ -1466,7 +1478,7 @@ a.app-page-btn:hover {
                             </svg>
                             <span>نقلات الفروع</span>
                         </a>
-                    @endcan
+                    @endcanany
 
                     @canany(['stock_transfers.view', 'stock_transfers.dispatch', 'stock_transfers.receive'])
 

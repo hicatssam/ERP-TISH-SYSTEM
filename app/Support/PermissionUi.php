@@ -313,6 +313,7 @@ class PermissionUi
             'stock_transfers.view' => 'عرض تحويلات المخزون',
             'stock_transfers.dispatch' => 'إرسال تحويل مخزون',
             'stock_transfers.receive' => 'استلام تحويل مخزون',
+            'branch_shipments.view' => 'عرض نقلات Dispatcher الخاصة بالفرع',
             'branch_shipments.manage' => 'إدارة وتوزيع نقلات طلبات الفروع',
             'branch_shipments.close_short' => 'إغلاق طلبية ناقصة مع تسجيل سبب إلزامي',
 

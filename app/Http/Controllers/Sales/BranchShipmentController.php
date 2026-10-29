@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Sales;
 
+use App\Enums\LocationType;
 use App\Http\Controllers\Controller;
 use App\Models\BranchReceivingInvoice;
 use App\Models\BranchShipment;
@@ -32,18 +33,24 @@ class BranchShipmentController extends Controller
     public function index(Request $request): View
     {
         $user = $request->user();
-        abort_unless($user->isAdmin()
-            || $user->can('branch_shipments.manage')
-            || $user->can('branch_shipments.close_short')
-            || $user->can('showroom_sweets_requests.dispatch')
-            || $user->can('showroom_cake_requests.update_status'), 403);
+        abort_unless($this->canViewShipmentList($user), 403);
 
         $query = BranchShipment::query()
             ->with(['source', 'fromLocation', 'toLocation', 'receivingInvoice', 'trips'])
             ->where('multi_trip_enabled', true);
-        if (! $user->isAdmin() && ! $user->can('branch_shipments.manage')) {
-            $locationIds = $this->userLocationIds($user);
-            $query->whereIn('from_location_id', $locationIds);
+
+        if (! $user->isAdmin()) {
+            $locations = $this->userLocationIds($user);
+
+            if ($this->isBranchViewer($user)) {
+                // The branch's dispatcher trips are incoming shipments only.
+                // A factory or unrelated branch must never grant a branch
+                // employee visibility into somebody else's delivery.
+                $query->whereIn('to_location_id', $locations);
+            } elseif (! $user->can('branch_shipments.manage')) {
+                // Preserve dispatcher/factory access to their outgoing trips.
+                $query->whereIn('from_location_id', $locations);
+            }
         }
 
         return view('sales.branch-shipments.index', [
@@ -443,25 +450,65 @@ class BranchShipmentController extends Controller
         ]);
     }
 
-    private function assertShipmentAccess(
-        User $user,
-        BranchShipment $shipment
-    ): void {
-        if ($user->isAdmin()) {
-            return;
-        }
+    /**
+     * Branch users can view their own incoming dispatcher trips;
+     * factory dispatchers retain the existing outbound permissions.
+     */
+    private function canViewShipmentList(User $user): bool
+    {
+        return $user->isAdmin()
+            || $user->can('branch_shipments.manage')
+            || $user->can('branch_shipments.close_short')
+            || $user->can('branch_shipments.view')
+            || $user->can('inventory.view')
+            || $user->can('showroom_cake_requests.view')
+            || $user->can('showroom_cake_requests.create')
+            || $user->can('showroom_cake_requests.update_status')
+            || $user->can('showroom_sweets_requests.view')
+            || $user->can('showroom_sweets_requests.receive')
+            || $user->can('showroom_sweets_requests.dispatch')
+            || $user->can('cake_orders.receive');
+    }
 
-        if ((int) $shipment->driver_id === (int) $user->id
-            || $shipment->trips()->where('driver_id', $user->id)->exists()
-            || $user->can('branch_shipments.manage')) {
+    private function isBranchViewer(User $user): bool
+    {
+        return $user->primaryLocation()?->type === LocationType::Branch;
+    }
+
+    private function assertShipmentAccess(User $user, BranchShipment $shipment): void
+    {
+        if ($user->isAdmin()) {
             return;
         }
 
         $locations = $this->userLocationIds($user);
 
+        if ($this->isBranchViewer($user)) {
+            // Apply the exact same destination restriction to direct URLs.
+            abort_unless(
+                $this->canViewShipmentList($user)
+                && in_array((int) $shipment->to_location_id, $locations, true),
+                403,
+                'يمكنك مشاهدة نقلات فرعك فقط.'
+            );
+            return;
+        }
+
+        if ($user->can('branch_shipments.manage')) {
+            return;
+        }
+
+        if ((int) $shipment->driver_id === (int) $user->id
+            || $shipment->trips()->where('driver_id', $user->id)->exists()) {
+            return;
+        }
+
         abort_unless(
-            in_array((int) $shipment->from_location_id, $locations, true)
-            || in_array((int) $shipment->to_location_id, $locations, true),
+            $this->canViewShipmentList($user)
+            && (
+                in_array((int) $shipment->from_location_id, $locations, true)
+                || in_array((int) $shipment->to_location_id, $locations, true)
+            ),
             403,
             'لا تملك صلاحية الوصول إلى هذه الشحنة.'
         );
@@ -473,6 +520,12 @@ class BranchShipmentController extends Controller
     ): bool {
         if ($user->isAdmin()) {
             return true;
+        }
+
+        // A branch employee must never operate the factory's dispatcher
+        // controls, even if a broad management permission was granted.
+        if ($this->isBranchViewer($user)) {
+            return false;
         }
 
         $factoryId = match (true) {

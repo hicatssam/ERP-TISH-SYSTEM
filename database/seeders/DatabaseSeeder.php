@@ -2184,6 +2184,7 @@ SVG;
             'procurement.exchange_rates.view','procurement.exchange_rates.manage','procurement.reports.view',
             'stock_requests.view','stock_requests.create','stock_requests.review',
             'stock_transfers.view','stock_transfers.dispatch','stock_transfers.receive',
+            'branch_shipments.view',
             'inventory.expiry-alerts.view','inventory.expiry-alerts.receive',
             'inventory.expiry-alerts.receive_all','inventory.expiry-alerts.settings',
             'cash_sessions.manage','receiving_invoices.view',
@@ -2280,7 +2281,8 @@ SVG;
             // Four branch manager daily workflows: sweets, special cakes, branch cakes, and sales report submission.
             'showroom_sweets_requests.view','showroom_sweets_requests.create',
             'cake_orders.view','cake_orders.create',
-            'showroom_daily_reports.view','showroom_daily_reports.manage_branch'], ['orders.confirm','orders.cancel','customers.view_all','employees.view_all','hr.documents.manage','hr.organization.manage']);
+            'showroom_daily_reports.view','showroom_daily_reports.manage_branch',
+            'branch_shipments.view'], ['orders.confirm','orders.cancel','customers.view_all','employees.view_all','hr.documents.manage','hr.organization.manage']);
         $grantByPrefixes('Cashier', ['orders.','customers.','payments.','invoices.','restaurant.pos.'], [
             'products.view','categories.view','payment_methods.view',
         ], ['orders.confirm','orders.cancel','orders.delete','customers.view_all']);
@@ -2305,7 +2307,7 @@ SVG;
         ]);
         $grantByPrefixes('Quality Control', ['quality_control.'], ['production.view']);
         $grantByPrefixes('Branch Employee', ['orders.','customers.','restaurant.'], [
-            'products.view','inventory.view',
+            'products.view','inventory.view','branch_shipments.view',
         ], ['orders.confirm','orders.cancel','orders.delete','customers.view_all']);
         $grantByPrefixes('Dispatcher', ['delivery.','stock_transfers.'], [
             'orders.view','locations.view',
