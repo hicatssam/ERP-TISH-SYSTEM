@@ -607,7 +607,7 @@ class SpecialCakeOrderController extends Controller
 ],
 
 'print_image' => [
-    'required_if:image_cover_type,edible_sugar',
+    'required_if:image_cover_type,edible_sugar,removable_cardboard',
     'nullable',
     'image',
     'mimes:jpg,jpeg,png,webp',
@@ -741,9 +741,9 @@ if ($request->hasFile('reference_image')) {
     ]);
 }
 
-// Store the sugar print image
+// Store the selected sugar-print or removable-cardboard design image
 if (
-    $request->image_cover_type === 'edible_sugar' &&
+    in_array($request->image_cover_type, ['edible_sugar', 'removable_cardboard'], true) &&
     $request->hasFile('print_image')
 ) {
     $printImage = $request->file('print_image');

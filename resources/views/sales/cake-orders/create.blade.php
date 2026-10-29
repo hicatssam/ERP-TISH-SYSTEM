@@ -268,11 +268,11 @@
                 </div>
 
                 <div class="form-group" id="printImageGroup" style="margin-top:1rem" hidden>
-                    <label class="form-label">صورة الطباعة على السكر *</label>
+                    <label class="form-label" id="printImageLabel">صورة الطباعة على السكر *</label>
                     <input type="file" name="print_image" id="printImage"
                            class="form-input @error('print_image') is-invalid @enderror"
                            accept="image/jpeg,image/png,image/webp">
-                    <small class="form-help">أضف الصورة الأصلية التي تريد طباعتها على ورق السكر.</small>
+                    <small class="form-help" id="printImageHelp">أضف الصورة الأصلية التي تريد طباعتها على ورق السكر.</small>
                     @error('print_image')<span class="form-error">{{ $message }}</span>@enderror
                     <div id="printImagePreview" class="image-preview"></div>
                 </div>
@@ -903,19 +903,28 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Cake reference and sugar-print images ────────────────────────────────
     const imageCoverType      = document.getElementById('imageCoverType');
     const printImageGroup     = document.getElementById('printImageGroup');
+    const printImageLabel     = document.getElementById('printImageLabel');
+    const printImageHelp      = document.getElementById('printImageHelp');
     const printImageInput     = document.getElementById('printImage');
     const referenceImageInput = document.getElementById('referenceImage');
     const referencePreview    = document.getElementById('referenceImagePreview');
     const printPreview        = document.getElementById('printImagePreview');
 
     function updatePrintImageField() {
-        const requiresPrintImage = imageCoverType.value === 'edible_sugar';
-        printImageGroup.hidden = !requiresPrintImage;
-        printImageInput.required = requiresPrintImage;
+        const isSugar = imageCoverType.value === 'edible_sugar';
+        const isCardboard = imageCoverType.value === 'removable_cardboard';
+        const needsImage = isSugar || isCardboard;
+        printImageGroup.hidden = !needsImage;
+        printImageInput.required = needsImage;
+        printImageInput.disabled = !needsImage;
+        printImageLabel.textContent = isCardboard ? 'صورة الكرتون القابلة للإزالة *' : 'صورة الطباعة على السكر *';
+        printImageHelp.textContent = isCardboard
+            ? 'اختر صورة التصميم المطلوب تثبيتها على الكرتون القابل للإزالة.'
+            : 'أضف الصورة الأصلية التي تريد طباعتها على ورق السكر.';
 
-        if (!requiresPrintImage) {
+        if (!needsImage) {
             printImageInput.value = '';
-            printPreview.innerHTML = '';
+            printPreview.replaceChildren();
         }
     }
 
