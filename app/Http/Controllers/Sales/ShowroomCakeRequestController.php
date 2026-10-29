@@ -162,7 +162,8 @@ class ShowroomCakeRequestController extends Controller
         // Display cakes first, followed by cake moulds; preserve category boundaries.
         $cakeProducts = Product::query()
             ->active()
-            ->forBranchCakeOrders()
+            ->where('is_raw_material', false)
+            ->whereHas('category', fn ($query) => $query->where('is_active', true))
             ->with(['category', 'activeVariants.size'])
             ->orderBy('name')
             ->get()
@@ -170,9 +171,8 @@ class ShowroomCakeRequestController extends Controller
                 ($product->branchCakeCatalogGroup() === 'الكيك' ? '0|' : '1|')
                 . mb_strtolower($product->name_ar ?: $product->name))
             ->values();
-        $cakeProductGroups = $cakeProducts->groupBy(
-            fn (Product $product) => $product->branchCakeCatalogGroup()
-        );
+        // Use actual catalogue categories, not the two presentation groups.
+        $cakeProductGroups = $cakeProducts->groupBy('category_id');
 
         return view(
             'sales.showroom-cake-requests.create',
@@ -293,7 +293,9 @@ class ShowroomCakeRequestController extends Controller
         foreach ($validated['items'] as $index => $item) {
             if (! empty($item['product_id'])) {
                 $product = Product::query()->active()
-                    ->forBranchCakeOrders()->find($item['product_id']);
+                    ->where('is_raw_material', false)
+                    ->whereHas('category', fn ($query) => $query->where('is_active', true))
+                    ->find($item['product_id']);
                 $variant = null;
                 if ($product && ! empty($item['product_variant_id'])) {
                     $variant = $product->activeVariants()->with('size')

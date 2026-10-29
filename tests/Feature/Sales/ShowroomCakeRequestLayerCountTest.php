@@ -197,7 +197,7 @@ class ShowroomCakeRequestLayerCountTest extends TestCase
     }
 
     #[Test]
-    public function branch_cake_catalog_lists_cakes_then_moulds_and_excludes_unrelated_products(): void
+    public function branch_order_catalog_shows_all_finished_categories_but_excludes_raw_materials(): void
     {
         [, , $user] = $this->prepareBranchUser();
 
@@ -236,13 +236,13 @@ class ShowroomCakeRequestLayerCountTest extends TestCase
             ->assertOk()
             ->assertSee('كيك شوكولاتة')
             ->assertSee('قالب دائري')
-            ->assertDontSee('بقلاوة')
+            ->assertSee('بقلاوة')
             ->assertDontSee('قالب خام')
             ->assertDontSee('class="scr-shape"', false)
             ->getContent();
 
         $cakesPosition = strpos($html, '>الكيك</strong>');
-        $mouldsPosition = strpos($html, '>القوالب</strong>');
+        $mouldsPosition = strpos($html, '>قوالب الكيك</strong>');
         $this->assertNotFalse($cakesPosition);
         $this->assertNotFalse($mouldsPosition);
         $this->assertLessThan($mouldsPosition, $cakesPosition);

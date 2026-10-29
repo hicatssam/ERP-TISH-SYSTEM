@@ -108,13 +108,22 @@
             <div class="card-header"><span class="card-title">منتجات الكيك المتاحة للطلب</span></div>
             <div class="card-body">
                 <p class="scr-catalog-help">الكيك أولًا ثم القوالب. اختر الأصناف والأحجام والكميات المطلوبة فقط، وتاريخ الحاجة إلزامي. لا حاجة لتحديد الشكل أو النكهة أو عدد الطبقات.</p>
+                <fieldset class="scr-category-filter" id="cakeCategoryFilter">
+                    <legend>اختر الفئات لعرض منتجاتها تلقائيًا</legend>
+                    <div class="scr-category-filter-options">
+                        @foreach($cakeProductGroups as $categoryId => $groupProducts)
+                            <label><input type="checkbox" class="scr-category-choice" value="{{ $categoryId }}" checked> <span>{{ $groupProducts->first()?->category?->name_ar ?: $groupProducts->first()?->category?->name }} ({{ $groupProducts->count() }})</span></label>
+                        @endforeach
+                    </div>
+                    <small class="scr-catalog-muted">تظل الفئات المختارة محفوظة على هذا المتصفح حتى تغيّرها بنفسك.</small>
+                </fieldset>
                 <input id="cakeCatalogSearch" class="form-input" type="search" placeholder="بحث باسم المنتج..." aria-label="بحث في منتجات الكيك" style="margin-bottom:1rem">
                 <p class="scr-catalog-muted">يمكن ترك كميات المعرض والمحجوز صفرًا للأصناف المختارة.</p>
                 <div id="cakeCatalogRows" class="scr-catalog-list">
-                    @forelse($cakeProductGroups as $groupName => $groupProducts)
-                        <div class="scr-catalog-group" data-catalog-group>
+                    @forelse($cakeProductGroups as $categoryId => $groupProducts)
+                        <div class="scr-catalog-group" data-catalog-group data-group-name="{{ $categoryId }}">
                             <div class="scr-catalog-group-title">
-                                <strong>{{ $groupName }}</strong>
+                                <strong>{{ $groupProducts->first()?->category?->name_ar ?: $groupProducts->first()?->category?->name }}</strong>
                                 <span>{{ $groupProducts->count() }} منتج</span>
                             </div>
                             <div class="scr-catalog-group-products">
@@ -190,6 +199,12 @@
 <style>
 .scr-catalog-help,.scr-catalog-muted{font-size:.82rem;color:var(--text-muted);line-height:1.6}
 .scr-catalog-list{display:grid;gap:1.25rem}
+.scr-catalog-group[hidden],.scr-catalog-product[hidden]{display:none!important}
+.scr-category-filter{border:1px solid var(--border-light);border-radius:12px;padding:.85rem 1rem;margin-bottom:1rem}
+.scr-category-filter legend{font-weight:800;padding:0 .35rem}
+.scr-category-filter-options{display:flex;flex-wrap:wrap;gap:.8rem;margin:.3rem 0}
+.scr-category-filter-options label{display:flex;align-items:center;gap:.4rem;font-weight:700;cursor:pointer}
+.scr-category-filter-options input{width:18px;height:18px;accent-color:#b68c2b}
 .scr-catalog-group{border:1px solid var(--border-light);border-radius:18px;padding:1rem;background:rgba(245,247,250,.65)}
 .scr-catalog-group-title{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1rem;padding:.15rem .3rem .8rem;border-bottom:2px solid rgba(182,140,43,.35);color:var(--text)}
 .scr-catalog-group-title strong{font-size:1.15rem;font-weight:850}
@@ -233,6 +248,37 @@ document.addEventListener('DOMContentLoaded', () => {
     const rows = Array.from(document.querySelectorAll('[data-cake-line]'));
     const error = form.querySelector('[data-order-error]');
     const search = document.getElementById('cakeCatalogSearch');
+    const groups = [...document.querySelectorAll('[data-catalog-group]')];
+    const categoryChoices = [...document.querySelectorAll('.scr-category-choice')];
+    const preferencesKey = 'dahab:showroom-cake:visible-categories:user-{{ auth()->id() }}';
+    // Store category visibility only, never submitted order quantities or selection.
+    try {
+        const saved = JSON.parse(localStorage.getItem(preferencesKey) ?? 'null');
+        if (Array.isArray(saved)) {
+            categoryChoices.forEach(choice => { choice.checked = saved.includes(choice.value); });
+        }
+    } catch (_) { /* Storage may be blocked in private browsing. */ }
+    function applyCatalogFilters() {
+        const q = search.value.trim().toLocaleLowerCase();
+        const enabled = new Set(categoryChoices.filter(choice => choice.checked).map(choice => choice.value));
+        groups.forEach(group => {
+            let visibleProducts = 0;
+            group.querySelectorAll('[data-catalog-product]').forEach(product => {
+                const matches = enabled.has(group.dataset.groupName) && product.dataset.name.includes(q);
+                product.hidden = !matches;
+                if (matches) visibleProducts++;
+            });
+            group.hidden = visibleProducts === 0;
+        });
+    }
+    categoryChoices.forEach(choice => choice.addEventListener('change', () => {
+        try {
+            localStorage.setItem(preferencesKey, JSON.stringify(categoryChoices.filter(item => item.checked).map(item => item.value)));
+        } catch (_) { /* Filtering still works without browser storage. */ }
+        applyCatalogFilters();
+    }));
+    search.addEventListener('input', applyCatalogFilters);
+    applyCatalogFilters();
     function updateSummary() {
         let count=0, showroom=0, reserved=0;
         rows.forEach(row => {
@@ -254,18 +300,6 @@ document.addEventListener('DOMContentLoaded', () => {
             updateSummary();
         });
         row.addEventListener('change',updateSummary);
-    });
-    search.addEventListener('input',()=>{
-        const q=search.value.trim().toLocaleLowerCase();
-        document.querySelectorAll('[data-catalog-group]').forEach(group => {
-            let visible = false;
-            group.querySelectorAll('[data-catalog-product]').forEach(product => {
-                const matches = product.dataset.name.includes(q);
-                product.hidden = !matches;
-                if(matches) visible = true;
-            });
-            group.hidden = !visible;
-        });
     });
     form.addEventListener('submit',event=>{
         form.querySelectorAll('[data-generated-cake-item]').forEach(node=>node.remove());
