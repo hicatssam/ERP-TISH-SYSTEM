@@ -163,7 +163,11 @@ class ShowroomCakeRequestController extends Controller
         $cakeProducts = Product::query()
             ->active()
             ->where('is_raw_material', false)
-            ->whereHas('category', fn ($query) => $query->where('is_active', true))
+            ->whereHas('category', fn ($query) => $query->where('is_active', true)
+                ->where(function ($names) {
+                    $names->whereIn('name_ar', ['الكيك', 'كيك', 'القوالب', 'قوالب الكيك', 'قطع الكيك', 'قطع كيك'])
+                        ->orWhereIn('slug', ['cakes', 'cake', 'cake-moulds', 'cake-molds', 'cake-slices', 'cake-pieces']);
+                }))
             ->with(['category', 'activeVariants.size'])
             ->orderBy('name')
             ->get()
@@ -294,7 +298,11 @@ class ShowroomCakeRequestController extends Controller
             if (! empty($item['product_id'])) {
                 $product = Product::query()->active()
                     ->where('is_raw_material', false)
-                    ->whereHas('category', fn ($query) => $query->where('is_active', true))
+                    ->whereHas('category', fn ($query) => $query->where('is_active', true)
+                ->where(function ($names) {
+                    $names->whereIn('name_ar', ['الكيك', 'كيك', 'القوالب', 'قوالب الكيك', 'قطع الكيك', 'قطع كيك'])
+                        ->orWhereIn('slug', ['cakes', 'cake', 'cake-moulds', 'cake-molds', 'cake-slices', 'cake-pieces']);
+                }))
                     ->find($item['product_id']);
                 $variant = null;
                 if ($product && ! empty($item['product_variant_id'])) {
