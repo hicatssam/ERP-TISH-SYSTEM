@@ -1,0 +1,103 @@
+name: HR Full Regression
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/hr-regression.yml'
+      - 'app/Http/Controllers/Admin/Employee*'
+      - 'app/Http/Controllers/Admin/Attendance*'
+      - 'app/Http/Controllers/Admin/Hr*'
+      - 'app/Http/Controllers/Admin/Leave*'
+      - 'app/Http/Controllers/Admin/Payroll*'
+      - 'app/Http/Controllers/Admin/Work*'
+      - 'app/Http/Controllers/Employee/**'
+      - 'app/Models/Employee*'
+      - 'app/Models/Attendance*'
+      - 'app/Models/Payroll*'
+      - 'app/Models/WorkShift.php'
+      - 'app/Models/LeaveType.php'
+      - 'app/Services/Attendance*'
+      - 'app/Services/Payroll*'
+      - 'app/Services/Employee*'
+      - 'app/Services/Hr*'
+      - 'routes/attendance.php'
+      - 'routes/payroll.php'
+      - 'routes/web.php'
+      - 'resources/views/admin/attendance/**'
+      - 'resources/views/admin/hr/**'
+      - 'resources/views/admin/employees/**'
+      - 'resources/views/admin/payroll/**'
+      - 'resources/views/employee/my-hr/**'
+      - 'tests/Feature/Attendance/**'
+      - 'tests/Feature/Payroll/**'
+      - 'tests/Feature/Admin/LocationEmployeeStatusActionsTest.php'
+      - 'tests/Feature/Finance/EmployeePurchaseAccountTest.php'
+      - 'tests/Unit/AttendanceWebauthnVerifierTest.php'
+      - 'tests/Unit/EmployeeLedgerBalanceRuleTest.php'
+      - 'tests/Unit/PayrollSettlementMathTest.php'
+      - 'tests/Frontend/employee-webauthn.test.cjs'
+      - 'tests/Frontend/face-attendance-ui.test.cjs'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/hr-regression.yml'
+      - 'routes/attendance.php'
+      - 'routes/payroll.php'
+      - 'app/Services/Attendance*'
+      - 'app/Services/Payroll*'
+      - 'tests/Feature/Attendance/**'
+      - 'tests/Feature/Payroll/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hr-regression-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  hr-backend:
+    name: HR PHP / permissions / payroll
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_sqlite, sqlite3, intl, gd, zip
+          coverage: none
+      - name: Prepare isolated test environment
+        run: |
+          cp .env.example .env
+          php -r "file_exists('database/database.sqlite') || touch('database/database.sqlite');"
+          composer install --no-interaction --prefer-dist --no-progress
+          php artisan key:generate
+      - name: Validate HR routes and Blade templates
+        run: |
+          php artisan route:cache
+          php artisan view:cache
+          php artisan optimize:clear
+      - name: Run full HR and employee-related regression suite
+        run: |
+          php artisan test \
+            tests/Feature/Attendance \
+            tests/Feature/Payroll \
+            tests/Feature/Admin/LocationEmployeeStatusActionsTest.php \
+            tests/Feature/Finance/EmployeePurchaseAccountTest.php \
+            tests/Unit/AttendanceWebauthnVerifierTest.php \
+            tests/Unit/EmployeeLedgerBalanceRuleTest.php \
+            tests/Unit/PayrollSettlementMathTest.php
+
+  hr-frontend:
+    name: HR attendance frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run face and passkey interface tests
+        run: node --test tests/Frontend/employee-webauthn.test.cjs tests/Frontend/face-attendance-ui.test.cjs
