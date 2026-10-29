@@ -1,6 +1,6 @@
 @extends('layouts.app')
 @section('title', 'لوحة توزيع طلبات الفروع')
-@section('page-title', 'الـ Dispatcher والنقلات')
+@section('page-title', 'إدارة نقلات الفروع')
 @section('content')
 <div class="page-header">
     <div>

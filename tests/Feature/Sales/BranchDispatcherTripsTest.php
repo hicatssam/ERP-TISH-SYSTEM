@@ -72,6 +72,45 @@ class BranchDispatcherTripsTest extends TestCase
     }
 
     #[Test]
+    public function cake_delivery_trip_and_receiving_invoice_display_arabic_shapes_and_units(): void
+    {
+        [, , $dispatcher, $receiver, $driver, $order] = $this->prepareOrder();
+        $shipment = app(BranchDeliveryService::class)->createShipment($order, $dispatcher);
+        $line = $shipment->receivingInvoice->items->sole();
+        $line->update(['description' => 'بستاشيو — وسط — round', 'unit' => 'pcs']);
+
+        $this->actingAs($dispatcher)->get(route('branch-shipments.show', $shipment))
+            ->assertOk()
+            ->assertSee('مراجعة الكميات ونقلات الفروع')
+            ->assertSee('بستاشيو — وسط — دائري')
+            ->assertSee('حبة')
+            ->assertDontSee('بستاشيو — وسط — round');
+
+        $tripService = app(BranchDeliveryTripService::class);
+        $trip = $tripService->loadTrip($shipment, $dispatcher, $driver, [$line->id => ['quantity' => 5]], null);
+        $this->actingAs($dispatcher)->get(route('branch-shipments.show', $shipment))
+            ->assertOk()->assertSee('بستاشيو — وسط — دائري');
+        $outcome = $tripService->receiveTrip($trip, $receiver, [
+            $trip->items->sole()->id => ['received_quantity' => 5],
+        ], null);
+
+        $this->assertTrue($outcome['complete']);
+        $invoice = $outcome['invoice'];
+        $this->actingAs($receiver)->get(route('branch-receiving-invoices.show', $invoice))
+            ->assertOk()
+            ->assertSee('بستاشيو — وسط — دائري')
+            ->assertDontSee('بستاشيو — وسط — round');
+
+        $this->actingAs($receiver)->get(route('branch-receiving-invoices.print', $invoice))
+            ->assertOk()
+            ->assertSee('بستاشيو — وسط — دائري')
+            ->assertDontSee('بستاشيو — وسط — round');
+
+        $this->assertSame('بستاشيو — وسط — round', $line->fresh()->description);
+        $this->assertSame('pcs', $line->fresh()->unit);
+    }
+
+    #[Test]
     public function short_received_trip_creates_remaining_quantity_instead_of_a_final_invoice(): void
     {
         [, , $dispatcher, $receiver, $driver, $order] = $this->prepareOrder();

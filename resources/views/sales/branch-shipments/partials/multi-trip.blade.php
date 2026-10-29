@@ -6,7 +6,7 @@
 <div class="card" style="margin-bottom:1rem">
     <div class="card-header">
         <div>
-            <span class="card-title">مراجعة الكميات والنقلات — Dispatcher</span>
+            <span class="card-title">مراجعة الكميات ونقلات الفروع</span>
             <p class="form-help">يُسجل التحميل لكل نقلة مع الموصّل. تصدر فاتورة نهائية بعد اكتمال الاستلام، أو عند إغلاق الطلب بنقص مع سبب موثق.</p>
         </div>
         <span class="badge {{ $complete ? 'badge-active' : 'badge-warning' }}">{{ $closedShort ? 'أغلقت بنقص — فاتورة معتمدة' : ($complete ? 'مكتمل — الفاتورة صادرة' : 'قيد التوريد') }}</span>
@@ -24,8 +24,8 @@
                 <tbody>
                     @foreach($progress['lines'] as $line)
                         <tr>
-                            <td><strong>{{ $line['item']->description }}</strong></td>
-                            <td>{{ $line['item']->unit ?: '—' }}</td>
+                            <td><strong>{{ $line['item']->displayDescription() }}</strong></td>
+                            <td>{{ $line['item']->displayUnit() ?: '—' }}</td>
                             <td>{{ number_format($line['required'], 3) }}</td>
                             <td>{{ number_format($line['received'], 3) }}</td>
                             <td>{{ number_format($line['pending'], 3) }}</td>
@@ -59,13 +59,13 @@
                         <tbody>
                             @foreach($progress['lines'] as $id => $line)
                                 <tr>
-                                    <td>{{ $line['item']->description }}</td>
-                                    <td>{{ number_format($line['available'], 3) }} {{ $line['item']->unit }}</td>
+                                    <td>{{ $line['item']->displayDescription() }}</td>
+                                    <td>{{ number_format($line['available'], 3) }} {{ $line['item']->displayUnit() }}</td>
                                     <td>
                                         <input type="number" name="items[{{ $id }}][quantity]" step="0.001"
                                             min="0" max="{{ $line['available'] }}"
                                             value="{{ old("items.{$id}.quantity", 0) }}"
-                                            class="form-input" aria-label="كمية تحميل {{ $line['item']->description }}" required>
+                                            class="form-input" aria-label="كمية تحميل {{ $line['item']->displayDescription() }}" required>
                                     </td>
                                 </tr>
                             @endforeach
@@ -108,13 +108,13 @@
                                 <tbody>
                                     @foreach($trip->items as $tripItem)
                                         <tr>
-                                            <td>{{ $tripItem->invoiceItem?->description }}</td>
+                                            <td>{{ $tripItem->invoiceItem?->displayDescription() }}</td>
                                             <td>{{ number_format((float)$tripItem->loaded_quantity, 3) }}</td>
                                             <td>
                                                 <input type="number" name="items[{{ $tripItem->id }}][received_quantity]"
                                                     value="{{ old("items.{$tripItem->id}.received_quantity", $tripItem->loaded_quantity) }}"
                                                     min="0" max="{{ $tripItem->loaded_quantity }}" step="0.001" required
-                                                    class="form-input" aria-label="المستلم {{ $tripItem->invoiceItem?->description }}">
+                                                    class="form-input" aria-label="المستلم {{ $tripItem->invoiceItem?->displayDescription() }}">
                                             </td>
                                             <td><input name="items[{{ $tripItem->id }}][note]" type="text" maxlength="1000" class="form-input"></td>
                                         </tr>
@@ -133,7 +133,7 @@
                             <tbody>
                                 @foreach($trip->items as $tripItem)
                                     <tr>
-                                        <td>{{ $tripItem->invoiceItem?->description }}</td>
+                                        <td>{{ $tripItem->invoiceItem?->displayDescription() }}</td>
                                         <td>{{ number_format((float)$tripItem->loaded_quantity, 3) }}</td>
                                         <td>{{ $tripItem->received_quantity === null ? '—' : number_format((float)$tripItem->received_quantity, 3) }}</td>
                                         <td>{{ $tripItem->received_quantity === null ? '—' : number_format((float)$tripItem->loaded_quantity - (float)$tripItem->received_quantity, 3) }}</td>
@@ -146,7 +146,7 @@
                 @endif
             </section>
         @empty
-            <p class="form-help">لا توجد نقلات مسجلة حتى الآن. يبدأ الـDispatcher بتسجيل النقلة الأولى.</p>
+            <p class="form-help">لا توجد نقلات مسجلة حتى الآن. تبدأ العملية بتسجيل النقلة الأولى من مسؤول النقلات.</p>
         @endforelse
     </div>
 </div>

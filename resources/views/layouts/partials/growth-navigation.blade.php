@@ -13,7 +13,7 @@
     @if($growthModules->isEnabled('crm') && auth()->user()->can('crm.view') && Route::has('crm.index'))
         <a href="{{ route('crm.index') }}" class="nav-item {{ request()->routeIs('crm.*') ? 'active' : '' }}">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a6 6 0 0 1 6-6h2"/><path d="M16 11h6M19 8v6"/></svg>
-            <span>CRM والعملاء</span>
+            <span>إدارة علاقات العملاء</span>
         </a>
     @endif
 

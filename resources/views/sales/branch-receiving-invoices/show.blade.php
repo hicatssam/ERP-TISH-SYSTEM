@@ -55,8 +55,8 @@
                     @php $difference = (float)($item->difference_quantity ?? 0); @endphp
                     <tr>
                         <td>{{ $loop->iteration }}</td>
-                        <td>{{ $item->description }}</td>
-                        <td>{{ $item->unit ?? '—' }}</td>
+                        <td>{{ $item->displayDescription() }}</td>
+                        <td>{{ $item->displayUnit() ?? '—' }}</td>
                         <td>{{ number_format((float)$item->sent_quantity, 3) }}</td>
                         <td>{{ number_format((float)($item->received_quantity ?? 0), 3) }}</td>
                         <td>

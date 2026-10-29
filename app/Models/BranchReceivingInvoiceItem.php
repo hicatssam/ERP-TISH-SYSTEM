@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\BranchDeliveryLabels;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -28,6 +29,16 @@ class BranchReceivingInvoiceItem extends Model
             'difference_quantity' => 'decimal:3',
             'metadata' => 'array',
         ];
+    }
+
+    public function displayDescription(): string
+    {
+        return BranchDeliveryLabels::itemDescription($this->description);
+    }
+
+    public function displayUnit(): string
+    {
+        return BranchDeliveryLabels::unit($this->unit);
     }
 
     public function invoice(): BelongsTo

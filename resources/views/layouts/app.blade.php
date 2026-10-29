@@ -1464,7 +1464,7 @@ a.app-page-btn:hover {
                                 <rect x="2" y="7" width="20" height="14" rx="2"/>
                                 <path d="M2 11h20M7 7V3h10v4M7 15h4M15 15h3"/>
                             </svg>
-                            <span>Dispatcher — نقلات الفروع</span>
+                            <span>نقلات الفروع</span>
                         </a>
                     @endcan
 
@@ -1710,7 +1710,7 @@ a.app-page-btn:hover {
 
                                 </svg>
 
-                                <span>نقطة البيع POS</span>
+                                <span>نقطة البيع</span>
 
                             </a>
 
@@ -1810,7 +1810,7 @@ a.app-page-btn:hover {
 
                                 </svg>
 
-                                <span>شاشة المطبخ KDS</span>
+                                <span>شاشة المطبخ</span>
 
                             </a>
 

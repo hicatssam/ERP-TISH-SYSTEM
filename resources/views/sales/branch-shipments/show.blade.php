@@ -207,8 +207,8 @@
                         @foreach($invoice->items as $item)
                             <tr>
                                 <td>{{ $loop->iteration }}</td>
-                                <td>{{ $item->description }}</td>
-                                <td>{{ $item->unit ?? '—' }}</td>
+                                <td>{{ $item->displayDescription() }}</td>
+                                <td>{{ $item->displayUnit() ?? '—' }}</td>
                                 <td>{{ number_format((float)$item->sent_quantity, 3) }}</td>
                                 <td>
                                     <input
@@ -254,8 +254,8 @@
                     @foreach($invoice->items as $item)
                         <tr>
                             <td>{{ $loop->iteration }}</td>
-                            <td>{{ $item->description }}</td>
-                            <td>{{ $item->unit ?? '—' }}</td>
+                            <td>{{ $item->displayDescription() }}</td>
+                            <td>{{ $item->displayUnit() ?? '—' }}</td>
                             <td>{{ number_format((float)$item->sent_quantity, 3) }}</td>
                             <td>{{ $item->received_quantity === null ? '—' : number_format((float)$item->received_quantity, 3) }}</td>
                             <td>{{ $item->difference_quantity === null ? '—' : number_format((float)$item->difference_quantity, 3) }}</td>
