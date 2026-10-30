@@ -95,26 +95,59 @@
         </div>
 
         <div class="card">
-            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
-                <div>
-                    <span class="card-title">أصناف الحلويات المطلوبة</span>
-                    <div style="font-size:.78rem;color:var(--text-muted);margin-top:.2rem">
-                        مثال: نمورة — 2 صدر، بقلاوة — 3 صدر، كنافة — 1 صينية.
-                    </div>
-                </div>
-
-                <button type="button" class="btn btn-outline btn-sm" id="addItemBtn">
-                    + إضافة صنف
-                </button>
-            </div>
-
+            <div class="card-header"><span class="card-title">تعديل كتالوج حلويات الفرع</span></div>
             <div class="card-body">
-                <div id="itemsContainer"></div>
-                <p id="noItemsMsg" style="color:var(--text-muted);font-size:.9rem;margin:0">
-                    اضغط "إضافة صنف" لإضافة أول صنف حلويات.
-                </p>
+                <p class="ssr-catalog-hint">يعرض الكتالوج فئتين فقط: الحلويات الشرقية والكنافة بجميع أنواعها. اختر الأصناف المطلوبة وحدد كمية المعرض والمحجوز للعملاء.</p>
+                <input id="sweetsCatalogSearch" class="form-input" type="search" placeholder="ابحث باسم المنتج..." aria-label="بحث في الحلويات">
+                <div class="ssr-catalog-list" id="sweetsCatalog">
+                    @forelse($sweetProducts as $product)
+                        @php
+                            $name = $product->name_ar ?: $product->name;
+                            $unitNames = [
+                                'pcs' => 'حبة', 'pc' => 'حبة', 'piece' => 'حبة', 'pieces' => 'حبة',
+                                'unit' => 'حبة', 'units' => 'حبة', 'each' => 'حبة',
+                                'tray' => 'صينية', 'trays' => 'صينية',
+                                'box' => 'علبة', 'boxes' => 'علبة',
+                                'kg' => 'كغم', 'kgs' => 'كغم', 'kilogram' => 'كغم', 'kilograms' => 'كغم',
+                                'bundle' => 'ربطة', 'bundles' => 'ربطة',
+                                'plate' => 'صدر', 'plates' => 'صدر',
+                            ];
+                            $rawUnit = trim((string) ($product->unitDefinition?->displayName() ?: $product->unit ?: 'حبة'));
+                            $arabicUnit = $unitNames[strtolower($rawUnit)] ?? $rawUnit;
+                            $image = $product->image
+                                ? (\Illuminate\Support\Str::startsWith($product->image, ['http://', 'https://', '/'])
+                                    ? $product->image : asset('storage/' . $product->image))
+                                : null;
+                        @endphp
+                        <div class="ssr-catalog-item" data-sweet-product data-name="{{ mb_strtolower($name) }}" data-id="{{ $product->id }}" data-unit="{{ $arabicUnit }}">
+                            <div class="ssr-catalog-identity">
+                                <label class="ssr-catalog-name">
+                                    <input class="ssr-selected" type="checkbox" aria-label="اختيار {{ $name }}">
+                                    @if($image)
+                                        <img src="{{ $image }}" alt="" loading="lazy" width="54" height="54">
+                                    @else
+                                        <span class="ssr-catalog-image-empty" aria-hidden="true">🍬</span>
+                                    @endif
+                                    <span><strong>{{ $name }}</strong><small>{{ $product->category?->name_ar ?: $product->category?->name }}</small></span>
+                                </label>
+                            </div>
+                            <div class="ssr-catalog-fields">
+                                <label>للمعرض <input type="number" class="form-input ssr-showroom" min="0" step="0.001" value="0"></label>
+                                <label>محجوز للعملاء <input type="number" class="form-input ssr-reserved" min="0" step="0.001" value="0"></label>
+                                <label>الوحدة <input type="text" class="form-input ssr-unit" list="requestUnitOptions" value="{{ $arabicUnit }}" maxlength="50" required></label>
+                                <label>تفاصيل الحجز <input type="text" class="form-input ssr-reservation-notes" maxlength="1000" placeholder="اختياري"></label>
+                                <label>ملاحظة <input type="text" class="form-input ssr-notes" maxlength="500" placeholder="اختياري"></label>
+                            </div>
+                        </div>
+                    @empty
+                        <p>لا توجد منتجات نشطة ضمن فئتي الحلويات الشرقية والكنافة. تأكد من تصنيف منتجات الكنافة ضمن فئتها الصحيحة في الكتالوج.</p>
+                    @endforelse
+                </div>
+                <div class="ssr-catalog-summary" aria-live="polite">منتجات مختارة: <strong id="ssrSelected">0</strong> — للمعرض: <strong id="ssrShowroomTotal">0</strong> — محجوز: <strong id="ssrReservedTotal">0</strong></div>
             </div>
         </div>
+
+        <div class="alert alert-danger" data-order-error role="alert" tabindex="-1" hidden></div>
 
         <div style="display:flex;gap:.75rem;flex-wrap:wrap">
             <button class="btn btn-gold" type="submit" {{ $factories->isEmpty() ? 'disabled' : '' }}>
@@ -134,205 +167,91 @@
     <option value="ربطة"></option>
 </datalist>
 
-<template id="itemTemplate">
-    <div class="ssr-item-row" data-index="__IDX__">
-        <div class="form-group ssr-product-col">
-            <label class="form-label">الصنف *</label>
-            <input type="search" class="form-input product-search" placeholder="ابحث بالاسم أو الرمز" autocomplete="off" aria-label="بحث عن صنف حلويات">
-            <select name="items[__IDX__][product_id]" class="form-select product-select" required>
-                <option value="">ابحث ثم اختر الصنف</option>
-            </select>
-            <small class="form-help product-search-status" aria-live="polite"></small>
-        </div>
-
-        <div class="form-group">
-            <label class="form-label">الكمية *</label>
-            <input type="number"
-                   name="items[__IDX__][quantity]"
-                   class="form-input quantity-input"
-                   min="0"
-                   step="0.001"
-                   value="0"
-                   required>
-        </div>
-
-        <div class="form-group">
-            <label class="form-label">الوحدة *</label>
-            <input type="text"
-                   name="items[__IDX__][requested_unit]"
-                   class="form-input unit-input"
-                   list="requestUnitOptions"
-                   value="صدر"
-                   placeholder="صدر / صينية / كغم..."
-                   required>
-        </div>
-
-        <div class="form-group">
-            <label class="form-label">محجوز للعملاء</label>
-            <input type="number"
-                   name="items[__IDX__][reserved_quantity]"
-                   class="form-input reserved-input"
-                   min="0"
-                   step="0.001"
-                   value="0">
-            <small class="form-help">مثال: من 150 صدر، 5 محجوزة.</small>
-        </div>
-
-        <div class="form-group ssr-notes-col">
-            <label class="form-label">تفاصيل الحجوزات</label>
-            <input type="text"
-                   name="items[__IDX__][reservation_notes]"
-                   class="form-input reservation-notes-input"
-                   placeholder="مثال: 3 لمحمد، 2 لسارة...">
-        </div>
-
-        <div class="form-group ssr-notes-col">
-            <label class="form-label">ملاحظة للصنف</label>
-            <input type="text"
-                   name="items[__IDX__][notes]"
-                   class="form-input notes-input"
-                   placeholder="مثال: صدر كبير، بدون فستق...">
-        </div>
-
-        <div class="form-group ssr-remove-col">
-            <label class="form-label" style="opacity:0">حذف</label>
-            <button type="button" class="btn btn-danger btn-sm remove-item-btn" title="حذف الصنف">×</button>
-        </div>
-    </div>
-</template>
-
 <style>
-.ssr-grid{display:grid;gap:1rem}
-.ssr-grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
-.ssr-item-row{
-    display:grid;
-    grid-template-columns:minmax(240px,1.8fr) repeat(3,minmax(110px,.65fr)) minmax(190px,1.2fr) minmax(190px,1.2fr) auto;
-    gap:.85rem;
-    align-items:start;
-    padding:1rem;
-    margin-bottom:.85rem;
-    background:var(--off-white);
-    border:1px solid var(--border);
-    border-radius:var(--radius);
-}
-.ssr-remove-col{display:flex;flex-direction:column}
+.ssr-grid{display:grid;gap:1rem}.ssr-grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.ssr-catalog-hint{font-size:.83rem;color:var(--text-muted);line-height:1.75;margin-bottom:.75rem}
+.ssr-catalog-list{display:grid;gap:.75rem;margin-top:1rem}
+.ssr-catalog-item{padding:.9rem 1rem;border:1px solid var(--border-light);border-radius:14px;background:var(--surface,#fff);transition:border-color .2s,background .2s}
+.ssr-catalog-item:has(.ssr-selected:checked){border-color:rgba(212,160,23,.55);background:rgba(212,160,23,.045)}
+.ssr-catalog-name{display:flex;align-items:center;gap:.85rem;cursor:pointer}
+.ssr-catalog-name input{accent-color:#b68c2b;width:19px;height:19px;flex-shrink:0}
+.ssr-catalog-name img,.ssr-catalog-image-empty{width:54px;height:54px;border-radius:10px;object-fit:cover;flex-shrink:0}
+.ssr-catalog-image-empty{display:grid;place-items:center;background:rgba(212,160,23,.1)}
+.ssr-catalog-name strong{display:block;font-size:.88rem}
+.ssr-catalog-name small{display:block;color:var(--text-muted);font-size:.73rem}
+.ssr-catalog-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.65rem;margin-top:.75rem}
+.ssr-catalog-fields label{display:flex;flex-direction:column;gap:.25rem;font-size:.73rem;font-weight:700;color:var(--text-muted)}
+.ssr-catalog-fields input{width:100%;min-width:0;height:40px}
+.ssr-catalog-summary{margin-top:1rem;padding:.85rem 1rem;border-radius:12px;background:rgba(212,160,23,.08);font-size:.85rem}
+.ssr-catalog-summary strong{color:var(--gold-deep,#a77b16)}
 .ssr-errors{max-width:1100px;margin-bottom:1.25rem;padding:1rem 1.25rem;border:1px solid #dc3545;border-radius:12px;background:rgba(220,53,69,.12);color:#dc3545}
 .ssr-errors ul{margin:.65rem 0 0;padding-inline-start:1.25rem}
-@media(max-width:900px){
-    .ssr-grid-2,.ssr-item-row{grid-template-columns:1fr}
-    .ssr-remove-col .form-label{display:none}
-}
+@media(max-width:850px){.ssr-grid-2{grid-template-columns:1fr}.ssr-catalog-fields{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:450px){.ssr-catalog-fields{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.ssr-catalog-item{transition:none}}
 </style>
 
-@php
-    $editItems = old('items', $showroomSweetsRequest->items->map(fn ($item) => [
-        'product_id' => $item->product_id,
-        'quantity' => $item->quantity,
-        'reserved_quantity' => $item->reserved_quantity,
-        'reservation_notes' => $item->reservation_notes,
-        'requested_unit' => $item->requested_unit,
-        'notes' => $item->notes,
-    ])->values()->all());
-@endphp
-
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    let index = 0;
-    const container = document.getElementById('itemsContainer');
-    const noItemsMsg = document.getElementById('noItemsMsg');
-    const template = document.getElementById('itemTemplate');
-    const oldItems = {{ \Illuminate\Support\Js::from($editItems) }};
-    const productsUrl = @json(route('showroom-sweets-requests.products'));
-
-    function refreshEmptyState() {
-        noItemsMsg.style.display = container.querySelector('.ssr-item-row') ? 'none' : '';
-    }
-
-    function addItem(data = {}) {
-        const html = template.innerHTML.replaceAll('__IDX__', index++);
-        const holder = document.createElement('div');
-        holder.innerHTML = html.trim();
-        const row = holder.firstElementChild;
-
-        const product = row.querySelector('.product-select');
-        const search = row.querySelector('.product-search');
-        const searchStatus = row.querySelector('.product-search-status');
-        const quantity = row.querySelector('.quantity-input');
-        const unit = row.querySelector('.unit-input');
-        const reserved = row.querySelector('.reserved-input');
-        const reservationNotes = row.querySelector('.reservation-notes-input');
-        const notes = row.querySelector('.notes-input');
-
-        let controller;
-        let timer;
-        const loadProducts = async (params, selectedId = null) => {
-            controller?.abort();
-            controller = new AbortController();
-            searchStatus.textContent = 'جاري البحث...';
-            try {
-                const response = await fetch(productsUrl + '?' + new URLSearchParams(params), {
-                    headers: {'Accept': 'application/json'}, signal: controller.signal,
-                });
-                if (!response.ok) throw new Error('تعذر تحميل الأصناف. حاول مجددًا.');
-                const items = await response.json();
-                product.replaceChildren(new Option('ابحث ثم اختر الصنف', ''));
-                items.forEach(item => {
-                    const option = new Option(item.label, item.id);
-                    option.dataset.unit = item.unit || '';
-                    product.add(option);
-                });
-                if (selectedId) product.value = String(selectedId);
-                searchStatus.textContent = items.length ? (items.length === 30 ? 'أول 30 نتيجة؛ اكتب اسمًا أدق للبحث.' : '') : 'لم نجد أصنافًا مطابقة.';
-            } catch (error) {
-                if (error.name !== 'AbortError') searchStatus.textContent = error.message;
-            }
-        };
-        search.addEventListener('input', () => {
-            clearTimeout(timer);
-            // An old selection must not be submitted after a different search.
-            product.value = '';
-            timer = setTimeout(() => loadProducts({q: search.value.trim()}), 250);
-        });
-        if (data.product_id) loadProducts({id: data.product_id}, data.product_id);
-        else loadProducts({q: ''});
-        quantity.value = data.quantity ?? 0;
-        const arabicUnits = {pcs:'حبة', pc:'حبة', piece:'حبة', pieces:'حبة', unit:'حبة', units:'حبة', each:'حبة', tray:'صينية', trays:'صينية', box:'علبة', boxes:'علبة', kg:'كغم', kgs:'كغم', kilogram:'كغم', kilograms:'كغم', bundle:'ربطة', bundles:'ربطة', plate:'صدر', plates:'صدر'};
-        const requestedUnit = data.requested_unit ?? 'صدر';
-        unit.value = arabicUnits[String(requestedUnit).toLowerCase().trim()] ?? requestedUnit;
-        reserved.value = data.reserved_quantity ?? 0;
-        reservationNotes.value = data.reservation_notes ?? '';
-        notes.value = data.notes ?? '';
-
-        row.querySelector('.remove-item-btn').addEventListener('click', () => {
-            controller?.abort();
-            clearTimeout(timer);
-            row.remove();
-            refreshEmptyState();
-        });
-
-        product.addEventListener('change', () => {
-            const selected = product.options[product.selectedIndex];
-            const productUnit = selected?.dataset?.unit;
-
-            if (productUnit && !unit.value.trim()) {
-                unit.value = productUnit;
-            }
-        });
-
-        container.appendChild(row);
-        refreshEmptyState();
-    }
-
-    document.getElementById('addItemBtn').addEventListener('click', () => addItem());
-
-    document.getElementById('ssrForm').addEventListener('submit', (event) => {
-        if (!container.querySelector('.ssr-item-row')) {
-            event.preventDefault();
-            alert('يجب إضافة صنف حلويات واحد على الأقل.');
-        }
-    });
-
-    (Array.isArray(oldItems) && oldItems.length ? oldItems : [{}]).forEach(addItem);
+document.addEventListener('DOMContentLoaded',()=>{
+ const form=document.getElementById('ssrForm');
+ const cards=Array.from(document.querySelectorAll('[data-sweet-product]'));
+ const error=form.querySelector('[data-order-error]');
+ const oldItems={{ \Illuminate\Support\Js::from(old('items', $showroomSweetsRequest->items->map(fn ($item) => ['product_id' => $item->product_id, 'quantity' => $item->quantity, 'reserved_quantity' => $item->reserved_quantity, 'reservation_notes' => $item->reservation_notes, 'requested_unit' => $item->requested_unit, 'notes' => $item->notes])->values()->all())) }};
+ const oldById=new Map((Array.isArray(oldItems)?oldItems:[]).map(item=>[String(item.product_id),item]));
+ const number=value=>Number(value||0);
+ function update(){
+  let selected=0,showroom=0,reserved=0;
+  cards.forEach(card=>{
+   if(!card.querySelector('.ssr-selected').checked)return;
+   selected++;
+   showroom+=number(card.querySelector('.ssr-showroom').value);
+   reserved+=number(card.querySelector('.ssr-reserved').value);
+  });
+  document.getElementById('ssrSelected').textContent=selected;
+  document.getElementById('ssrShowroomTotal').textContent=showroom.toLocaleString('en-US',{maximumFractionDigits:3});
+  document.getElementById('ssrReservedTotal').textContent=reserved.toLocaleString('en-US',{maximumFractionDigits:3});
+ }
+ cards.forEach(card=>{
+  const old=oldById.get(card.dataset.id);
+  if(old){
+   card.querySelector('.ssr-selected').checked=true;
+   card.querySelector('.ssr-reserved').value=old.reserved_quantity??0;
+   card.querySelector('.ssr-showroom').value=Math.max(0,number(old.quantity)-number(old.reserved_quantity));
+   card.querySelector('.ssr-unit').value=old.requested_unit||card.dataset.unit;
+   card.querySelector('.ssr-reservation-notes').value=old.reservation_notes||'';
+   card.querySelector('.ssr-notes').value=old.notes||'';
+  }
+  card.addEventListener('input',event=>{
+   if(event.target.matches('.ssr-showroom,.ssr-reserved') && number(event.target.value)>0)
+    card.querySelector('.ssr-selected').checked=true;
+   update();
+  });
+  card.addEventListener('change',update);
+ });
+ document.getElementById('sweetsCatalogSearch').addEventListener('input',event=>{
+  const q=event.target.value.trim().toLocaleLowerCase();
+  cards.forEach(card=>{card.hidden=!card.dataset.name.includes(q)});
+ });
+ form.addEventListener('submit',event=>{
+  form.querySelectorAll('[data-generated-sweet]').forEach(el=>el.remove());
+  let index=0;
+  for(const card of cards){
+   if(!card.querySelector('.ssr-selected').checked)continue;
+   const showroom=number(card.querySelector('.ssr-showroom').value),reserved=number(card.querySelector('.ssr-reserved').value);
+   const unit=card.querySelector('.ssr-unit').value.trim();
+   if(!Number.isFinite(showroom)||!Number.isFinite(reserved)||showroom<0||reserved<0||!unit){
+    event.preventDefault();error.textContent='تحقق من الكمية والوحدة لكل منتج مختار.';error.hidden=false;error.focus();return;
+   }
+   const values={product_id:card.dataset.id,quantity:(showroom+reserved).toFixed(3),reserved_quantity:reserved.toFixed(3),requested_unit:unit,reservation_notes:card.querySelector('.ssr-reservation-notes').value,notes:card.querySelector('.ssr-notes').value};
+   Object.entries(values).forEach(([key,value])=>{
+    const el=document.createElement('input');el.type='hidden';el.name='items['+index+']['+key+']';el.value=value;el.dataset.generatedSweet='';form.appendChild(el);
+   });
+   index++;
+  }
+  if(!index){event.preventDefault();error.textContent='اختر صنف حلويات واحدًا على الأقل.';error.hidden=false;error.focus();return;}
+  error.hidden=true;
+ });
+ update();
 });
 </script>
 @endsection

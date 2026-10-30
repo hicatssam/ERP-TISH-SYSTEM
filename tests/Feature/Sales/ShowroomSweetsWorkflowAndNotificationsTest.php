@@ -380,7 +380,7 @@ class ShowroomSweetsWorkflowAndNotificationsTest extends TestCase
 
         $this->actingAs($editor)->get($url)
             ->assertOk()
-            ->assertSee('const oldItems =', false)
+            ->assertSee('const oldById=', false)
             ->assertSee('product_id', false);
 
         $this->actingAs($editor)
@@ -389,7 +389,7 @@ class ShowroomSweetsWorkflowAndNotificationsTest extends TestCase
             ]])
             ->get($url)
             ->assertOk()
-            ->assertSee('const oldItems =', false);
+            ->assertSee('const oldById=', false);
     }
 
     private function locations(): array

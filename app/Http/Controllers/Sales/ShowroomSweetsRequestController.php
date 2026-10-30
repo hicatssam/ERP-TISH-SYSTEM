@@ -595,6 +595,15 @@ class ShowroomSweetsRequestController extends Controller
 
         $factories = Location::query()->factory()->active()->orderBy('name')->get();
 
+        $sweetProducts = Product::query()
+            ->active()
+            ->where('is_raw_material', false)
+            ->whereHas('category', fn ($category) => $category->forBranchSweetsOrders())
+            ->with(['category', 'unitDefinition'])
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get();
+
         return view(
             'sales.showroom-sweets-requests.edit',
             compact(
@@ -602,7 +611,8 @@ class ShowroomSweetsRequestController extends Controller
                 'branch',
                 'branches',
                 'factories',
-                'canChooseBranch'
+                'canChooseBranch',
+                'sweetProducts'
             )
         );
     }
