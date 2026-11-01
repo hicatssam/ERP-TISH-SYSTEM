@@ -45,6 +45,7 @@ use App\Http\Controllers\Reports\ShowroomSweetsRequestsReportController;
 use App\Http\Controllers\Reports\TomorrowPreparationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\OrdersAppController;
 use App\Http\Controllers\Admin\PaymentMethodController;
 use App\Http\Controllers\Admin\SalesChannelController;
 use App\Http\Controllers\Inventory\StockReceivingInvoiceController;
@@ -113,6 +114,9 @@ Route::middleware(['auth', 'location.scope'])->group(function () {
         Route::get('/profile/image', [ProfileController::class, 'image'])->name('profile.image');
         Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
         Route::post('/profile/password', [ChangePasswordController::class, 'updateFromProfile'])->name('password.change');
+
+        // Standalone orders PWA; same authenticated user and existing notification scope.
+        Route::get('/orders-app', [OrdersAppController::class, 'index'])->name('orders-app.index');
 
         // Notifications
         Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');

@@ -147,7 +147,7 @@ class NotificationController extends Controller
                 }
 
                 return preg_match(
-                    '~^/(?:cake-orders|showroom-cake-requests)/[0-9]+/?$~',
+                    '~^/(?:cake-orders|showroom-cake-requests|showroom-sweets-requests)/[0-9]+/?$~',
                     $path
                 ) === 1;
             })

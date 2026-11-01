@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\PwaController;
+use App\Http\Controllers\OrdersAppController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/pwa/start', [PwaController::class, 'start'])
@@ -16,3 +17,6 @@ Route::get('/pwa/icon-{size}.png', [PwaController::class, 'icon'])
 
 Route::get('/menu/{location:code}/manifest.webmanifest', [PwaController::class, 'customerMenuManifest'])
     ->name('pwa.customer-manifest');
+
+Route::get('/orders-app.webmanifest', [OrdersAppController::class, 'manifest'])
+    ->name('orders-app.manifest');
