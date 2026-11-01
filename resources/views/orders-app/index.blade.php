@@ -41,7 +41,7 @@ button:hover,.button:hover{border-color:#b8994b}.gold{background:#d6a128;color:#
 <header>
  <div><small>حلويات دهب</small><h1>طلبات دهب</h1></div>
  <div class="actions">
-  <button id="installButton" type="button" class="gold" hidden>تثبيت طلبات دهب</button>
+  <button id="installButton" type="button" class="gold">تثبيت التطبيق</button>
   <button id="soundButton" type="button" class="dark">تفعيل صوت التنبيه</button>
   <a href="{{ route('dashboard') }}" class="button">العودة للنظام</a>
  </div>
@@ -71,13 +71,13 @@ document.addEventListener('DOMContentLoaded',()=>{
  const soundButton=document.getElementById('soundButton');
  const installButton=document.getElementById('installButton');
  let installPrompt=null;
- window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;installButton.hidden=false;});
- window.addEventListener('appinstalled',()=>{installPrompt=null;installButton.hidden=true;});
+ window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;installButton.textContent='تثبيت التطبيق';});
+ window.addEventListener('appinstalled',()=>{installPrompt=null;installButton.textContent='التطبيق مثبت';});
  installButton.addEventListener('click',async()=>{
-  if(!installPrompt)return;
+  if(!installPrompt){alert('لتثبيت طلبات دهب، افتح قائمة Chrome أو Edge واختر «تثبيت التطبيق» أو «Install app». إذا كان مثبتًا بالفعل، افتحه من قائمة التطبيقات.');return;}
   installPrompt.prompt();
   await installPrompt.userChoice;
-  installPrompt=null;installButton.hidden=true;
+  installPrompt=null;installButton.textContent='تثبيت التطبيق';
  });
  let items=[],filter='all',busy=false,audio=null,soundOn=false,initialized=false;
  const seenKey='dahab:orders-pwa:seen:{{ auth()->id() }}';
