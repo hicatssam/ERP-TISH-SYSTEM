@@ -15,26 +15,26 @@
 *{box-sizing:border-box}body{margin:0;font-size:13px}button,input{font:inherit}button{cursor:pointer}
 header{background:#202b3c;color:#fff;padding:13px max(18px,calc((100vw - 1160px)/2));display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;border-bottom:2px solid #c99b2a}
 header h1{font-size:20px;line-height:1.5;margin:0;font-weight:800}header small{color:#e6c77d;font-size:11px}
-main{max-width:1160px;margin:auto;padding:22px 16px}
+main{max-width:1160px;margin:auto;padding:15px 16px}
 h2{font-size:17px;margin:0 0 4px;font-weight:800}p{line-height:1.8}.muted{color:#687589}
 .actions{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
 button,.button{border:1px solid #d5dae3;border-radius:8px;padding:8px 13px;background:#fff;color:#1d293b;text-decoration:none;font-weight:700}
 button:hover,.button:hover{border-color:#b8994b}.gold{background:#d6a128;color:#fff;border-color:#d6a128}.dark{background:#34445c;color:#fff;border-color:#34445c}
-.panel{background:#fff;border:1px solid #e2e5eb;border-radius:10px;padding:14px;margin:12px 0 17px}
-.tabs{display:flex;align-items:center;gap:0;overflow-x:auto;border-bottom:1px solid #d9dee7;white-space:nowrap;scrollbar-width:thin}
-.tabs button{border:0;border-bottom:3px solid transparent;border-radius:0;background:transparent;color:#667386;padding:12px 16px}
+.panel{background:#fff;border:1px solid #e2e5eb;border-radius:10px;padding:10px 12px;margin:12px 0 14px}
+.tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;gap:3px;border-bottom:1px solid #d9dee7}
+.tabs button{border:0;border-bottom:2px solid transparent;border-radius:6px 6px 0 0;background:transparent;color:#667386;padding:9px 4px;font-size:11px;white-space:normal;min-width:0}
 .tabs button[aria-selected="true"]{border-bottom-color:#c99b2a;color:#233249;background:#fff;font-weight:800}
 .tab-count{font-size:11px;background:#eff1f5;border-radius:6px;padding:1px 6px;margin-inline-start:5px}
 .tabs button[aria-selected="true"] .tab-count{background:#f6ead0;color:#806018}
 .search{padding:10px 12px;border:1px solid #cfd5df;border-radius:8px;min-width:190px;flex:1}
-.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(285px,1fr));gap:10px}
-.card{border:1px solid #e1e4e9;background:white;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px;border-right:3px solid #d5ad52}
-.card h3{font-size:14px;margin:0;line-height:1.65}.card p{margin:0;font-size:12px;overflow-wrap:anywhere;color:#546071}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,310px),1fr));gap:9px}
+.card{border:1px solid #e1e4e9;background:white;border-radius:9px;padding:12px;display:flex;flex-direction:column;gap:7px;border-right:3px solid #d5ad52}
+.card h3{font-size:13px;margin:0;line-height:1.65}.card p{margin:0;font-size:12px;overflow-wrap:anywhere;color:#546071}
 .card .button{display:block;text-align:center;margin-top:auto;padding:8px}
 .tag{background:#f8efdb;color:#86651d;border-radius:5px;padding:3px 7px;font-size:11px}
 .toolbar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;justify-content:space-between}
 #alertStatus{font-size:11px}.danger{color:#b32020}.empty{padding:35px;text-align:center;background:white;border-radius:9px;grid-column:1/-1}
-@media(max-width:580px){header{padding:12px}header h1{font-size:18px}main{padding:14px 11px}.tabs button{padding:11px 12px}.cards{grid-template-columns:1fr}}
+@media(max-width:580px){header{padding:10px 12px;gap:8px}header h1{font-size:18px}header .actions{gap:6px}header .actions button,header .actions .button{padding:7px 9px;font-size:11px}main{padding:12px 10px}.tabs button{padding:10px 3px}.cards{grid-template-columns:1fr}.toolbar h2{font-size:15px}}
 </style>
 </head>
 <body>
@@ -79,7 +79,11 @@ document.addEventListener('DOMContentLoaded',()=>{
   await installPrompt.userChoice;
   installPrompt=null;installButton.hidden=true;
  });
- let items=[],filter='all',busy=false,audio=null,soundOn=false,seen=new Set(),lastRing=0;
+ let items=[],filter='all',busy=false,audio=null,soundOn=false,initialized=false;
+ const seenKey='dahab:orders-pwa:seen:{{ auth()->id() }}';
+ let seen=new Set();
+ try{seen=new Set(JSON.parse(localStorage.getItem(seenKey)||'[]'));}catch(_){seen=new Set();}
+ function remember(ids){ids.forEach(id=>seen.add(id));if(seen.size>500)seen=new Set([...seen].slice(-500));try{localStorage.setItem(seenKey,JSON.stringify([...seen]));}catch(_){}}
  const classify=n=>{
   const path=String(n.url||'');
   if(path.includes('showroom-sweets-requests'))return 'branch-sweets';
@@ -113,16 +117,20 @@ document.addEventListener('DOMContentLoaded',()=>{
    top.append(title,tag);article.append(top,body,time,link);cards.append(article);
   });
  }
+ // A short, soft two-note chime played once per newly received notification.
  function beep(){
-  if(!soundOn||!audio||document.hidden||!items.length)return;
-  if(Date.now()-lastRing<2600)return;
-  lastRing=Date.now();
+  if(!soundOn||!audio||document.hidden)return;
   const start=audio.currentTime;
-  [580,820,580].forEach((f,i)=>{
-   const o=audio.createOscillator(),g=audio.createGain(),t=start+i*.35;
-   o.type='sine';o.frequency.setValueAtTime(f,t);o.frequency.linearRampToValueAtTime(f*1.12,t+.3);
-   g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.13,t+.08);g.gain.linearRampToValueAtTime(0,t+.32);
-   o.connect(g);g.connect(audio.destination);o.start(t);o.stop(t+.34);
+  [660,880].forEach((frequency,index)=>{
+   const t=start+index*.19;
+   const oscillator=audio.createOscillator(),gain=audio.createGain();
+   oscillator.type='sine';
+   oscillator.frequency.setValueAtTime(frequency,t);
+   gain.gain.setValueAtTime(0,t);
+   gain.gain.linearRampToValueAtTime(.11,t+.035);
+   gain.gain.exponentialRampToValueAtTime(.0001,t+.31);
+   oscillator.connect(gain);gain.connect(audio.destination);
+   oscillator.start(t);oscillator.stop(t+.32);
   });
  }
  soundButton.addEventListener('click',async()=>{
@@ -131,7 +139,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(!AudioClass){status.textContent='متصفحك لا يدعم صوت التنبيهات';return;}
   audio??=new AudioClass();await audio.resume();soundOn=audio.state==='running';
   soundButton.textContent=soundOn?'إيقاف صوت التنبيه':'تفعيل صوت التنبيه';
-  if(soundOn)beep();
+  // Enabling sound never replays previously received orders.
  });
  async function poll(){
   if(busy||document.hidden)return;busy=true;
@@ -140,10 +148,14 @@ document.addEventListener('DOMContentLoaded',()=>{
    if(!response.ok)throw new Error('تعذر تحميل التنبيهات');
    const json=await response.json();
    items=Array.isArray(json.items)?json.items:[];
-   const ids=new Set(items.map(x=>x.id));
-   if([...ids].some(id=>!seen.has(id)))lastRing=0;
-   seen=ids;draw();status.textContent='متصل — آخر تحديث '+new Date().toLocaleTimeString('ar');
-   if(items.length)beep();
+   const ids=items.map(x=>x.id);
+   // Establish a silent baseline on first load. Only later, genuinely new
+   // notification IDs can trigger the single chime.
+   const newIds=initialized?ids.filter(id=>!seen.has(id)):[];
+   remember(ids);
+   initialized=true;
+   draw();status.textContent='متصل — آخر تحديث '+new Date().toLocaleTimeString('ar');
+   if(newIds.length)beep();
   }catch(e){status.textContent='انقطع الاتصال — تتم إعادة المحاولة';status.className='danger'}
   finally{busy=false;}
  }
@@ -152,7 +164,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{
   filter=b.dataset.filter;document.querySelectorAll('[data-filter]').forEach(x=>x.setAttribute('aria-selected',String(x===b)));draw();
  }));
- setInterval(poll,5000);setInterval(beep,2800);document.addEventListener('visibilitychange',()=>{if(!document.hidden)poll()});poll();
+ setInterval(poll,5000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)poll()});poll();
  if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
 });
 </script>
