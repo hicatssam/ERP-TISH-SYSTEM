@@ -7,25 +7,34 @@
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <link rel="manifest" href="{{ route('orders-app.manifest') }}">
 <title>طلبات دهب</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{font-family:Tahoma,Arial,sans-serif;color:#132238;background:#f4f6f9;font-synthesis:none}
-*{box-sizing:border-box}body{margin:0}button,input{font:inherit}button{cursor:pointer}
-header{background:#101c2d;color:#fff;padding:20px max(18px,calc((100vw - 1100px)/2));display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap}
-header h1{font-size:24px;margin:0}header small{color:#e0b65b}main{max-width:1100px;margin:auto;padding:22px 16px}
-h2{font-size:20px;margin:0 0 8px}p{line-height:1.7}.muted{color:#617085}.actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-button,.button{border:1px solid #ccd2dc;border-radius:11px;padding:10px 15px;background:white;color:#172133;text-decoration:none;font-weight:700}
-.gold{background:#eea51b;color:#172133;border-color:#eea51b}.dark{background:#26354c;color:#fff;border-color:#26354c}
-.panel{background:white;border:1px solid #e1e4eb;border-radius:15px;padding:18px;margin:15px 0}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.stat{background:#fff;border:1px solid #e1e4eb;border-radius:12px;padding:18px}
-.stat strong{font-size:30px;display:block;margin-top:5px}.stat small{color:#66758b}
-.filters{display:flex;gap:10px;flex-wrap:wrap}.filters button[aria-pressed="true"]{background:#101c2d;color:white}
-.search{padding:12px;border:1px solid #cbd2df;border-radius:10px;min-width:220px;flex:1}
-.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
-.card{border:1px solid #e0e4ed;background:white;border-radius:15px;padding:17px;display:flex;flex-direction:column;gap:10px}
-.card h3{font-size:16px;margin:0}.card p{margin:0;font-size:14px;overflow-wrap:anywhere}
-.card .button{display:block;text-align:center;margin-top:auto}.tag{background:#fff4d8;color:#825500;border-radius:50px;padding:5px 9px;font-size:12px}
-#alertStatus{font-size:13px}.danger{color:#b32020}.empty{padding:35px;text-align:center;background:white;border-radius:14px}
-@media(max-width:580px){.stats{gap:8px}.stat{padding:10px}.stat strong{font-size:25px}header{padding:16px}header h1{font-size:20px}}
+:root{font-family:'Cairo',Tahoma,sans-serif;color:#1d293b;background:#f5f6f8;font-synthesis:none}
+*{box-sizing:border-box}body{margin:0;font-size:13px}button,input{font:inherit}button{cursor:pointer}
+header{background:#202b3c;color:#fff;padding:13px max(18px,calc((100vw - 1160px)/2));display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;border-bottom:2px solid #c99b2a}
+header h1{font-size:20px;line-height:1.5;margin:0;font-weight:800}header small{color:#e6c77d;font-size:11px}
+main{max-width:1160px;margin:auto;padding:22px 16px}
+h2{font-size:17px;margin:0 0 4px;font-weight:800}p{line-height:1.8}.muted{color:#687589}
+.actions{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+button,.button{border:1px solid #d5dae3;border-radius:8px;padding:8px 13px;background:#fff;color:#1d293b;text-decoration:none;font-weight:700}
+button:hover,.button:hover{border-color:#b8994b}.gold{background:#d6a128;color:#fff;border-color:#d6a128}.dark{background:#34445c;color:#fff;border-color:#34445c}
+.panel{background:#fff;border:1px solid #e2e5eb;border-radius:10px;padding:14px;margin:12px 0 17px}
+.tabs{display:flex;align-items:center;gap:0;overflow-x:auto;border-bottom:1px solid #d9dee7;white-space:nowrap;scrollbar-width:thin}
+.tabs button{border:0;border-bottom:3px solid transparent;border-radius:0;background:transparent;color:#667386;padding:12px 16px}
+.tabs button[aria-selected="true"]{border-bottom-color:#c99b2a;color:#233249;background:#fff;font-weight:800}
+.tab-count{font-size:11px;background:#eff1f5;border-radius:6px;padding:1px 6px;margin-inline-start:5px}
+.tabs button[aria-selected="true"] .tab-count{background:#f6ead0;color:#806018}
+.search{padding:10px 12px;border:1px solid #cfd5df;border-radius:8px;min-width:190px;flex:1}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(285px,1fr));gap:10px}
+.card{border:1px solid #e1e4e9;background:white;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px;border-right:3px solid #d5ad52}
+.card h3{font-size:14px;margin:0;line-height:1.65}.card p{margin:0;font-size:12px;overflow-wrap:anywhere;color:#546071}
+.card .button{display:block;text-align:center;margin-top:auto;padding:8px}
+.tag{background:#f8efdb;color:#86651d;border-radius:5px;padding:3px 7px;font-size:11px}
+.toolbar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;justify-content:space-between}
+#alertStatus{font-size:11px}.danger{color:#b32020}.empty{padding:35px;text-align:center;background:white;border-radius:9px;grid-column:1/-1}
+@media(max-width:580px){header{padding:12px}header h1{font-size:18px}main{padding:14px 11px}.tabs button{padding:11px 12px}.cards{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -38,19 +47,17 @@ button,.button{border:1px solid #ccd2dc;border-radius:11px;padding:10px 15px;bac
  </div>
 </header>
 <main>
- <div class="actions" style="justify-content:space-between"><div><h2>مركز متابعة الطلبات</h2><p class="muted" style="margin:0">الطلبات الواردة لحسابك حسب صلاحياتك وإشعاراتك الحالية</p></div><span id="alertStatus" role="status">جاري الاتصال...</span></div>
- <section class="stats" aria-label="ملخص الطلبات">
-  <div class="stat"><small>بانتظار المراجعة</small><strong id="newCount">0</strong></div>
-  <div class="stat"><small>تنبيهات الكيك</small><strong id="cakeCount">0</strong></div>
-  <div class="stat"><small>تنبيهات الحلويات</small><strong id="sweetsCount">0</strong></div>
- </section>
+ <div class="toolbar"><div><h2>مركز متابعة الطلبات</h2><p class="muted" style="margin:0">الطلبات الواردة حسب صلاحيات الحساب</p></div><span id="alertStatus" role="status">جاري الاتصال...</span></div>
  <div class="panel">
-  <div class="actions"><input id="search" class="search" type="search" placeholder="ابحث برقم الطلب أو النص" aria-label="بحث في الطلبات"><button id="refresh" type="button">تحديث</button></div>
-  <div class="filters" style="margin-top:14px" aria-label="نوع الطلب">
-   <button type="button" data-filter="all" aria-pressed="true">الكل</button>
-   <button type="button" data-filter="cake" aria-pressed="false">الكيك</button>
-   <button type="button" data-filter="sweets" aria-pressed="false">الحلويات</button>
-  </div>
+  <nav class="tabs" role="tablist" aria-label="أقسام الطلبات">
+   <button type="button" role="tab" data-filter="all" aria-selected="true">الكل <span class="tab-count" data-count="all">0</span></button>
+   <button type="button" role="tab" data-filter="cake" aria-selected="false">الكيك <span class="tab-count" data-count="cake">0</span></button>
+   <button type="button" role="tab" data-filter="sweets" aria-selected="false">الحلويات <span class="tab-count" data-count="sweets">0</span></button>
+   <button type="button" role="tab" data-filter="special" aria-selected="false">الكيك الخاص <span class="tab-count" data-count="special">0</span></button>
+   <button type="button" role="tab" data-filter="branch-cake" aria-selected="false">كيك الفروع <span class="tab-count" data-count="branch-cake">0</span></button>
+   <button type="button" role="tab" data-filter="branch-sweets" aria-selected="false">حلويات الفروع <span class="tab-count" data-count="branch-sweets">0</span></button>
+  </nav>
+  <div class="actions" style="margin-top:13px"><input id="search" class="search" type="search" placeholder="بحث برقم الطلب، الفرع أو الوصف..." aria-label="بحث في الطلبات"><button id="refresh" type="button">تحديث</button></div>
  </div>
  <section id="cards" class="cards" aria-live="polite"></section>
  <p class="muted">تعرض الشاشة إشعارات الطلبات غير المقروءة فقط. فتح الطلب يحدد إشعاره كمقروء، ولا يغيّر حالة إنتاج الطلب.</p>
@@ -73,20 +80,27 @@ document.addEventListener('DOMContentLoaded',()=>{
   installPrompt=null;installButton.hidden=true;
  });
  let items=[],filter='all',busy=false,audio=null,soundOn=false,seen=new Set(),lastRing=0;
- const classify=n=>String(n.url||'').includes('showroom-sweets-requests')?'sweets':'cake';
+ const classify=n=>{
+  const path=String(n.url||'');
+  if(path.includes('showroom-sweets-requests'))return 'branch-sweets';
+  if(path.includes('showroom-cake-requests'))return 'branch-cake';
+  return 'special';
+ };
+ const matches=(n,key)=>key==='all'||(key==='cake'&&classify(n)!=='branch-sweets')||(key==='sweets'&&classify(n)==='branch-sweets')||classify(n)===key;
+ const categoryLabel=n=>({'special':'كيك خاص','branch-cake':'كيك فروع','branch-sweets':'حلويات فروع'})[classify(n)];
  function draw(){
   const q=search.value.trim().toLocaleLowerCase();
-  const visible=items.filter(n=>(filter==='all'||classify(n)===filter)&&[n.title,n.message].join(' ').toLocaleLowerCase().includes(q));
+  const visible=items.filter(n=>matches(n,filter)&&[n.title,n.message].join(' ').toLocaleLowerCase().includes(q));
   cards.replaceChildren();
-  document.getElementById('newCount').textContent=items.length;
-  document.getElementById('cakeCount').textContent=items.filter(n=>classify(n)==='cake').length;
-  document.getElementById('sweetsCount').textContent=items.filter(n=>classify(n)==='sweets').length;
+  document.querySelectorAll('[data-count]').forEach(el=>{
+    el.textContent=items.filter(n=>matches(n,el.dataset.count)).length;
+  });
   if(!visible.length){const empty=document.createElement('div');empty.className='empty muted';empty.textContent='لا توجد طلبات تطابق البحث حاليًا';cards.append(empty);return;}
   visible.forEach(n=>{
    const article=document.createElement('article');article.className='card';
    const top=document.createElement('div');top.className='actions';top.style.justifyContent='space-between';
    const title=document.createElement('h3');title.textContent=n.title||'طلب جديد';
-   const tag=document.createElement('span');tag.className='tag';tag.textContent=classify(n)==='sweets'?'حلويات':'كيك';
+   const tag=document.createElement('span');tag.className='tag';tag.textContent=categoryLabel(n);
    const body=document.createElement('p');body.textContent=n.message||'';
    const time=document.createElement('small');time.className='muted';time.textContent=n.time||'';
    const link=document.createElement('a');link.className='button gold';link.textContent='فتح الطلب ومراجعته';link.href=n.url||'#';
@@ -136,7 +150,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  document.getElementById('refresh').addEventListener('click',poll);
  search.addEventListener('input',draw);
  document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{
-  filter=b.dataset.filter;document.querySelectorAll('[data-filter]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));draw();
+  filter=b.dataset.filter;document.querySelectorAll('[data-filter]').forEach(x=>x.setAttribute('aria-selected',String(x===b)));draw();
  }));
  setInterval(poll,5000);setInterval(beep,2800);document.addEventListener('visibilitychange',()=>{if(!document.hidden)poll()});poll();
  if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
