@@ -27,14 +27,17 @@ button:hover,.button:hover{border-color:#b8994b}.gold{background:#d6a128;color:#
 .tab-count{font-size:11px;background:#eff1f5;border-radius:6px;padding:1px 6px;margin-inline-start:5px}
 .tabs button[aria-selected="true"] .tab-count{background:#f6ead0;color:#806018}
 .search{padding:10px 12px;border:1px solid #cfd5df;border-radius:8px;min-width:190px;flex:1}
-.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,310px),1fr));gap:9px}
-.card{border:1px solid #e1e4e9;background:white;border-radius:9px;padding:12px;display:flex;flex-direction:column;gap:7px;border-right:3px solid #d5ad52}
-.card h3{font-size:13px;margin:0;line-height:1.65}.card p{margin:0;font-size:12px;overflow-wrap:anywhere;color:#546071}
-.card .button{display:block;text-align:center;margin-top:auto;padding:8px}
-.tag{background:#f8efdb;color:#86651d;border-radius:5px;padding:3px 7px;font-size:11px}
+.cards{display:block;background:#fff;border:1px solid #dce1e7;border-radius:8px;overflow:hidden}
+.order-row{display:grid;grid-template-columns:minmax(145px,1.1fr) minmax(170px,2fr) 125px 105px;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #e8eaf0;color:inherit;text-decoration:none;transition:background .12s}
+.order-row:last-child{border-bottom:0}.order-row:hover,.order-row:focus-visible{background:#f7f9fb;outline-offset:-2px}
+.order-number{font-size:13px;font-weight:800;color:#253448;direction:ltr;text-align:right;unicode-bidi:isolate}
+.order-title{font-size:12px;color:#26374b;font-weight:700;line-height:1.6}
+.order-note{font-size:11px;color:#708094;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;max-width:100%}
+.order-time{font-size:11px;color:#758094}.order-open{font-size:11px;color:#8c6a24;font-weight:700;text-align:left}
+.tag{display:inline-block;background:#f6f1e4;color:#856728;border-radius:4px;padding:2px 6px;font-size:10px;font-weight:700;width:max-content;margin-bottom:4px}
 .toolbar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;justify-content:space-between}
-#alertStatus{font-size:11px}.danger{color:#b32020}.empty{padding:35px;text-align:center;background:white;border-radius:9px;grid-column:1/-1}
-@media(max-width:580px){header{padding:10px 12px;gap:8px}header h1{font-size:18px}header .actions{gap:6px}header .actions button,header .actions .button{padding:7px 9px;font-size:11px}main{padding:12px 10px}.tabs button{padding:10px 3px}.cards{grid-template-columns:1fr}.toolbar h2{font-size:15px}}
+#alertStatus{font-size:11px}.danger{color:#b32020}.empty{padding:35px;text-align:center;background:white;border-radius:9px}
+@media(max-width:580px){header{padding:10px 12px;gap:8px}header h1{font-size:18px}header .actions{gap:6px}header .actions button,header .actions .button{padding:7px 9px;font-size:11px}main{padding:12px 10px}.tabs button{padding:10px 3px}.order-row{grid-template-columns:1fr auto;gap:5px 9px;padding:11px}.order-row .order-description{grid-column:1/-1;grid-row:2}.order-time{grid-column:1;grid-row:3}.order-open{grid-column:2;grid-row:3}.toolbar h2{font-size:15px}}
 </style>
 </head>
 <body>
@@ -59,7 +62,7 @@ button:hover,.button:hover{border-color:#b8994b}.gold{background:#d6a128;color:#
   </nav>
   <div class="actions" style="margin-top:13px"><input id="search" class="search" type="search" placeholder="بحث برقم الطلب، الفرع أو الوصف..." aria-label="بحث في الطلبات"><button id="refresh" type="button">تحديث</button></div>
  </div>
- <section id="cards" class="cards" aria-live="polite"></section>
+ <section id="cards" class="cards" aria-live="polite" aria-label="قائمة الطلبات"></section>
  <p class="muted">تعرض الشاشة إشعارات الطلبات غير المقروءة فقط. فتح الطلب يحدد إشعاره كمقروء، ولا يغيّر حالة إنتاج الطلب.</p>
 </main>
 <script>
@@ -101,20 +104,31 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
   if(!visible.length){const empty=document.createElement('div');empty.className='empty muted';empty.textContent='لا توجد طلبات تطابق البحث حاليًا';cards.append(empty);return;}
   visible.forEach(n=>{
-   const article=document.createElement('article');article.className='card';
-   const top=document.createElement('div');top.className='actions';top.style.justifyContent='space-between';
-   const title=document.createElement('h3');title.textContent=n.title||'طلب جديد';
-   const tag=document.createElement('span');tag.className='tag';tag.textContent=categoryLabel(n);
-   const body=document.createElement('p');body.textContent=n.message||'';
-   const time=document.createElement('small');time.className='muted';time.textContent=n.time||'';
-   const link=document.createElement('a');link.className='button gold';link.textContent='فتح الطلب ومراجعته';link.href=n.url||'#';
-   link.addEventListener('click',async e=>{
+   const row=document.createElement('a');row.className='order-row';row.href=n.url||'#';
+   const reference=(String(n.title||'')+' '+String(n.message||'')).match(/(?:SSR|CKO|SCR)-\d{4}-\d+/i);
+   const id=document.createElement('div');id.className='order-number';id.textContent=reference?reference[0]:'طلب جديد';
+   const description=document.createElement('div');description.className='order-description';
+   const title=document.createElement('div');title.className='order-title';title.textContent=n.title||'طلب جديد';
+   const note=document.createElement('span');note.className='order-note';note.textContent=n.message||'';
+   description.append(title,note);
+   const meta=document.createElement('div');
+   const type=document.createElement('span');type.className='tag';type.textContent=categoryLabel(n);
+   const time=document.createElement('div');time.className='order-time';time.textContent=n.time||'';
+   meta.append(type,time);
+   const open=document.createElement('span');open.className='order-open';open.textContent='عرض الطلب ‹';
+   row.append(id,description,meta,open);
+   row.addEventListener('click',async e=>{
     e.preventDefault();
     if(!n.url)return;
-    try{await fetch(readTemplate.replace('__NOTIFICATION_ID__',encodeURIComponent(n.id)),{method:'POST',credentials:'same-origin',headers:{'X-CSRF-TOKEN':csrf,'Accept':'application/json'}});}catch(err){console.debug(err)}
+    try{
+     const result=await fetch(readTemplate.replace('__NOTIFICATION_ID__',encodeURIComponent(n.id)),{
+      method:'POST',credentials:'same-origin',headers:{'X-CSRF-TOKEN':csrf,'Accept':'application/json'}
+     });
+     if(!result.ok)console.debug('Notification not marked read',result.status);
+    }catch(err){console.debug(err)}
     location.assign(n.url);
    });
-   top.append(title,tag);article.append(top,body,time,link);cards.append(article);
+   cards.append(row);
   });
  }
  // A short, soft two-note chime played once per newly received notification.
