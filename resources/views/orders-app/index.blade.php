@@ -38,6 +38,16 @@ button:hover,.button:hover{border-color:#b8994b}.gold{background:#d6a128;color:#
 .toolbar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;justify-content:space-between}
 #alertStatus{font-size:11px}.danger{color:#b32020}.empty{padding:35px;text-align:center;background:white;border-radius:9px}
 @media(max-width:580px){header{padding:10px 12px;gap:8px}header h1{font-size:18px}header .actions{gap:6px}header .actions button,header .actions .button{padding:7px 9px;font-size:11px}main{padding:12px 10px}.tabs button{padding:10px 3px}.order-row{grid-template-columns:1fr auto;gap:5px 9px;padding:11px}.order-row .order-description{grid-column:1/-1;grid-row:2}.order-time{grid-column:1;grid-row:3}.order-open{grid-column:2;grid-row:3}.toolbar h2{font-size:15px}}
+/* Keep an installed desktop app visually phone-sized even if the OS restores a wider window. */
+@media (display-mode:standalone) and (min-width:600px){
+  body{max-width:440px;margin-inline:auto;border-inline:1px solid #e1e4ea;min-height:100vh;background:#f5f6f8}
+  header{padding-inline:12px}
+  main{padding-inline:12px}
+  .order-row{grid-template-columns:1fr auto;gap:5px 9px;padding:11px}
+  .order-row .order-description{grid-column:1/-1;grid-row:2}
+  .order-time{grid-column:1;grid-row:3}
+  .order-open{grid-column:2;grid-row:3}
+}
 </style>
 </head>
 <body>
@@ -45,6 +55,7 @@ button:hover,.button:hover{border-color:#b8994b}.gold{background:#d6a128;color:#
  <div><small>حلويات دهب</small><h1>طلبات دهب</h1></div>
  <div class="actions">
   <button id="installButton" type="button" class="gold">تثبيت التطبيق</button>
+  <button id="windowSizeButton" type="button" class="dark" title="ضبط حجم التطبيق وموضعه على سطح المكتب" hidden>ضبط النافذة</button>
   <button id="soundButton" type="button" class="dark">تفعيل صوت التنبيه</button>
   <a href="{{ route('dashboard') }}" class="button">العودة للنظام</a>
  </div>
@@ -73,6 +84,21 @@ document.addEventListener('DOMContentLoaded',()=>{
  const cards=document.getElementById('cards'),status=document.getElementById('alertStatus'),search=document.getElementById('search');
  const soundButton=document.getElementById('soundButton');
  const installButton=document.getElementById('installButton');
+ const windowSizeButton=document.getElementById('windowSizeButton');
+ const installedWindow=window.matchMedia('(display-mode: standalone)').matches;
+ if(installedWindow){
+  windowSizeButton.hidden=false;
+  const placeMobileWindow=()=>{
+   // Browsers may ignore window geometry changes; users can still manually resize.
+   const width=Math.min(440,screen.availWidth);
+   const height=Math.min(860,screen.availHeight);
+   const left=(screen.availLeft||0)+Math.max(0,screen.availWidth-width-12);
+   const top=(screen.availTop||0)+Math.max(0,screen.availHeight-height-12);
+   try{window.resizeTo(width,height);window.moveTo(left,top);}catch(_){}
+  };
+  windowSizeButton.addEventListener('click',placeMobileWindow);
+  placeMobileWindow();
+ }
  let installPrompt=null;
  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;installButton.textContent='تثبيت التطبيق';});
  window.addEventListener('appinstalled',()=>{installPrompt=null;installButton.textContent='التطبيق مثبت';});
