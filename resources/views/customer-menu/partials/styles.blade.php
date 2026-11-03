@@ -22,7 +22,7 @@
  --line:{{ $theme['border'] ?? 'color-mix(in srgb, var(--text) 9%, transparent)' }};
  --shadow:0 14px 34px color-mix(in srgb, var(--text) 8%, transparent);
  --safe-bottom:env(safe-area-inset-bottom,0px);
- --on-primary:#ffffff;
+ --on-primary:{{ $theme['on_primary'] ?? '#FFFFFF' }};
 }
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;font-family:{{ $theme['font_family'] ?? 'Tajawal' }},Tajawal,sans-serif;background:var(--bg);color:var(--text)}

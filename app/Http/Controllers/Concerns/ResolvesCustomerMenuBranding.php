@@ -95,6 +95,13 @@ trait ResolvesCustomerMenuBranding
         $text = $clientColor('theme_text', $text);
         $muted = $clientColor('theme_text_muted', $muted);
 
+        $rgb = sscanf($primary, '#%02x%02x%02x');
+        $channels = array_map(static function ($channel): float {
+            $channel = ((int) $channel) / 255;
+            return $channel <= .04045 ? $channel / 12.92 : (($channel + .055) / 1.055) ** 2.4;
+        }, $rgb ?: [139, 18, 56]);
+        $luminance = .2126 * ($channels[0] ?? 0) + .7152 * ($channels[1] ?? 0) + .0722 * ($channels[2] ?? 0);
+
         $radius = max(0, min(40, (int) SystemSetting::get('customer_menu_radius', 22)));
         $columns = max(2, min(5, (int) SystemSetting::get('customer_menu_columns', 3)));
         $heroHeight = max(220, min(720, (int) SystemSetting::get('customer_menu_hero_height', 430)));
@@ -118,6 +125,7 @@ trait ResolvesCustomerMenuBranding
                 ? SystemSetting::get('customer_menu_header_position', 'center') : 'center',
             'category_visual' => SystemSetting::get('customer_menu_category_visual', 'icons'),
             'primary' => $primary,
+            'on_primary' => $luminance > .179 ? '#000000' : '#FFFFFF',
             'accent' => $accent,
             'background' => $background,
             'surface' => $surface,

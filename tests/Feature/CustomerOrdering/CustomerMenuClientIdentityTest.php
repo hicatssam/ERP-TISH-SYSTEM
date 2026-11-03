@@ -76,6 +76,9 @@ class CustomerMenuClientIdentityTest extends TestCase
         SystemSetting::set('theme_primary', '#225544');
         $this->get(route('customer-menu.show', $branch->code))->assertOk()
             ->assertViewHas('theme', fn ($theme) => $theme['primary'] === '#225544');
+        SystemSetting::set('theme_primary', '#FFF199');
+        $this->get(route('customer-menu.show', $branch->code))->assertOk()
+            ->assertViewHas('theme', fn ($theme) => $theme['on_primary'] === '#000000');
         SystemSetting::set('customer_menu_use_client_colors', '0');
         $this->get(route('customer-menu.show', $branch->code))->assertOk()
             ->assertViewHas('theme', fn ($theme) => $theme['primary'] === '#AA2233');

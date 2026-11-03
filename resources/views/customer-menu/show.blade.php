@@ -275,6 +275,42 @@
 
   </div>{{-- /reference-masthead --}}
 
+  @if($showCategories)
+  <section class="reference-section" aria-labelledby="categoriesTitle">
+   <div class="reference-section-head">
+    <div>
+     <h2 id="categoriesTitle">التصنيفات</h2>
+     <p>اختر اللي على بالك</p>
+    </div>
+    <button class="reference-see-all" type="button" data-show-all>عرض الكل <i class="fa-solid fa-chevron-left"></i></button>
+   </div>
+   <div class="categories" id="categories">
+    <button class="cat active" type="button" data-cat="all">
+     <span class="cat-visual" style="--category-color:var(--primary)"><i class="fa-solid fa-utensils"></i></span>
+     <b>الكل</b>
+    </button>
+    @foreach(($categories ?? []) as $category)
+     @php
+      $categoryColor = preg_match('/^#[0-9A-Fa-f]{6}$/', (string) ($category['icon_color'] ?? ''))
+          ? $category['icon_color']
+          : '#B0003A';
+      $iconClass = $categoryIconClasses[$category['icon_key'] ?? 'sparkles'] ?? 'fa-wand-magic-sparkles';
+     @endphp
+     <button class="cat" type="button" data-cat="{{ $category['id'] }}" data-cat-name="{{ $category['name'] }}">
+      <span class="cat-visual" style="--category-color:{{ $categoryColor }}">
+       @if(($theme['category_visual'] ?? 'icons') === 'images' && !empty($category['image']))
+        <img src="{{ $category['image'] }}" alt="" loading="lazy" onerror="this.outerHTML='<i class=&quot;fa-solid {{ $iconClass }}&quot;></i>'">
+       @else
+        <i class="fa-solid {{ $iconClass }}"></i>
+       @endif
+      </span>
+      <b>{{ $category['name'] }}</b>
+     </button>
+    @endforeach
+   </div>
+  </section>
+  @endif
+
   @if(($theme['show_hero'] ?? true) && ($banners->isNotEmpty() || $coverImage))
   <section class="reference-hero" aria-label="العروض الحالية">
    @if($banners->isNotEmpty())
@@ -320,41 +356,6 @@
   </section>
   @endif
 
-  @if($showCategories)
-  <section class="reference-section" aria-labelledby="categoriesTitle">
-   <div class="reference-section-head">
-    <div>
-     <h2 id="categoriesTitle">التصنيفات</h2>
-     <p>اختر اللي على بالك</p>
-    </div>
-    <button class="reference-see-all" type="button" data-show-all>عرض الكل <i class="fa-solid fa-chevron-left"></i></button>
-   </div>
-   <div class="categories" id="categories">
-    <button class="cat active" type="button" data-cat="all">
-     <span class="cat-visual" style="--category-color:var(--primary)"><i class="fa-solid fa-utensils"></i></span>
-     <b>الكل</b>
-    </button>
-    @foreach(($categories ?? []) as $category)
-     @php
-      $categoryColor = preg_match('/^#[0-9A-Fa-f]{6}$/', (string) ($category['icon_color'] ?? ''))
-          ? $category['icon_color']
-          : '#B0003A';
-      $iconClass = $categoryIconClasses[$category['icon_key'] ?? 'sparkles'] ?? 'fa-wand-magic-sparkles';
-     @endphp
-     <button class="cat" type="button" data-cat="{{ $category['id'] }}" data-cat-name="{{ $category['name'] }}">
-      <span class="cat-visual" style="--category-color:{{ $categoryColor }}">
-       @if(($theme['category_visual'] ?? 'icons') === 'images' && !empty($category['image']))
-        <img src="{{ $category['image'] }}" alt="" loading="lazy" onerror="this.outerHTML='<i class=&quot;fa-solid {{ $iconClass }}&quot;></i>'">
-       @else
-        <i class="fa-solid {{ $iconClass }}"></i>
-       @endif
-      </span>
-      <b>{{ $category['name'] }}</b>
-     </button>
-    @endforeach
-   </div>
-  </section>
-  @endif
 
   @if($showFeatured)
   <section class="reference-section" id="featuredSection" aria-labelledby="featuredTitle">
