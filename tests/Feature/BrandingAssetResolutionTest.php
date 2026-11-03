@@ -53,17 +53,17 @@ class BrandingAssetResolutionTest extends TestCase
         SystemSetting::set('brand_logo_small', 'storage/branding/older-small.png');
         SystemSetting::set('brand_favicon', '');
         $this->actingAs($admin)->get(route('profile.show'))->assertOk()
-            ->assertSee('<link rel="icon" href="'.PublicImageUrl::url('storage/branding/logo-one.png').'">', false);
+            ->assertSee('<link rel="icon" href="'.SystemSetting::browserIconUrl().'">', false);
         $this->image('branding/logo-two.png');
         SystemSetting::set('brand_logo', 'storage/branding/logo-two.png');
         $this->get(route('profile.show'))->assertOk()
-            ->assertSee('<link rel="icon" href="'.PublicImageUrl::url('storage/branding/logo-two.png').'">', false);
+            ->assertSee('<link rel="icon" href="'.SystemSetting::browserIconUrl().'">', false);
         $this->image('branding/favicon.png');
         SystemSetting::set('brand_favicon', 'storage/branding/favicon.png');
         $this->get(route('profile.show'))->assertOk()
-            ->assertSee('<link rel="icon" href="'.PublicImageUrl::url('storage/branding/favicon.png').'">', false);
+            ->assertSee('<link rel="icon" href="'.SystemSetting::browserIconUrl().'">', false);
         $this->get(route('customer-menu.show', 'BRAND'))->assertOk()
-            ->assertViewHas('branding', fn ($branding) => $branding['favicon'] === PublicImageUrl::url('storage/branding/favicon.png'));
+            ->assertViewHas('branding', fn ($branding) => $branding['favicon'] === SystemSetting::browserIconUrl());
     }
 
     public function test_pwa_icons_resample_public_disk_branding_and_prioritize_supported_favicon(): void
@@ -107,4 +107,26 @@ class BrandingAssetResolutionTest extends TestCase
             $this->assertNull(PublicImageUrl::localPath($path));
         }
     }
+    public function test_browser_icon_url_changes_for_same_path_replacements_and_retains_explicit_favicon_priority(): void
+    {
+        Storage::fake('public');
+        $this->image('branding/stable.png');
+        SystemSetting::set('brand_favicon', '');
+        SystemSetting::set('brand_logo', 'storage/branding/stable.png');
+        $first = SystemSetting::browserIconUrl();
+        $this->assertStringContainsString('brand_v=', $first);
+        // Content versioning must not depend on path, timestamp or file size.
+        Storage::disk('public')->put('branding/stable.png',
+            Storage::disk('public')->get('branding/stable.png')."\n");
+        $second = SystemSetting::browserIconUrl();
+        $this->assertNotSame($first, $second);
+        $this->assertSame($second, SystemSetting::browserIconUrl());
+        $this->image('branding/dedicated.png');
+        SystemSetting::set('brand_favicon', 'storage/branding/dedicated.png');
+        $explicit = SystemSetting::browserIconUrl();
+        $this->assertStringContainsString('dedicated.png', $explicit);
+        SystemSetting::set('brand_logo', '');
+        $this->assertSame($explicit, SystemSetting::browserIconUrl());
+    }
+
 }
