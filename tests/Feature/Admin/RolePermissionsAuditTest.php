@@ -19,20 +19,21 @@ class RolePermissionsAuditTest extends TestCase
     #[Test]
     public function source_permission_labels_cover_the_seed_matrix_and_protected_routes(): void
     {
-        $source = file_get_contents(database_path('seeders/DatabaseSeeder.php'));
-
-        $this->assertNotFalse($source);
-        $this->assertSame(
-            1,
-            preg_match('/\\$featurePermissions = collect\\(\\[([\\s\\S]*?)\\]\\);/', $source, $matches)
-        );
-
-        preg_match_all("/'([a-z][a-z0-9_.-]+)'/", $matches[1], $names);
+        app(\Database\Seeders\DatabaseSeeder::class)->seedRestaurantFoundationOnly();
         $labels = PermissionUi::permissionLabels();
+        $seeded = Permission::where('guard_name', 'web')->pluck('name')->all();
+        $this->assertNotEmpty($seeded);
 
-        foreach (array_unique($names[1]) as $name) {
+        foreach ($seeded as $name) {
             $this->assertArrayHasKey($name, $labels, "Missing Arabic label: {$name}");
         }
+        foreach (array_keys($labels) as $name) {
+            $this->assertContains($name, $seeded, "Missing seeded permission: {$name}");
+        }
+        $this->assertEqualsCanonicalizing(
+            $seeded,
+            Role::findByName('Admin', 'web')->permissions->pluck('name')->all()
+        );
 
         foreach (app('router')->getRoutes()->getRoutes() as $route) {
             foreach ($route->gatherMiddleware() as $middleware) {
