@@ -110,6 +110,13 @@ trait ResolvesCustomerMenuBranding
         $cover = SystemSetting::assetUrl('customer_menu_cover_image')
             ?: SystemSetting::assetUrl('customer_menu_cover');
 
+        // Existing installations upload the masthead through this legacy field.
+        // An explicitly cleared dedicated header disables that fallback.
+        $headerValue = SystemSetting::get('customer_menu_header_image');
+        $headerImage = $headerValue === null
+            ? SystemSetting::assetUrl('customer_menu_cover_image')
+            : SystemSetting::assetUrl('customer_menu_header_image');
+
         $shadow = match ((string) SystemSetting::get('customer_menu_product_card_shadow', 'soft')) {
             'none' => 'none',
             'deep' => '0 18px 44px rgba(27, 19, 22, .16)',
@@ -118,7 +125,7 @@ trait ResolvesCustomerMenuBranding
 
         return [
             'use_client_colors' => $useClientColors,
-            'header_image' => SystemSetting::assetUrl('customer_menu_header_image'),
+            'header_image' => $headerImage,
             'header_height' => max(240, min(600, (int) SystemSetting::get('customer_menu_header_height', 340))),
             'header_overlay' => max(0, min(85, (int) SystemSetting::get('customer_menu_header_overlay', 15))),
             'header_position' => in_array(SystemSetting::get('customer_menu_header_position', 'center'), ['center', 'top', 'bottom', 'left', 'right'], true)

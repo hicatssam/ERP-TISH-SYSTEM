@@ -647,6 +647,7 @@
 
                             @if($group === 'customer_menu')
                                 @include('admin.settings.partials.customer-menu-bilingual-copy')
+                                @include('admin.settings.partials.customer-menu-header')
                             @endif
 
                             <div class="settings-grid">
@@ -657,6 +658,8 @@
                                         'customer_menu_subtitle', 'customer_menu_subtitle_en',
                                         'customer_menu_search_placeholder_ar',
                                         'customer_menu_search_placeholder_en',
+                                        'customer_menu_header_image', 'customer_menu_header_height', 'customer_menu_header_overlay',
+                                        'customer_menu_header_position', 'customer_menu_category_visual', 'customer_menu_use_client_colors',
                                     ], true))
                                     @continue(in_array($setting->key, ['chat_theme_preset', 'system_theme_preset'], true))
                                     @php

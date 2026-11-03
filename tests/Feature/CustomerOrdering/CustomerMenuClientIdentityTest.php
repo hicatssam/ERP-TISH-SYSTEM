@@ -99,4 +99,39 @@ class CustomerMenuClientIdentityTest extends TestCase
         ]);
         $this->assertSame('images/existing-header.webp', SystemSetting::get('customer_menu_header_image'));
     }
+    public function test_existing_cover_upload_appears_as_header_and_actual_settings_page_exposes_controls_once(): void
+    {
+        Storage::fake('public');
+        $branch = $this->branch();
+        $admin = $this->admin($branch);
+        // Reproduce the existing image field shown in the real settings page.
+        SystemSetting::query()->where('key', 'customer_menu_header_image')->delete();
+        \Illuminate\Support\Facades\Cache::forget('setting:customer_menu_header_image');
+        $this->actingAs($admin)->post(route('settings.update'), [
+            'customer_menu_cover_image'=>UploadedFile::fake()->image('existing-cover.png'),
+        ])->assertRedirect()->assertSessionHasNoErrors();
+        $legacyUrl = SystemSetting::assetUrl('customer_menu_cover_image');
+        $this->get(route('customer-menu.show', $branch->code))->assertOk()
+            ->assertSee('class="reference-masthead-image"', false)
+            ->assertViewHas('theme', fn ($theme) => $theme['header_image'] === $legacyUrl);
+
+        // The main settings view previously never included the V4 designer.
+        $page = $this->actingAs($admin)->get(route('settings.index'))->assertOk()
+            ->assertSee('خلفية رأس المنيو وألوان العميل');
+        foreach (['customer_menu_header_image','customer_menu_header_height','customer_menu_header_overlay',
+            'customer_menu_header_position','customer_menu_category_visual','customer_menu_use_client_colors'] as $key) {
+            $this->assertSame(1, substr_count($page->getContent(), 'name="'.$key.'"'), $key);
+        }
+        // Repeat after values exist so the generic settings loop cannot duplicate them.
+        SystemSetting::set('customer_menu_header_height', '400');
+        $page = $this->actingAs($admin)->get(route('settings.index'))->assertOk();
+        $this->assertSame(1, substr_count($page->getContent(), 'name="customer_menu_header_height"'));
+        $this->actingAs($admin)->post(route('settings.update'), [
+            'remove_customer_menu_header_image'=>1,
+        ])->assertRedirect()->assertSessionHasNoErrors();
+        $this->get(route('customer-menu.show', $branch->code))->assertOk()
+            ->assertDontSee('class="reference-masthead-image"', false);
+        $this->assertSame($legacyUrl, SystemSetting::assetUrl('customer_menu_cover_image'));
+    }
+
 }
