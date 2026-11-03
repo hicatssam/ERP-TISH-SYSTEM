@@ -44,7 +44,11 @@ class SystemSetting extends Model
     {
         static::query()
             ->pluck('key')
-            ->each(fn (string $key) => Cache::forget("setting:{$key}"));
+            ->each(function (string $key): void {
+                // Collection::each stops on false; a cache miss must not stop
+                // invalidation of the remaining settings.
+                Cache::forget("setting:{$key}");
+            });
     }
 
     public static function assetUrl(string $key, ?string $fallback = null): ?string

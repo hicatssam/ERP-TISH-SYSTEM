@@ -99,12 +99,18 @@ class ClientOnboardingService
     ): SetupWizardRun {
         $this->ensureDraft($run);
 
+        if ($step < 1 || $step > 5 || $step > $run->current_step) {
+            throw ValidationException::withMessages([
+                'step' => 'أكمل خطوات الإعداد بالترتيب قبل المتابعة.',
+            ]);
+        }
+
         match ($step) {
             1 => $this->saveBusinessProfileStep($run, $payload),
             2 => $this->saveBusinessDataStep($run, $payload),
             3 => $run->branding_data = array_merge(
                 $run->branding_data ?? [],
-                $payload,
+                array_diff_key($payload, array_flip(self::FILE_SETTING_KEYS)),
                 $this->stageBrandingFiles($run, $files)
             ),
             4 => $run->operational_data = $payload,
@@ -141,6 +147,20 @@ class ClientOnboardingService
         }
 
         $result = DB::transaction(function () use ($run, $actor, $profile): array {
+            $lockedRun = SetupWizardRun::query()->lockForUpdate()->findOrFail($run->id);
+            $this->ensureDraft($lockedRun);
+            if ($lockedRun->current_step !== self::TOTAL_STEPS) {
+                throw ValidationException::withMessages([
+                    'wizard' => 'أكمل جميع خطوات إعداد العميل قبل التطبيق.',
+                ]);
+            }
+            // Reject stale review pages instead of applying an unseen revision.
+            if ($lockedRun->getRawOriginal() !== $run->getRawOriginal()) {
+                throw ValidationException::withMessages([
+                    'wizard' => 'تغيرت المسودة. أعد فتح صفحة المراجعة قبل التطبيق.',
+                ]);
+            }
+
             $this->businessProfiles->setCurrent($profile, $actor);
 
             $this->applyBusinessSettings($run->business_data ?? []);
@@ -374,10 +394,11 @@ class ClientOnboardingService
             ]);
         }
 
+        $profileChanged = $run->business_profile_code !== $profile->code;
         $run->business_profile_id = $profile->id;
         $run->business_profile_code = $profile->code;
 
-        if (empty($run->module_plan['selected_codes'] ?? [])) {
+        if ($profileChanged || empty($run->module_plan['selected_codes'] ?? [])) {
             $recommended = $profile->modules()
                 ->wherePivot('is_default', true)
                 ->pluck('modules.code')
@@ -471,8 +492,23 @@ class ClientOnboardingService
             'theme_radius' => 'integer',
         ];
 
+        // Explicit identity changes also update print overrides, so documents
+        // cannot silently retain the previous client's uploaded identity.
+        $printUpdates = [];
+        foreach (['brand_logo' => 'print_logo', 'brand_report_logo' => 'print_logo',
+            'brand_stamp' => 'print_stamp', 'brand_signature' => 'print_signature',
+            'brand_footer_text' => 'print_footer_text'] as $brandKey => $printKey) {
+            if (array_key_exists($brandKey, $data)
+                && (string) $data[$brandKey] !== (string) SystemSetting::get($brandKey, '')) {
+                $printUpdates[$printKey] = (string) $data[$brandKey];
+            }
+        }
+
         foreach ($data as $key => $value) {
-            if ($value === null || $value === '') {
+            // Missing file inputs preserve existing images. Empty text inputs
+            // are intentional removals and must be persisted.
+            if (in_array($key, self::FILE_SETTING_KEYS, true)
+                && ($value === null || $value === '')) {
                 continue;
             }
 
@@ -489,6 +525,11 @@ class ClientOnboardingService
                 $key,
                 'تم تحديثه عبر معالج إعداد العميل.'
             );
+        }
+
+        foreach ($printUpdates as $key => $value) {
+            $this->writeSetting($key, $value, 'string', 'printing', $key,
+                'تمت مزامنته مع هوية العميل عبر معالج الإعداد.');
         }
     }
 

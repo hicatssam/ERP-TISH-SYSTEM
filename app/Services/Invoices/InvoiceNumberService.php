@@ -3,6 +3,7 @@
 namespace App\Services\Invoices;
 
 use App\Models\Invoice;
+use App\Models\SystemSetting;
 use App\Services\Procurement\DocumentNumberService;
 use Illuminate\Support\Facades\DB;
 
@@ -18,6 +19,8 @@ class InvoiceNumberService
      */
     public static function generate(): string
     {
-        return app(DocumentNumberService::class)->next('sales_invoice', 'DH');
+        $prefix = trim((string) SystemSetting::get('invoice_prefix', 'DH'));
+
+        return app(DocumentNumberService::class)->next('sales_invoice', $prefix !== '' ? $prefix : 'DH');
     }
 }

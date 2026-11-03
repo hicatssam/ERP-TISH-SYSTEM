@@ -14,6 +14,7 @@
         </div>
 
         <div class="onb-card-body">
+            <p class="onb-help">تغيير الشعار أو الختم أو التوقيع أو نص التذييل يحدّث هوية الطباعة أيضًا. ترك رفع الصور فارغًا يحافظ على الصور الحالية.</p>
             <div class="onb-grid">
                 <div>
                     <label class="form-label">اسم النظام بالعربية *</label>

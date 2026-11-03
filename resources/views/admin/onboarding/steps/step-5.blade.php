@@ -31,7 +31,7 @@
                                 type="checkbox"
                                 name="selected_codes[]"
                                 value="{{ $module->code }}"
-                                @checked($isCore || $selected->contains($module->code) || $recommended)
+                                @checked($isCore || $selected->contains($module->code))
                                 @disabled($isCore || !$implemented)
                             >
 
