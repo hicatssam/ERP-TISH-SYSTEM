@@ -42,7 +42,8 @@ class DatabaseSeeder extends Seeder
         $routePermissions = collect(app('router')->getRoutes()->getRoutes())
             ->flatMap(fn ($route) => $route->gatherMiddleware())
             ->filter(fn ($middleware) => is_string($middleware) && str_starts_with($middleware, 'can:'))
-            ->map(fn ($middleware) => trim(explode(',', substr($middleware, 4))[0]));
+            ->map(fn ($middleware) => trim(explode(',', substr($middleware, 4))[0]))
+            ->filter(fn ($name) => str_contains($name, '.'));
         foreach ($routePermissions->merge(array_keys(PermissionUi::permissionLabels()))->filter()->unique() as $name) {
             Permission::findOrCreate($name, 'web');
         }
