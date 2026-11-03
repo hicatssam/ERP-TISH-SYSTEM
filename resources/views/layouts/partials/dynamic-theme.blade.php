@@ -75,6 +75,14 @@
         */
         --navy: var(--theme-primary);
         --gold: var(--theme-accent);
+        --gold-accent: var(--theme-accent);
+        --gold-deep: color-mix(in srgb, var(--theme-accent) 80%, var(--theme-text));
+        --gold-soft: color-mix(in srgb, var(--theme-accent) 80%, var(--theme-surface));
+        --gold-pale: color-mix(in srgb, var(--theme-accent) 14%, var(--theme-surface));
+        --gold-ultra: color-mix(in srgb, var(--theme-accent) 6%, var(--theme-surface));
+        --gold-border: color-mix(in srgb, var(--theme-accent) 30%, var(--theme-border));
+        --icon-color: var(--theme-accent);
+        --icon-bg: var(--gold-pale);
 
         --bg: var(--theme-bg);
         --surface: var(--theme-surface);
@@ -92,6 +100,10 @@
         --error: var(--theme-danger);
         --danger: var(--theme-danger);
         --info: var(--theme-info);
+        --success-bg: color-mix(in srgb, var(--theme-success) 12%, var(--theme-surface));
+        --warning-bg: color-mix(in srgb, var(--theme-warning) 12%, var(--theme-surface));
+        --error-bg: color-mix(in srgb, var(--theme-danger) 12%, var(--theme-surface));
+        --info-bg: color-mix(in srgb, var(--theme-info) 12%, var(--theme-surface));
     }
 
 
@@ -451,5 +463,22 @@
             var(--theme-accent) 9%,
             transparent
         );
+    }
+    /* Decorative icons inherit client branding; status icons keep their meaning. */
+    .notif-item-icon,
+    .stat-gold .stat-icon {
+        color: var(--icon-color);
+        background: var(--icon-bg);
+    }
+
+    .stat-orange .stat-icon {
+        color: var(--theme-warning);
+        background: var(--warning-bg);
+    }
+
+    .btn svg,
+    .nav-icon,
+    .dahab-shortcut-icon svg {
+        color: inherit;
     }
 </style>
