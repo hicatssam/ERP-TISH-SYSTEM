@@ -53,6 +53,16 @@ class BurgerRestaurantDemoSeederTest extends TestCase
         $this->assertTrue(\Illuminate\Support\Facades\Hash::check('TishDemo@2026!', User::where('username', 'admin')->firstOrFail()->password));
         $this->assertFalse(Location::where('name', 'like', '%دهب%')->exists());
 
+        foreach (['B01', 'B02'] as $branchCode) {
+            $menu = $this->get('/menu/'.$branchCode.'?branch_selected=1')->assertOk();
+            $menu->assertViewHas('menuItems', fn ($items) => $items->count() === 76
+                && $items->every(fn ($item) => str_starts_with($item['sku'], 'BRG-')
+                    && str_contains((string) $item['image'], '/images/burger-menu/products/')));
+            $menu->assertViewHas('categories', fn ($categories) => $categories->count() === 8
+                && $categories->every(fn ($category) => ! empty($category['image'])));
+            $menu->assertViewHas('banners', fn ($banners) => $banners->count() === 3);
+        }
+
         $quantities = DB::table('inventories')->orderBy('id')->pluck('quantity', 'id')->all();
         $this->seed(DatabaseSeeder::class);
         $this->assertSame(24, Order::count());
