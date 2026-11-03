@@ -110,21 +110,21 @@
     }
 
     .task-tone-blue {
-        --task-accent: #2563eb;
-        --task-soft: rgba(37, 99, 235, .06);
-        --task-border: rgba(37, 99, 235, .18);
+        --task-accent: var(--theme-info);
+        --task-soft: color-mix(in srgb, var(--theme-info) 6%, var(--theme-surface));
+        --task-border: color-mix(in srgb, var(--theme-info) 18%, var(--theme-border));
     }
 
     .task-tone-green {
-        --task-accent: #16a34a;
-        --task-soft: rgba(22, 163, 74, .06);
-        --task-border: rgba(22, 163, 74, .18);
+        --task-accent: var(--theme-success);
+        --task-soft: color-mix(in srgb, var(--theme-success) 6%, var(--theme-surface));
+        --task-border: color-mix(in srgb, var(--theme-success) 18%, var(--theme-border));
     }
 
     .task-tone-red {
-        --task-accent: #dc2626;
-        --task-soft: rgba(220, 38, 38, .055);
-        --task-border: rgba(220, 38, 38, .18);
+        --task-accent: var(--theme-danger);
+        --task-soft: color-mix(in srgb, var(--theme-danger) 6%, var(--theme-surface));
+        --task-border: color-mix(in srgb, var(--theme-danger) 18%, var(--theme-border));
     }
 
     .dashboard-task-head {
@@ -281,15 +281,15 @@
     }
 
     .dashboard-module-card.is-danger .dashboard-module-card-value {
-        color: #dc2626;
+        color: var(--theme-danger);
     }
 
     .dashboard-module-card.is-success .dashboard-module-card-value {
-        color: #16a34a;
+        color: var(--theme-success);
     }
 
     .dashboard-module-card.is-info .dashboard-module-card-value {
-        color: #2563eb;
+        color: var(--theme-info);
     }
 
     @media (max-width: 1100px) {

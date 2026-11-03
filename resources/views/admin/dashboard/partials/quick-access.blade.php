@@ -74,11 +74,11 @@
 .dahab-shortcut:focus-visible{outline:2px solid var(--theme-accent);outline-offset:3px}
 .dahab-shortcut-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:var(--icon-bg, var(--gold-pale));color:var(--gold-deep, var(--theme-accent));font-size:1.2rem}
 .dahab-shortcut-icon svg{width:23px;height:23px;display:block}\n.dahab-shortcut-label{text-align:center;font-size:.78rem;font-weight:800;line-height:1.5}
-.dahab-shortcut-selected{display:none;position:absolute;inset-block-start:6px;inset-inline-start:8px;color:#168545}
+.dahab-shortcut-selected{display:none;position:absolute;inset-block-start:6px;inset-inline-start:8px;color:var(--theme-success)}
 .dahab-shortcuts.is-editing .dahab-shortcut-selected{display:block}
 .dahab-shortcuts.is-editing .dahab-shortcut.is-hidden{display:flex;opacity:.4;border-style:dashed}
 .dahab-shortcuts:not(.is-editing) .dahab-shortcut.is-hidden{display:none}
-.dahab-shortcuts.is-editing .dahab-shortcut.is-hidden .dahab-shortcut-selected{color:#9ca3af}
+.dahab-shortcuts.is-editing .dahab-shortcut.is-hidden .dahab-shortcut-selected{color:var(--theme-text-muted)}
 .dashboard-task-card,.dashboard-module-card,.stats-grid .stat-card{transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease}
 .stats-grid .stat-card:hover,.dashboard-task-card:hover,.dashboard-module-card:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(15,23,42,.08)}
 @media(max-width:1100px){.dahab-shortcuts-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}

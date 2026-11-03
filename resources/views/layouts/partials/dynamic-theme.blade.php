@@ -103,6 +103,10 @@
         --success-bg: color-mix(in srgb, var(--theme-success) 12%, var(--theme-surface));
         --warning-bg: color-mix(in srgb, var(--theme-warning) 12%, var(--theme-surface));
         --error-bg: color-mix(in srgb, var(--theme-danger) 12%, var(--theme-surface));
+        --success-border: color-mix(in srgb, var(--theme-success) 30%, var(--theme-border));
+        --error-border: color-mix(in srgb, var(--theme-danger) 30%, var(--theme-border));
+        --warning-border: color-mix(in srgb, var(--theme-warning) 30%, var(--theme-border));
+        --info-border: color-mix(in srgb, var(--theme-info) 30%, var(--theme-border));
         --info-bg: color-mix(in srgb, var(--theme-info) 12%, var(--theme-surface));
     }
 
