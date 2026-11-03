@@ -252,19 +252,12 @@
      </span>
      <div class="reference-brand-copy">
      <a class="reference-branch" href="{{ route('customer-menu.index', ['choose' => 1]) }}" aria-label="تغيير الفرع">{{ $location->name }} <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></a>
-      @if(!empty($branding['tagline']))
-       <span class="reference-client-tagline">{{ $branding['tagline'] }}</span>
-      @endif
      </div>
     </div>
     <div class="reference-actions">
      <a class="icon-btn" href="{{ route('customer-menu.cart', $location->code) }}" aria-label="السلة"><i class="fa-solid fa-bag-shopping"></i><span class="badge" id="cartBadgeTop">0</span></a>
      <a class="icon-btn" href="{{ route('customer-menu.favorites', $location->code) }}" aria-label="المفضلة"><i class="fa-regular fa-heart"></i><span class="badge" id="favBadgeTop">0</span></a>
     </div>
-   </div>
-   <div class="reference-greeting">
-    <h1>{{ $homeTitle }} <span aria-hidden="true">👋</span></h1>
-    <p>{{ $homeSubtitle }}</p>
    </div>
   </header>
 
@@ -276,6 +269,15 @@
   @endif
 
   </div>{{-- /reference-masthead --}}
+
+   <div class="reference-greeting reference-welcome-strip">
+    <h1>{{ $homeTitle }} <span aria-hidden="true">👋</span></h1>
+    <p>{{ $homeSubtitle }}</p>
+    @if(!empty($branding['tagline']))
+     <p class="reference-welcome-tagline">{{ $branding['tagline'] }}</p>
+    @endif
+   </div>
+
 
   @if($showCategories)
   <section class="reference-section" aria-labelledby="categoriesTitle">

@@ -55,6 +55,34 @@ final class PublicImageUrl
         return null;
     }
 
+    /**
+     * Resolve a local branding image for server-side rendering without relying
+     * on public/storage symlinks. Remote URLs are never fetched here.
+     */
+    public static function localPath(?string $path): ?string
+    {
+        $path = trim((string) $path);
+        if ($path === '' || preg_match('#^(https?://|//|data:)#i', $path)) {
+            return null;
+        }
+        $normalized = ltrim(str_replace('\\', '/', $path), '/');
+        if (str_contains($normalized, '..') || str_contains($normalized, "\0")) {
+            return null;
+        }
+        foreach (['storage/app/public/', 'public/storage/', 'storage/'] as $prefix) {
+            if (str_starts_with($normalized, $prefix)) {
+                $normalized = substr($normalized, strlen($prefix));
+                break;
+            }
+        }
+        if (self::allowedDiskPath($normalized) && Storage::disk('public')->exists($normalized)) {
+            $local = Storage::disk('public')->path($normalized);
+            return is_file($local) && is_readable($local) ? $local : null;
+        }
+        $local = public_path($normalized);
+        return is_file($local) && is_readable($local) ? $local : null;
+    }
+
     public static function allowedDiskPath(string $path): bool
     {
         if ($path === '' || str_contains($path, '..') || str_contains($path, "\0")) {

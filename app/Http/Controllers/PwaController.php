@@ -163,9 +163,9 @@ class PwaController extends Controller
     private function resolveBrandImage(): ?string
     {
         $candidates = [
+            SystemSetting::get('brand_favicon'),
             SystemSetting::get('brand_logo'),
             SystemSetting::get('brand_logo_small'),
-            SystemSetting::get('brand_favicon'),
             'assets/images/logo.png',
         ];
 
@@ -174,10 +174,13 @@ class PwaController extends Controller
                 continue;
             }
 
-            $relativePath = ltrim(str_replace('\\', '/', trim($candidate)), '/');
-            $absolutePath = public_path($relativePath);
-
-            if (is_file($absolutePath) && is_readable($absolutePath)) {
+            $absolutePath = \App\Support\PublicImageUrl::localPath($candidate);
+            if ($absolutePath === null) {
+                continue;
+            }
+            $info = @getimagesize($absolutePath);
+            // ICO remains valid for browser favicons, but GD cannot resample it.
+            if ($info && in_array($info['mime'] ?? '', ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/avif'], true)) {
                 return $absolutePath;
             }
         }

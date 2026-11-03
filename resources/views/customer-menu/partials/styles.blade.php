@@ -387,4 +387,4 @@ body.crisp-customer-menu > .app{position:relative;z-index:1}
 </style>
 <script src="{{ asset('assets/js/customer-menu/i18n.js') }}?v=2"></script>
 
-<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/client-identity.css') }}?v=2">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/client-identity.css') }}?v=3">

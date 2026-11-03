@@ -24,7 +24,6 @@ body.reference-home .reference-brand-copy{display:flex;flex-direction:column;gap
 body.reference-home .reference-logo-square{display:grid;place-items:center;width:56px;height:56px;flex:0 0 56px;padding:5px;border-radius:14px;background:var(--surface);border:1px solid var(--line);box-shadow:0 5px 16px color-mix(in srgb,var(--primary) 10%,transparent);overflow:hidden;color:var(--primary);font-size:1.3rem;font-weight:900}
 body.reference-home .reference-logo-square .reference-client-logo{width:100%;height:100%;object-fit:contain}
 body.reference-home .reference-masthead.is-illustrated .reference-header{flex:1;display:flex;flex-direction:column}
-body.reference-home .reference-masthead.is-illustrated .reference-greeting{margin-top:auto;padding-top:16px}
 body.reference-home .reference-branch{padding:12px 14px;border-radius:18px;background:color-mix(in srgb,var(--surface) 94%,transparent);color:var(--text);border:1px solid var(--line)}
 body.reference-home .reference-client-tagline{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);font-size:.7rem;font-weight:700}
 body.reference-home .reference-greeting{margin:0 0 14px;text-align:center}
@@ -44,3 +43,9 @@ body.reference-home .reference-section-icon{color:var(--primary)}
  body.reference-home .reference-greeting p{font-size:.82rem}
 }
 @media(prefers-reduced-motion:reduce){.crisp-customer-menu :is(.icon-btn,.filter-square,.page-back,.fav,.cat,.details,.reference-see-all){transition:none!important}}
+
+/* Keep all editable copy off the uploaded hero artwork. */
+body.reference-home .reference-welcome-strip{margin:14px 0 0;padding:14px 16px;text-align:start;border:1px solid var(--line);border-radius:18px;background:color-mix(in srgb,var(--surface) 95%,var(--bg))}
+body.reference-home .reference-welcome-strip h1{font-size:1.1rem;line-height:1.6;margin:0}
+body.reference-home .reference-welcome-strip p{font-size:.85rem;line-height:1.7;margin:4px 0 0;color:var(--muted)}
+body.reference-home .reference-welcome-strip .reference-welcome-tagline{color:var(--primary);font-size:.75rem;font-weight:700}
