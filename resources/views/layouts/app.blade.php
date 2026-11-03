@@ -56,6 +56,7 @@ $brandName =
         ?: $brandLogoUrl;
 
     $brandFaviconUrl = \App\Models\SystemSetting::assetUrl('brand_favicon');
+    $browserIconUrl = $brandFaviconUrl ?: $brandLogoSmallUrl;
 
     $pwaBrandVersion = substr(
         sha1(implode('|', [
@@ -133,24 +134,14 @@ $brandName =
 
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-    <link
-        rel="icon"
-        type="image/png"
-        sizes="32x32"
-        href="{{ route('pwa.icon', ['size' => 32, 'v' => $pwaBrandVersion]) }}"
-    >
-
-    <link
-        rel="icon"
-        type="image/png"
-        sizes="192x192"
-        href="{{ route('pwa.icon', ['size' => 192, 'v' => $pwaBrandVersion]) }}"
-    >
-
-    <link
-        rel="shortcut icon"
-        href="{{ route('pwa.icon', ['size' => 32, 'v' => $pwaBrandVersion]) }}"
-    >
+    {{-- Direct branding assets also work when PHP GD is unavailable. --}}
+    @if($browserIconUrl)
+        <link rel="icon" href="{{ $browserIconUrl }}">
+        <link rel="shortcut icon" href="{{ $browserIconUrl }}">
+    @else
+        <link rel="icon" type="image/png" sizes="32x32" href="{{ route('pwa.icon', ['size' => 32, 'v' => $pwaBrandVersion]) }}">
+        <link rel="shortcut icon" href="{{ route('pwa.icon', ['size' => 32, 'v' => $pwaBrandVersion]) }}">
+    @endif
 
     <link
         rel="apple-touch-icon"

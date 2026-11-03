@@ -83,9 +83,9 @@
                     <div>
                         <label class="form-label">{{ $label }}</label>
                         <input type="file" class="form-input" name="{{ $key }}" accept="image/*,.ico">
-                        @if(!empty($data[$key]))
+                        @if($previewUrl = \App\Support\PublicImageUrl::url($data[$key] ?? null))
                             <div class="onb-preview" style="margin-top:.55rem">
-                                <img src="{{ asset($data[$key]) }}" alt="{{ $label }}">
+                                <img src="{{ $previewUrl }}" alt="{{ $label }}">
                                 <small>الصورة الحالية ستبقى ما لم ترفع بديلًا.</small>
                             </div>
                         @endif

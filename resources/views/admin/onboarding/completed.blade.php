@@ -119,7 +119,8 @@
     </style>
 
     @php
-        $brandLogo = $brandingData['brand_logo'] ?? null;
+        $brandLogo = \App\Support\PublicImageUrl::url($brandingData['brand_logo'] ?? null)
+            ?: \App\Support\PublicImageUrl::url($brandingData['brand_logo_small'] ?? null);
         $systemName =
             $brandingData['system_name']
             ?? $businessData['business_legal_name']
@@ -137,7 +138,7 @@
                 <div class="onb-summary-logo">
                     @if($brandLogo)
                         <img
-                            src="{{ asset($brandLogo) }}"
+                            src="{{ $brandLogo }}"
                             alt="{{ $systemName }}"
                         >
                     @else
