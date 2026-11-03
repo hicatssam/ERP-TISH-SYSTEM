@@ -53,6 +53,11 @@ class BurgerRestaurantSeeder extends Seeder
                     'is_active' => true, 'sort_order' => ($count + 1) * 10,
                 ]);
 
+                $categoryImage = 'images/burger-menu/products/'.$group.'-'.strtolower($definition['items'][0][0]).'.webp';
+                if (! $category->image) {
+                    $category->update(['image' => $categoryImage]);
+                }
+
                 foreach ($definition['items'] as $index => [$code, $name, $nameAr, $price]) {
                     $sku = 'BRG-'.strtoupper($group).'-'.$code;
                     $product = Product::withTrashed()->firstOrCreate(['sku' => $sku], [
@@ -68,6 +73,14 @@ class BurgerRestaurantSeeder extends Seeder
                     // A deliberate deletion must not be undone by rerunning a catalogue seed.
                     if ($product->trashed()) {
                         continue;
+                    }
+
+                    $image = 'images/burger-menu/products/'.$group.'-'.strtolower($code).'.webp';
+                    if (! is_file(public_path($image))) {
+                        throw new RuntimeException('صورة صنف البرجر مفقودة: '.$image);
+                    }
+                    if (! $product->image) {
+                        $product->update(['image' => $image]);
                     }
 
                     foreach ($branches as $branch) {

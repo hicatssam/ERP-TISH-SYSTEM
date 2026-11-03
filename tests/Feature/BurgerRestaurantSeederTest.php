@@ -19,6 +19,13 @@ class BurgerRestaurantSeederTest extends TestCase
         $this->seed(BurgerRestaurantSeeder::class);
         $this->assertSame(7, Category::count());
         $this->assertSame(68, Product::count());
+        foreach (Product::all() as $product) {
+            $this->assertNotEmpty($product->image);
+            $this->assertFileExists(public_path($product->image));
+        }
+        foreach (Category::all() as $category) {
+            $this->assertFileExists(public_path($category->image));
+        }
         $this->assertSame(68, RestaurantMenuItem::count());
         $this->assertDatabaseCount('menu_banners', 3);
         $this->assertDatabaseHas('products', ['sku' => 'BRG-BEEF-CLASSIC', 'name_ar' => 'برجر لحم كلاسيك']);
@@ -33,7 +40,10 @@ class BurgerRestaurantSeederTest extends TestCase
     {
         $this->seed(BurgerRestaurantSeeder::class);
         $product = Product::where('sku', 'BRG-BEEF-CLASSIC')->firstOrFail();
-        $product->update(['base_selling_price' => 99]);
+        $product->update(['base_selling_price' => 99, 'image' => 'images/custom-upload.webp']);
+        $category = $product->category;
+        $category->update(['image' => 'images/my-category.webp']);
+        Product::where('sku', 'BRG-CHICKEN-CRISPY')->update(['image' => null]);
         $banner = \App\Models\MenuBanner::query()->firstOrFail();
         $banner->update(['title' => 'Edited banner', 'is_active' => false]);
         RestaurantMenuItem::where('product_id', $product->id)->update(['is_active' => false]);
@@ -42,8 +52,11 @@ class BurgerRestaurantSeederTest extends TestCase
         $this->seed(BurgerRestaurantSeeder::class);
         $this->assertSame(68, Product::withTrashed()->count());
         $this->assertSame('99.00', $product->fresh()->base_selling_price);
+        $this->assertSame('images/custom-upload.webp', $product->fresh()->image);
         $this->assertSame('Edited banner', $banner->fresh()->title);
         $this->assertFalse($banner->fresh()->is_active);
+        $this->assertSame('images/my-category.webp', $category->fresh()->image);
+        $this->assertNotEmpty(Product::where('sku', 'BRG-CHICKEN-CRISPY')->firstOrFail()->image);
         $this->assertFalse(RestaurantMenuItem::where('product_id', $product->id)->firstOrFail()->is_active);
         $this->assertTrue(Product::withTrashed()->where('sku', 'BRG-FRIES-CHEESE')->firstOrFail()->trashed());
         $this->assertSame(68, RestaurantMenuItem::count());
