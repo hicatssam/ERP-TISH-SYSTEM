@@ -1,6 +1,19 @@
 @php
-    $cmSetting = static fn(string $key, mixed $default = null): mixed =>
-        old($key, \App\Models\SystemSetting::get($key, $default));
+    $cmSetting = static function (string $key, mixed $default = null): mixed {
+        $value = old($key, \App\Models\SystemSetting::get($key, $default));
+        $clientKeys = [
+            'customer_menu_primary_color'=>'theme_primary', 'customer_menu_accent_color'=>'theme_accent',
+            'customer_menu_background_color'=>'theme_background', 'customer_menu_surface_color'=>'theme_surface',
+            'customer_menu_text_color'=>'theme_text', 'customer_menu_muted_color'=>'theme_text_muted',
+            'customer_menu_border_color'=>'theme_border',
+        ];
+        if ((bool) old('customer_menu_use_client_colors', \App\Models\SystemSetting::get('customer_menu_use_client_colors', true))
+            && isset($clientKeys[$key])) {
+            $client = \App\Models\SystemSetting::get($clientKeys[$key]);
+            if (is_string($client) && preg_match('/^#[0-9A-Fa-f]{6}$/', $client)) { return $client; }
+        }
+        return $value;
+    };
 
     $cmPreviewLocation = \App\Models\Location::query()
         ->branches()
@@ -69,12 +82,12 @@
                 </div>
             </section>
 
-            <div class="chips"><i>الكل</i><i>قهوة</i><i>حلويات</i></div>
+            <div class="chips"><i>الكل</i><i>البرجر</i><i>المشروبات</i></div>
 
             <div class="cards">
-                <article><div></div><b>لاتيه</b><small>مشروب ساخن</small><strong>18 ₪</strong></article>
-                <article><div></div><b>تشيز كيك</b><small>قطعة يومية</small><strong>22 ₪</strong></article>
-                <aside><b>طلبك</b><small>لاتيه × 1</small><strong>18 ₪</strong></aside>
+                <article><div></div><b>مشروب</b><small>مشروب ساخن</small><strong>18 ₪</strong></article>
+                <article><div></div><b>برجر كلاسيك</b><small>تحضير طازج</small><strong>22 ₪</strong></article>
+                <aside><b>طلبك</b><small>مشروب × 1</small><strong>18 ₪</strong></aside>
             </div>
         </div>
     </div>
@@ -179,6 +192,41 @@
 
     <div class="cmv4-pane" data-cmv4-pane="layout">
         <div class="cmv4-grid">
+            <div class="wide">
+                <label class="form-label">ألوان هوية العميل</label>
+                <select class="form-input" name="customer_menu_use_client_colors">
+                    <option value="1" @selected((string)$cmSetting('customer_menu_use_client_colors',1)==='1')>استخدام ألوان العميل في كل صفحات المنيو</option>
+                    <option value="0" @selected((string)$cmSetting('customer_menu_use_client_colors',1)==='0')>استخدام ألوان المنيو المستقلة أدناه</option>
+                </select>
+                <small>الأيقونات والهوفر والأزرار والتحديد تتبع اللون الرئيسي تلقائياً. الشعار والسلوجن من قسم الهوية.</small>
+            </div>
+            <div class="wide">
+                <label class="form-label">صورة خلفية رأس المنيو</label>
+                <input class="form-input" type="file" name="customer_menu_header_image" accept="image/png,image/jpeg,image/webp">
+                <small>ارفع خلفية بدون شعار أو كتابة؛ يظهر الشعار والسلوجن فوقها تلقائياً. مستقلة عن بانرات العروض.</small>
+                @if($headerImage = \App\Models\SystemSetting::assetUrl('customer_menu_header_image'))
+                    <img src="{{ $headerImage }}" alt="خلفية رأس المنيو الحالية" style="max-height:150px;max-width:100%;border-radius:16px;margin-top:10px">
+                    <label class="cmv4-remove"><input type="checkbox" name="remove_customer_menu_header_image" value="1"> حذف الخلفية الحالية</label>
+                @endif
+            </div>
+            <div><label class="form-label">ارتفاع خلفية الرأس</label><input class="form-input" type="number" name="customer_menu_header_height" min="240" max="600" value="{{ $cmSetting('customer_menu_header_height',340) }}"></div>
+            <div><label class="form-label">تعتيم الخلفية %</label><input class="form-input" type="number" name="customer_menu_header_overlay" min="0" max="85" value="{{ $cmSetting('customer_menu_header_overlay',15) }}"></div>
+            <div>
+                <label class="form-label">موضع الصورة</label>
+                <select class="form-input" name="customer_menu_header_position">
+                    @foreach(['center'=>'الوسط','top'=>'أعلى','bottom'=>'أسفل','left'=>'يسار','right'=>'يمين'] as $value=>$label)
+                        <option value="{{ $value }}" @selected($cmSetting('customer_menu_header_position','center')===$value)>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="form-label">عرض التصنيفات</label>
+                <select class="form-input" name="customer_menu_category_visual">
+                    <option value="icons" @selected($cmSetting('customer_menu_category_visual','icons')==='icons')>أيقونات ثابتة بألوان العميل</option>
+                    <option value="images" @selected($cmSetting('customer_menu_category_visual','icons')==='images')>صور التصنيفات المرفوعة</option>
+                </select>
+            </div>
+
             <div><label class="form-label">اللون الرئيسي</label><input class="form-input" type="color" name="customer_menu_primary_color" value="{{ $cmSetting('customer_menu_primary_color','#B0003A') }}"></div>
             <div><label class="form-label">Accent</label><input class="form-input" type="color" name="customer_menu_accent_color" value="{{ $cmSetting('customer_menu_accent_color','#D8124B') }}"></div>
             <div><label class="form-label">الخلفية</label><input class="form-input" type="color" name="customer_menu_background_color" value="{{ $cmSetting('customer_menu_background_color','#FBFAF8') }}"></div>
