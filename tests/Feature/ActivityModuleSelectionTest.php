@@ -136,4 +136,42 @@ class ActivityModuleSelectionTest extends TestCase
         $this->assertStringNotContainsString('href="'.route('cake-orders.index').'"', $html);
         $this->assertStringNotContainsString('href="'.route('showroom-daily-reports.index').'"', $html);
     }
+    public function test_notifications_for_disabled_modules_are_hidden_without_deleting_them(): void
+    {
+        $this->applyActivity('restaurant', []);
+        $this->actor->notifications()->create([
+            'id' => (string) \Illuminate\Support\Str::uuid(),
+            'type' => 'App\\Notifications\\SystemNotification',
+            'data' => ['type' => 'cake_orders.created', 'url' => url('/cake-orders/1'), 'title' => 'Cake'],
+        ]);
+        $this->actor->notifications()->create([
+            'id' => (string) \Illuminate\Support\Str::uuid(),
+            'type' => 'App\\Notifications\\SystemNotification',
+            'data' => ['type' => 'general', 'title' => 'General'],
+        ]);
+        $this->assertSame(1, \App\Support\NotificationVisibility::query($this->actor->notifications())->count());
+        $this->assertSame(2, $this->actor->notifications()->count());
+    }
+
+    public function test_role_editor_only_offers_permissions_of_enabled_modules(): void
+    {
+        $this->applyActivity('restaurant', []);
+        \Spatie\Permission\Models\Permission::findOrCreate('cake_orders.view', 'web');
+        \Spatie\Permission\Models\Permission::findOrCreate('restaurant.view', 'web');
+        $view = app(\App\Http\Controllers\Admin\RoleController::class)->create();
+        $names = $view->getData()['permissions']->flatten(2)->pluck('name');
+        $this->assertContains('restaurant.view', $names);
+        $this->assertNotContains('cake_orders.view', $names);
+    }
+
+    public function test_dashboard_contains_only_selected_activity_sections(): void
+    {
+        $this->applyActivity('restaurant', ['restaurant_pos']);
+        $this->actingAs($this->actor);
+        $view = app(\App\Http\Controllers\Admin\DashboardController::class)->index();
+        $html = $view->render();
+        $this->assertStringNotContainsString('href="'.route('cake-orders.create').'"', $html);
+        $this->assertStringNotContainsString('href="'.route('production.orders.index').'"', $html);
+    }
+
 }

@@ -4,6 +4,7 @@
 namespace App\Http\Controllers;
 
 use App\Support\ArabicDate;
+use App\Support\NotificationVisibility;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,7 +26,7 @@ class NotificationController extends Controller
             'search' => ['nullable', 'string', 'max:150'],
         ]);
 
-        $query = $user->notifications();
+        $query = NotificationVisibility::query($user->notifications());
 
         if (($filters['read'] ?? null) === 'unread') {
             $query->whereNull('read_at');
@@ -55,14 +56,14 @@ class NotificationController extends Controller
         }
 
         $notifications = $query->latest()->paginate(20)->withQueryString();
-        $unreadCount = $user->unreadNotifications()->count();
+        $unreadCount = NotificationVisibility::query($user->unreadNotifications())->count();
 
         /*
          * Keep notification type discovery database-agnostic.
          * Tests run on SQLite while production may run on MySQL, so avoid
          * MySQL-only JSON_UNQUOTE / JSON_EXTRACT expressions here.
          */
-        $types = $user->notifications()
+        $types = NotificationVisibility::query($user->notifications())
             ->reorder()
             ->get(['data'])
             ->map(function (DatabaseNotification $notification): ?string {
@@ -92,10 +93,10 @@ class NotificationController extends Controller
         ]);
 
         $afterId = trim((string) ($validated['after_id'] ?? ''));
-        $query = $user->notifications()->reorder();
+        $query = NotificationVisibility::query($user->notifications())->reorder();
 
         if ($afterId !== '') {
-            $lastSeen = $user->notifications()->whereKey($afterId)->first();
+            $lastSeen = NotificationVisibility::query($user->notifications())->whereKey($afterId)->first();
 
             if ($lastSeen) {
                 $query->where('created_at', '>', $lastSeen->created_at);
@@ -113,7 +114,7 @@ class NotificationController extends Controller
             ->limit(20)
             ->get();
 
-        $latest = $user->notifications()
+        $latest = NotificationVisibility::query($user->notifications())
             ->reorder()
             ->latest('created_at')
             ->first();
@@ -121,7 +122,7 @@ class NotificationController extends Controller
         return response()->json([
             'has_new' => $newNotifications->isNotEmpty(),
             'latest_id' => $latest?->id,
-            'unread_count' => $user->unreadNotifications()->count(),
+            'unread_count' => NotificationVisibility::query($user->unreadNotifications())->count(),
             'notifications' => $newNotifications
                 ->map(fn (DatabaseNotification $notification): array => $this->formatNotification($notification))
                 ->values(),
@@ -134,7 +135,7 @@ class NotificationController extends Controller
      */
     public function pendingOrderAlerts(Request $request): JsonResponse
     {
-        $notifications = $request->user()->unreadNotifications()
+        $notifications = NotificationVisibility::query($request->user()->unreadNotifications())
             ->latest('created_at')
             ->limit(100)
             ->get()
@@ -177,8 +178,7 @@ class NotificationController extends Controller
 
     public function markAllRead(Request $request): JsonResponse|RedirectResponse
     {
-        $request->user()
-            ->unreadNotifications()
+        NotificationVisibility::query($request->user()->unreadNotifications())
             ->update(['read_at' => now()]);
 
         if ($request->expectsJson()) {
@@ -191,14 +191,13 @@ class NotificationController extends Controller
     public function unreadCount(Request $request): JsonResponse
     {
         return response()->json([
-            'count' => $request->user()->unreadNotifications()->count(),
+            'count' => NotificationVisibility::query($request->user()->unreadNotifications())->count(),
         ]);
     }
 
     public function recent(Request $request): JsonResponse
     {
-        $items = $request->user()
-            ->unreadNotifications()
+        $items = NotificationVisibility::query($request->user()->unreadNotifications())
             ->latest()
             ->limit(8)
             ->get()

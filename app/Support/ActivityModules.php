@@ -9,7 +9,8 @@ final class ActivityModules
 {
     public static function scoped(): bool
     {
-        return (bool) SystemSetting::get('activity_modules_scoped', false);
+        return \Illuminate\Support\Facades\Schema::hasTable('system_settings')
+            && (bool) SystemSetting::get('activity_modules_scoped', false);
     }
 
     public static function allowedCodes(?string $profile = null): array
@@ -64,7 +65,7 @@ final class ActivityModules
             'reports' => 'reports', 'report-schedules' => 'reports',
             'employees' => 'employees', 'hr' => 'employees', 'payroll' => 'employees',
         ] as $prefix => $module) {
-            if ($key === $prefix || str_starts_with($key, $prefix.'.')
+            if ($key === $prefix || str_starts_with($key, $prefix.'.') || str_starts_with($key, $prefix.'-')
                 || (str_ends_with($prefix, '-') && str_starts_with($key, $prefix))
                 || (in_array($prefix, ['showroom-cake', 'showroom-sweets', 'showroom-daily', 'supplier', 'goods-receipt'], true)
                     && str_starts_with($key, $prefix))) {
@@ -72,6 +73,12 @@ final class ActivityModules
             }
         }
         return null;
+    }
+
+    public static function permissionEnabled(string $permission): bool
+    {
+        $code = self::moduleFor($permission);
+        return ! self::scoped() || ! $code || app(\App\Services\ModuleService::class)->isEnabled($code);
     }
 
     public static function reportModule(string $type): ?string

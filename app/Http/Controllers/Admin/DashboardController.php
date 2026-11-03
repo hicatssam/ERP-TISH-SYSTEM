@@ -109,7 +109,7 @@ class DashboardController extends Controller
             'revenue_labels' => [],
             'revenue_data' => [],
             'recent_notifications' => $modules->isEnabled('notifications')
-                ? $user->notifications()->latest()->limit(5)->get()
+                ? \App\Support\NotificationVisibility::query($user->notifications())->latest()->limit(5)->get()
                 : collect(),
             'payment_breakdown' => [],
 
