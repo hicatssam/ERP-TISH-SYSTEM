@@ -65,20 +65,20 @@
 <style>
 .dahab-shortcuts{margin-bottom:1.25rem;overflow:hidden}
 .dahab-shortcuts-header{display:flex;justify-content:space-between;align-items:center;gap:12px}
-.dahab-shortcuts-customize{border:0;background:transparent;color:var(--gold-deep,#a77b16);font:inherit;font-size:.78rem;font-weight:800;cursor:pointer;padding:8px;border-radius:8px}
+.dahab-shortcuts-customize{border:0;background:transparent;color:var(--gold-deep, var(--theme-accent));font:inherit;font-size:.78rem;font-weight:800;cursor:pointer;padding:8px;border-radius:8px}
 .dahab-shortcuts-customize:hover,.dahab-shortcuts-customize:focus-visible{background:rgba(180,133,35,.1);outline-offset:2px}
 .dahab-shortcuts-help{font-size:.75rem;color:var(--text-muted);margin:0 0 12px}
 .dahab-shortcuts-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:.75rem}
 .dahab-shortcut{position:relative;display:flex;min-height:100px;flex-direction:column;justify-content:center;align-items:center;gap:.55rem;padding:.8rem .45rem;color:var(--text);border:1px solid var(--border-light);border-radius:12px;text-decoration:none;background:var(--surface,#fff);transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease,opacity .2s ease}
 .dahab-shortcut:hover{transform:translateY(-4px);box-shadow:0 10px 22px rgba(30,35,43,.08);border-color:rgba(180,133,35,.5)}
-.dahab-shortcut:focus-visible{outline:2px solid var(--gold,#d4a017);outline-offset:3px}
-.dahab-shortcut-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:rgba(212,160,23,.1);color:var(--gold-deep,#a77b16);font-size:1.2rem}
+.dahab-shortcut:focus-visible{outline:2px solid var(--theme-accent);outline-offset:3px}
+.dahab-shortcut-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:var(--icon-bg, var(--gold-pale));color:var(--gold-deep, var(--theme-accent));font-size:1.2rem}
 .dahab-shortcut-icon svg{width:23px;height:23px;display:block}\n.dahab-shortcut-label{text-align:center;font-size:.78rem;font-weight:800;line-height:1.5}
-.dahab-shortcut-selected{display:none;position:absolute;inset-block-start:6px;inset-inline-start:8px;color:#168545}
+.dahab-shortcut-selected{display:none;position:absolute;inset-block-start:6px;inset-inline-start:8px;color:var(--theme-success)}
 .dahab-shortcuts.is-editing .dahab-shortcut-selected{display:block}
 .dahab-shortcuts.is-editing .dahab-shortcut.is-hidden{display:flex;opacity:.4;border-style:dashed}
 .dahab-shortcuts:not(.is-editing) .dahab-shortcut.is-hidden{display:none}
-.dahab-shortcuts.is-editing .dahab-shortcut.is-hidden .dahab-shortcut-selected{color:#9ca3af}
+.dahab-shortcuts.is-editing .dahab-shortcut.is-hidden .dahab-shortcut-selected{color:var(--theme-text-muted)}
 .dashboard-task-card,.dashboard-module-card,.stats-grid .stat-card{transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease}
 .stats-grid .stat-card:hover,.dashboard-task-card:hover,.dashboard-module-card:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(15,23,42,.08)}
 @media(max-width:1100px){.dahab-shortcuts-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}

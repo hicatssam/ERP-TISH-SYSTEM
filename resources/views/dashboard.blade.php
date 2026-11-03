@@ -32,7 +32,7 @@
 
         border-radius: 999px;
 
-        background: rgba(212, 160, 23, .11);
+        background: color-mix(in srgb, var(--theme-accent) 11%, transparent);
         color: var(--gold);
 
         font-size: .8rem;
@@ -46,9 +46,9 @@
     }
 
     .dashboard-task-card {
-        --task-accent: #d4a017;
-        --task-soft: rgba(212, 160, 23, .07);
-        --task-border: rgba(212, 160, 23, .22);
+        --task-accent: var(--theme-accent);
+        --task-soft: color-mix(in srgb, var(--theme-accent) 7%, var(--theme-surface));
+        --task-border: color-mix(in srgb, var(--theme-accent) 22%, var(--theme-border));
 
         position: relative;
 
@@ -104,27 +104,27 @@
     }
 
     .task-tone-gold {
-        --task-accent: #d4a017;
-        --task-soft: rgba(212, 160, 23, .07);
-        --task-border: rgba(212, 160, 23, .22);
+        --task-accent: var(--theme-accent);
+        --task-soft: color-mix(in srgb, var(--theme-accent) 7%, var(--theme-surface));
+        --task-border: color-mix(in srgb, var(--theme-accent) 22%, var(--theme-border));
     }
 
     .task-tone-blue {
-        --task-accent: #2563eb;
-        --task-soft: rgba(37, 99, 235, .06);
-        --task-border: rgba(37, 99, 235, .18);
+        --task-accent: var(--theme-info);
+        --task-soft: color-mix(in srgb, var(--theme-info) 6%, var(--theme-surface));
+        --task-border: color-mix(in srgb, var(--theme-info) 18%, var(--theme-border));
     }
 
     .task-tone-green {
-        --task-accent: #16a34a;
-        --task-soft: rgba(22, 163, 74, .06);
-        --task-border: rgba(22, 163, 74, .18);
+        --task-accent: var(--theme-success);
+        --task-soft: color-mix(in srgb, var(--theme-success) 6%, var(--theme-surface));
+        --task-border: color-mix(in srgb, var(--theme-success) 18%, var(--theme-border));
     }
 
     .task-tone-red {
-        --task-accent: #dc2626;
-        --task-soft: rgba(220, 38, 38, .055);
-        --task-border: rgba(220, 38, 38, .18);
+        --task-accent: var(--theme-danger);
+        --task-soft: color-mix(in srgb, var(--theme-danger) 6%, var(--theme-surface));
+        --task-border: color-mix(in srgb, var(--theme-danger) 18%, var(--theme-border));
     }
 
     .dashboard-task-head {
@@ -256,7 +256,7 @@
 
     .dashboard-module-card:hover {
         transform: translateY(-2px);
-        border-color: rgba(212, 160, 23, .42);
+        border-color: color-mix(in srgb, var(--theme-accent) 42%, var(--theme-border));
         box-shadow: 0 8px 22px rgba(15, 23, 42, .055);
     }
 
@@ -281,15 +281,15 @@
     }
 
     .dashboard-module-card.is-danger .dashboard-module-card-value {
-        color: #dc2626;
+        color: var(--theme-danger);
     }
 
     .dashboard-module-card.is-success .dashboard-module-card-value {
-        color: #16a34a;
+        color: var(--theme-success);
     }
 
     .dashboard-module-card.is-info .dashboard-module-card-value {
-        color: #2563eb;
+        color: var(--theme-info);
     }
 
     @media (max-width: 1100px) {
