@@ -56,7 +56,7 @@ $brandName =
         ?: $brandLogoUrl;
 
     $brandFaviconUrl = \App\Models\SystemSetting::assetUrl('brand_favicon');
-    $browserIconUrl = $brandFaviconUrl ?: $brandLogoUrl;
+    $browserIconUrl = \App\Models\SystemSetting::browserIconUrl();
 
     $pwaBrandVersion = substr(
         sha1(implode('|', [

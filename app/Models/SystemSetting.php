@@ -59,6 +59,28 @@ class SystemSetting extends Model
             ?? PublicImageUrl::url($fallback);
     }
 
+    /**
+     * Use a distinct URL whenever the selected icon bytes change, including
+     * replacements at the same stored path. Keep explicit favicons preferred.
+     */
+    public static function browserIconUrl(): ?string
+    {
+        foreach (['brand_favicon', 'brand_logo', 'brand_logo_small'] as $key) {
+            $path = static::get($key);
+            $url = PublicImageUrl::url(is_string($path) ? $path : null);
+            if (! $url) {
+                continue;
+            }
+            $local = PublicImageUrl::localPath(is_string($path) ? $path : null);
+            if (! $local) {
+                return $url;
+            }
+            $version = substr(hash('sha256', (string) $path.'|'.hash_file('sha256', $local)), 0, 16);
+            return $url.(str_contains($url, '?') ? '&' : '?').'brand_v='.$version;
+        }
+        return null;
+    }
+
     public function typedValue(): mixed
     {
         return match ($this->type) {
