@@ -607,6 +607,8 @@ trait ResolvesCustomerMenuBranding
         $text = mb_strtolower(trim((string) $text));
 
         return match (true) {
+            str_contains($text, 'ميلك'), str_contains($text, 'milkshake'), str_contains($text, 'صوص'), str_contains($text, 'sauce') => 'drink',
+            str_contains($text, 'مقبلات'), str_contains($text, 'appetizer') => 'salad',
             str_contains($text, 'برغر'), str_contains($text, 'برجر'), str_contains($text, 'burger') => 'burger',
             str_contains($text, 'بيتزا'), str_contains($text, 'pizza') => 'pizza',
             str_contains($text, 'قهوة'), str_contains($text, 'coffee'), str_contains($text, 'كافيه') => 'coffee',
