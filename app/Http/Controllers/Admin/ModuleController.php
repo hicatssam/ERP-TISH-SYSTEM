@@ -31,7 +31,11 @@ class ModuleController extends Controller
     {
         $this->ensureAdmin($request);
 
-        $query = Module::query()
+        $allowed = \App\Support\ActivityModules::allowedCodes();
+        $query = Module::query()->when(
+            \App\Support\ActivityModules::scoped(),
+            fn ($query) => $query->whereIn('code', $allowed)
+        )
             ->whereNotIn('code', self::HIDDEN_MODULE_CODES)
             ->with([
                 'dependencies' => fn ($query) =>
@@ -71,6 +75,9 @@ class ModuleController extends Controller
                         'modules.code',
                         self::HIDDEN_MODULE_CODES
                     )
+                )
+                ->when(\App\Support\ActivityModules::scoped(), fn ($query) =>
+                    $query->whereDoesntHave('modules', fn ($q) => $q->whereNotIn('modules.code', $allowed))
                 )
                 ->with([
                     'businessProfile',

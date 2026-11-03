@@ -61,6 +61,11 @@ class AppServiceProvider extends ServiceProvider
         Schema::defaultStringLength(191);
         // Admin gate — bypasses all permission checks
         Gate::before(function (User $user, string $ability) {
+            if (\App\Support\ActivityModules::scoped()
+                && ($code = \App\Support\ActivityModules::moduleFor($ability))
+                && ! app(\App\Services\ModuleService::class)->isEnabled($code)) {
+                return false;
+            }
             if ($user->isAdmin()) {
                 return true;
             }

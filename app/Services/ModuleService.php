@@ -40,7 +40,7 @@ class ModuleService
 
     public function enabled(): Collection
     {
-        return $this->all()->filter->is_active->values();
+        return $this->all()->filter(fn (Module $module) => $this->isEnabled($module->code))->values();
     }
 
     public function core(): Collection
@@ -79,6 +79,28 @@ class ModuleService
             return true;
         }
 
+        if (\App\Support\ActivityModules::scoped()) {
+            $allowed = \App\Support\ActivityModules::allowedCodes();
+            $visited = [];
+            $check = function (string $code) use (&$check, &$visited, $allowed): bool {
+                if (isset($visited[$code])) {
+                    return true;
+                }
+                $visited[$code] = true;
+                $module = $this->get($code);
+                if (! in_array($code, $allowed, true) || ! $module?->is_active || ! $module->isImplemented()) {
+                    return false;
+                }
+                foreach ($module->dependencies as $dependency) {
+                    if (! $check($dependency->code)) {
+                        return false;
+                    }
+                }
+                return true;
+            };
+            return $check($moduleCode);
+        }
+
         return (bool) $this->get($moduleCode)?->is_active;
     }
 
@@ -104,6 +126,11 @@ class ModuleService
         $module = $module instanceof Module
             ? $module
             : Module::query()->where('code', $module)->firstOrFail();
+
+        if ($enabled && \App\Support\ActivityModules::scoped()
+            && ! in_array($module->code, \App\Support\ActivityModules::allowedCodes(), true)) {
+            throw ValidationException::withMessages(['module' => 'هذه الوحدة لا تتبع النشاط الحالي.']);
+        }
 
         if ($module->is_active === $enabled) {
             return $module;
@@ -201,6 +228,73 @@ class ModuleService
         return $result;
     }
 
+    public function availableForProfile(string $profile): Collection
+    {
+        $allowed = \App\Support\ActivityModules::allowedCodes($profile);
+        return $this->all()->filter(fn (Module $module) =>
+            in_array($module->code, $allowed, true) && $module->isImplemented()
+        )->values();
+    }
+
+    public function selection(string $profile, array $selected): array
+    {
+        $available = $this->availableForProfile($profile)->keyBy('code');
+        $targets = [];
+        $visit = function (string $code) use (&$visit, &$targets, $available): void {
+            if (isset($targets[$code])) {
+                return;
+            }
+            $module = $available->get($code);
+            if (! $module) {
+                throw ValidationException::withMessages([
+                    'selected_codes' => 'الوحدة أو أحد متطلباتها لا يتبع النشاط المحدد: '.$code,
+                ]);
+            }
+            $targets[$code] = true;
+            foreach ($module->dependencies as $dependency) {
+                $visit($dependency->code);
+            }
+        };
+        foreach (array_unique(array_merge(
+            \App\Support\ActivityModules::requiredCodes($profile), $selected
+        )) as $code) {
+            $visit($code);
+        }
+        return array_keys($targets);
+    }
+
+    public function applySelection(string $profile, array $selected, User $actor): array
+    {
+        $targets = $this->selection($profile, $selected);
+        $result = ['enabled' => [], 'disabled' => [], 'skipped' => [], 'blocked' => []];
+        foreach ($targets as $code) {
+            $sub = $this->enableWithDependencies($this->get($code), $actor);
+            $result['enabled'] = array_values(array_unique(array_merge($result['enabled'], $sub['enabled'])));
+        }
+        // Disable dependents before dependencies, independent of display order.
+        $pending = Module::query()->where('is_active', true)
+            ->whereNotIn('code', $targets)->get()->keyBy('code');
+        while ($pending->isNotEmpty()) {
+            $progress = false;
+            foreach ($pending as $code => $module) {
+                if ($module->dependents()->where('is_active', true)->exists()) {
+                    continue;
+                }
+                $this->setEnabled($module, false, $actor);
+                $result['disabled'][] = $code;
+                $pending->forget($code);
+                $progress = true;
+            }
+            if (! $progress) {
+                throw ValidationException::withMessages([
+                    'selected_codes' => 'تعذر إيقاف الوحدات غير المختارة بسبب اعتمادياتها. لم يتم تطبيق الإعداد.',
+                ]);
+            }
+        }
+        $this->invalidate();
+        return $result;
+    }
+
     public function invalidate(): void
     {
         Cache::forget(self::CACHE_KEY);
@@ -217,6 +311,11 @@ class ModuleService
         }
 
         $visited[$module->code] = true;
+
+        if (\App\Support\ActivityModules::scoped()
+            && ! in_array($module->code, \App\Support\ActivityModules::allowedCodes(), true)) {
+            throw ValidationException::withMessages(['module' => 'هذه الوحدة لا تتبع النشاط الحالي.']);
+        }
 
         if (! $module->isImplemented()) {
             $result['skipped'][] = $module->code;
