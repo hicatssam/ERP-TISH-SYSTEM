@@ -1,0 +1,43 @@
+/* Shared client identity. No customer-specific assets or fixed brand colors. */
+.crisp-customer-menu .icon-btn,.crisp-customer-menu .filter-square,.crisp-customer-menu .page-back,
+.crisp-customer-menu .fav,.crisp-customer-menu .reference-section-icon{color:var(--primary)}
+.crisp-customer-menu .cat-visual{color:var(--primary);background:color-mix(in srgb,var(--primary) 9%,var(--surface))}
+.crisp-customer-menu .cat.active{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}
+.crisp-customer-menu .cat.active .cat-visual{background:transparent;color:var(--on-primary)}
+.crisp-customer-menu .product{background:linear-gradient(145deg,var(--surface),color-mix(in srgb,var(--primary) 5%,var(--surface)));border-color:color-mix(in srgb,var(--primary) 14%,var(--surface))}
+.crisp-customer-menu .bottom-nav{background:color-mix(in srgb,var(--surface) 96%,transparent);border-color:color-mix(in srgb,var(--primary) 14%,var(--surface))}
+.crisp-customer-menu .bottom-nav a.active{color:var(--primary)}
+.crisp-customer-menu :is(.icon-btn,.filter-square,.page-back,.fav,.cat,.details,.reference-see-all){transition:background-color .2s,border-color .2s,box-shadow .2s,transform .2s}
+.crisp-customer-menu :is(button,a):focus-visible{outline:3px solid var(--primary);outline-offset:4px}
+@media(hover:hover){
+ .crisp-customer-menu :is(.icon-btn,.filter-square,.page-back,.fav,.cat:not(.active),.reference-see-all):hover{background:color-mix(in srgb,var(--primary) 10%,var(--surface));border-color:color-mix(in srgb,var(--primary) 45%,var(--surface));box-shadow:0 6px 18px color-mix(in srgb,var(--primary) 12%,transparent)}
+ .crisp-customer-menu .details:not(:disabled):hover{box-shadow:0 6px 18px color-mix(in srgb,var(--primary) 25%,transparent);transform:translateY(-1px)}
+}
+body.reference-home .reference-masthead{position:relative;isolation:isolate;padding:0 14px 8px;margin:0 -14px;overflow:hidden;border-radius:0 0 24px 24px}
+body.reference-home .reference-masthead.is-illustrated{min-height:var(--masthead-height);display:flex;flex-direction:column;justify-content:space-between}
+body.reference-home .reference-masthead-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-3;pointer-events:none}
+body.reference-home .reference-masthead.is-illustrated::before{content:"";position:absolute;inset:0;z-index:-2;background:color-mix(in srgb,var(--bg) calc(var(--masthead-overlay)*100%),transparent);pointer-events:none}
+body.reference-home .reference-masthead.is-illustrated::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(to bottom,transparent 40%,color-mix(in srgb,var(--bg) 50%,transparent) 70%,var(--bg) 100%);pointer-events:none}
+body.reference-home .reference-header-row{gap:12px}
+body.reference-home .reference-brand{max-width:65%}
+body.reference-home .reference-branch{padding:12px 14px;border-radius:18px;background:color-mix(in srgb,var(--surface) 94%,transparent);color:var(--text);border:1px solid var(--line)}
+body.reference-home .reference-client-identity{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px;padding:24px 16px}
+body.reference-home .reference-client-logo{width:min(250px,65%);height:100px;object-fit:contain}
+body.reference-home .reference-client-name{font-size:clamp(2rem,8vw,3.3rem);line-height:1.2;color:var(--primary)}
+body.reference-home .reference-client-tagline{margin:0;max-width:95%;padding:7px 16px;border-radius:999px;color:var(--text);background:color-mix(in srgb,var(--surface) 90%,transparent);font-weight:800;line-height:1.6}
+body.reference-home .reference-greeting{margin:0 0 14px;text-align:center}
+body.reference-home .reference-greeting h1{font-size:1.15rem;letter-spacing:normal;line-height:1.5}
+body.reference-home .reference-greeting p{margin-top:4px;font-size:.95rem;color:var(--text)}
+body.reference-home .reference-masthead .tools{position:relative;margin-bottom:4px}
+body.reference-home .cat.active{background:var(--primary);color:var(--on-primary)}
+body.reference-home .cat.active .cat-visual{background:transparent;color:var(--on-primary)}
+body.reference-home .reference-section-icon{color:var(--primary)}
+@media(max-width:700px){
+ body.reference-home .reference-actions .icon-btn{width:44px;height:44px;border-radius:14px;font-size:1.15rem}
+ body.reference-home .reference-branch{font-size:.78rem;padding:10px;max-width:100%}
+ body.reference-home .reference-client-identity{padding:18px 10px}
+ body.reference-home .reference-client-logo{height:90px}
+  body.reference-home .reference-greeting h1{font-size:1rem}
+ body.reference-home .reference-greeting p{font-size:.82rem}
+}
+@media(prefers-reduced-motion:reduce){.crisp-customer-menu :is(.icon-btn,.filter-square,.page-back,.fav,.cat,.details,.reference-see-all){transition:none!important}}

@@ -67,6 +67,8 @@ class SettingsController extends Controller
         'customer_display_show_clock',
 
         // Customer QR menu
+        'customer_menu_use_client_colors','customer_menu_header_height','customer_menu_header_overlay',
+        'customer_menu_header_position','customer_menu_category_visual',
         'customer_menu_primary','customer_menu_accent','customer_menu_background','customer_menu_surface',
         'customer_menu_text','customer_menu_muted','customer_menu_radius','customer_menu_columns',
         'customer_menu_hero_height','customer_menu_show_hero',
@@ -112,7 +114,7 @@ class SettingsController extends Controller
 
         // Customer Order Display
         'customer_display_background_image',
-        'customer_menu_cover','customer_menu_cover_image','customer_menu_intro_image',
+        'customer_menu_cover','customer_menu_cover_image','customer_menu_intro_image','customer_menu_header_image',
     ];
 
     private const GROUP_ORDER = [
@@ -415,6 +417,12 @@ class SettingsController extends Controller
             'customer_menu_columns' => ['nullable', 'integer', 'min:2', 'max:5'],
             'customer_menu_hero_height' => ['nullable', 'integer', 'min:220', 'max:720'],
             'customer_menu_show_hero' => ['nullable', 'boolean'],
+            'customer_menu_use_client_colors' => ['nullable', 'boolean'],
+            'customer_menu_header_height' => ['nullable', 'integer', 'min:240', 'max:600'],
+            'customer_menu_header_overlay' => ['nullable', 'integer', 'min:0', 'max:85'],
+            'customer_menu_header_position' => ['nullable', Rule::in(['center', 'top', 'bottom', 'left', 'right'])],
+            'customer_menu_category_visual' => ['nullable', Rule::in(['icons', 'images'])],
+            'customer_menu_header_image' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:12288'],
             'customer_menu_cover' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:12288'],
             'customer_menu_cover_image' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:12288'],
             'customer_menu_intro_image' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:12288'],

@@ -234,20 +234,31 @@
 <main class="menu-area">
  <div class="shell">
 
+  <div class="reference-masthead {{ !empty($theme['header_image']) ? 'is-illustrated' : '' }}"
+       style="--masthead-height:{{ $theme['header_height'] ?? 340 }}px;--masthead-overlay:{{ ($theme['header_overlay'] ?? 15) / 100 }}">
+   @if(!empty($theme['header_image']))
+    <img class="reference-masthead-image" src="{{ $theme['header_image'] }}" alt="" fetchpriority="high"
+         style="object-position:{{ $theme['header_position'] ?? 'center' }}">
+   @endif
   <header class="reference-header">
    <div class="reference-header-row">
     <div class="reference-brand">
-     @if($branding['logo'] ?? null)
-      <img class="reference-logo" src="{{ $branding['logo'] }}" alt="{{ $branding['name'] }}" onerror="this.outerHTML='<span class=&quot;reference-logo-fallback&quot;>{{ mb_substr($branding['name'] ?? 'د', 0, 1) }}</span>'">
-     @else
-      <span class="reference-logo-fallback">{{ mb_substr($branding['name'] ?? 'د', 0, 1) }}</span>
-     @endif
      <a class="reference-branch" href="{{ route('customer-menu.index', ['choose' => 1]) }}" aria-label="تغيير الفرع">{{ $location->name }} <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></a>
     </div>
     <div class="reference-actions">
      <a class="icon-btn" href="{{ route('customer-menu.cart', $location->code) }}" aria-label="السلة"><i class="fa-solid fa-bag-shopping"></i><span class="badge" id="cartBadgeTop">0</span></a>
      <a class="icon-btn" href="{{ route('customer-menu.favorites', $location->code) }}" aria-label="المفضلة"><i class="fa-regular fa-heart"></i><span class="badge" id="favBadgeTop">0</span></a>
     </div>
+   </div>
+   <div class="reference-client-identity">
+    @if($branding['logo'] ?? null)
+     <img class="reference-client-logo" src="{{ $branding['logo'] }}" alt="{{ $branding['name'] }}">
+    @else
+     <strong class="reference-client-name">{{ $branding['name'] }}</strong>
+    @endif
+    @if(!empty($branding['tagline']))
+     <p class="reference-client-tagline">{{ $branding['tagline'] }}</p>
+    @endif
    </div>
    <div class="reference-greeting">
     <h1>{{ $homeTitle }} <span aria-hidden="true">👋</span></h1>
@@ -260,6 +271,44 @@
    <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input id="searchInput" type="search" placeholder="{{ \App\Support\CustomerMenuCopy::searchPlaceholder() }}" autocomplete="off"></div>
    <button class="filter-square" type="button" id="openFullMenu" aria-label="فلترة الأصناف"><i class="fa-solid fa-sliders"></i></button>
   </div>
+  @endif
+
+  </div>{{-- /reference-masthead --}}
+
+  @if($showCategories)
+  <section class="reference-section" aria-labelledby="categoriesTitle">
+   <div class="reference-section-head">
+    <div>
+     <h2 id="categoriesTitle">التصنيفات</h2>
+     <p>اختر اللي على بالك</p>
+    </div>
+    <button class="reference-see-all" type="button" data-show-all>عرض الكل <i class="fa-solid fa-chevron-left"></i></button>
+   </div>
+   <div class="categories" id="categories">
+    <button class="cat active" type="button" data-cat="all">
+     <span class="cat-visual" style="--category-color:var(--primary)"><i class="fa-solid fa-utensils"></i></span>
+     <b>الكل</b>
+    </button>
+    @foreach(($categories ?? []) as $category)
+     @php
+      $categoryColor = preg_match('/^#[0-9A-Fa-f]{6}$/', (string) ($category['icon_color'] ?? ''))
+          ? $category['icon_color']
+          : '#B0003A';
+      $iconClass = $categoryIconClasses[$category['icon_key'] ?? 'sparkles'] ?? 'fa-wand-magic-sparkles';
+     @endphp
+     <button class="cat" type="button" data-cat="{{ $category['id'] }}" data-cat-name="{{ $category['name'] }}">
+      <span class="cat-visual" style="--category-color:{{ $categoryColor }}">
+       @if(($theme['category_visual'] ?? 'icons') === 'images' && !empty($category['image']))
+        <img src="{{ $category['image'] }}" alt="" loading="lazy" onerror="this.outerHTML='<i class=&quot;fa-solid {{ $iconClass }}&quot;></i>'">
+       @else
+        <i class="fa-solid {{ $iconClass }}"></i>
+       @endif
+      </span>
+      <b>{{ $category['name'] }}</b>
+     </button>
+    @endforeach
+   </div>
+  </section>
   @endif
 
   @if(($theme['show_hero'] ?? true) && ($banners->isNotEmpty() || $coverImage))
@@ -307,41 +356,6 @@
   </section>
   @endif
 
-  @if($showCategories)
-  <section class="reference-section" aria-labelledby="categoriesTitle">
-   <div class="reference-section-head">
-    <div>
-     <h2 id="categoriesTitle">التصنيفات</h2>
-     <p>اختر اللي على بالك</p>
-    </div>
-    <button class="reference-see-all" type="button" data-show-all>عرض الكل <i class="fa-solid fa-chevron-left"></i></button>
-   </div>
-   <div class="categories" id="categories">
-    <button class="cat active" type="button" data-cat="all">
-     <span class="cat-visual" style="--category-color:var(--primary)"><i class="fa-solid fa-utensils"></i></span>
-     <b>الكل</b>
-    </button>
-    @foreach(($categories ?? []) as $category)
-     @php
-      $categoryColor = preg_match('/^#[0-9A-Fa-f]{6}$/', (string) ($category['icon_color'] ?? ''))
-          ? $category['icon_color']
-          : '#B0003A';
-      $iconClass = $categoryIconClasses[$category['icon_key'] ?? 'sparkles'] ?? 'fa-wand-magic-sparkles';
-     @endphp
-     <button class="cat" type="button" data-cat="{{ $category['id'] }}" data-cat-name="{{ $category['name'] }}">
-      <span class="cat-visual" style="--category-color:{{ $categoryColor }}">
-       @if(!empty($category['image']))
-        <img src="{{ $category['image'] }}" alt="" loading="lazy" onerror="this.outerHTML='<i class=&quot;fa-solid {{ $iconClass }}&quot;></i>'">
-       @else
-        <i class="fa-solid {{ $iconClass }}"></i>
-       @endif
-      </span>
-      <b>{{ $category['name'] }}</b>
-     </button>
-    @endforeach
-   </div>
-  </section>
-  @endif
 
   @if($showFeatured)
   <section class="reference-section" id="featuredSection" aria-labelledby="featuredTitle">

@@ -81,6 +81,27 @@ trait ResolvesCustomerMenuBranding
         $text = (string) $setting('customer_menu_text_color', 'customer_menu_text', '#17151A');
         $muted = (string) $setting('customer_menu_muted_color', 'customer_menu_muted', '#858087');
 
+        // Follow the client's identity across every menu page; legacy menu colors
+        // remain the fallback when a client color has not been configured.
+        $useClientColors = (bool) SystemSetting::get('customer_menu_use_client_colors', true);
+        $clientColor = static function (string $key, string $fallback) use ($useClientColors): string {
+            $value = $useClientColors ? SystemSetting::get($key) : null;
+            return is_string($value) && preg_match('/^#[0-9a-fA-F]{6}$/', $value) ? $value : $fallback;
+        };
+        $primary = $clientColor('theme_primary', $primary);
+        $accent = $clientColor('theme_accent', $accent);
+        $background = $clientColor('theme_background', $background);
+        $surface = $clientColor('theme_surface', $surface);
+        $text = $clientColor('theme_text', $text);
+        $muted = $clientColor('theme_text_muted', $muted);
+
+        $rgb = sscanf($primary, '#%02x%02x%02x');
+        $channels = array_map(static function ($channel): float {
+            $channel = ((int) $channel) / 255;
+            return $channel <= .04045 ? $channel / 12.92 : (($channel + .055) / 1.055) ** 2.4;
+        }, $rgb ?: [139, 18, 56]);
+        $luminance = .2126 * ($channels[0] ?? 0) + .7152 * ($channels[1] ?? 0) + .0722 * ($channels[2] ?? 0);
+
         $radius = max(0, min(40, (int) SystemSetting::get('customer_menu_radius', 22)));
         $columns = max(2, min(5, (int) SystemSetting::get('customer_menu_columns', 3)));
         $heroHeight = max(220, min(720, (int) SystemSetting::get('customer_menu_hero_height', 430)));
@@ -96,13 +117,21 @@ trait ResolvesCustomerMenuBranding
         };
 
         return [
+            'use_client_colors' => $useClientColors,
+            'header_image' => SystemSetting::assetUrl('customer_menu_header_image'),
+            'header_height' => max(240, min(600, (int) SystemSetting::get('customer_menu_header_height', 340))),
+            'header_overlay' => max(0, min(85, (int) SystemSetting::get('customer_menu_header_overlay', 15))),
+            'header_position' => in_array(SystemSetting::get('customer_menu_header_position', 'center'), ['center', 'top', 'bottom', 'left', 'right'], true)
+                ? SystemSetting::get('customer_menu_header_position', 'center') : 'center',
+            'category_visual' => SystemSetting::get('customer_menu_category_visual', 'icons'),
             'primary' => $primary,
+            'on_primary' => $luminance > .179 ? '#000000' : '#FFFFFF',
             'accent' => $accent,
             'background' => $background,
             'surface' => $surface,
             'text' => $text,
             'muted' => $muted,
-            'border' => (string) SystemSetting::get('customer_menu_border_color', '#EDE8E6'),
+            'border' => $clientColor('theme_border', (string) SystemSetting::get('customer_menu_border_color', '#EDE8E6')),
             'radius' => $radius,
             'columns' => $columns,
             'hero_height' => $heroHeight,
@@ -578,6 +607,8 @@ trait ResolvesCustomerMenuBranding
         $text = mb_strtolower(trim((string) $text));
 
         return match (true) {
+            str_contains($text, 'ميلك'), str_contains($text, 'milkshake'), str_contains($text, 'صوص'), str_contains($text, 'sauce') => 'drink',
+            str_contains($text, 'مقبلات'), str_contains($text, 'appetizer') => 'salad',
             str_contains($text, 'برغر'), str_contains($text, 'برجر'), str_contains($text, 'burger') => 'burger',
             str_contains($text, 'بيتزا'), str_contains($text, 'pizza') => 'pizza',
             str_contains($text, 'قهوة'), str_contains($text, 'coffee'), str_contains($text, 'كافيه') => 'coffee',

@@ -22,7 +22,7 @@
  --line:{{ $theme['border'] ?? 'color-mix(in srgb, var(--text) 9%, transparent)' }};
  --shadow:0 14px 34px color-mix(in srgb, var(--text) 8%, transparent);
  --safe-bottom:env(safe-area-inset-bottom,0px);
- --on-primary:#ffffff;
+ --on-primary:{{ $theme['on_primary'] ?? '#FFFFFF' }};
 }
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;font-family:{{ $theme['font_family'] ?? 'Tajawal' }},Tajawal,sans-serif;background:var(--bg);color:var(--text)}
@@ -386,3 +386,5 @@ body.crisp-customer-menu > .app{position:relative;z-index:1}
 @media (max-width:420px){.cm-language-switch {padding:6px 9px;font-size:11px}}
 </style>
 <script src="{{ asset('assets/js/customer-menu/i18n.js') }}?v=2"></script>
+
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/client-identity.css') }}?v=1">
