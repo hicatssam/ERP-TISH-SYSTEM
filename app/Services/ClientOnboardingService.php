@@ -110,7 +110,7 @@ class ClientOnboardingService
             2 => $this->saveBusinessDataStep($run, $payload),
             3 => $run->branding_data = array_merge(
                 $run->branding_data ?? [],
-                $payload,
+                array_diff_key($payload, array_flip(self::FILE_SETTING_KEYS)),
                 $this->stageBrandingFiles($run, $files)
             ),
             4 => $run->operational_data = $payload,

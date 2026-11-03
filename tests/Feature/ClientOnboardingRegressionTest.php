@@ -69,7 +69,7 @@ class ClientOnboardingRegressionTest extends TestCase
         SystemSetting::set('brand_logo', 'storage/branding/previous.png');
         SystemSetting::set('print_logo', 'storage/branding/previous-print.png');
         SystemSetting::set('brand_stamp', 'storage/branding/stamp.png');
-        $run = $this->readyRun([], ['brand_logo' => UploadedFile::fake()->image('client.png')]);
+        $run = $this->readyRun(['brand_stamp' => null], ['brand_logo' => UploadedFile::fake()->image('client.png')]);
         $this->onboarding->apply($run, $this->actor);
         $this->assertSame(SystemSetting::get('brand_logo'), SystemSetting::get('print_logo'));
         $this->assertNotSame('storage/branding/previous.png', SystemSetting::get('brand_logo'));
