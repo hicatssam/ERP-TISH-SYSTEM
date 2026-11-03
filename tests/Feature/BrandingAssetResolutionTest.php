@@ -49,7 +49,8 @@ class BrandingAssetResolutionTest extends TestCase
         $admin = $this->admin();
         $this->image('branding/logo-one.png');
         SystemSetting::set('brand_logo', 'storage/branding/logo-one.png');
-        SystemSetting::set('brand_logo_small', '');
+        $this->image('branding/older-small.png');
+        SystemSetting::set('brand_logo_small', 'storage/branding/older-small.png');
         SystemSetting::set('brand_favicon', '');
         $this->actingAs($admin)->get(route('profile.show'))->assertOk()
             ->assertSee('<link rel="icon" href="'.PublicImageUrl::url('storage/branding/logo-one.png').'">', false);

@@ -164,8 +164,8 @@ class PwaController extends Controller
     {
         $candidates = [
             SystemSetting::get('brand_favicon'),
-            SystemSetting::get('brand_logo_small'),
             SystemSetting::get('brand_logo'),
+            SystemSetting::get('brand_logo_small'),
             'assets/images/logo.png',
         ];
 

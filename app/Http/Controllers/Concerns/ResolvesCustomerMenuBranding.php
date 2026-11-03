@@ -39,7 +39,7 @@ trait ResolvesCustomerMenuBranding
 
         $logo = SystemSetting::assetUrl('brand_logo');
         $logoSmall = SystemSetting::assetUrl('brand_logo_small');
-        $favicon = SystemSetting::assetUrl('brand_favicon') ?: $logoSmall ?: $logo;
+        $favicon = SystemSetting::assetUrl('brand_favicon') ?: $logo ?: $logoSmall;
 
         // Safe fallbacks: if only one logo is configured, use it in both places.
         $logo = $logo ?: $logoSmall;
