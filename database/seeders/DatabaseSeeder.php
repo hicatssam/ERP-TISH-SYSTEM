@@ -2135,14 +2135,14 @@ SVG;
             }
         }
 
-        SystemSetting::query()->updateOrCreate(
+        SystemSetting::query()->firstOrCreate(
             ['key' => 'business_profile_code'],
             [
                 'value' => 'bakery_sweets', 'type' => 'string', 'group' => 'business',
                 'label' => 'نوع النشاط', 'description' => 'ملف النشاط الحالي للنظام.',
             ]
         );
-        SystemSetting::query()->updateOrCreate(
+        SystemSetting::query()->firstOrCreate(
             ['key' => 'client_onboarding_completed'],
             [
                 'value' => '0', 'type' => 'boolean', 'group' => 'onboarding',
