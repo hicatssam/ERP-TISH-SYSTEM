@@ -189,7 +189,7 @@ class BurgerRestaurantDemoSeeder extends Seeder
             'OIL' => ['زيت قلي', 'liter', 9], 'SEASONING' => ['توابل وملح', 'kg', 12],
             'FLOUR' => ['طحين تغليف', 'kg', 3], 'CRUMBS' => ['بقسماط', 'kg', 7],
             'NACHOS' => ['رقائق ناتشوز', 'kg', 16], 'CABBAGE' => ['ملفوف', 'kg', 3],
-            'CARROT' => ['جزر', 'kg', 4], 'MAYO' => ['مايونيز', 'kg', 10],
+            'CARROT' => ['جزر', 'kg', 4], 'MAYO' => ['مايونيز', 'kg', 10], 'GARLIC' => ['صوص ثوم', 'kg', 12],
             'COLA' => ['كولا خام للمشروب', 'liter', 3], 'COLA-ZERO' => ['كولا زيرو خام للمشروب', 'liter', 3],
             'LEMON-SODA' => ['مشروب ليمون غازي', 'liter', 3], 'ORANGE-SODA' => ['مشروب برتقال غازي', 'liter', 3],
             'WATER' => ['مياه للشرب', 'liter', .5], 'SPARKLING' => ['مياه غازية خام', 'liter', 2],
@@ -267,6 +267,9 @@ class BurgerRestaurantDemoSeeder extends Seeder
                 default => ['CHICKEN' => .18, 'CRUMBS' => .04, 'OIL' => .02],
             };
         }
+        if ($group === 'sauces') {
+            return [match ($code) { 'BURGER' => 'SAUCE', 'GARLIC' => 'GARLIC', default => $code } => .05];
+        }
         if ($group === 'drinks') {
             return match ($code) {
                 'ORANGE' => ['ORANGE' => .4], 'LEMON-MINT' => ['LEMON' => .12, 'MINT' => .01, 'WATER' => .25],
@@ -338,7 +341,7 @@ class BurgerRestaurantDemoSeeder extends Seeder
                     'name' => $name, 'is_active' => true, 'is_default' => $code === 'GRILL',
                     'target_minutes' => $code === 'BAR' ? 5 : 15, 'created_by' => $admin->id,
                 ]);
-                $groups = match ($code) { 'BAR' => ['drinks', 'shakes'], 'FRYER' => ['fries', 'appetizers'], default => ['beef', 'chicken', 'vegetarian'] };
+                $groups = match ($code) { 'BAR' => ['drinks', 'shakes'], 'FRYER' => ['fries', 'appetizers'], default => ['beef', 'chicken', 'vegetarian', 'sauces'] };
                 foreach ($groups as $group) {
                     $category = Category::where('slug', 'burger-'.$group)->firstOrFail();
                     DB::table('kitchen_category_routes')->updateOrInsert([
@@ -382,6 +385,7 @@ class BurgerRestaurantDemoSeeder extends Seeder
                     ['product_id' => $products[($number - 1) % $products->count()]->id, 'quantity' => ($number % 3) + 1],
                     ['product_id' => Product::where('sku', 'BRG-FRIES-MEDIUM')->value('id'), 'quantity' => 1],
                     ['product_id' => Product::where('sku', 'BRG-DRINKS-COLA')->value('id'), 'quantity' => 1],
+                    ['product_id' => Product::where('sku', 'BRG-SAUCES-RANCH')->value('id'), 'quantity' => 1],
                 ];
                 $payload = [
                     'location_id' => $branch->id, 'customer_id' => $customer->id,

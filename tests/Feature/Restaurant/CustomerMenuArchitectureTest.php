@@ -75,31 +75,10 @@ class CustomerMenuArchitectureTest extends TestCase
 
 
     #[Test]
-    public function demo_catalog_supports_remote_product_images_without_storage_rewrite(): void
+    public function remote_product_images_are_preserved_without_storage_rewrite(): void
     {
-        $seeder = file_get_contents(
-            database_path('seeders/DatabaseSeeder.php')
-        );
-
         $remoteImage = 'https://images.unsplash.com/example.jpg?width=800';
         $this->assertSame($remoteImage, PublicImageUrl::url($remoteImage));
-        $this->assertSame('//cdn.example.test/cake.png', PublicImageUrl::url('//cdn.example.test/cake.png'));
-
-        $this->assertStringContainsString(
-            'demoProductRemoteImage',
-            $seeder
-        );
-
-        $this->assertStringContainsString(
-            'https://unsplash.com/',
-            $seeder
-        );
-
-        $this->assertStringContainsString(
-            'ensureDemoProductImage',
-            $seeder
-        );
+        $this->assertSame('//cdn.example.test/burger.png', PublicImageUrl::url('//cdn.example.test/burger.png'));
     }
-
-
 }

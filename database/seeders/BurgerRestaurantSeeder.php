@@ -221,6 +221,19 @@ class BurgerRestaurantSeeder extends Seeder
                     ['SALAD', 'Garden Salad', 'سلطة خضراء', 10],
                 ],
             ],
+            'sauces' => [
+                'name' => 'Sauces', 'name_ar' => 'الصوصات',
+                'items' => [
+                    ['BURGER', 'Burger Sauce', 'صوص البرجر', 3],
+                    ['BBQ', 'BBQ Sauce', 'صوص باربكيو', 3],
+                    ['RANCH', 'Ranch Sauce', 'صوص رانش', 3],
+                    ['BUFFALO', 'Buffalo Sauce', 'صوص بافلو', 3],
+                    ['HONEY', 'Honey Mustard Sauce', 'صوص هاني مسترد', 3],
+                    ['CHEDDAR', 'Cheddar Cheese Sauce', 'صوص جبنة شيدر', 4],
+                    ['TRUFFLE', 'Truffle Sauce', 'صوص ترافل', 5],
+                    ['GARLIC', 'Garlic Mayo', 'صوص ثوم', 3],
+                ],
+            ],
             'drinks' => [
                 'name' => 'Cold Drinks', 'name_ar' => 'المشروبات الباردة',
                 'items' => [

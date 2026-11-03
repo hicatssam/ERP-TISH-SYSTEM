@@ -24,11 +24,17 @@ class BurgerRestaurantDemoSeederTest extends TestCase
     public function test_default_seed_is_a_complete_restaurant_fixture_without_legacy_sweets(): void
     {
         $this->seed(DatabaseSeeder::class);
-        $this->assertSame(68, Product::where('is_raw_material', false)->count());
-        $this->assertSame(68, Recipe::where('status', 'approved')->count());
-        $this->assertSame(136, RestaurantMenuItem::count());
+        $this->assertSame(76, Product::where('is_raw_material', false)->count());
+        $this->assertSame(76, Recipe::where('status', 'approved')->count());
+        $this->assertSame(152, RestaurantMenuItem::count());
         $this->assertSame(24, Order::count());
         $this->assertSame(24, Invoice::count());
+        $this->assertSame(8, Product::where('sku', 'like', 'BRG-SAUCES-%')->count());
+        $this->assertDatabaseHas('recipe_items', [
+            'recipe_id' => Recipe::where('code', 'RCP-BRG-SAUCES-RANCH')->value('id'),
+            'ingredient_product_id' => Product::where('sku', 'BRG-ING-RANCH')->value('id'),
+            'quantity' => .05,
+        ]);
         $this->assertDatabaseCount('special_cake_orders', 0);
         $this->assertDatabaseCount('showroom_sweets_requests', 0);
         $this->assertDatabaseCount('showroom_cake_requests', 0);
@@ -51,7 +57,7 @@ class BurgerRestaurantDemoSeederTest extends TestCase
         $this->seed(DatabaseSeeder::class);
         $this->assertSame(24, Order::count());
         $this->assertSame($quantities, DB::table('inventories')->orderBy('id')->pluck('quantity', 'id')->all());
-        $this->assertSame(68, Recipe::count());
+        $this->assertSame(76, Recipe::count());
     }
 
     public function test_full_seed_refuses_to_mix_legacy_records_into_the_restaurant_fixture(): void
