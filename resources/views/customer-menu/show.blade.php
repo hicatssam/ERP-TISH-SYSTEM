@@ -243,22 +243,24 @@
   <header class="reference-header">
    <div class="reference-header-row">
     <div class="reference-brand">
+     <span class="reference-logo-square">
+      @if($branding['logo'] ?? null)
+       <img class="reference-client-logo" src="{{ $branding['logo'] }}" alt="{{ $branding['name'] }}">
+      @else
+       <span aria-label="{{ $branding['name'] }}">{{ mb_substr($branding['name'] ?? '', 0, 1) }}</span>
+      @endif
+     </span>
+     <div class="reference-brand-copy">
      <a class="reference-branch" href="{{ route('customer-menu.index', ['choose' => 1]) }}" aria-label="تغيير الفرع">{{ $location->name }} <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></a>
+      @if(!empty($branding['tagline']))
+       <span class="reference-client-tagline">{{ $branding['tagline'] }}</span>
+      @endif
+     </div>
     </div>
     <div class="reference-actions">
      <a class="icon-btn" href="{{ route('customer-menu.cart', $location->code) }}" aria-label="السلة"><i class="fa-solid fa-bag-shopping"></i><span class="badge" id="cartBadgeTop">0</span></a>
      <a class="icon-btn" href="{{ route('customer-menu.favorites', $location->code) }}" aria-label="المفضلة"><i class="fa-regular fa-heart"></i><span class="badge" id="favBadgeTop">0</span></a>
     </div>
-   </div>
-   <div class="reference-client-identity">
-    @if($branding['logo'] ?? null)
-     <img class="reference-client-logo" src="{{ $branding['logo'] }}" alt="{{ $branding['name'] }}">
-    @else
-     <strong class="reference-client-name">{{ $branding['name'] }}</strong>
-    @endif
-    @if(!empty($branding['tagline']))
-     <p class="reference-client-tagline">{{ $branding['tagline'] }}</p>
-    @endif
    </div>
    <div class="reference-greeting">
     <h1>{{ $homeTitle }} <span aria-hidden="true">👋</span></h1>
