@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use App\Models\Location;
+use App\Models\MenuBanner;
 use App\Models\LocationProduct;
 use App\Models\Product;
 use App\Models\RestaurantMenuItem;
@@ -25,7 +26,7 @@ class BurgerRestaurantSeeder extends Seeder
 {
     public function run(): void
     {
-        foreach (['categories', 'products', 'locations', 'location_products', 'restaurant_menu_items'] as $table) {
+        foreach (['categories', 'products', 'locations', 'location_products', 'restaurant_menu_items', 'menu_banners'] as $table) {
             if (! Schema::hasTable($table)) {
                 throw new RuntimeException('شغّل migrations أولاً. الجدول المفقود: '.$table);
             }
@@ -55,6 +56,7 @@ class BurgerRestaurantSeeder extends Seeder
                 foreach ($definition['items'] as $index => [$code, $name, $nameAr, $price]) {
                     $sku = 'BRG-'.strtoupper($group).'-'.$code;
                     $product = Product::withTrashed()->firstOrCreate(['sku' => $sku], [
+                        'barcode' => $sku,
                         'category_id' => $category->id, 'name' => $name, 'name_ar' => $nameAr,
                         'description' => $nameAr.' — '.$definition['name_ar'],
                         'unit' => in_array($group, ['drinks', 'shakes'], true) ? 'cup' : 'piece',
@@ -88,11 +90,43 @@ class BurgerRestaurantSeeder extends Seeder
                     $count++;
                 }
             }
+            $this->seedBanners($branches);
             return $count;
         });
 
         $this->command?->info('تم تجهيز '.$count.' صنف برجر ومقبلات وفرايز ومشروبات في منيو الفروع الفعالة.');
         $this->command?->warn('الأسعار تجريبية. جهّز المخزون أو الوصفات الفعلية قبل تأكيد المبيعات.');
+    }
+
+    private function seedBanners(iterable $branches): void
+    {
+        $banners = [
+            ['burger', 'برجر على طريقة لندن', 'London Calling. Burger Waiting.',
+                'سماش وتشيز وكرسبي… اختار برجر على ذوقك', 'Find your favourite burger', 'برجر', 'Burgers'],
+            ['fries', 'الفرايز إلها حكاية', 'Fries Worth Calling For',
+                'تشيز ولودد وكيرلي… كمّل وجبتك', 'Cheese, loaded and curly fries', 'فرايز ومقبلات', 'Fries & Sides'],
+            ['drinks', 'برّدها على طريقة لندن', 'A Cool London Break',
+                'ميلك شيك وعصائر ومشروبات باردة', 'Milkshakes, juices and cold drinks', 'مشروبات', 'Drinks'],
+        ];
+        foreach ($branches as $branch) {
+            foreach ($banners as $index => [$key, $title, $titleEn, $subtitle, $subtitleEn, $badge, $badgeEn]) {
+                $image = 'images/burger-menu/banners/'.$key.'-london.webp';
+                if (! is_file(public_path($image))) {
+                    throw new RuntimeException('ملف بانر البرجر مفقود: '.$image);
+                }
+                // Match by stable bundled asset and branch, not editable copy.
+                // Existing banner customizations remain untouched on reruns.
+                MenuBanner::query()->firstOrCreate([
+                    'location_id' => $branch->id, 'image' => $image,
+                ], [
+                    'title' => $title, 'title_en' => $titleEn,
+                    'subtitle' => $subtitle, 'subtitle_en' => $subtitleEn,
+                    'badge_text' => $badge, 'badge_text_en' => $badgeEn,
+                    'link_url' => '#menuCatalog', 'sort_order' => ($index + 1) * 10,
+                    'is_active' => true, 'starts_at' => null, 'ends_at' => null,
+                ]);
+            }
+        }
     }
 
     public static function catalogue(): array
