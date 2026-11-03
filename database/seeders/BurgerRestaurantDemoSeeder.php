@@ -366,7 +366,7 @@ class BurgerRestaurantDemoSeeder extends Seeder
         ]);
         SalesChannel::firstOrCreate(['slug' => 'tish-direct'], [
             'name' => 'طلبات Tish المباشرة', 'type' => 'direct', 'is_active' => true,
-            'discount_type' => 'none', 'discount_value' => 0, 'commission_type' => 'none', 'commission_value' => 0,
+            'discount_type' => 'fixed', 'discount_value' => 0, 'commission_type' => 'fixed', 'commission_value' => 0,
         ]);
     }
 
@@ -391,7 +391,7 @@ class BurgerRestaurantDemoSeeder extends Seeder
                     'location_id' => $branch->id, 'customer_id' => $customer->id,
                     'sales_channel_id' => $channel->id, 'service_type' => 'takeaway',
                     'payment_arrangement' => 'pay_now', 'payment_method_id' => $payment->id,
-                    'discount_type' => 'none', 'discount_value' => 0,
+                    'discount_type' => 'fixed', 'discount_value' => 0,
                     'items' => $rows, 'notes' => $marker, 'order_source' => 'restaurant_pos',
                 ];
                 $order = app(RestaurantOrderService::class)->createPosOrder($payload, $cashier);
