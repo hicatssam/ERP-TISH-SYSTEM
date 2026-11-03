@@ -7,7 +7,7 @@
 <title>{{ $branding['name'] ?? config('app.name') }} - {{ $location->name }}</title>
 @if(!empty($branding['favicon']))<link rel="icon" href="{{ $branding['favicon'] }}">@endif
 @include('customer-menu.partials.styles')
-<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/floating-showcase.css') }}?v=1">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/floating-showcase.css') }}?v=2">
 @include('customer-menu.partials.pwa-head')
 <script src="{{ asset('assets/js/customer-menu/branch-entry.js') }}?v=1"
         data-branch-code="{{ $location->code }}"
@@ -348,7 +348,7 @@
    <div class="reference-section-head">
     <div class="reference-section-copy">
      <i class="fa-solid fa-star reference-section-icon"></i>
-     <div><h2 id="featuredTitle">{{ $featuredTitle }}</h2><p>مخبوزات وأصناف مميزة من المنيو</p></div>
+     <div><h2 id="featuredTitle">{{ $featuredTitle }}</h2><p>اختيارات مميزة من المنيو</p></div>
     </div>
     <a class="reference-see-all" href="{{ route('customer-menu.products', $location->code) }}">عرض الكل <i class="fa-solid fa-chevron-left"></i></a>
    </div>

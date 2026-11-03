@@ -3,15 +3,22 @@
 .reference-home .cm-showcase-stage {position:relative;height:410px;perspective:1150px;overflow:hidden;isolation:isolate}
 .reference-home .cm-showcase-slide {position:absolute;top:50%;left:50%;width:clamp(238px,32vw,328px);height:365px;transform-origin:center center;transition:transform .68s cubic-bezier(.22,.8,.21,1),opacity .55s ease,filter .55s ease,visibility .55s;will-change:transform;visibility:hidden;opacity:0;pointer-events:none}
 .reference-home .cm-showcase-slide[data-offset="0"] {transform:translate(-50%,-50%) translateX(0) scale(1) rotateY(0);opacity:1;filter:none;visibility:visible;z-index:6;pointer-events:auto}
-.reference-home .cm-showcase-slide[data-offset="-1"] {transform:translate(-50%,-50%) translateX(-72%) scale(.83) rotateY(-12deg);opacity:.73;filter:brightness(.72);visibility:visible;z-index:4}
-.reference-home .cm-showcase-slide[data-offset="1"] {transform:translate(-50%,-50%) translateX(72%) scale(.83) rotateY(12deg);opacity:.73;filter:brightness(.72);visibility:visible;z-index:4}
-.reference-home .cm-showcase-slide[data-offset="-2"] {transform:translate(-50%,-50%) translateX(-124%) scale(.68) rotateY(-16deg);opacity:.37;filter:brightness(.6);visibility:visible;z-index:2}
-.reference-home .cm-showcase-slide[data-offset="2"] {transform:translate(-50%,-50%) translateX(124%) scale(.68) rotateY(16deg);opacity:.37;filter:brightness(.6);visibility:visible;z-index:2}
-.reference-home .cm-showcase-slide .product {height:100%;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);box-shadow:0 18px 46px rgba(18,12,25,.15);overflow:hidden}
+.reference-home .cm-showcase-slide[data-offset="-1"] {transform:translate(-50%,-50%) translateX(-72%) scale(.83) rotateY(-12deg);opacity:.92;filter:none;visibility:visible;z-index:4}
+.reference-home .cm-showcase-slide[data-offset="1"] {transform:translate(-50%,-50%) translateX(72%) scale(.83) rotateY(12deg);opacity:.92;filter:none;visibility:visible;z-index:4}
+.reference-home .cm-showcase-slide[data-offset="-2"] {transform:translate(-50%,-50%) translateX(-124%) scale(.68) rotateY(-16deg);opacity:.68;filter:none;visibility:visible;z-index:2}
+.reference-home .cm-showcase-slide[data-offset="2"] {transform:translate(-50%,-50%) translateX(124%) scale(.68) rotateY(16deg);opacity:.68;filter:none;visibility:visible;z-index:2}
+.reference-home .cm-showcase-slide .product {height:100%;display:flex;flex-direction:column;background:var(--surface);border:1px solid color-mix(in srgb,var(--primary) 18%,var(--surface));box-shadow:0 18px 46px color-mix(in srgb,var(--primary) 15%,transparent);overflow:hidden}
 .reference-home .cm-showcase-slide[data-offset="0"] .product {animation:cmShowcaseFloat 7s ease-in-out infinite}
 .reference-home .cm-showcase-slide .product-media {flex:0 0 auto;aspect-ratio:1.7/1;min-height:0}
 .reference-home .cm-showcase-slide .product-body {flex:1;display:flex;flex-direction:column;justify-content:space-between;min-height:0}
-.reference-home .cm-showcase-slide .product-desc {min-height:0;margin:5px 0 10px}
+.reference-home .cm-showcase-slide .product-body {
+ background:linear-gradient(145deg,color-mix(in srgb,var(--primary) 5%,var(--surface)),color-mix(in srgb,var(--accent) 9%,var(--surface)));
+ color:var(--text);
+}
+.reference-home .cm-showcase-slide:not([data-offset="0"]) .product-body {
+ background:linear-gradient(145deg,color-mix(in srgb,var(--primary) 12%,var(--surface)),color-mix(in srgb,var(--accent) 16%,var(--surface)));
+}
+.reference-home .cm-showcase-slide .product-desc {min-height:0;margin:5px 0 10px;color:color-mix(in srgb,var(--text) 76%,var(--surface))}
 .reference-home .cm-showcase-slide .product-ribbon {font-size:.65rem}
 .reference-home .cm-showcase-nav {position:absolute;top:43%;z-index:10;width:48px;height:48px;border-radius:50%;border:1px solid var(--line);background:color-mix(in srgb,var(--surface) 95%,transparent);color:var(--primary);display:grid;place-items:center;cursor:pointer;box-shadow:0 8px 30px rgba(0,0,0,.10);transition:transform .2s ease,box-shadow .2s ease}
 .reference-home .cm-showcase-prev {right:0}
