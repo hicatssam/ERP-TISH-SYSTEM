@@ -1503,9 +1503,32 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
     }
 
+    const themeStyle = getComputedStyle(document.documentElement);
+    const themeColor = (name, fallback) => {
+        const value = themeStyle.getPropertyValue('--theme-' + name).trim();
+        return /^#[0-9a-f]{6}$/i.test(value) ? value : fallback;
+    };
+    const accent = themeColor('accent', '#2563eb');
+    const surface = themeColor('surface', '#ffffff');
+    const text = themeColor('text', '#172435');
+    const muted = themeColor('text-muted', '#687482');
+    const border = themeColor('border', '#dde2e7');
+    const mix = (base, target, amount) => {
+        const channel = (color, offset) => parseInt(color.slice(offset, offset + 2), 16);
+        return '#' + [1, 3, 5].map(offset =>
+            Math.round(channel(base, offset) * (1 - amount) + channel(target, offset) * amount)
+                .toString(16).padStart(2, '0')
+        ).join('');
+    };
+    const productPalette = [
+        accent, mix(accent, surface, .25), mix(accent, text, .2),
+        mix(accent, surface, .5), mix(accent, text, .4),
+    ];
+
     const defaults = {
         chart: {
-            fontFamily: 'Cairo, sans-serif',
+            fontFamily: themeStyle.getPropertyValue('--theme-font').trim() || 'Cairo, sans-serif',
+            foreColor: muted,
             toolbar: {
                 show: false
             }
@@ -1516,13 +1539,11 @@ document.addEventListener('DOMContentLoaded', function () {
         },
 
         grid: {
-            borderColor: '#F1F3F5',
+            borderColor: border,
             strokeDashArray: 3
         },
 
-        colors: [
-            '#D4A017'
-        ]
+        colors: [accent]
     };
 
 
@@ -1672,13 +1693,12 @@ document.addEventListener('DOMContentLoaded', function () {
                             item.product_name
                     ),
 
-                colors: [
-                    '#D4A017',
-                    '#F4C542',
-                    '#B8860B',
-                    '#FFE08A',
-                    '#8D6E12'
-                ],
+                colors: productPalette,
+
+                stroke: {
+                    colors: [surface],
+                    width: 2
+                },
 
                 legend: {
                     position: 'bottom'
