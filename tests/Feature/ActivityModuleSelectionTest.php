@@ -105,6 +105,8 @@ class ActivityModuleSelectionTest extends TestCase
     public function test_admin_permissions_and_direct_reports_respect_disabled_modules(): void
     {
         $this->applyActivity('restaurant', []);
+        $this->actor->givePermissionTo(\Spatie\Permission\Models\Permission::findOrCreate('cake_orders.view', 'web'));
+        $this->assertFalse(\Illuminate\Support\Facades\Gate::forUser($this->actor)->allows('cake_orders.view'));
         $this->assertFalse($this->actor->can('cake_orders.view'));
         $this->assertFalse($this->actor->can('inventory.view'));
         $this->assertTrue($this->actor->can('restaurant.view'));
