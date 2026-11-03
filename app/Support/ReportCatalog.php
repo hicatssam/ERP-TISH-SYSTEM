@@ -27,6 +27,12 @@ class ReportCatalog
 
     public function allowed(User $user, array $meta): bool
     {
+        if (ActivityModules::scoped()) {
+            $code = $meta['module'] ?? ActivityModules::moduleFor($meta['route'] ?? '');
+            if ($code && ! app(ModuleService::class)->isEnabled($code)) {
+                return false;
+            }
+        }
         return ($user->isAdmin() || $user->canAny((array) $meta['permission']))
             && (! isset($meta['extra_permission']) || $user->isAdmin() || $user->can($meta['extra_permission']))
             && (! isset($meta['module']) || app(ModuleService::class)->isEnabled($meta['module']))
@@ -44,6 +50,10 @@ class ReportCatalog
         $groups = [];
         foreach ($core as $group => $reports) {
             foreach ($reports as $type => $title) {
+                if (ActivityModules::scoped() && ($code = ActivityModules::reportModule($type))
+                    && ! app(ModuleService::class)->isEnabled($code)) {
+                    continue;
+                }
                 $groups[$group][] = ['type' => $type, 'title' => $title, 'url' => route('reports.show', $type), 'description' => 'عرض · Excel · PDF · طباعة'];
             }
         }

@@ -75,55 +75,12 @@ class BusinessProfileService
         User $actor,
         bool $deactivateOtherIndustry = false
     ): array {
-        $this->setCurrent($profile, $actor);
-
-        $modules = app(ModuleService::class);
-        $result = [
-            'enabled' => [],
-            'skipped' => [],
-            'disabled' => [],
-            'blocked' => [],
-        ];
-
-        $recommended = $profile->modules()
-            ->wherePivot('is_default', true)
-            ->orderByPivot('sort_order')
-            ->get();
-
-        foreach ($recommended as $module) {
-            if (! $module->isImplemented()) {
-                $result['skipped'][] = $module->code;
-                continue;
-            }
-
-            $sub = $modules->enableWithDependencies($module, $actor);
-            $result['enabled'] = array_values(array_unique(array_merge($result['enabled'], $sub['enabled'])));
-            $result['skipped'] = array_values(array_unique(array_merge($result['skipped'], $sub['skipped'])));
-        }
-
-        if ($deactivateOtherIndustry) {
-            $recommendedCodes = $recommended->pluck('code')->all();
-
-            Module::query()
-                ->where('is_active', true)
-                ->where('is_system', false)
-                ->whereIn('type', [ModuleType::INDUSTRY->value, ModuleType::OPTIONAL->value])
-                ->whereNotIn('code', $recommendedCodes)
-                ->orderByDesc('sort_order')
-                ->get()
-                ->each(function (Module $module) use ($modules, $actor, &$result): void {
-                    try {
-                        $modules->setEnabled($module, false, $actor);
-                        $result['disabled'][] = $module->code;
-                    } catch (\Throwable $e) {
-                        $result['blocked'][] = [
-                            'code' => $module->code,
-                            'reason' => $e->getMessage(),
-                        ];
-                    }
-                });
-        }
-
-        return $result;
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($profile, $actor): array {
+            $this->setCurrent($profile, $actor);
+            $modules = app(ModuleService::class);
+            $codes = $modules->availableForProfile($profile->code)->pluck('code')->all();
+            SystemSetting::set('activity_modules_scoped', '1');
+            return $modules->applySelection($profile->code, $codes, $actor);
+        });
     }
 }

@@ -100,7 +100,7 @@ class ClientOnboardingController extends Controller
                 ->all()
             : [];
 
-        $allModules = $this->modules->all()->values();
+        $allModules = $this->modules->availableForProfile($run->business_profile_code ?? 'bakery_sweets');
 
         $baseCurrency = null;
 
@@ -155,10 +155,7 @@ class ClientOnboardingController extends Controller
         $payload = $this->validatedStep($request, $step);
 
         if ($step === 5) {
-            $coreCodes = $this->modules->core()
-                ->filter(fn ($module) => $module->isImplemented())
-                ->pluck('code')
-                ->all();
+            $coreCodes = \App\Support\ActivityModules::requiredCodes($run->business_profile_code);
 
             $payload['selected_codes'] = array_values(
                 array_unique(
@@ -170,7 +167,7 @@ class ClientOnboardingController extends Controller
             );
 
             $payload['deactivate_unselected'] =
-                $request->boolean('deactivate_unselected');
+                true;
         }
 
         $files = $step === 3

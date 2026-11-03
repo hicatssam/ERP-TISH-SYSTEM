@@ -32,6 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
             ->onOneServer();
     })
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->appendToGroup('web', \App\Http\Middleware\EnsureActivityModules::class);
         // Non-sensitive locale preference must be readable by browser JS and Laravel.
         $middleware->encryptCookies(except: ['dahab_menu_lang']);
         $middleware->alias([

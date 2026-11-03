@@ -42,6 +42,13 @@ class ReportScheduleService
             throw new \InvalidArgumentException('نوع التقرير المجدول غير مدعوم؛ يرجى تعديل الجدول قبل إرساله.');
         }
 
+        if (\App\Support\ActivityModules::scoped()) {
+            app(ModuleService::class)->require('reports');
+            if ($code = \App\Support\ActivityModules::reportModule($schedule->report_type)) {
+                app(ModuleService::class)->require($code);
+            }
+        }
+
         // Validate all addresses before exporting or sending to any recipient.
         $recipients = $schedule->recipientList();
         ['date_from' => $dateFrom, 'date_to' => $dateTo] = $schedule->resolveDateRange();

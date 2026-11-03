@@ -223,8 +223,13 @@ class RoleController extends Controller
                 'guard_name' => self::GUARD_NAME,
             ]);
 
+            // Hidden grants stay stored for a future activity switch, but
+            // are ineffective while their module is disabled.
+            $hidden = $role->permissions->filter(fn ($permission) =>
+                ! \App\Support\ActivityModules::permissionEnabled($permission->name)
+            )->pluck('name')->all();
             $role->syncPermissions(
-                array_values(array_unique($validated['permissions'] ?? []))
+                array_values(array_unique(array_merge($hidden, $validated['permissions'] ?? [])))
             );
         });
 
@@ -245,6 +250,9 @@ class RoleController extends Controller
             },
         ]);
 
+        $role->setRelation('permissions', $role->permissions->filter(
+            fn ($permission) => \App\Support\ActivityModules::permissionEnabled($permission->name)
+        ));
         return view('admin.roles.show', compact('role'));
     }
 
@@ -384,6 +392,9 @@ class RoleController extends Controller
      */
     private function ensureGrantablePermissions(Request $request, array $requested): void
     {
+        abort_unless(collect($requested)->every(
+            fn (string $permission) => \App\Support\ActivityModules::permissionEnabled($permission)
+        ), 403, 'لا يمكن منح صلاحيات وحدة غير مفعلة في النشاط الحالي.');
         $actor = $request->user();
         if ($actor->isAdmin()) {
             return;
@@ -400,6 +411,7 @@ class RoleController extends Controller
             ->where('guard_name', self::GUARD_NAME)
             ->orderBy('name')
             ->get()
+            ->filter(fn (Permission $permission) => \App\Support\ActivityModules::permissionEnabled($permission->name))
             ->groupBy(fn (Permission $permission) => explode('.', $permission->name)[0])
             ->map(fn ($items) => $items->groupBy(
                 fn (Permission $permission) => PermissionUi::permissionSection($permission->name)

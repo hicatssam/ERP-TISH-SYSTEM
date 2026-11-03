@@ -1422,7 +1422,7 @@ a.app-page-btn:hover {
                     @endcan
 
                     @canany(['inventory.view', 'inventory.count', 'reports.view'])
-                        @if(\Illuminate\Support\Facades\Route::has('showroom-daily-reports.index'))
+                        @if($moduleEnabled('bakery') && \Illuminate\Support\Facades\Route::has('showroom-daily-reports.index'))
                             <a
                                 href="{{ route('showroom-daily-reports.index') }}"
                                 class="nav-item {{ request()->routeIs('showroom-daily-reports.*') ? 'active' : '' }}"
@@ -2285,7 +2285,7 @@ a.app-page-btn:hover {
 
                     </a>
 
-                    @if(\Illuminate\Support\Facades\Route::has('showroom-daily-reports.index'))
+                    @if($moduleEnabled('bakery') && \Illuminate\Support\Facades\Route::has('showroom-daily-reports.index'))
                         <a
                             href="{{ route('showroom-daily-reports.index') }}"
                             class="nav-item {{ request()->routeIs('showroom-daily-reports.*') ? 'active' : '' }}"
@@ -2322,7 +2322,7 @@ a.app-page-btn:hover {
                     @endcan
 
 
-                    @if(\Illuminate\Support\Facades\Route::has('restaurant.takeaway-report.index'))
+                    @if($moduleEnabled('restaurant') && \Illuminate\Support\Facades\Route::has('restaurant.takeaway-report.index'))
                         <a
                             href="{{ route('restaurant.takeaway-report.index') }}"
                             class="nav-item {{ request()->routeIs('restaurant.takeaway-report.*') ? 'active' : '' }}"
@@ -2336,7 +2336,7 @@ a.app-page-btn:hover {
                     @endif
 
 
-                    @if(\Illuminate\Support\Facades\Route::has('reports.showroom-sweets-requests.index'))
+                    @if($moduleEnabled('bakery') && \Illuminate\Support\Facades\Route::has('reports.showroom-sweets-requests.index'))
                         <a
                             href="{{ route('reports.showroom-sweets-requests.index') }}"
                             class="nav-item {{ request()->routeIs('reports.showroom-sweets-requests.*') ? 'active' : '' }}"

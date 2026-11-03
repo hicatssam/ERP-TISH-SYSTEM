@@ -60,7 +60,7 @@ class ClientOnboardingService
             'operational_data' => $this->currentOperationalData(),
             'module_plan' => [
                 'selected_codes' => $this->modules->enabled()->pluck('code')->values()->all(),
-                'deactivate_unselected' => false,
+                'deactivate_unselected' => true,
             ],
             'temporary_files' => [],
             'created_by' => $actor->id,
@@ -114,7 +114,10 @@ class ClientOnboardingService
                 $this->stageBrandingFiles($run, $files)
             ),
             4 => $run->operational_data = $payload,
-            5 => $run->module_plan = $payload,
+            5 => $run->module_plan = [
+                'selected_codes' => $this->modules->selection($run->business_profile_code, $payload['selected_codes'] ?? []),
+                'deactivate_unselected' => true,
+            ],
             default => throw ValidationException::withMessages([
                 'step' => 'خطوة الإعداد غير صحيحة.',
             ]),
@@ -167,8 +170,10 @@ class ClientOnboardingService
             $this->applyBrandingSettings($run->branding_data ?? []);
             $this->applyOperationalSettings($run->operational_data ?? []);
 
-            $moduleResult = $this->applyModulePlan(
-                $run->module_plan ?? [],
+            SystemSetting::set('activity_modules_scoped', '1');
+            $moduleResult = $this->modules->applySelection(
+                $profile->code,
+                $run->module_plan['selected_codes'] ?? [],
                 $actor
             );
 
@@ -399,14 +404,13 @@ class ClientOnboardingService
         $run->business_profile_code = $profile->code;
 
         if ($profileChanged || empty($run->module_plan['selected_codes'] ?? [])) {
-            $recommended = $profile->modules()
-                ->wherePivot('is_default', true)
-                ->pluck('modules.code')
-                ->all();
+            $recommended = $this->modules->availableForProfile($profile->code)
+                ->filter(fn ($module) => $profile->modules()->where('modules.code', $module->code)->exists())
+                ->pluck('code')->all();
 
             $run->module_plan = [
                 'selected_codes' => array_values(array_unique(array_merge(
-                    $this->modules->core()->pluck('code')->all(),
+                    \App\Support\ActivityModules::requiredCodes($profile->code),
                     $recommended
                 ))),
                 'deactivate_unselected' => false,
