@@ -45,6 +45,9 @@ jobs:
       - name: Generate app key
         run: php artisan key:generate
 
+      - name: Verify complete burger demo and product photos
+        run: php artisan test tests/Feature/BurgerRestaurantSeederTest.php tests/Feature/BurgerRestaurantDemoSeederTest.php
+
       - name: Verify daily branch raw material authorization and reports
         run: php artisan test tests/Feature/Sales/DailyBranchRawMaterialsTest.php
 

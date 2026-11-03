@@ -17,9 +17,16 @@ class BurgerRestaurantSeederTest extends TestCase
     public function test_standalone_seed_builds_the_complete_burger_catalogue_and_menu(): void
     {
         $this->seed(BurgerRestaurantSeeder::class);
-        $this->assertSame(7, Category::count());
-        $this->assertSame(68, Product::count());
-        $this->assertSame(68, RestaurantMenuItem::count());
+        $this->assertSame(8, Category::count());
+        $this->assertSame(76, Product::count());
+        foreach (Product::all() as $product) {
+            $this->assertNotEmpty($product->image);
+            $this->assertFileExists(public_path($product->image));
+        }
+        foreach (Category::all() as $category) {
+            $this->assertFileExists(public_path($category->image));
+        }
+        $this->assertSame(76, RestaurantMenuItem::count());
         $this->assertDatabaseCount('menu_banners', 3);
         $this->assertDatabaseHas('products', ['sku' => 'BRG-BEEF-CLASSIC', 'name_ar' => 'برجر لحم كلاسيك']);
         $this->assertDatabaseHas('products', ['sku' => 'BRG-FRIES-CHEESE']);
@@ -33,20 +40,26 @@ class BurgerRestaurantSeederTest extends TestCase
     {
         $this->seed(BurgerRestaurantSeeder::class);
         $product = Product::where('sku', 'BRG-BEEF-CLASSIC')->firstOrFail();
-        $product->update(['base_selling_price' => 99]);
+        $product->update(['base_selling_price' => 99, 'image' => 'images/custom-upload.webp']);
+        $category = $product->category;
+        $category->update(['image' => 'images/my-category.webp']);
+        Product::where('sku', 'BRG-CHICKEN-CRISPY')->update(['image' => null]);
         $banner = \App\Models\MenuBanner::query()->firstOrFail();
         $banner->update(['title' => 'Edited banner', 'is_active' => false]);
         RestaurantMenuItem::where('product_id', $product->id)->update(['is_active' => false]);
         Product::where('sku', 'BRG-FRIES-CHEESE')->firstOrFail()->delete();
 
         $this->seed(BurgerRestaurantSeeder::class);
-        $this->assertSame(68, Product::withTrashed()->count());
+        $this->assertSame(76, Product::withTrashed()->count());
         $this->assertSame('99.00', $product->fresh()->base_selling_price);
+        $this->assertSame('images/custom-upload.webp', $product->fresh()->image);
         $this->assertSame('Edited banner', $banner->fresh()->title);
         $this->assertFalse($banner->fresh()->is_active);
+        $this->assertSame('images/my-category.webp', $category->fresh()->image);
+        $this->assertNotEmpty(Product::where('sku', 'BRG-CHICKEN-CRISPY')->firstOrFail()->image);
         $this->assertFalse(RestaurantMenuItem::where('product_id', $product->id)->firstOrFail()->is_active);
         $this->assertTrue(Product::withTrashed()->where('sku', 'BRG-FRIES-CHEESE')->firstOrFail()->trashed());
-        $this->assertSame(68, RestaurantMenuItem::count());
+        $this->assertSame(76, RestaurantMenuItem::count());
     }
 
     public function test_existing_catalogue_and_branches_are_preserved_and_each_active_branch_gets_the_menu(): void
@@ -58,11 +71,11 @@ class BurgerRestaurantSeederTest extends TestCase
         }
         $this->seed(BurgerRestaurantSeeder::class);
         $this->assertSame(2, Location::count());
-        $this->assertSame(136, RestaurantMenuItem::count());
+        $this->assertSame(152, RestaurantMenuItem::count());
         $this->assertDatabaseCount('menu_banners', 6);
         $this->assertDatabaseHas('products', ['sku' => 'EXISTING', 'base_selling_price' => 50]);
         $this->assertDatabaseHas('categories', ['slug' => 'existing', 'name' => 'Existing']);
         $this->seed(BurgerRestaurantSeeder::class);
-        $this->assertSame(136, RestaurantMenuItem::count());
+        $this->assertSame(152, RestaurantMenuItem::count());
     }
 }

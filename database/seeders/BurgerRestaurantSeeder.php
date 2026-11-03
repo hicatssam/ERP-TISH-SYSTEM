@@ -53,6 +53,11 @@ class BurgerRestaurantSeeder extends Seeder
                     'is_active' => true, 'sort_order' => ($count + 1) * 10,
                 ]);
 
+                $categoryImage = 'images/burger-menu/products/'.$group.'-'.strtolower($definition['items'][0][0]).'.webp';
+                if (! $category->image) {
+                    $category->update(['image' => $categoryImage]);
+                }
+
                 foreach ($definition['items'] as $index => [$code, $name, $nameAr, $price]) {
                     $sku = 'BRG-'.strtoupper($group).'-'.$code;
                     $product = Product::withTrashed()->firstOrCreate(['sku' => $sku], [
@@ -68,6 +73,14 @@ class BurgerRestaurantSeeder extends Seeder
                     // A deliberate deletion must not be undone by rerunning a catalogue seed.
                     if ($product->trashed()) {
                         continue;
+                    }
+
+                    $image = 'images/burger-menu/products/'.$group.'-'.strtolower($code).'.webp';
+                    if (! is_file(public_path($image))) {
+                        throw new RuntimeException('صورة صنف البرجر مفقودة: '.$image);
+                    }
+                    if (! $product->image) {
+                        $product->update(['image' => $image]);
                     }
 
                     foreach ($branches as $branch) {
@@ -206,6 +219,19 @@ class BurgerRestaurantSeeder extends Seeder
                     ['NACHOS', 'Cheese Nachos', 'ناتشوز بالجبنة', 15],
                     ['COLESLAW', 'Coleslaw', 'كول سلو', 7],
                     ['SALAD', 'Garden Salad', 'سلطة خضراء', 10],
+                ],
+            ],
+            'sauces' => [
+                'name' => 'Sauces', 'name_ar' => 'الصوصات',
+                'items' => [
+                    ['BURGER', 'Burger Sauce', 'صوص البرجر', 3],
+                    ['BBQ', 'BBQ Sauce', 'صوص باربكيو', 3],
+                    ['RANCH', 'Ranch Sauce', 'صوص رانش', 3],
+                    ['BUFFALO', 'Buffalo Sauce', 'صوص بافلو', 3],
+                    ['HONEY', 'Honey Mustard Sauce', 'صوص هاني مسترد', 3],
+                    ['CHEDDAR', 'Cheddar Cheese Sauce', 'صوص جبنة شيدر', 4],
+                    ['TRUFFLE', 'Truffle Sauce', 'صوص ترافل', 5],
+                    ['GARLIC', 'Garlic Mayo', 'صوص ثوم', 3],
                 ],
             ],
             'drinks' => [
