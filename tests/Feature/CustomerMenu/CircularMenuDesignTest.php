@@ -55,7 +55,7 @@ class CircularMenuDesignTest extends TestCase
 
         $this->assertStringContainsString("'addOnItems' => \$addOnItems", $controller);
         $this->assertStringContainsString("->filter(fn (array \$row): bool", $controller);
-        $this->assertStringContainsString("('available'", $controller);
+        $this->assertStringContainsString("\$row['available']", $controller);
         $this->assertStringContainsString('tish-complete-meal', $product);
         $this->assertStringContainsString('data-addon-id', $product);
         $this->assertStringContainsString('CM.addToCart(item.id, 1)', $product);
