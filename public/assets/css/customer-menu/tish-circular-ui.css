@@ -187,3 +187,43 @@ body.crisp-customer-menu .tish-addons-feedback{font-size:.8rem;font-weight:800;c
  body.crisp-customer-menu .tish-addon-photo{height:106px}
  body.crisp-customer-menu .tish-addon-info{padding:10px}
 }
+
+
+/* Product detail: clean, separately named add-on categories and optional expansion. */
+body.tish-product-page .detail-media{border-radius:30px!important}
+body.tish-product-page .detail-media img{object-fit:contain;max-height:330px;margin:auto}
+body.tish-product-page .detail-body{margin-bottom:18px}
+body.tish-product-page .tish-complete-meal{margin:22px 0 28px}
+body.tish-product-page .tish-addons-heading{display:block;margin-bottom:20px}
+body.tish-product-page .tish-addons-heading h2{font-size:1.25rem;letter-spacing:-.012em}
+body.tish-product-page .tish-addon-group{margin-bottom:20px}
+body.tish-product-page .tish-addon-group-title{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:11px}
+body.tish-product-page .tish-addon-category-label{display:flex;align-items:center;gap:9px;min-width:0}
+body.tish-product-page .tish-addon-category-label h3{font-size:.94rem;font-weight:900;margin:0;line-height:1.3}
+body.tish-product-page .tish-addon-category-icon{width:38px;height:38px;border-radius:50%;background:var(--tish-soft);color:var(--primary);display:grid;place-items:center;flex:0 0 38px;font-size:.92rem}
+body.tish-product-page .tish-addon-discover{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 11px;min-height:36px;white-space:nowrap;background:var(--surface);border:1px solid var(--tish-ring);border-radius:999px;color:var(--primary);font-weight:900;font-size:.73rem}
+body.tish-product-page .tish-addon-discover i{font-size:.64rem;transition:transform .2s}
+body.tish-product-page .tish-addon-discover[aria-expanded="true"] i{transform:rotate(180deg)}
+body.tish-product-page .tish-addons-grid{align-items:stretch}
+body.tish-product-page .tish-addon-card[hidden]{display:none!important}
+body.tish-product-page .tish-addon-photo{height:132px}
+body.tish-product-page .tish-addon-photo img{object-fit:cover}
+body.tish-product-page .tish-addon-info{min-height:120px}
+body.tish-product-page .tish-addon-actions{margin-top:auto}
+body.tish-product-page .tish-install-inline{margin:15px 0 0;display:flex;justify-content:center}
+body.tish-product-page .tish-install-inline #pwaInstallBtn{
+ position:static!important;inset:auto!important;transform:none;
+ border-radius:999px!important;height:46px;min-height:46px;
+ padding-inline:14px!important;margin:0;box-shadow:0 7px 18px color-mix(in srgb,var(--primary) 20%,transparent)
+}
+body.tish-product-page .tish-install-inline #pwaInstallBtn i{width:28px;height:28px;flex:0 0 28px}
+body.tish-product-page .tish-install-inline #pwaInstallBtn span{position:static!important;width:auto;height:auto;clip:auto;white-space:nowrap;overflow:visible;font-size:.81rem}
+body.tish-product-page .tish-install-inline #pwaInstallBtn[hidden]{display:none!important}
+@media(max-width:560px){
+ body.tish-product-page .detail-body{padding:16px 14px}
+ body.tish-product-page .tish-addon-photo{height:108px}
+ body.tish-product-page .tish-addon-info{min-height:120px}
+ body.tish-product-page .menu-area{padding-bottom:calc(184px + var(--safe-bottom))}
+ body.tish-product-page .tish-addon-discover{font-size:.7rem;padding-inline:9px}
+}
+@media(prefers-reduced-motion:reduce){body.tish-product-page .tish-addon-discover i{transition:none}}
