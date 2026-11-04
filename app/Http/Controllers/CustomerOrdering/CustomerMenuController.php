@@ -122,10 +122,20 @@ class CustomerMenuController extends Controller
 
         abort_unless($item !== null, 404);
 
+        // Offer only currently available, branch-specific products already
+        // published in the QR menu. Never fabricate optional add-ons.
+        $addOnKeywords = '/(?:بطاط|فرايز|شيبس|صوص|صلص|مشروب|مشروبات|كولا|عصير|مياه|ماء|fries|chips|sauce|dip|drink|beverage|cola|soda|water|juice)/iu';
+        $addOnItems = $menuItems
+            ->filter(fn (array $row): bool => (int) $row['product_id'] !== (int) $item['product_id']
+                && ($row['available'] ?? false)
+                && preg_match($addOnKeywords, (string) ($row['category'] ?? '').' '.(string) ($row['name'] ?? '')) === 1)
+            ->take(6)->values();
+
         return view('customer-menu.product', [
             'location' => $location,
             'product' => $item,
             'menuItems' => $menuItems,
+            'addOnItems' => $addOnItems,
             'relatedItems' => $menuItems
                 ->where('category_id', $item['category_id'])
                 ->reject(fn (array $row) => $row['product_id'] === $item['product_id'])
