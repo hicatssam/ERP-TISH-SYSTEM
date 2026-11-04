@@ -53,10 +53,15 @@ class CircularMenuDesignTest extends TestCase
         $product = file_get_contents(resource_path('views/customer-menu/product.blade.php'));
         $css = file_get_contents(public_path('assets/css/customer-menu/tish-circular-ui.css'));
 
-        $this->assertStringContainsString("'addOnItems' => \$addOnItems", $controller);
+        $this->assertStringContainsString("'addOnGroups' => \$addOnGroups", $controller);
         $this->assertStringContainsString("->filter(fn (array \$row): bool", $controller);
         $this->assertStringContainsString("\$row['available']", $controller);
         $this->assertStringContainsString('tish-complete-meal', $product);
+        $this->assertStringContainsString('data-addon-expand', $product);
+        $this->assertStringContainsString('data-addon-extra', $product);
+        $this->assertStringContainsString('aria-expanded', $product);
+        $this->assertStringContainsString('tish-install-inline', $product);
+        $this->assertStringContainsString('tish-addon-group-title', $css);
         $this->assertStringContainsString('data-addon-id', $product);
         $this->assertStringContainsString('CM.addToCart(item.id, 1)', $product);
         $this->assertStringContainsString('item.requiresChoices || item.isVariantProduct', $product);
