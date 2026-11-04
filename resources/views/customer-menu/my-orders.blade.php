@@ -27,8 +27,9 @@ main{padding:22px 0}.titleRow{margin-bottom:18px}.titleRow h1{margin:0 0 4px;fon
 @media(min-width:700px){.wrap{width:min(920px,calc(100% - 40px))}.orders{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(min-width:561px){body{padding-bottom:30px}}
 </style>
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-circular-ui.css') }}?v=1">
 </head>
-<body>
+<body class="cm-my-orders">
 <header class="topbar"><div class="wrap topin">
 <a class="brand" href="{{ route('customer-menu.show',$location->code) }}">
 @if($brandLogo)<img src="{{ $brandLogo }}" alt="{{ $brandName }}">@endif
