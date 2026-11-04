@@ -51,6 +51,48 @@
    </button>
   </div>
 
+  @if($addOnItems->isNotEmpty())
+  <section class="tish-complete-meal" aria-labelledby="tishCompleteTitle">
+   <div class="tish-addons-heading">
+    <div>
+     <span class="tish-addons-eyebrow"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> {{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'MAKE IT A MEAL' : 'كمّل وجبتك' }}</span>
+     <h2 id="tishCompleteTitle">{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Something extra?' : 'بدك معها إشي زاكي؟' }}</h2>
+     <p>{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Add fries, a drink or a sauce with one tap.' : 'بطاطا، مشروب أو صوص... اختار اللي بناسب طلبك.' }}</p>
+    </div>
+   </div>
+   <div class="tish-addons-grid">
+    @foreach($addOnItems as $addOn)
+     <article class="tish-addon-card">
+      <a class="tish-addon-photo" href="{{ route('customer-menu.product.show', [$location->code, $addOn['product_id']]) }}" aria-label="{{ $addOn['name'] }}">
+       @if(!empty($addOn['image']))
+        <img src="{{ $addOn['image'] }}" alt="{{ $addOn['name'] }}" loading="lazy">
+       @else
+        <span class="tish-addon-placeholder"><i class="fa-solid fa-utensils" aria-hidden="true"></i></span>
+       @endif
+      </a>
+      <div class="tish-addon-info">
+       <span class="tish-addon-type">{{ $addOn['category'] }}</span>
+       <strong>{{ $addOn['name'] }}</strong>
+       <div class="tish-addon-actions">
+        <span class="tish-addon-price">{{ number_format($addOn['price'], 2) }} {{ $menuCurrencySymbol }}</span>
+        @if($addOn['requires_choices'])
+         <a class="tish-addon-pick" href="{{ route('customer-menu.product.show', [$location->code, $addOn['product_id']]) }}" aria-label="{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Choose options for' : 'اختيار تفاصيل' }} {{ $addOn['name'] }}">
+          <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
+         </a>
+        @else
+         <button class="tish-addon-add" type="button" data-addon-id="{{ $addOn['product_id'] }}" aria-label="{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Add' : 'أضف' }} {{ $addOn['name'] }}">
+          <i class="fa-solid fa-plus" aria-hidden="true"></i>
+         </button>
+        @endif
+       </div>
+      </div>
+     </article>
+    @endforeach
+   </div>
+   <p class="tish-addons-feedback" id="tishAddonsFeedback" role="status" aria-live="polite"></p>
+  </section>
+  @endif
+
   @if($relatedItems->isNotEmpty())
    <div class="section-title"><div><h2>قد يعجبك أيضًا</h2></div></div>
    <div class="related-row">
@@ -81,6 +123,24 @@ const menuT = text => window.CustomerMenuI18n.t(text);
 const menuF = (key, values) => window.CustomerMenuI18n.format(key, values);
 const PRODUCT_ID = @json($product['product_id']);
 const PRODUCT = CM.product(PRODUCT_ID);
+const addonFeedback = document.getElementById('tishAddonsFeedback');
+document.querySelector('.tish-addons-grid')?.addEventListener('click', event => {
+    const button = event.target.closest('button[data-addon-id]');
+    if (!button) return;
+    const item = CM.product(button.dataset.addonId);
+    // Complex items must go through their dedicated choice picker.
+    if (!item || !item.available || item.requiresChoices || item.isVariantProduct) return;
+    if (!CM.addToCart(item.id, 1)) return;
+    button.classList.add('added');
+    button.innerHTML = '<i class="fa-solid fa-check" aria-hidden="true"></i>';
+    if (addonFeedback) addonFeedback.textContent = menuT('تمت الإضافة للسلة') + ': ' + item.name;
+    window.setTimeout(() => {
+        if (!button.isConnected) return;
+        button.classList.remove('added');
+        button.innerHTML = '<i class="fa-solid fa-plus" aria-hidden="true"></i>';
+    }, 1000);
+});
+
 let qty = 1;
 
 // ---- selection state ----
