@@ -36,7 +36,7 @@ class CircularMenuDesignTest extends TestCase
 
         $this->assertStringContainsString('id="pwaInstallBtn" aria-label="ثبّت التطبيق"', $install);
         $this->assertStringContainsString('tish-circular-ui.css', $shared);
-        $this->assertStringContainsString('v=3', $shared);
+        $this->assertStringContainsString('v=4', $shared);
         $this->assertStringContainsString('body.crisp-customer-menu #pwaInstallBtn', $css);
         $this->assertStringContainsString('border-radius:50%!important', $css);
         $this->assertStringContainsString('cm-has-sticky-cart #pwaInstallBtn', $css);
