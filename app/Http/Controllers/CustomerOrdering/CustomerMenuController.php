@@ -122,20 +122,29 @@ class CustomerMenuController extends Controller
 
         abort_unless($item !== null, 404);
 
-        // Offer only currently available, branch-specific products already
-        // published in the QR menu. Never fabricate optional add-ons.
-        $addOnKeywords = '/(?:بطاط|فرايز|شيبس|صوص|صلص|مشروب|مشروبات|كولا|عصير|مياه|ماء|fries|chips|sauce|dip|drink|beverage|cola|soda|water|juice)/iu';
-        $addOnItems = $menuItems
-            ->filter(fn (array $row): bool => (int) $row['product_id'] !== (int) $item['product_id']
-                && ($row['available'] ?? false)
-                && preg_match($addOnKeywords, (string) ($row['category'] ?? '').' '.(string) ($row['name'] ?? '')) === 1)
-            ->take(6)->values();
+        // Curated by type from this branch's published, available products only.
+        // Keep all matching entries for the inline "discover more" action.
+        $addOnPatterns = [
+            'fries' => '/(?:بطاط|فرايز|شيبس|fries|chips|wedges)/iu',
+            'drinks' => '/(?:مشروب|مشروبات|كولا|عصير|مياه|ماء|موهيتو|ميلك.?شيك|drink|beverage|cola|soda|water|juice|shake|mojito)/iu',
+            'sauces' => '/(?:صوص|صلص|تغميس|sauce|dip|dressing)/iu',
+        ];
+        $addOnGroups = collect($addOnPatterns)->map(function (string $pattern, string $type) use ($menuItems, $item): array {
+            $items = $menuItems
+                ->filter(fn (array $row): bool => (int) $row['product_id'] !== (int) $item['product_id']
+                    && ($row['available'] ?? false)
+                    && preg_match($pattern, (string) ($row['category'] ?? '').' '.(string) ($row['name'] ?? '')) === 1)
+                ->values();
+
+            return ['type' => $type, 'items' => $items];
+        })->filter(fn (array $group): bool => $group['items']->isNotEmpty())->values();
+
 
         return view('customer-menu.product', [
             'location' => $location,
             'product' => $item,
             'menuItems' => $menuItems,
-            'addOnItems' => $addOnItems,
+            'addOnGroups' => $addOnGroups,
             'relatedItems' => $menuItems
                 ->where('category_id', $item['category_id'])
                 ->reject(fn (array $row) => $row['product_id'] === $item['product_id'])
