@@ -390,4 +390,4 @@ body.crisp-customer-menu > .app{position:relative;z-index:1}
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/client-identity.css') }}?v=3">
 
 {{-- The last layer deliberately applies after the shared legacy/identity skins. --}}
-<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-circular-ui.css') }}?v=3">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-circular-ui.css') }}?v=4">
