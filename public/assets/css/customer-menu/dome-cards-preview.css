@@ -204,3 +204,158 @@ body.crisp-customer-menu #productGrid .product .product-body {
     animation: none !important;
   }
 }
+
+/* V2 mobile corrections after reviewing the 300px screenshot.
+   Narrow 2-column grids squeezed content and cropped the top badges,
+   while the carousel stage hid the sides of the main card. */
+body.crisp-customer-menu .product .details {
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 5;
+  margin: 4px auto 10px !important;
+}
+body.crisp-customer-menu .product .product-body {
+  min-width: 0;
+  overflow: visible;
+  padding-bottom: 15px !important;
+}
+body.crisp-customer-menu .product .product-foot {
+  flex: 0 0 auto;
+  gap: 5px;
+}
+body.crisp-customer-menu .product .product-media {
+  min-height: 0;
+}
+body.reference-home .cm-showcase-slide .product {
+  box-sizing: border-box;
+  min-height: 0;
+}
+body.reference-home .cm-showcase-stage {
+  overflow: hidden;
+}
+body.reference-home .cm-showcase-slide .product .product-media {
+  aspect-ratio: 1.48 / 1 !important;
+}
+body.reference-home .cm-showcase-slide .product h3 {
+  font-size: clamp(.95rem, 3.4vw, 1.14rem);
+}
+body.reference-home .cm-showcase-slide .product .product-body {
+  justify-content: flex-start !important;
+}
+body.reference-home .cm-showcase-nav {
+  width: 44px;
+  height: 44px;
+  top: 44%;
+}
+body.crisp-customer-menu .product .product-status,
+body.crisp-customer-menu .product .product-ribbon {
+  z-index: 6;
+}
+@media (max-width: 560px) {
+  body.reference-home.crisp-customer-menu .cm-featured-showcase {
+    padding-inline: 14px !important;
+    min-height: 440px;
+  }
+  body.reference-home.crisp-customer-menu .cm-showcase-stage {
+    height: 394px;
+  }
+  body.reference-home.crisp-customer-menu .cm-showcase-slide {
+    width: min(80vw, 288px) !important;
+    height: 362px;
+  }
+  body.reference-home.crisp-customer-menu .cm-showcase-slide .product .product-media {
+    aspect-ratio: 1.55 / 1 !important;
+  }
+  body.reference-home.crisp-customer-menu .cm-showcase-nav {
+    width: 38px;
+    height: 38px;
+    top: 43%;
+  }
+  body.crisp-customer-menu .product .fav {
+    top: 18px;
+    left: 18px;
+    width: 40px;
+    height: 40px;
+  }
+  body.crisp-customer-menu .product .product-status,
+  body.crisp-customer-menu .product .product-ribbon {
+    top: 20px;
+    right: 16px;
+    max-width: calc(100% - 78px);
+  }
+  body.reference-home.crisp-customer-menu .catalog-section .grid,
+  body.reference-home.crisp-customer-menu #productGrid,
+  body.crisp-customer-menu #productGrid {
+    gap: 18px;
+    align-items: stretch;
+  }
+  /* Preserve a two-column catalog on normal phones but never crush cards
+     below the width needed for their labels and add controls. */
+  body.crisp-customer-menu .product .product-body,
+  body.reference-home.crisp-customer-menu .product .product-body {
+    padding: 10px 12px 14px !important;
+  }
+  body.crisp-customer-menu .product .details {
+    width: 46px !important;
+    min-width: 46px;
+    height: 46px;
+    min-height: 46px !important;
+    margin-bottom: 8px !important;
+  }
+  body.crisp-customer-menu .product .price {
+    font-size: .97rem;
+  }
+}
+@media(max-width:420px) {
+  /* At 300–400px, a single premium dome is better than two clipped mini cards.
+     Two columns return automatically on wider phones and tablets. */
+  body.reference-home.crisp-customer-menu .catalog-section .grid,
+  body.reference-home.crisp-customer-menu #productGrid,
+  body.crisp-customer-menu #productGrid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    max-width: 340px;
+    margin-inline: auto;
+    gap: 22px;
+  }
+  body.reference-home.crisp-customer-menu .catalog-section .product,
+  body.crisp-customer-menu #productGrid .product {
+    width: 100%;
+    min-height: 0;
+    border-radius: 50% 50% 42% 42% / 32% 32% 15% 15% !important;
+  }
+  body.reference-home.crisp-customer-menu .catalog-section .product .product-media,
+  body.crisp-customer-menu #productGrid .product .product-media {
+    aspect-ratio: 1.55 / 1 !important;
+  }
+  body.crisp-customer-menu .product .fav {
+    top: 23px;
+    left: 23px;
+  }
+  body.crisp-customer-menu .product .product-status,
+  body.crisp-customer-menu .product .product-ribbon {
+    top: 23px;
+    right: 20px;
+    max-width: calc(100% - 100px);
+  }
+  body.reference-home.crisp-customer-menu .cm-showcase-slide {
+    width: min(82vw, 285px) !important;
+  }
+  body.reference-home.crisp-customer-menu .cm-showcase-dots {
+    margin-top: 0;
+  }
+  body.crisp-customer-menu .bottom-nav {
+    inset-inline: 9px !important;
+    bottom: 7px !important;
+    width: auto !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 32px !important;
+    overflow: visible;
+    box-shadow: 0 10px 28px rgba(25,18,20,.13);
+  }
+  body.crisp-customer-menu .menu-area {
+    padding-bottom: calc(125px + var(--safe-bottom)) !important;
+  }
+  body.crisp-customer-menu .cm-sticky-cart:not([hidden]) {
+    bottom: calc(99px + var(--safe-bottom)) !important;
+  }
+}
