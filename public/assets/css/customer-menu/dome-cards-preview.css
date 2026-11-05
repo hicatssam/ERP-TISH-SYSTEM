@@ -537,3 +537,43 @@ body.reference-home.crisp-customer-menu .cm-showcase-slide .product-body {
     height: 47px !important;
   }
 }
+
+/* V4 refinement — rounder, more balanced oval and a soft floating shadow.
+   Scoped to public product cards only; leaves interactions intact. */
+body.reference-home.crisp-customer-menu .catalog-section .product,
+body.reference-home.crisp-customer-menu #productGrid .product,
+body.crisp-customer-menu #productGrid .product,
+body.reference-home.crisp-customer-menu .cm-showcase-slide .product {
+  border-radius: 50% 50% 50% 50% / 44% 44% 42% 42% !important;
+  border: 3px solid color-mix(in srgb, var(--surface) 94%, white) !important;
+  box-shadow:
+    0 3px 7px color-mix(in srgb, var(--primary) 7%, transparent),
+    0 13px 25px color-mix(in srgb, var(--primary) 13%, transparent),
+    0 27px 42px color-mix(in srgb, var(--text) 7%, transparent) !important;
+}
+body.reference-home.crisp-customer-menu .catalog-section .product,
+body.reference-home.crisp-customer-menu #productGrid .product,
+body.crisp-customer-menu #productGrid .product {
+  aspect-ratio: .82 !important;
+}
+body.reference-home.crisp-customer-menu .catalog-section .product-media,
+body.reference-home.crisp-customer-menu #productGrid .product-media,
+body.crisp-customer-menu #productGrid .product-media,
+body.reference-home.crisp-customer-menu .cm-showcase-slide .product-media {
+  border-radius: 50% 50% 5% 5% / 57% 57% 4% 4% !important;
+}
+body.crisp-customer-menu .product .details {
+  box-shadow:
+    0 3px 7px color-mix(in srgb, var(--primary) 13%, transparent),
+    0 8px 17px color-mix(in srgb, var(--primary) 20%, transparent) !important;
+}
+@media(max-width:560px) {
+  body.reference-home.crisp-customer-menu .catalog-section .product,
+  body.reference-home.crisp-customer-menu #productGrid .product,
+  body.crisp-customer-menu #productGrid .product {
+    aspect-ratio: .78 !important;
+  }
+  body.reference-home.crisp-customer-menu .cm-showcase-slide {
+    height: 365px !important;
+  }
+}
