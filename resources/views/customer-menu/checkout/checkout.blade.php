@@ -212,7 +212,7 @@ function choosePayment(id) {
     document.querySelectorAll('[data-pay]').forEach(b => b.classList.toggle('active', String(b.dataset.pay) === String(id)));
     const accounts = method.accounts || [];
     document.getElementById('paymentAccountDetails').innerHTML = accounts.length
-        ? `<label>الحساب<select id="paymentAccountSelect" required><option value="">اختر الحساب</option>${accounts.map(a => `<option value="${a.id}">${CM.esc(a.name || a.provider_name || a.account_number || 'حساب')}</option>`).join('')}</select></label>`
+        ? `<label>الحساب<select id="paymentAccountSelect" aria-required="true"><option value="">اختر الحساب</option>${accounts.map(a => `<option value="${a.id}">${CM.esc(a.name || a.provider_name || a.account_number || 'حساب')}</option>`).join('')}</select></label>`
         : '';
 
     document.getElementById('paymentAccountDetails').insertAdjacentHTML('beforeend', '<div id="selectedPaymentAccount" dir="auto"></div>');
