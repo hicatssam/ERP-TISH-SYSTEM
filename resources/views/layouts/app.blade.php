@@ -951,6 +951,79 @@ a.app-page-btn:hover {
     line-height: 1.8;
 }
 
+
+    /* One shared mobile-style navigation bar on every ERP screen size. */
+    .tish-bottom-navigation {
+        position: fixed;
+        inset-inline-start: var(--sidebar-w, 260px);
+        inset-inline-end: 0;
+        bottom: 0;
+        z-index: 180;
+        display: flex;
+        align-items: stretch;
+        justify-content: space-around;
+        gap: 4px;
+        min-height: 68px;
+        padding: 7px max(12px, env(safe-area-inset-right)) max(7px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+        border-top: 1px solid var(--theme-border, #e5e7eb);
+        background: var(--theme-header-bg, #fff);
+        color: var(--theme-text, #172c43);
+        box-shadow: 0 -6px 22px rgba(0,0,0,.07);
+        box-sizing: border-box;
+    }
+    .tish-bottom-navigation[hidden] { display: none !important; }
+    .tish-bottom-navigation__item {
+        display: flex;
+        flex: 1 1 0;
+        min-width: 0;
+        max-width: 160px;
+        min-height: 54px;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        padding: 5px 3px;
+        border: none;
+        border-radius: 12px;
+        background: transparent;
+        color: inherit;
+        text-decoration: none;
+        font: inherit;
+        font-size: .69rem;
+        font-weight: 700;
+        line-height: 1.2;
+        cursor: pointer;
+        transition: background .18s ease, color .18s ease;
+    }
+    .tish-bottom-navigation__item .nav-icon { width: 21px; height: 21px; flex: none; }
+    .tish-bottom-navigation__item span {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .tish-bottom-navigation__item:hover,
+    .tish-bottom-navigation__item:focus-visible {
+        background: color-mix(in srgb, var(--theme-sidebar-active, #c79d44) 11%, transparent);
+        outline-offset: -2px;
+    }
+    .tish-bottom-navigation__item.active {
+        background: color-mix(in srgb, var(--theme-sidebar-active, #c79d44) 14%, transparent);
+        color: var(--theme-sidebar-active, #a77821);
+    }
+    .dahab-content { padding-bottom: max(100px, calc(84px + env(safe-area-inset-bottom))) !important; }
+    @media (max-width: 1024px) {
+        .tish-bottom-navigation { inset-inline-start: 0; }
+    }
+    @media (max-width: 480px) {
+        .tish-bottom-navigation { gap: 0; padding-inline: 4px; }
+        .tish-bottom-navigation__item { font-size: .62rem; }
+    }
+    @media print {
+        .tish-bottom-navigation { display: none !important; }
+        .dahab-content { padding-bottom: 0 !important; }
+    }
+
     </style>
 
     <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.54.1/dist/apexcharts.min.js" defer></script>
@@ -2850,6 +2923,10 @@ a.app-page-btn:hover {
 
     </div>
 
+
+    {{-- Same source of truth as the sidebar: only visible, permitted links become bottom tabs. --}}
+    <nav id="tishBottomNavigation" class="tish-bottom-navigation" aria-label="التنقل السريع" hidden></nav>
+
     <div
         class="modal-overlay dahab-confirm-overlay"
         id="confirmModal"
@@ -3756,6 +3833,62 @@ a.app-page-btn:hover {
                     { passive: false }
                 );
             });
+        });
+    </script>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const bottom = document.getElementById('tishBottomNavigation');
+            const sidebar = document.querySelector('.dahab-sidebar .sidebar-nav');
+            if (!bottom || !sidebar) return;
+
+            // Reuse the existing authorized sidebar links, icons, labels and active state.
+            // Both desktop and mobile render this exact same component.
+            const links = Array.from(sidebar.querySelectorAll('a.nav-item[href]'))
+                .filter(link => link.getAttribute('href') !== '#' && !link.hidden && link.querySelector('span'));
+            const titles = ['لوحة التحكم', 'لوحة التشغيل', 'نقطة البيع', 'الصالة والطاولات', 'شاشة المطبخ'];
+            const chosen = [];
+            for (const title of titles) {
+                const match = links.find(link => link.querySelector('span')?.textContent.trim() === title);
+                if (match && !chosen.includes(match)) chosen.push(match);
+                if (chosen.length === 4) break;
+            }
+            if (chosen.length < 4) {
+                for (const link of links) {
+                    if (!chosen.includes(link)) chosen.push(link);
+                    if (chosen.length === 4) break;
+                }
+            }
+            for (const source of chosen) {
+                const tab = document.createElement('a');
+                tab.href = source.href;
+                tab.className = 'tish-bottom-navigation__item' + (source.classList.contains('active') ? ' active' : '');
+                if (source.classList.contains('active')) tab.setAttribute('aria-current', 'page');
+                const icon = source.querySelector('svg');
+                if (icon) tab.appendChild(icon.cloneNode(true));
+                const label = document.createElement('span');
+                label.textContent = source.querySelector('span')?.textContent.trim() || 'القسم';
+                tab.appendChild(label);
+                bottom.appendChild(tab);
+            }
+            const more = document.createElement('button');
+            more.type = 'button';
+            more.className = 'tish-bottom-navigation__item';
+            more.setAttribute('aria-label', 'المزيد من الأقسام');
+            more.innerHTML = '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span>المزيد</span>';
+            more.addEventListener('click', () => {
+                const toggle = document.getElementById('sidebarToggle');
+                if (toggle && getComputedStyle(toggle).display !== 'none') {
+                    toggle.click();
+                } else {
+                    const first = sidebar.querySelector('a.nav-item.active') || sidebar.querySelector('a.nav-item');
+                    if (first) first.focus();
+                    sidebar.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                }
+            });
+            bottom.appendChild(more);
+            bottom.hidden = false;
         });
     </script>
 
