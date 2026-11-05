@@ -212,8 +212,10 @@ function updateMedia() {
         media.querySelector('.product-placeholder')?.remove();
         media.prepend(img);
     }
+    if (img.getAttribute('src') === v.image) return;
     img.src = v.image;
     img.alt = PRODUCT.name;
+    document.dispatchEvent(new CustomEvent('tish:product-image-changed', { detail: { image: img } }));
 }
 
 function currentPrice() {

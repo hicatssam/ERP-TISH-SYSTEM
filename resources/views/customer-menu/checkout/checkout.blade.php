@@ -114,6 +114,7 @@ const CSRF = document.querySelector('meta[name="csrf-token"]').content;
 let methods = [];
 let checkoutSubmitting = false;
 let checkoutSucceeded = false;
+let paymentProofPreviewUrl = null;
 
 function renderSummary() {
     const rows = CM.cartRows();
@@ -211,7 +212,7 @@ function choosePayment(id) {
     document.querySelectorAll('[data-pay]').forEach(b => b.classList.toggle('active', String(b.dataset.pay) === String(id)));
     const accounts = method.accounts || [];
     document.getElementById('paymentAccountDetails').innerHTML = accounts.length
-        ? `<label>الحساب<select id="paymentAccountSelect"><option value="">اختر الحساب</option>${accounts.map(a => `<option value="${a.id}">${CM.esc(a.name || a.provider_name || a.account_number || 'حساب')}</option>`).join('')}</select></label>`
+        ? `<label>الحساب<select id="paymentAccountSelect" aria-required="true"><option value="">اختر الحساب</option>${accounts.map(a => `<option value="${a.id}">${CM.esc(a.name || a.provider_name || a.account_number || 'حساب')}</option>`).join('')}</select></label>`
         : '';
 
     document.getElementById('paymentAccountDetails').insertAdjacentHTML('beforeend', '<div id="selectedPaymentAccount" dir="auto"></div>');
@@ -253,10 +254,12 @@ function renderSelectedPaymentAccount() {
 document.getElementById('paymentProofInput').addEventListener('change', e => {
     const file = e.target.files[0];
     const preview = document.getElementById('uploadPreview');
-    if (!file) { preview.hidden = true; return; }
+    if (paymentProofPreviewUrl) { URL.revokeObjectURL(paymentProofPreviewUrl); paymentProofPreviewUrl = null; }
+    if (!file) { preview.hidden = true; preview.replaceChildren(); return; }
     const isImage = file.type.startsWith('image/');
     preview.hidden = false;
-    preview.innerHTML = `${isImage ? `<img src="${URL.createObjectURL(file)}" alt="">` : `<i class="fa-solid fa-file-pdf" style="font-size:1.6rem;color:var(--primary)"></i>`}<span>${CM.esc(file.name)}</span>`;
+    if (isImage) paymentProofPreviewUrl = URL.createObjectURL(file);
+    preview.innerHTML = `${isImage ? `<img src="${paymentProofPreviewUrl}" alt="">` : `<i class="fa-solid fa-file-pdf" style="font-size:1.6rem;color:var(--primary)"></i>`}<span>${CM.esc(file.name)}</span>`;
 });
 
 document.addEventListener('click', e => {
@@ -300,6 +303,15 @@ document.getElementById('checkoutForm').addEventListener('submit', async e => {
         document.getElementById('paymentMethods').scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
     }
+    const selectedMethod = methods.find(method => String(method.id) === String(paymentMethodId));
+    const configuredAccounts = selectedMethod?.accounts || [];
+    if (configuredAccounts.length > 0 && !document.getElementById('paymentAccountId').value) {
+        error.textContent = 'اختر حساب الدفع أو التحويل قبل تأكيد الطلب.';
+        document.getElementById('paymentAccountSelect')?.focus();
+        document.getElementById('paymentAccountDetails').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+    }
+
 
     const proof = document.getElementById('paymentProofInput').files[0];
     if (proof && proof.size > 5 * 1024 * 1024) {

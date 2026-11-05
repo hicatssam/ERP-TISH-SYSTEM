@@ -91,27 +91,42 @@ root.innerHTML=rows.length?rows.map((item,index)=>{
     </a>`;
 }).join(''):`<div class="empty"><div class="emptyIcon">🛍️</div><h2>لا توجد طلبات بعد</h2><p>بعد إرسال أول طلب سيظهر هنا تلقائيًا.</p><a class="primary" href="${menuUrl}">ابدأ طلبًا جديدًا</a></div>`;
 
+let refreshingStatuses = false;
 async function refreshStatuses(){
-    if(document.hidden||!rows.length)return;
-
-    await Promise.allSettled(rows.map(async(item,index)=>{
-        const endpoint=statusUrl(item);
-        if(!endpoint)return;
-
-        const response=await fetch(endpoint,{headers:{Accept:'application/json'},cache:'no-store'});
-        if(!response.ok)return;
-
-        const data=await response.json();
-        const element=root.querySelector(`[data-order-index="${index}"] .orderStatus`);
-        if(!element)return;
-
-        const state=String(data.state||'received').toLowerCase();
-        element.dataset.state=state;
-        element.textContent=menuT(data.label||fallbackLabels[state]||'تم تحديث الطلب');
-    }));
+    if(document.hidden||!rows.length||refreshingStatuses)return;
+    refreshingStatuses=true;
+    try {
+        // Keep at most four requests in flight, even for a returning customer
+        // with 30 saved orders. The open order tracking page remains 5-second live.
+        let nextIndex=0;
+        const updateOne=async()=>{
+            while(nextIndex<rows.length&&!document.hidden){
+                const index=nextIndex++;
+                const item=rows[index];
+                const endpoint=statusUrl(item);
+                if(!endpoint)continue;
+                try {
+                    const response=await fetch(endpoint,{headers:{Accept:'application/json'},cache:'no-store'});
+                    if(!response.ok)continue;
+                    const data=await response.json();
+                    const element=root.querySelector(`[data-order-index="${index}"] .orderStatus`);
+                    if(!element)continue;
+                    const state=String(data.state||'received').toLowerCase();
+                    element.dataset.state=state;
+                    element.textContent=menuT(data.label||fallbackLabels[state]||'تم تحديث الطلب');
+                } catch(error) { /* Keep the last known state while offline. */ }
+            }
+        };
+        await Promise.all(Array.from({length:Math.min(4,rows.length)},()=>updateOne()));
+    }finally{
+        refreshingStatuses=false;
+    }
 }
 
 refreshStatuses();
-setInterval(refreshStatuses,10000);
+setInterval(refreshStatuses,20000);
+document.addEventListener('visibilitychange',()=>{
+    if(!document.hidden)refreshStatuses();
+});
 </script>
 </body></html>
