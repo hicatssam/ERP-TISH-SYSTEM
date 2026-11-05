@@ -546,3 +546,46 @@ body.tish-product-page .detail-media.tish-image-loading{
 body.tish-product-page .detail-media.tish-image-loading img{opacity:0}
 body.tish-product-page .detail-media.tish-image-settled img{opacity:1;transition:opacity .3s ease}
 @media(prefers-reduced-motion:reduce){body.tish-product-page .detail-media.tish-image-loading{animation:none}}
+
+
+/* Home promo banner: round BOTH top corners of the real image and slide.
+   Clip the moving carousel and its gradient to the exact outer card radius. */
+body.reference-home.crisp-customer-menu .reference-hero{
+ --tish-banner-radius:30px;
+ border-radius:var(--tish-banner-radius)!important;
+ overflow:hidden;
+ isolation:isolate;
+ background:var(--surface);
+ border:1px solid color-mix(in srgb,var(--primary) 10%,var(--surface));
+ box-shadow:0 3px 7px color-mix(in srgb,var(--text) 6%,transparent),0 14px 30px color-mix(in srgb,var(--text) 12%,transparent);
+ -webkit-mask-image:-webkit-radial-gradient(white,black);
+}
+body.reference-home.crisp-customer-menu .reference-hero .banner-track{
+ border-radius:var(--tish-banner-radius) var(--tish-banner-radius) 0 0;
+ overflow:hidden;
+}
+body.reference-home.crisp-customer-menu .reference-hero .banner-slide{
+ border-radius:var(--tish-banner-radius) var(--tish-banner-radius) 0 0;
+ overflow:hidden;
+}
+body.reference-home.crisp-customer-menu .reference-hero .banner-slide img{
+ display:block;
+ width:100%;
+ height:100%;
+ object-fit:cover;
+}
+body.reference-home.crisp-customer-menu .reference-hero .banner-slide::after{
+ border-radius:inherit;
+}
+body.reference-home.crisp-customer-menu .reference-hero .banner-dots{
+ position:relative;
+ margin:0;
+ border-radius:0 0 var(--tish-banner-radius) var(--tish-banner-radius);
+}
+body.reference-home.crisp-customer-menu .reference-hero .reference-hero-fallback{
+ border-radius:inherit;
+ overflow:hidden;
+}
+@media(max-width:560px){
+ body.reference-home.crisp-customer-menu .reference-hero{--tish-banner-radius:26px}
+}
