@@ -555,6 +555,7 @@
 
         // Export an actual PNG receipt locally, without screenshot permissions,
         // cross-origin libraries or server-side file storage.
+        @if($order->invoice)
         const saveInvoiceButton = document.getElementById('saveInvoiceImage');
         const receipt = @json([
             'brand' => $brandName,
@@ -651,6 +652,8 @@
                 saveInvoiceButton.innerHTML = oldLabel;
             }
         });
+
+        @endif
 
         if (initialStatus) {
             updateTracking(initialStatus);
