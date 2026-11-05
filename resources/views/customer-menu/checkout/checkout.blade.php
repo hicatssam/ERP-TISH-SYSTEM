@@ -154,6 +154,11 @@ function serviceFields() {
     const value = document.getElementById('serviceType').value;
     document.getElementById('tableField').hidden = value !== 'dine_in';
     document.getElementById('addressField').hidden = value !== 'delivery';
+    // A previous dine-in table must never be silently carried to another service type.
+    if (value !== 'dine_in') {
+        document.getElementById('tableIdInput').value = '';
+        document.querySelectorAll('.table-card.selected').forEach(card => card.classList.remove('selected'));
+    }
 }
 
 document.getElementById('tableGrid').addEventListener('click', e => {
@@ -178,7 +183,8 @@ async function loadPayments() {
         methods = [];
         document.getElementById('checkoutSubmit').disabled = true;
         document.getElementById('paymentMethods').innerHTML =
-            '<div class="error">' + menuT('تعذر تحميل طرق الدفع. حدّث الصفحة أو راجع إعدادات الفرع.') + '</div>';
+            '<div class="error">' + menuT('تعذر تحميل طرق الدفع. تحقق من الاتصال وحاول مرة أخرى.') +
+            '</div><button class="filter-apply" type="button" id="retryLoadPayments">إعادة تحميل طرق الدفع</button>';
     }
 }
 
@@ -226,6 +232,14 @@ function choosePayment(id) {
 
     const proofField = document.getElementById('paymentProofField');
     const proofInput = document.getElementById('paymentProofInput');
+    // A receipt chosen for a different payment method must not be reused silently.
+    proofInput.value = '';
+    if (paymentProofPreviewUrl) {
+        URL.revokeObjectURL(paymentProofPreviewUrl);
+        paymentProofPreviewUrl = null;
+    }
+    document.getElementById('uploadPreview').hidden = true;
+    document.getElementById('uploadPreview').replaceChildren();
     const proofStar = document.getElementById('proofRequiredStar');
     proofField.hidden = isPureCash;
     proofInput.required = !!method.requires_verification;
@@ -263,6 +277,7 @@ document.getElementById('paymentProofInput').addEventListener('change', e => {
 });
 
 document.addEventListener('click', e => {
+    if (e.target.closest('#retryLoadPayments')) { loadPayments(); return; }
     const pay = e.target.closest('[data-pay]');
     if (pay) choosePayment(pay.dataset.pay);
 });
