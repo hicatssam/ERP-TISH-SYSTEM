@@ -107,6 +107,8 @@ class CircularMenuDesignTest extends TestCase
         $this->assertStringContainsString('tish-visuals.js', $shared);
         $this->assertStringContainsString('IntersectionObserver', $js);
         $this->assertStringContainsString('MutationObserver', $js);
+        $this->assertStringContainsString('.detail-media img', $js);
+        $this->assertStringContainsString('tish-visuals.js', $shared);
         $this->assertStringContainsString("img.addEventListener('load'", $js);
         $this->assertStringContainsString("img.addEventListener('error'", $js);
         $this->assertStringContainsString('prefers-reduced-motion: reduce', $js);
