@@ -43,3 +43,11 @@ Do **not** treat this document as a claim that every flow has been verified.
 ## Acceptance
 Run `php artisan test` and real browser tests on a test DB **before** merging.
 Confirm no real payments or kitchen production transactions were created while testing.
+
+## Multi-station readiness safety
+- Customer status is aggregated over ALL tickets for the order, not just one KDS station.
+- Kitchen tickets are checked against the order's original line IDs; a missing ticket prevents a premature ready/completed result.
+- Mixed queued/preparing/ready/served tickets remain at preparing until every non-cancelled station is ready/served.
+- A mix of ready and served is ready; only all served is completed.
+- Added `tests/Unit/CustomerOrderMultiStationStatusTest.php` with 12 source-level regression cases (not run here).
+- This does not change physical fulfillment: ticket status is not proof that products were actually handed to a customer.
