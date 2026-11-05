@@ -589,3 +589,55 @@ body.reference-home.crisp-customer-menu .reference-hero .reference-hero-fallback
 @media(max-width:560px){
  body.reference-home.crisp-customer-menu .reference-hero{--tish-banner-radius:26px}
 }
+
+/* Unified extra-rounded card system: all PUBLIC customer menu pages.
+   Keep the entire image clipped to the same pill-like outer silhouette.
+   These final rules intentionally override older mobile !important radii. */
+body.crisp-customer-menu,
+body.cm-my-orders {
+  --tish-card-radius: 40px;
+  --tish-card-inner-radius: 34px;
+}
+body.crisp-customer-menu :is(
+  .product, .related-row .product, .tish-addon-card,
+  .order-card, .cart-row, .order-summary, .eta-banner,
+  .payment-card, .table-card, .detail-body, .picker-group,
+  .option-row, .upload-field, .upload-preview
+) {
+  border-radius: var(--tish-card-radius) !important;
+}
+body.crisp-customer-menu :is(.product, .related-row .product, .tish-addon-card, .order-card) {
+  overflow: hidden;
+  isolation: isolate;
+}
+body.crisp-customer-menu .product-media,
+body.reference-home.crisp-customer-menu .product-media,
+body.crisp-customer-menu .tish-addon-photo {
+  border-radius: var(--tish-card-inner-radius) var(--tish-card-inner-radius) 28px 28px !important;
+  overflow: hidden;
+}
+body.crisp-customer-menu .product-media img,
+body.crisp-customer-menu .tish-addon-photo img {
+  display: block;
+  max-width: 100%;
+}
+body.crisp-customer-menu :is(.product-body, .cart-thumb, .detail-media) {
+  border-radius: var(--tish-card-inner-radius) !important;
+}
+body.cm-my-orders .order {
+  border-radius: var(--tish-card-radius) !important;
+}
+@media (max-width: 560px) {
+  body.crisp-customer-menu,
+  body.cm-my-orders {
+    --tish-card-radius: 36px;
+    --tish-card-inner-radius: 32px;
+  }
+  body.reference-home.crisp-customer-menu .product,
+  body.reference-home.crisp-customer-menu .product-media {
+    border-radius: var(--tish-card-radius) !important;
+  }
+  body.reference-home.crisp-customer-menu .product-media {
+    border-radius: var(--tish-card-inner-radius) var(--tish-card-inner-radius) 26px 26px !important;
+  }
+}
