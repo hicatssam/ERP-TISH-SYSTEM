@@ -684,13 +684,15 @@
                 🖨️ طباعة
             </button>
 
-            <button
-                type="button"
-                class="print-screen-btn"
-                onclick="window.close()"
-            >
-                إغلاق
-            </button>
+            @hasSection('print_close_url')
+                <a class="print-screen-btn" href="@yield('print_close_url')">إغلاق</a>
+            @else
+                <button
+                    type="button"
+                    class="print-screen-btn"
+                    onclick="window.close()"
+                >إغلاق</button>
+            @endif
         </div>
     @endunless
 
