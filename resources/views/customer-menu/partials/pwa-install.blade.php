@@ -1,5 +1,5 @@
 {{-- Installation is native where the browser exposes a prompt, manual otherwise. --}}
-<button type="button" class="pwa-install-btn" id="pwaInstallBtn" hidden>
+<button type="button" class="pwa-install-btn" id="pwaInstallBtn" aria-label="ثبّت التطبيق" title="ثبّت التطبيق" hidden>
     <i class="fa-solid fa-arrow-down-to-bracket" aria-hidden="true"></i>
     <span>ثبّت التطبيق</span>
 </button>

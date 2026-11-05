@@ -10,7 +10,7 @@
 @include('customer-menu.partials.styles')
 @include('customer-menu.partials.pwa-head')
 </head>
-<body class="crisp-customer-menu">
+<body class="crisp-customer-menu tish-product-page">
 <div class="app crisp-menu-app">
 @include('customer-menu.partials.topbar', ['backUrl' => route('customer-menu.products', $location->code)])
 
@@ -49,7 +49,73 @@
    <button class="detail-cart-link" id="detailOpenCart" type="button">
     <i class="fa-solid fa-basket-shopping"></i> عرض السلة <span id="detailCartCount">0</span>
    </button>
+   <div class="tish-install-inline">@include('customer-menu.partials.pwa-install')</div>
   </div>
+
+  @if($addOnGroups->isNotEmpty())
+  <section class="tish-complete-meal" aria-labelledby="tishCompleteTitle">
+   <div class="tish-addons-heading">
+    <span class="tish-addons-eyebrow"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> {{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'MAKE IT A MEAL' : 'كمّل وجبتك' }}</span>
+    <h2 id="tishCompleteTitle">{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Complete your order' : 'خلّي وجبتك كاملة!' }}</h2>
+    <p>{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Pick fries, a drink or a sauce — all optional.' : 'اختار بطاطا أو مشروب أو صوص... حسب ذوقك.' }}</p>
+   </div>
+   <?php foreach ($addOnGroups as $addOnGroup): ?>
+    <?php
+     $addOnLabels = [
+      'fries' => ['ar' => 'بطاطا ومقبلات', 'en' => 'Fries & sides', 'icon' => 'fa-box-open'],
+      'drinks' => ['ar' => 'مشروبات منعشة', 'en' => 'Cold drinks', 'icon' => 'fa-glass-water'],
+      'sauces' => ['ar' => 'صوصات وتغميسات', 'en' => 'Sauces & dips', 'icon' => 'fa-bottle-droplet'],
+     ];
+     $addOnGroupLabel = $addOnLabels[$addOnGroup['type']];
+     $addOnTitle = \App\Support\CustomerMenuLanguage::isEnglish() ? $addOnGroupLabel['en'] : $addOnGroupLabel['ar'];
+    ?>
+    <div class="tish-addon-group" data-addon-group="{{ $addOnGroup['type'] }}">
+     <div class="tish-addon-group-title">
+      <div class="tish-addon-category-label">
+       <span class="tish-addon-category-icon"><i class="fa-solid {{ $addOnGroupLabel['icon'] }}" aria-hidden="true"></i></span>
+       <h3>{{ $addOnTitle }}</h3>
+      </div>
+      @if($addOnGroup['items']->count() > 2)
+       <button type="button" class="tish-addon-discover" data-addon-expand aria-expanded="false" aria-controls="tish-addon-{{ $addOnGroup['type'] }}">
+        <span>{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Discover more' : 'اكتشف المزيد' }}</span>
+        <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+       </button>
+      @endif
+     </div>
+     <div class="tish-addons-grid" id="tish-addon-{{ $addOnGroup['type'] }}">
+      <?php foreach ($addOnGroup['items'] as $addOnIndex => $addOn): ?>
+       <article class="tish-addon-card" <?php if ($addOnIndex >= 2): ?> data-addon-extra hidden <?php endif; ?>>
+        <a class="tish-addon-photo" href="{{ route('customer-menu.product.show', [$location->code, $addOn['product_id']]) }}" aria-label="{{ $addOn['name'] }}">
+         @if(!empty($addOn['image']))
+          <img src="{{ $addOn['image'] }}" alt="{{ $addOn['name'] }}" loading="lazy" onerror="this.style.display='none'">
+         @else
+          <span class="tish-addon-placeholder"><i class="fa-solid fa-utensils" aria-hidden="true"></i></span>
+         @endif
+        </a>
+        <div class="tish-addon-info">
+         <span class="tish-addon-type">{{ $addOn['category'] }}</span>
+         <strong>{{ $addOn['name'] }}</strong>
+         <div class="tish-addon-actions">
+          <span class="tish-addon-price">{{ number_format($addOn['price'], 2) }} {{ $menuCurrencySymbol }}</span>
+          @if($addOn['requires_choices'])
+           <a class="tish-addon-pick" href="{{ route('customer-menu.product.show', [$location->code, $addOn['product_id']]) }}" aria-label="{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Choose options for' : 'اختيار تفاصيل' }} {{ $addOn['name'] }}">
+            <i class="fa-solid fa-sliders" aria-hidden="true"></i>
+           </a>
+          @else
+           <button class="tish-addon-add" type="button" data-addon-id="{{ $addOn['product_id'] }}" aria-label="{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Add' : 'أضف' }} {{ $addOn['name'] }}">
+            <i class="fa-solid fa-plus" aria-hidden="true"></i>
+           </button>
+          @endif
+         </div>
+        </div>
+       </article>
+      <?php endforeach; ?>
+     </div>
+    </div>
+   <?php endforeach; ?>
+   <p class="tish-addons-feedback" id="tishAddonsFeedback" role="status" aria-live="polite"></p>
+  </section>
+  @endif
 
   @if($relatedItems->isNotEmpty())
    <div class="section-title"><div><h2>قد يعجبك أيضًا</h2></div></div>
@@ -72,7 +138,6 @@
 </div>
 
 @include('customer-menu.partials.bottom-nav', ['activeNav' => 'menu'])
-@include('customer-menu.partials.pwa-install')
 @include('customer-menu.partials.cart-engine')
 
 <script>
@@ -81,6 +146,37 @@ const menuT = text => window.CustomerMenuI18n.t(text);
 const menuF = (key, values) => window.CustomerMenuI18n.format(key, values);
 const PRODUCT_ID = @json($product['product_id']);
 const PRODUCT = CM.product(PRODUCT_ID);
+document.querySelectorAll('[data-addon-expand]').forEach(button => {
+    button.addEventListener('click', () => {
+        const group = button.closest('[data-addon-group]');
+        if (!group) return;
+        const expanded = button.getAttribute('aria-expanded') === 'true';
+        group.querySelectorAll('[data-addon-extra]').forEach(card => { card.hidden = expanded; });
+        button.setAttribute('aria-expanded', String(!expanded));
+        const text = button.querySelector('span');
+        if (text) text.textContent = expanded
+            ? @json(\App\Support\CustomerMenuLanguage::isEnglish() ? 'Discover more' : 'اكتشف المزيد')
+            : @json(\App\Support\CustomerMenuLanguage::isEnglish() ? 'Show less' : 'عرض أقل');
+    });
+});
+const addonFeedback = document.getElementById('tishAddonsFeedback');
+document.querySelector('.tish-addons-grid')?.addEventListener('click', event => {
+    const button = event.target.closest('button[data-addon-id]');
+    if (!button) return;
+    const item = CM.product(button.dataset.addonId);
+    // Complex items must go through their dedicated choice picker.
+    if (!item || !item.available || item.requiresChoices || item.isVariantProduct) return;
+    if (!CM.addToCart(item.id, 1)) return;
+    button.classList.add('added');
+    button.innerHTML = '<i class="fa-solid fa-check" aria-hidden="true"></i>';
+    if (addonFeedback) addonFeedback.textContent = menuT('تمت الإضافة للسلة') + ': ' + item.name;
+    window.setTimeout(() => {
+        if (!button.isConnected) return;
+        button.classList.remove('added');
+        button.innerHTML = '<i class="fa-solid fa-plus" aria-hidden="true"></i>';
+    }, 1000);
+});
+
 let qty = 1;
 
 // ---- selection state ----
