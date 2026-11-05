@@ -3,7 +3,17 @@
 @section('title', 'شاشة المطبخ KDS')
 
 @section('content')
+@php
+    // Same editable client logo used in the ERP branding settings.
+    $kdsClientLogo = \App\Models\SystemSetting::assetUrl('brand_logo')
+        ?: \App\Models\SystemSetting::assetUrl('brand_logo_small');
+@endphp
 <div class="kds-shell" id="kdsShell">
+    @if($kdsClientLogo)
+        <div class="kds-brand-watermark" aria-hidden="true">
+            <img src="{{ $kdsClientLogo }}" alt="" decoding="async">
+        </div>
+    @endif
     <div class="kds-topbar">
         <div>
             <h1>شاشة المطبخ KDS</h1>
@@ -100,7 +110,31 @@
 </div>
 
 <style>
-.kds-shell{--kds-card-min:320px}
+.kds-shell{--kds-card-min:320px;position:relative;isolation:isolate;min-height:calc(100vh - 150px)}
+/* Ambient client branding: the stored logo is decorative and never affects controls. */
+.kds-brand-watermark{
+    position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    overflow:hidden;pointer-events:none;z-index:0;opacity:.075;
+}
+.kds-brand-watermark img{
+    display:block;width:min(58vw,780px);height:min(64vh,680px);
+    max-width:none;object-fit:contain;
+    animation:kdsLogoFloat 22s ease-in-out infinite alternate;
+    will-change:transform;
+}
+.kds-shell > :not(.kds-brand-watermark){position:relative;z-index:1}
+@keyframes kdsLogoFloat{
+    0%{transform:translate3d(-18px,10px,0) scale(.96) rotate(-2deg)}
+    50%{transform:translate3d(12px,-15px,0) scale(1.025) rotate(1deg)}
+    100%{transform:translate3d(-6px,6px,0) scale(1.06) rotate(2deg)}
+}
+@media(max-width:760px){
+    .kds-brand-watermark img{width:min(82vw,480px);height:54vh}
+}
+@media(prefers-reduced-motion:reduce){
+    .kds-brand-watermark img{animation:none!important;will-change:auto}
+}
+@media print{.kds-brand-watermark{display:none!important}}
 .kds-topbar{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1rem}
 .kds-topbar h1{margin:0;font-size:1.3rem}.kds-topbar p{margin:.25rem 0 0;color:var(--text-muted);font-size:.75rem}
 .kds-top-actions,.kds-filter-form{display:flex;align-items:center;gap:.55rem;flex-wrap:wrap}.kds-filter-form .form-select{min-width:150px}
