@@ -6,7 +6,6 @@
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
     const canReveal = !reduced.matches && 'IntersectionObserver' in window;
     let revealObserver = null;
-    let imageObserver = null;
     const seen = new WeakSet();
 
     function reveal(card) {
@@ -22,25 +21,39 @@
     }
 
     function finalizeImage(img, frame) {
+        if (!frame || !img.isConnected) return;
         frame.classList.remove('tish-image-loading');
         frame.classList.add('tish-image-settled');
-        if (img.complete && img.naturalWidth === 0) frame.classList.add('tish-image-error');
+        frame.classList.toggle('tish-image-error', !img.naturalWidth);
+    }
+
+    function refreshImage(img, frame) {
+        if (!frame) return;
+        frame.classList.remove('tish-image-settled', 'tish-image-error');
+        if (img.complete) {
+            finalizeImage(img, frame);
+        } else {
+            frame.classList.add('tish-image-loading');
+        }
     }
 
     function prepareImage(img, frame) {
-        if (img.dataset.tishImageBound) return;
-        img.dataset.tishImageBound = '1';
-        img.decoding = 'async';
-        if (!frame.classList.contains('detail-media') && !img.hasAttribute('loading')) img.loading = 'lazy';
-        if (img.complete) {
-            finalizeImage(img, frame);
-            return;
+        if (!frame) return;
+        if (!img.dataset.tishImageBound) {
+            img.dataset.tishImageBound = '1';
+            img.decoding = 'async';
+            if (!frame.classList.contains('detail-media') && !img.hasAttribute('loading')) img.loading = 'lazy';
+            // Persistent handlers also cover a variant switching on the same image.
+            img.addEventListener('load', () => finalizeImage(img, frame));
+            img.addEventListener('error', () => finalizeImage(img, frame));
         }
-        frame.classList.add('tish-image-loading');
-        img.addEventListener('load', () => finalizeImage(img, frame), { once: true });
-        img.addEventListener('error', () => finalizeImage(img, frame), { once: true });
-        // Native lazy-loading handles viewport prioritization; don't assign src anew.
+        refreshImage(img, frame);
     }
+
+    document.addEventListener('tish:product-image-changed', event => {
+        const img = event.detail?.image;
+        if (img instanceof HTMLImageElement) prepareImage(img, img.closest('.detail-media'));
+    });
 
     function prepareCard(card, index) {
         if (seen.has(card)) return;
