@@ -589,3 +589,94 @@ body.reference-home.crisp-customer-menu .reference-hero .reference-hero-fallback
 @media(max-width:560px){
  body.reference-home.crisp-customer-menu .reference-hero{--tish-banner-radius:26px}
 }
+
+/* Customer ordering menu: show the EXISTING five-tab mobile bottom navigation
+   on desktop as well. The markup, URLs, icons, badges, and active-state logic
+   remain the exact same customer-menu.partials.bottom-nav partial.
+   Mobile rules (<=560px) are intentionally unchanged. */
+@media (min-width: 561px) {
+  body.crisp-customer-menu .bottom-nav {
+    position: fixed;
+    z-index: 100;
+    bottom: 0;
+    left: 50%;
+    right: auto;
+    width: min(100%, 900px);
+    height: calc(84px + var(--safe-bottom, 0px));
+    padding: 7px 6px var(--safe-bottom, 0px);
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: center;
+    transform: translateX(-50%);
+    border: 1px solid var(--line);
+    border-bottom: 0;
+    border-radius: 26px 26px 0 0;
+    background: color-mix(in srgb, var(--surface) 96%, transparent);
+    box-shadow: 0 -9px 30px rgba(25, 18, 20, .07);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    box-sizing: border-box;
+  }
+  body.crisp-customer-menu .bottom-nav .nav-btn {
+    height: 69px;
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 800;
+    position: relative;
+    text-decoration: none;
+  }
+  body.crisp-customer-menu .bottom-nav .nav-btn i {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    font-size: 18px;
+    transition: transform .2s ease;
+  }
+  body.crisp-customer-menu .bottom-nav .nav-btn.active {
+    color: var(--primary);
+  }
+  body.crisp-customer-menu .bottom-nav .nav-btn.active i {
+    background: var(--primary);
+    color: var(--on-primary);
+    transform: none;
+  }
+  body.crisp-customer-menu .bottom-nav .nav-badge {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    margin-left: 9px;
+    min-width: 19px;
+    height: 19px;
+    padding: 0 3px;
+    display: grid;
+    place-items: center;
+    border: 2px solid var(--surface);
+    border-radius: 12px;
+    background: var(--primary);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 900;
+  }
+  body.crisp-customer-menu .menu-area,
+  body.reference-home.crisp-customer-menu .menu-area {
+    padding-bottom: calc(120px + var(--safe-bottom, 0px));
+  }
+  body.crisp-customer-menu .toast {
+    bottom: calc(96px + var(--safe-bottom, 0px));
+  }
+  body.crisp-customer-menu #pwaInstallBtn {
+    bottom: calc(100px + var(--safe-bottom, 0px));
+  }
+}
+@media print {
+  body.crisp-customer-menu .bottom-nav { display: none !important; }
+}
