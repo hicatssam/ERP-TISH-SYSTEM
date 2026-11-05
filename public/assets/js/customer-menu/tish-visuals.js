@@ -21,7 +21,7 @@
     }
 
     function finalizeImage(img, frame) {
-        if (!frame || !img.isConnected) return;
+        if (!frame) return;
         frame.classList.remove('tish-image-loading');
         frame.classList.add('tish-image-settled');
         frame.classList.toggle('tish-image-error', !img.naturalWidth);
