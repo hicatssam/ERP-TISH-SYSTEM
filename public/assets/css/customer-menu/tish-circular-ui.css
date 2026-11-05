@@ -533,3 +533,16 @@ body.crisp-customer-menu :is(.product-media,.tish-addon-photo).tish-image-error{
  body.crisp-customer-menu :is(.product-media,.tish-addon-photo).tish-image-loading{animation:none}
  body.crisp-customer-menu :is(.product-media,.tish-addon-photo) img{transition:none!important}
 }
+
+/* Main product photo receives the same skeleton until its real image loads. */
+body.tish-product-page .detail-media.tish-image-loading{
+ background:linear-gradient(104deg,
+ color-mix(in srgb,var(--primary) 5%,var(--surface)) 20%,
+ color-mix(in srgb,var(--primary) 12%,var(--surface)) 41%,
+ color-mix(in srgb,var(--primary) 5%,var(--surface)) 62%);
+ background-size:220% 100%;
+ animation:tishMenuShimmer 1.4s ease-in-out infinite;
+}
+body.tish-product-page .detail-media.tish-image-loading img{opacity:0}
+body.tish-product-page .detail-media.tish-image-settled img{opacity:1;transition:opacity .3s ease}
+@media(prefers-reduced-motion:reduce){body.tish-product-page .detail-media.tish-image-loading{animation:none}}
