@@ -218,6 +218,12 @@
         .action.primary{background:var(--primary);color:#fff}
         .action.secondary{border:1px solid color-mix(in srgb,var(--primary) 20%,transparent);color:var(--primary)}
         .cancelled .progress{opacity:.42}
+        .action{font-family:inherit;font-size:.85rem;cursor:pointer}
+        .customer-alert-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:16px 0}
+        .customer-alert-controls button{border:1px solid var(--primary);background:var(--surface);color:var(--primary);border-radius:12px;padding:10px 16px;font:800 .82rem Cairo,Tajawal,Arial,sans-serif;cursor:pointer}
+        .customer-alert-controls small{color:var(--muted)}
+        .customer-status-alert{display:none;margin:10px 0;padding:13px;border-radius:12px;background:color-mix(in srgb,var(--accent) 18%,var(--surface));font-weight:800}
+        .customer-status-alert.show{display:block}
         @media(max-width:560px){
             .wrap{width:min(100% - 20px,820px)}
             .topbar{padding:12px 0}
@@ -323,6 +329,11 @@
             </div>
 
             <div class="notice show" id="statusDescription"></div>
+            <div class="customer-alert-controls">
+                <button type="button" id="enableOrderAlerts"><i class="fa-solid fa-bell"></i> تفعيل صوت وإشعارات الطلب</button>
+                <small id="alertPermissionHint" aria-live="polite">ستصلك التنبيهات أثناء فتح صفحة الطلب.</small>
+            </div>
+            <div class="customer-status-alert" id="customerStatusAlert" role="status" aria-live="polite"></div>
 
             <div class="notice" id="customerMessage"></div>
 
@@ -350,6 +361,7 @@
                 <a class="action primary" href="{{ route('customer-menu.show',$order->location->code) }}">طلب جديد</a>
                 <a class="action secondary" href="{{ route('customer-menu.my-orders',$order->location->code) }}">كل طلباتي</a>
                 @if($order->invoice)
+                    <button class="action secondary" id="saveInvoiceImage" type="button"><i class="fa-solid fa-image"></i> حفظ الفاتورة كصورة</button>
                     <a class="action secondary" href="{{ route('customer-menu.invoice', ['token' => $order->public_token]) }}">
                         عرض الفاتورة
                     </a>
@@ -389,28 +401,94 @@
             canceled: 'تم إلغاء الطلب'
         };
 
+        const alertsButton = document.getElementById('enableOrderAlerts');
+        const alertsHint = document.getElementById('alertPermissionHint');
+        const alertBox = document.getElementById('customerStatusAlert');
+        const orderNumber = @json((string) $order->order_number);
+        const alertKey = 'tish-order-alerts:' + orderNumber;
         let lastNotifiedState = null;
+        let lastNotifiedMessage = null;
+        let alertsEnabled = sessionStorage.getItem(alertKey) === 'enabled';
+        let audioContext = null;
 
-        function notifyIfReady(data) {
-            const state = String(data.state || '').toLowerCase();
-            const isNewReadyState = ['ready', 'completed'].includes(state) && state !== lastNotifiedState;
-            lastNotifiedState = state;
-
-            if (!isNewReadyState) return;
-
-            if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
-
-            if ('Notification' in window && Notification.permission === 'granted') {
-                new Notification(menuT(data.label || 'طلبك جاهز 🎉'), {
-                    body: menuT(data.description || 'طلبك جاهز الآن للاستلام.'),
-                    icon: @json($branding['favicon'] ?? $branding['logo'] ?? null) || undefined,
-                    tag: 'order-status-' + @json($order->order_number),
+        function playOrderChime() {
+            if (!alertsEnabled) return;
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                audioContext = audioContext || new AudioContext();
+                if (audioContext.state === 'suspended') audioContext.resume().catch(() => {});
+                if (audioContext.state !== 'running') return;
+                [0, 0.16].forEach((delay, index) => {
+                    const oscillator = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    oscillator.type = 'sine';
+                    oscillator.frequency.value = index ? 880 : 660;
+                    gain.gain.setValueAtTime(.0001, audioContext.currentTime + delay);
+                    gain.gain.exponentialRampToValueAtTime(.13, audioContext.currentTime + delay + .015);
+                    gain.gain.exponentialRampToValueAtTime(.0001, audioContext.currentTime + delay + .22);
+                    oscillator.connect(gain).connect(audioContext.destination);
+                    oscillator.start(audioContext.currentTime + delay);
+                    oscillator.stop(audioContext.currentTime + delay + .23);
                 });
-            }
+            } catch (error) { console.warn('Audio notification unavailable:', error); }
         }
 
-        if ('Notification' in window && Notification.permission === 'default') {
-            Notification.requestPermission();
+        function refreshAlertsHint() {
+            if (!alertsButton || !alertsHint) return;
+            alertsButton.textContent = alertsEnabled ? '🔔 إشعارات الطلب مفعّلة' : '🔔 تفعيل صوت وإشعارات الطلب';
+            alertsHint.textContent = alertsEnabled
+                ? ('Notification' in window && Notification.permission === 'granted'
+                    ? 'الصوت وإشعارات الجهاز مفعّلان أثناء فتح الصفحة.'
+                    : 'الصوت مفعّل. إشعارات الجهاز تحتاج إذن المتصفح.')
+                : 'فعّل التنبيهات لتسمع صوتًا عند تغيّر حالة الطلب.';
+        }
+
+        alertsButton?.addEventListener('click', async () => {
+            alertsEnabled = true;
+            sessionStorage.setItem(alertKey, 'enabled');
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) {
+                    audioContext = audioContext || new AudioContext();
+                    await audioContext.resume();
+                }
+            } catch (error) { console.warn('Audio could not start:', error); }
+            if ('Notification' in window && Notification.permission === 'default' && window.isSecureContext) {
+                try { await Notification.requestPermission(); } catch (error) {}
+            }
+            refreshAlertsHint();
+        });
+        refreshAlertsHint();
+
+        function notifyStatusChange(data) {
+            const state = String(data.state || '').toLowerCase();
+            const message = String(data.customer_message || '');
+            // Initial render is not a change and must never play a false alert.
+            if (lastNotifiedState === null) {
+                lastNotifiedState = state;
+                lastNotifiedMessage = message;
+                return;
+            }
+            if (state === lastNotifiedState && message === lastNotifiedMessage) return;
+            lastNotifiedState = state;
+            lastNotifiedMessage = message;
+            const title = menuT(data.label || statusText[state] || 'تحديث طلبك');
+            alertBox.textContent = title + (message ? ' — ' + menuF('رسالة من الفرع: {message}', {message}) : '');
+            alertBox.classList.add('show');
+            if (alertsEnabled) {
+                playOrderChime();
+                if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    try {
+                        const notification = new Notification(title, {
+                            body: menuT(message || data.description || 'تم تحديث حالة طلبك.'),
+                            tag: 'tish-order-status-' + orderNumber,
+                        });
+                        notification.onclick = () => { window.focus(); notification.close(); };
+                    } catch (error) { console.warn('System notification unavailable:', error); }
+                }
+            }
         }
 
         function updateTracking(data) {
@@ -461,7 +539,7 @@
             eta.textContent = showEta ? '⏱️ ' + menuF('الوقت المتوقع لتجهيز طلبك: حوالي {minutes} دقيقة', {minutes}) : '';
             eta.classList.toggle('show', showEta);
 
-            notifyIfReady(data);
+            notifyStatusChange(data);
         }
 
         async function poll() {
@@ -474,6 +552,95 @@
                 label.textContent = menuT('تعذر تحديث الحالة مؤقتًا');
             }
         }
+
+        // Export an actual PNG receipt locally, without screenshot permissions,
+        // cross-origin libraries or server-side file storage.
+        const saveInvoiceButton = document.getElementById('saveInvoiceImage');
+        const receipt = @json([
+            'brand' => $brandName,
+            'branch' => $order->location->name,
+            'number' => (string) $order->order_number,
+            'date' => $order->created_at?->format('Y-m-d H:i'),
+            'items' => $order->items->map(fn ($item) => [
+                'name' => $item->product_name,
+                'quantity' => (string) $item->quantity,
+                'total' => number_format((float) $item->line_total, 2),
+            ])->values()->all(),
+            'total' => number_format((float) $order->total_amount, 2),
+            'currency' => $menuCurrencySymbol,
+        ]);
+        saveInvoiceButton?.addEventListener('click', async () => {
+            saveInvoiceButton.disabled = true;
+            const oldLabel = saveInvoiceButton.innerHTML;
+            saveInvoiceButton.textContent = 'جارٍ تجهيز صورة الفاتورة...';
+            try {
+                const width = 900, pad = 62;
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                if (!ctx) throw new Error('Canvas unsupported');
+                await document.fonts?.ready;
+                const rows = [];
+                for (const item of receipt.items) {
+                    const name = String(item.name || '');
+                    // Break long product names into visual lines.
+                    const pieces = name.match(/.{1,34}(?:\\s|$)|.{1,34}/gu) || [name];
+                    rows.push({ item, lines: pieces.map(x => x.trim()) });
+                }
+                const height = 390 + rows.reduce((sum, row) => sum + Math.max(62, row.lines.length * 38 + 18), 0);
+                canvas.width = width * 2;
+                canvas.height = height * 2;
+                ctx.scale(2, 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, width, height);
+                ctx.direction = 'rtl';
+                ctx.textAlign = 'right';
+                const draw = (text, x, y, font, color = '#222') => {
+                    ctx.font = font;
+                    ctx.fillStyle = color;
+                    ctx.fillText(String(text), x, y);
+                };
+                draw(receipt.brand, width - pad, 86, 'bold 39px Cairo, Arial, sans-serif', '#851535');
+                draw(receipt.branch, width - pad, 130, '25px Cairo, Arial, sans-serif');
+                draw('فاتورة طلب رقم ' + receipt.number, width - pad, 199, 'bold 31px Cairo, Arial, sans-serif');
+                draw(receipt.date || '', width - pad, 240, '22px Cairo, Arial, sans-serif', '#666');
+                ctx.fillStyle = '#dedede'; ctx.fillRect(pad, 267, width - pad * 2, 2);
+                let y = 313;
+                for (const row of rows) {
+                    for (const [index, line] of row.lines.entries()) {
+                        draw(line, width - pad, y + index * 38, '23px Cairo, Arial, sans-serif');
+                    }
+                    ctx.textAlign = 'left';
+                    draw(row.item.quantity + ' ×  ' + row.item.total + ' ' + receipt.currency, pad, y, '23px Cairo, Arial, sans-serif');
+                    ctx.textAlign = 'right';
+                    y += Math.max(62, row.lines.length * 38 + 18);
+                    ctx.fillStyle = '#eeeeee';
+                    ctx.fillRect(pad, y - 22, width - pad * 2, 1);
+                }
+                y += 28;
+                draw('الإجمالي: ' + receipt.total + ' ' + receipt.currency, width - pad, y, 'bold 31px Cairo, Arial, sans-serif', '#851535');
+                draw('احتفظ بهذه الصورة للرجوع إلى تفاصيل طلبك', width - pad, height - 42, '21px Cairo, Arial, sans-serif', '#666');
+                const blob = await new Promise((resolve, reject) => canvas.toBlob(b => b ? resolve(b) : reject(new Error('PNG export failed')), 'image/png'));
+                const filename = 'Tish-Invoice-' + receipt.number.replace(/[^a-zA-Z0-9_-]/g, '_') + '.png';
+                const file = new File([blob], filename, {type:'image/png'});
+                // Mobile Share can save to Photos/Files; fallback downloads PNG.
+                if (navigator.canShare?.({files:[file]}) && navigator.share) {
+                    try { await navigator.share({files:[file], title:'فاتورة ' + receipt.number}); return; }
+                    catch (error) { if (error.name === 'AbortError') return; }
+                }
+                const href = URL.createObjectURL(blob);
+                const anchor = document.createElement('a');
+                anchor.href = href; anchor.download = filename;
+                document.body.appendChild(anchor);
+                anchor.click(); anchor.remove();
+                setTimeout(() => URL.revokeObjectURL(href), 30000);
+            } catch (error) {
+                console.error('Invoice image export failed:', error);
+                alert('تعذر إنشاء صورة الفاتورة. يمكنك استخدام زر عرض الفاتورة.');
+            } finally {
+                saveInvoiceButton.disabled = false;
+                saveInvoiceButton.innerHTML = oldLabel;
+            }
+        });
 
         if (initialStatus) {
             updateTracking(initialStatus);
