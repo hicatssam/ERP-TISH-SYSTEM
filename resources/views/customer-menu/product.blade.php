@@ -59,8 +59,8 @@
     <h2 id="tishCompleteTitle">{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Complete your order' : 'خلّي وجبتك كاملة!' }}</h2>
     <p>{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Pick fries, a drink or a sauce — all optional.' : 'اختار بطاطا أو مشروب أو صوص... حسب ذوقك.' }}</p>
    </div>
-   @foreach($addOnGroups as $addOnGroup)
-    @php
+   <?php foreach ($addOnGroups as $addOnGroup): ?>
+    <?php
      $addOnLabels = [
       'fries' => ['ar' => 'بطاطا ومقبلات', 'en' => 'Fries & sides', 'icon' => 'fa-box-open'],
       'drinks' => ['ar' => 'مشروبات منعشة', 'en' => 'Cold drinks', 'icon' => 'fa-glass-water'],
@@ -68,7 +68,7 @@
      ];
      $addOnGroupLabel = $addOnLabels[$addOnGroup['type']];
      $addOnTitle = \App\Support\CustomerMenuLanguage::isEnglish() ? $addOnGroupLabel['en'] : $addOnGroupLabel['ar'];
-    @endphp
+    ?>
     <div class="tish-addon-group" data-addon-group="{{ $addOnGroup['type'] }}">
      <div class="tish-addon-group-title">
       <div class="tish-addon-category-label">
@@ -83,8 +83,8 @@
       @endif
      </div>
      <div class="tish-addons-grid" id="tish-addon-{{ $addOnGroup['type'] }}">
-      @foreach($addOnGroup['items'] as $addOnIndex => $addOn)
-       <article class="tish-addon-card" @if($addOnIndex >= 2) data-addon-extra hidden @endif>
+      <?php foreach ($addOnGroup['items'] as $addOnIndex => $addOn): ?>
+       <article class="tish-addon-card" <?php if ($addOnIndex >= 2): ?> data-addon-extra hidden <?php endif; ?>>
         <a class="tish-addon-photo" href="{{ route('customer-menu.product.show', [$location->code, $addOn['product_id']]) }}" aria-label="{{ $addOn['name'] }}">
          @if(!empty($addOn['image']))
           <img src="{{ $addOn['image'] }}" alt="{{ $addOn['name'] }}" loading="lazy" onerror="this.style.display='none'">
@@ -109,10 +109,10 @@
          </div>
         </div>
        </article>
-      @endforeach
+      <?php endforeach; ?>
      </div>
     </div>
-   @endforeach
+   <?php endforeach; ?>
    <p class="tish-addons-feedback" id="tishAddonsFeedback" role="status" aria-live="polite"></p>
   </section>
   @endif
