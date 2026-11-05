@@ -1,7 +1,7 @@
 {{-- Installation is native where the browser exposes a prompt, manual otherwise. --}}
-<button type="button" class="pwa-install-btn" id="pwaInstallBtn" aria-label="ثبّت التطبيق" title="ثبّت التطبيق" hidden>
+<button type="button" class="pwa-install-btn" id="pwaInstallBtn" aria-label="ثبّت المنيو" title="ثبّت المنيو" hidden>
     <i class="fa-solid fa-arrow-down-to-bracket" aria-hidden="true"></i>
-    <span>ثبّت التطبيق</span>
+    <span>ثبّت المنيو</span>
 </button>
 
 <div class="pwa-ios-sheet" id="pwaIosSheet" role="dialog" aria-modal="true" aria-labelledby="pwaInstallTitle" hidden>
