@@ -588,7 +588,7 @@
                 for (const item of receipt.items) {
                     const name = String(item.name || '');
                     // Break long product names into visual lines.
-                    const pieces = name.match(/.{1,34}(?:\\s|$)|.{1,34}/gu) || [name];
+                    const pieces = name.match(/.{1,34}(?:\s|$)|.{1,34}/gu) || [name];
                     rows.push({ item, lines: pieces.map(x => x.trim()) });
                 }
                 const height = 515 + rows.reduce((sum, row) => sum + Math.max(62, row.lines.length * 38 + 18), 0);
