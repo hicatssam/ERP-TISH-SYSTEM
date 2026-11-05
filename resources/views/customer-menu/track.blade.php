@@ -194,6 +194,8 @@
         .progressItem.on{color:var(--primary)}
         .progressItem.on .dot{background:var(--primary);border-color:var(--primary);color:#fff}
         .progressItem.current .dot{box-shadow:0 0 0 5px color-mix(in srgb,var(--accent) 28%,transparent)}
+        .progressItem[data-stage="3"].on .dot{background:var(--primary);border-color:var(--primary);color:#fff}
+        .progressItem[data-stage="3"].current{color:var(--primary);font-weight:900}
         .notice{
             display:none;
             padding:12px 14px;
@@ -498,13 +500,22 @@
             // re-guessing progress from the order's own status field,
             // which never actually changes to "preparing"/"ready" itself.
             const state = String(data.state || 'received').toLowerCase();
-            const cancelled = state === 'cancelled';
-            const stage = cancelled ? 0 : Math.max(0, Math.min(3, Number(data.step || 1) - 1));
+            const cancelled = ['cancelled', 'canceled'].includes(state);
+            // State is authoritative if a stale or inconsistent step value is returned.
+            const stepsByState = {
+                pending: 1, received: 1, confirmed: 2, accepted: 2,
+                preparing: 3, ready: 4, completed: 4
+            };
+            const serverStep = Number(data.step);
+            const resolvedStep = stepsByState[state] ?? (Number.isFinite(serverStep) ? serverStep : 1);
+            const stage = cancelled ? 0 : Math.max(0, Math.min(3, resolvedStep - 1));
 
             stages.forEach(item => {
                 const value = Number(item.dataset.stage);
                 item.classList.toggle('on', !cancelled && value <= stage);
                 item.classList.toggle('current', !cancelled && value === stage);
+                if (!cancelled && value === stage) item.setAttribute('aria-current', 'step');
+                else item.removeAttribute('aria-current');
             });
 
             card.classList.toggle('cancelled', cancelled);
@@ -542,14 +553,27 @@
             notifyStatusChange(data);
         }
 
+        let polling = false;
         async function poll() {
+            if (polling) return;
+            polling = true;
             try {
-                const response = await fetch(url, {headers:{Accept:'application/json'}});
+                const endpoint = new URL(url, location.href);
+                endpoint.searchParams.set('_fresh', Date.now().toString());
+                const response = await fetch(endpoint.toString(), {
+                    method: 'GET',
+                    headers: {Accept:'application/json', 'Cache-Control':'no-cache'},
+                    cache: 'no-store',
+                    credentials: 'same-origin'
+                });
+                if (!response.ok) throw new Error('Status HTTP ' + response.status);
                 const data = await response.json();
-                if (!response.ok) throw data;
                 updateTracking(data);
             } catch (error) {
-                label.textContent = menuT('تعذر تحديث الحالة مؤقتًا');
+                console.warn('Order tracking status refresh failed:', error);
+                // Keep the last successfully received status visible during a temporary outage.
+            } finally {
+                polling = false;
             }
         }
 
@@ -661,6 +685,10 @@
 
         poll();
         setInterval(poll, 5000);
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) poll();
+        });
+        window.addEventListener('pageshow', poll);
     </script>
 </body>
 </html>
