@@ -30,7 +30,7 @@ window.CustomerMenu = (function () {
         variants: Array.isArray(x.variants) ? x.variants : [],
         modifierGroups: Array.isArray(x.modifier_groups) ? x.modifier_groups : [],
         requiresChoices: !!x.requires_choices,
-    })).filter(x => x.id !== null);
+    })).filter(x => x.id !== null && Number.isFinite(x.price) && x.price >= 0);
 
     const LOCATION_CODE = @json($location->code);
     const CART_KEY = 'dahab_cart_' + LOCATION_CODE;
@@ -67,6 +67,13 @@ window.CustomerMenu = (function () {
      * branch catalog so missing names/prices can never crash checkout or show
      * a misleading 0.00 total. Unknown/deactivated products are discarded.
      */
+    function normalizedQuantity(value, fallback = 1, max = 50) {
+        const numeric = Number(value);
+        return Number.isFinite(numeric) && numeric > 0
+            ? Math.max(1, Math.min(max, Math.floor(numeric)))
+            : fallback;
+    }
+
     function normalizeCart(savedCart) {
         const normalized = {};
 
@@ -79,7 +86,7 @@ window.CustomerMenu = (function () {
             const p = PRODUCTS.find(item => String(item.id) === String(productId));
             if (!p || !p.available) return;
 
-            const quantity = Math.max(1, Math.min(50, Number(raw.quantity ?? raw.qty ?? 1) || 1));
+            const quantity = normalizedQuantity(raw.quantity ?? raw.qty, 1);
             const variantId = raw.variant_id ?? raw.product_variant_id ?? null;
             const variant = variantId
                 ? p.variants.find(item => String(item.id) === String(variantId))
@@ -89,8 +96,8 @@ window.CustomerMenu = (function () {
             // submit it as the base product.
             if (p.isVariantProduct && !variant) return;
 
-            const availableModifiers = (variant?.modifier_groups ?? p.modifierGroups).flatMap(group =>
-                group.modifiers.map(modifier => ({
+            const availableModifiers = (variant?.modifier_groups ?? p.modifierGroups ?? []).flatMap(group =>
+                (group.modifiers || []).map(modifier => ({
                     ...modifier,
                     group_id: group.id,
                     group_name: group.name,
@@ -98,6 +105,7 @@ window.CustomerMenu = (function () {
             );
             const modifiers = (Array.isArray(raw.modifiers) ? raw.modifiers : [])
                 .map(saved => {
+                    if (!saved || typeof saved !== 'object') return null;
                     const id = saved.modifier_id ?? saved.id;
                     const current = availableModifiers.find(item => String(item.id) === String(id));
                     if (!current) return null;
@@ -106,7 +114,7 @@ window.CustomerMenu = (function () {
                         modifier_id: current.id,
                         name: current.name,
                         price_delta: Number(current.price_delta || 0),
-                        quantity: Math.max(1, Math.min(20, Number(saved.quantity || 1) || 1)),
+                        quantity: normalizedQuantity(saved.quantity, 1, 20),
                     };
                 })
                 .filter(Boolean);
@@ -116,6 +124,7 @@ window.CustomerMenu = (function () {
                 (sum, modifier) => sum + modifier.price_delta * modifier.quantity,
                 0
             );
+            if (!Number.isFinite(price) || price < 0) return;
 
             const modifierSignature = modifiers
                 .slice()
@@ -216,6 +225,8 @@ window.CustomerMenu = (function () {
     function addToCart(id, qty = 1, options = {}) {
         const p = product(id);
         if (!p || !p.available) return false;
+        const amount = normalizedQuantity(qty, 0);
+        if (!amount) return false;
 
         const variantId = options.variantId ?? null;
         let variantName = null;
@@ -229,21 +240,26 @@ window.CustomerMenu = (function () {
         }
 
         const variant = p.variants.find(v => String(v.id) === String(variantId));
-        const allModifiers = (variant?.modifier_groups ?? p.modifierGroups).flatMap(g => g.modifiers.map(m => ({ ...m, group_id: g.id, group_name: g.name })));
-        const resolvedModifiers = (options.modifiers || [])
+        const allModifiers = (variant?.modifier_groups ?? p.modifierGroups ?? []).flatMap(g => (g.modifiers || []).map(m => ({ ...m, group_id: g.id, group_name: g.name })));
+        const resolvedModifiers = (Array.isArray(options.modifiers) ? options.modifiers : [])
             .map(row => {
+                if (!row || typeof row !== 'object') return null;
                 const def = allModifiers.find(m => String(m.id) === String(row.modifier_id));
                 if (!def) return null;
                 return {
                     modifier_id: def.id,
                     name: def.name,
                     price_delta: Number(def.price_delta || 0),
-                    quantity: Math.max(1, Number(row.quantity || 1)),
+                    quantity: normalizedQuantity(row.quantity, 1, 20),
                 };
             })
             .filter(Boolean);
 
         unitPrice += resolvedModifiers.reduce((sum, m) => sum + m.price_delta * m.quantity, 0);
+        if (!Number.isFinite(unitPrice) || unitPrice < 0) {
+            toast('تعذر تحديد سعر الصنف. حدّث المنيو وحاول مرة أخرى.');
+            return false;
+        }
 
         const key = lineKey(p.id, variantId, resolvedModifiers);
         const displayName = [p.name, variantName].filter(Boolean).join(' - ');
@@ -261,16 +277,17 @@ window.CustomerMenu = (function () {
                 prep_time_minutes: p.prepTimeMinutes ?? null,
             };
         }
-        cart[key].quantity = Math.min(50, Number(cart[key].quantity || 0) + Number(qty || 1));
+        cart[key].quantity = Math.min(50, normalizedQuantity(cart[key].quantity, 0) + amount);
         saveCart();
         toast('تمت الإضافة للسلة');
         return true;
     }
 
     function changeCart(key, delta) {
-        if (!cart[key]) return;
-        cart[key].quantity = Math.min(50, cart[key].quantity + delta);
-        if (cart[key].quantity <= 0) delete cart[key];
+        if (!cart[key] || !Number.isInteger(delta) || ![-1, 1].includes(delta)) return;
+        const next = Number(cart[key].quantity) + delta;
+        if (next <= 0) delete cart[key];
+        else cart[key].quantity = Math.min(50, next);
         saveCart();
     }
 

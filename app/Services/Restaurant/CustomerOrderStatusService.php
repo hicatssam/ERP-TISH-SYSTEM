@@ -165,12 +165,22 @@ class CustomerOrderStatusService
          * all tickets served -> completed
          */
         $tickets = $order->kitchenTickets()
+            ->with('items:id,kitchen_ticket_id,order_item_id')
             ->orderBy('id')
             ->get();
 
         $ticketStatuses = $tickets
             ->map(fn ($ticket): string => $ticket->statusValue())
             ->values();
+
+        // A multi-station order is ready only if ALL its order lines have
+        // been routed into tickets, not merely the subset currently returned.
+        // This prevents an incomplete kitchen dispatch from appearing finished.
+        $expectedItemIds = $order->items()->pluck('id')->map(fn ($id): int => (int) $id);
+        $routedItemIds = $tickets->flatMap(fn ($ticket) => $ticket->items->pluck('order_item_id'))
+            ->map(fn ($id): int => (int) $id)->unique();
+        $allItemsRouted = $expectedItemIds->isNotEmpty()
+            && $expectedItemIds->diff($routedItemIds)->isEmpty();
 
         if ($orderStatus === 'completed') {
             return [
@@ -184,68 +194,41 @@ class CustomerOrderStatusService
         }
 
         if ($ticketStatuses->isNotEmpty()) {
-            $nonCancelled = $ticketStatuses
-                ->reject(fn (string $status): bool => $status === 'cancelled')
-                ->values();
+            $aggregate = self::aggregateKitchenStatuses($ticketStatuses, $allItemsRouted);
+            $eventAt = match ($aggregate) {
+                'completed' => $this->latestTicketTime($tickets, 'served_at'),
+                'ready' => $this->latestTicketTime($tickets, 'ready_at'),
+                'preparing' => $this->latestTicketTime($tickets, 'started_at')
+                    ?? $this->latestTicketTime($tickets, 'queued_at'),
+                default => $this->latestTicketTime($tickets, 'queued_at'),
+            };
 
-            if (
-                $nonCancelled->isNotEmpty()
-                && $nonCancelled->every(fn (string $status): bool => $status === 'served')
-            ) {
-                return [
-                    'state' => 'completed',
-                    'step' => 4,
-                    'kitchen_status' => 'served',
-                    'event_at' => $this->latestTicketTime($tickets, 'served_at'),
+            return match ($aggregate) {
+                'completed' => [
+                    'state' => 'completed', 'step' => 4, 'kitchen_status' => 'served',
+                    'event_at' => $eventAt,
                     'default_label' => 'تم تسليم الطلب',
                     'default_description' => 'تم تسليم طلبك. شكراً لاختيارك لنا.',
-                ];
-            }
-
-            $remaining = $nonCancelled
-                ->reject(fn (string $status): bool => $status === 'served')
-                ->values();
-
-            if (
-                $remaining->isNotEmpty()
-                && $remaining->every(fn (string $status): bool => $status === 'ready')
-            ) {
-                return [
-                    'state' => 'ready',
-                    'step' => 4,
-                    'kitchen_status' => 'ready',
-                    'event_at' => $this->latestTicketTime($tickets, 'ready_at'),
+                ],
+                'ready' => [
+                    'state' => 'ready', 'step' => 4, 'kitchen_status' => 'ready',
+                    'event_at' => $eventAt,
                     'default_label' => 'طلبك جاهز 🎉',
                     'default_description' => 'طلبك جاهز الآن للاستلام. نتمنى لك وجبة شهية!',
-                ];
-            }
-
-            if (
-                $ticketStatuses->contains('preparing')
-                || $ticketStatuses->contains('ready')
-                || $ticketStatuses->contains('served')
-            ) {
-                return [
-                    'state' => 'preparing',
-                    'step' => 3,
-                    'kitchen_status' => 'preparing',
-                    'event_at' => $this->latestTicketTime($tickets, 'started_at')
-                        ?? $this->latestTicketTime($tickets, 'queued_at'),
+                ],
+                'preparing' => [
+                    'state' => 'preparing', 'step' => 3, 'kitchen_status' => 'preparing',
+                    'event_at' => $eventAt,
                     'default_label' => 'طلبك قيد التحضير',
                     'default_description' => 'فريقنا يجهز طلبك الآن.',
-                ];
-            }
-
-            if ($ticketStatuses->contains('queued')) {
-                return [
-                    'state' => 'accepted',
-                    'step' => 2,
-                    'kitchen_status' => 'queued',
-                    'event_at' => $this->latestTicketTime($tickets, 'queued_at'),
+                ],
+                default => [
+                    'state' => 'accepted', 'step' => 2, 'kitchen_status' => 'queued',
+                    'event_at' => $eventAt,
                     'default_label' => 'تم قبول الطلب',
                     'default_description' => 'تم قبول طلبك وسيدخل التحضير الآن.',
-                ];
-            }
+                ],
+            };
         }
 
         if ($orderStatus === 'confirmed') {
@@ -267,6 +250,42 @@ class CustomerOrderStatusService
             'default_label' => 'تم استلام طلبك',
             'default_description' => 'وصل طلبك للفرع وهو بانتظار القبول.',
         ];
+    }
+
+    /**
+     * Aggregate every station ticket for the SAME order.
+     * A single ready ticket is not enough to tell the customer it is ready.
+     *
+     * @param Collection<int, string> $statuses
+     */
+    public static function aggregateKitchenStatuses(Collection $statuses, bool $allItemsRouted = true): string
+    {
+        $active = $statuses
+            ->reject(fn (string $status): bool => $status === 'cancelled')
+            ->values();
+
+        if ($active->isEmpty()) {
+            // A ticket cancellation alone must not mark the entire order cancelled.
+            return 'accepted';
+        }
+
+        if ($allItemsRouted && $active->every(fn (string $status): bool => $status === 'served')) {
+            return 'completed';
+        }
+
+        if ($allItemsRouted && $active->every(
+            fn (string $status): bool => in_array($status, ['ready', 'served'], true)
+        )) {
+            return 'ready';
+        }
+
+        if ($active->contains(fn (string $status): bool => in_array(
+            $status, ['preparing', 'ready', 'served'], true
+        ))) {
+            return 'preparing';
+        }
+
+        return 'accepted';
     }
 
     /**
