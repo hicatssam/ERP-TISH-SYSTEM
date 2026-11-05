@@ -36,7 +36,7 @@ class CircularMenuDesignTest extends TestCase
 
         $this->assertStringContainsString('id="pwaInstallBtn" aria-label="ثبّت المنيو"', $install);
         $this->assertStringContainsString('tish-circular-ui.css', $shared);
-        $this->assertStringContainsString('v=7', $shared);
+        $this->assertStringContainsString('v=8', $shared);
         $this->assertStringContainsString('body.crisp-customer-menu #pwaInstallBtn', $css);
         $this->assertStringContainsString('border-radius:50%!important', $css);
         $this->assertStringContainsString('cm-has-sticky-cart #pwaInstallBtn', $css);
@@ -95,6 +95,25 @@ class CircularMenuDesignTest extends TestCase
         $this->assertStringContainsString("sessionStorage.setItem(key, '1')", $home);
         $this->assertStringContainsString("localStorage.setItem(key, '1')", $home);
         $this->assertStringContainsString('intro.remove()', $home);
+    }
+
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function menu_cards_reveal_on_scroll_and_images_show_skeletons_without_modifying_cart_logic(): void
+    {
+        $shared = file_get_contents(resource_path('views/customer-menu/partials/styles.blade.php'));
+        $js = file_get_contents(public_path('assets/js/customer-menu/tish-visuals.js'));
+        $css = file_get_contents(public_path('assets/css/customer-menu/tish-circular-ui.css'));
+
+        $this->assertStringContainsString('tish-visuals.js', $shared);
+        $this->assertStringContainsString('IntersectionObserver', $js);
+        $this->assertStringContainsString('MutationObserver', $js);
+        $this->assertStringContainsString("img.addEventListener('load'", $js);
+        $this->assertStringContainsString("img.addEventListener('error'", $js);
+        $this->assertStringContainsString('prefers-reduced-motion: reduce', $js);
+        $this->assertStringContainsString('.tish-reveal-pending', $css);
+        $this->assertStringContainsString('.tish-reveal-visible', $css);
+        $this->assertStringContainsString('.tish-image-loading', $css);
+        $this->assertStringContainsString('tishMenuShimmer', $css);
     }
 
     #[Test]
