@@ -486,3 +486,106 @@ body.reference-home.crisp-customer-menu #categories .cat.active .cat-visual{
  body.reference-home.crisp-customer-menu .product-body{padding:11px 11px 14px}
 }
 @media(prefers-reduced-motion:reduce){body.reference-home.crisp-customer-menu .product{transition:none!important}}
+
+
+/* Tish scroll reveal: subtle lift and fade, no animation for reduced-motion. */
+@media(prefers-reduced-motion:no-preference){
+ body.crisp-customer-menu .product.tish-reveal-pending,
+ body.crisp-customer-menu .tish-addon-card.tish-reveal-pending{
+  opacity:0!important;
+  transform:translate3d(0,24px,0) scale(.975)!important;
+  filter:blur(3px);
+  pointer-events:none;
+ }
+ body.crisp-customer-menu .product.tish-reveal-visible,
+ body.crisp-customer-menu .tish-addon-card.tish-reveal-visible{
+  opacity:1;
+  transform:translate3d(0,0,0) scale(1);
+  filter:blur(0);
+  transition:opacity .62s cubic-bezier(.2,.7,.2,1),transform .68s cubic-bezier(.16,1,.3,1),filter .62s ease,box-shadow .22s ease;
+  transition-delay:var(--tish-reveal-delay,0ms),var(--tish-reveal-delay,0ms),var(--tish-reveal-delay,0ms),0ms;
+ }
+ body.crisp-customer-menu .product.cm-reveal,
+ body.crisp-customer-menu .product.cm-card-motion{animation:none!important}
+}
+@media(prefers-reduced-motion:reduce){
+ body.crisp-customer-menu .product.tish-reveal-pending,
+ body.crisp-customer-menu .tish-addon-card.tish-reveal-pending{opacity:1!important;transform:none!important;filter:none!important}
+}
+/* Skeleton only while an actual image is pending; placeholders still work when missing. */
+@keyframes tishMenuShimmer{
+ from{background-position:170% 0}
+ to{background-position:-170% 0}
+}
+body.crisp-customer-menu :is(.product-media,.tish-addon-photo){position:relative;isolation:isolate}
+body.crisp-customer-menu :is(.product-media,.tish-addon-photo).tish-image-loading{
+ background:linear-gradient(104deg,
+  color-mix(in srgb,var(--primary) 5%,var(--surface)) 20%,
+  color-mix(in srgb,var(--primary) 12%,var(--surface)) 41%,
+  color-mix(in srgb,var(--primary) 5%,var(--surface)) 62%);
+ background-size:220% 100%;
+ animation:tishMenuShimmer 1.4s ease-in-out infinite;
+}
+body.crisp-customer-menu :is(.product-media,.tish-addon-photo).tish-image-loading img{opacity:0}
+body.crisp-customer-menu :is(.product-media,.tish-addon-photo).tish-image-settled img{opacity:1;transition:opacity .3s ease}
+body.crisp-customer-menu :is(.product-media,.tish-addon-photo).tish-image-error{animation:none}
+@media(prefers-reduced-motion:reduce){
+ body.crisp-customer-menu :is(.product-media,.tish-addon-photo).tish-image-loading{animation:none}
+ body.crisp-customer-menu :is(.product-media,.tish-addon-photo) img{transition:none!important}
+}
+
+/* Main product photo receives the same skeleton until its real image loads. */
+body.tish-product-page .detail-media.tish-image-loading{
+ background:linear-gradient(104deg,
+ color-mix(in srgb,var(--primary) 5%,var(--surface)) 20%,
+ color-mix(in srgb,var(--primary) 12%,var(--surface)) 41%,
+ color-mix(in srgb,var(--primary) 5%,var(--surface)) 62%);
+ background-size:220% 100%;
+ animation:tishMenuShimmer 1.4s ease-in-out infinite;
+}
+body.tish-product-page .detail-media.tish-image-loading img{opacity:0}
+body.tish-product-page .detail-media.tish-image-settled img{opacity:1;transition:opacity .3s ease}
+@media(prefers-reduced-motion:reduce){body.tish-product-page .detail-media.tish-image-loading{animation:none}}
+
+
+/* Home promo banner: round BOTH top corners of the real image and slide.
+   Clip the moving carousel and its gradient to the exact outer card radius. */
+body.reference-home.crisp-customer-menu .reference-hero{
+ --tish-banner-radius:30px;
+ border-radius:var(--tish-banner-radius)!important;
+ overflow:hidden;
+ isolation:isolate;
+ background:var(--surface);
+ border:1px solid color-mix(in srgb,var(--primary) 10%,var(--surface));
+ box-shadow:0 3px 7px color-mix(in srgb,var(--text) 6%,transparent),0 14px 30px color-mix(in srgb,var(--text) 12%,transparent);
+ -webkit-mask-image:-webkit-radial-gradient(white,black);
+}
+body.reference-home.crisp-customer-menu .reference-hero .banner-track{
+ border-radius:var(--tish-banner-radius) var(--tish-banner-radius) 0 0;
+ overflow:hidden;
+}
+body.reference-home.crisp-customer-menu .reference-hero .banner-slide{
+ border-radius:var(--tish-banner-radius) var(--tish-banner-radius) 0 0;
+ overflow:hidden;
+}
+body.reference-home.crisp-customer-menu .reference-hero .banner-slide img{
+ display:block;
+ width:100%;
+ height:100%;
+ object-fit:cover;
+}
+body.reference-home.crisp-customer-menu .reference-hero .banner-slide::after{
+ border-radius:inherit;
+}
+body.reference-home.crisp-customer-menu .reference-hero .banner-dots{
+ position:relative;
+ margin:0;
+ border-radius:0 0 var(--tish-banner-radius) var(--tish-banner-radius);
+}
+body.reference-home.crisp-customer-menu .reference-hero .reference-hero-fallback{
+ border-radius:inherit;
+ overflow:hidden;
+}
+@media(max-width:560px){
+ body.reference-home.crisp-customer-menu .reference-hero{--tish-banner-radius:26px}
+}
