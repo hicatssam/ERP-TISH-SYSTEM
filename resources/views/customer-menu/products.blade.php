@@ -8,7 +8,7 @@
 <title>المنيو - {{ $branding['name'] ?? config('app.name') }}</title>
 @if(!empty($branding['favicon']))<link rel="icon" href="{{ $branding['favicon'] }}">@endif
 @include('customer-menu.partials.styles')
-<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/dome-cards-preview.css') }}?v=6">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/dome-cards-preview.css') }}?v=7">
 @include('customer-menu.partials.pwa-head')
 <style>
 @keyframes dahabMenuCardIn {from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
