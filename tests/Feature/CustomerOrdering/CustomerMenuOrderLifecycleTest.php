@@ -21,6 +21,23 @@ class CustomerMenuOrderLifecycleTest extends TestCase
     use RefreshDatabase;
 
     #[Test]
+    public function public_tracking_page_shows_distinct_live_payment_status(): void
+    {
+        $view = file_get_contents(resource_path('views/customer-menu/track.blade.php'));
+        $this->assertStringContainsString('id="paymentSummary"', $view);
+        $this->assertStringContainsString('id="paymentBadge"', $view);
+        $this->assertStringContainsString('id="paymentDescription"', $view);
+        foreach (['payment_pending', 'partially_paid', 'paid', 'pending_payment_verification',
+            'partially_refunded', 'refunded'] as $status) {
+            $this->assertStringContainsString($status . ':', $view);
+        }
+        $this->assertStringContainsString('payment_arrangement', $view);
+        $this->assertStringContainsString('paymentBadge.textContent', $view);
+        $this->assertStringContainsString('paymentBadge.dataset.paymentState', $view);
+        $this->assertStringContainsString('setInterval(poll, 5000)', $view);
+    }
+
+    #[Test]
     public function public_order_fields_are_persisted_and_status_endpoint_reflects_confirmation(): void
     {
         $location = $this->makeLocation();
