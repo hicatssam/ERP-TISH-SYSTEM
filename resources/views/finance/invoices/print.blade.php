@@ -97,6 +97,7 @@
 @section('show_stamp', '0')
 
 @if($publicOrder)
+    @section('print_close_url', route('customer-menu.track', ['token' => $publicOrder->public_token]))
     @section('print_toolbar')
         <a class="print-screen-btn" href="{{ route('customer-menu.track', ['token' => $publicOrder->public_token]) }}">تتبع الطلب</a>
         <a class="print-screen-btn" href="{{ route('customer-menu.show', $publicOrder->location->code) }}">المنيو</a>
