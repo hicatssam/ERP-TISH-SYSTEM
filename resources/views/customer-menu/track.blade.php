@@ -116,11 +116,17 @@
             position:sticky;
             top:0;
             z-index:30;
-            padding:18px 0;
-            background:color-mix(in srgb,var(--bg) 92%,transparent);
+            margin:12px auto 0;
+            width:min(820px,calc(100% - 30px));
+            padding:14px 0;
+            border-radius:30px;
+            background:color-mix(in srgb,var(--bg) 94%,transparent);
+            border:1px solid color-mix(in srgb,var(--primary) 8%,transparent);
+            box-shadow:0 8px 26px color-mix(in srgb,var(--text) 6%,transparent);
             backdrop-filter:blur(12px);
+            -webkit-backdrop-filter:blur(12px);
         }
-        .topin{display:flex;align-items:center;justify-content:space-between;gap:14px}
+        .topin{display:flex;align-items:center;justify-content:space-between;gap:14px;padding-inline:16px}
         .brand{display:flex;align-items:center;gap:10px}
         .brand img{width:42px;height:42px;object-fit:contain}
         .brand b,.brand small{display:block}
@@ -228,7 +234,7 @@
         .customer-status-alert.show{display:block}
         @media(max-width:560px){
             .wrap{width:min(100% - 20px,820px)}
-            .topbar{padding:12px 0}
+            .topbar{padding:12px 0;border-radius:24px}
             .brand img{width:36px;height:36px}
             .orderHead{flex-direction:column}
             .status{align-self:flex-start}
@@ -581,23 +587,36 @@
         // cross-origin libraries or server-side file storage.
         @if($order->invoice)
         const saveInvoiceButton = document.getElementById('saveInvoiceImage');
-        const receipt = @json([
-            'brand' => $brandName,
-            'branch' => $order->location->name,
-            'number' => (string) ($order->invoice?->invoice_number ?? $order->order_number),
-            'order_number' => (string) $order->order_number,
-            'date' => $order->created_at?->format('Y-m-d H:i'),
-            'items' => $order->invoice->items->map(fn ($item) => [
-                'name' => $item->description,
-                'quantity' => (string) $item->quantity,
-                'total' => number_format((float) $item->line_total, 2),
-            ])->values()->all(),
-            'subtotal' => number_format((float) $order->invoice->subtotal, 2),
-            'discount' => number_format((float) $order->invoice->discount_amount, 2),
-            'tax' => number_format((float) $order->invoice->tax_amount, 2),
-            'total' => number_format((float) $order->invoice->total_amount, 2),
-            'currency' => $menuCurrencySymbol,
-        ]);
+        @php
+            // Keep complex PHP expressions out of Blade's @json directive.
+            // Blade's directive parser cannot safely balance nested callbacks.
+            $receiptInvoice = $order->invoice;
+            $receiptLines = $receiptInvoice->items->isNotEmpty()
+                ? $receiptInvoice->items->map(fn ($item) => [
+                    'name' => $item->description ?: ($item->product?->name_ar ?? $item->product?->name ?? 'صنف'),
+                    'quantity' => (string) $item->quantity,
+                    'total' => number_format((float) $item->line_total, 2),
+                ])->values()->all()
+                : $order->items->map(fn ($item) => [
+                    'name' => $item->product_name ?: 'صنف',
+                    'quantity' => (string) $item->quantity,
+                    'total' => number_format((float) $item->line_total, 2),
+                ])->values()->all();
+            $receiptData = [
+                'brand' => $brandName,
+                'branch' => $order->location->name,
+                'number' => (string) ($receiptInvoice->invoice_number ?? $order->order_number),
+                'order_number' => (string) $order->order_number,
+                'date' => ($receiptInvoice->issued_at ?? $order->created_at)?->format('Y-m-d H:i'),
+                'items' => $receiptLines,
+                'subtotal' => number_format((float) $receiptInvoice->subtotal, 2),
+                'discount' => number_format((float) $receiptInvoice->discount_amount, 2),
+                'tax' => number_format((float) $receiptInvoice->tax_amount, 2),
+                'total' => number_format((float) $receiptInvoice->total_amount, 2),
+                'currency' => $menuCurrencySymbol,
+            ];
+        @endphp
+        const receipt = {{ \Illuminate\Support\Js::from($receiptData) }};
         saveInvoiceButton?.addEventListener('click', async () => {
             saveInvoiceButton.disabled = true;
             const oldLabel = saveInvoiceButton.innerHTML;
