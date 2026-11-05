@@ -32,4 +32,14 @@ class MenuCheckoutAuditTest extends TestCase
         $this->assertStringContainsString("img.addEventListener('error'", $loader);
         $this->assertStringContainsString("frame.classList.remove('tish-image-loading')", $loader);
     }
+    #[Test]
+    public function my_orders_uses_bounded_status_refresh_without_overlapping_batches(): void
+    {
+        $view = file_get_contents(resource_path('views/customer-menu/my-orders.blade.php'));
+        $this->assertStringContainsString('refreshingStatuses', $view);
+        $this->assertStringContainsString('Math.min(4,rows.length)', $view);
+        $this->assertStringContainsString('setInterval(refreshStatuses,20000)', $view);
+        $this->assertStringContainsString("document.addEventListener('visibilitychange'", $view);
+    }
+
 }
