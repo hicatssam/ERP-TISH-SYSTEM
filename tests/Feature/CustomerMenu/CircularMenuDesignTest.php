@@ -36,7 +36,7 @@ class CircularMenuDesignTest extends TestCase
 
         $this->assertStringContainsString('id="pwaInstallBtn" aria-label="ثبّت المنيو"', $install);
         $this->assertStringContainsString('tish-circular-ui.css', $shared);
-        $this->assertStringContainsString('v=8', $shared);
+        $this->assertStringContainsString('v=9', $shared);
         $this->assertStringContainsString('body.crisp-customer-menu #pwaInstallBtn', $css);
         $this->assertStringContainsString('border-radius:50%!important', $css);
         $this->assertStringContainsString('cm-has-sticky-cart #pwaInstallBtn', $css);
@@ -116,6 +116,20 @@ class CircularMenuDesignTest extends TestCase
         $this->assertStringContainsString('.tish-reveal-visible', $css);
         $this->assertStringContainsString('.tish-image-loading', $css);
         $this->assertStringContainsString('tishMenuShimmer', $css);
+    }
+
+    #[Test]
+    public function homepage_promo_banner_matches_outer_card_corner_radius(): void
+    {
+        $home = file_get_contents(resource_path('views/customer-menu/show.blade.php'));
+        $css = file_get_contents(public_path('assets/css/customer-menu/tish-circular-ui.css'));
+
+        $this->assertStringContainsString('class="reference-hero"', $home);
+        $this->assertStringContainsString('.reference-hero .banner-track', $css);
+        $this->assertStringContainsString('.reference-hero .banner-slide', $css);
+        $this->assertStringContainsString('.reference-hero .banner-slide::after', $css);
+        $this->assertStringContainsString('--tish-banner-radius:30px', $css);
+        $this->assertStringContainsString('overflow:hidden', $css);
     }
 
     #[Test]
