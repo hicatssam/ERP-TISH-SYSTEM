@@ -81,7 +81,7 @@ class CircularMenuDesignTest extends TestCase
         $this->assertStringContainsString('content:none!important', $css);
         $this->assertStringContainsString('scroll-padding-inline:12px', $css);
         $this->assertStringContainsString('direction:rtl', $css);
-        $this->assertStringContainsString('subtle 3D depth', $css);
+        $this->assertStringContainsString('slightly elevated cards', $css);
         $this->assertStringContainsString('padding:8px 4px 20px', $css);
         $this->assertStringContainsString('#categories .cat.active .cat-visual', $css);
     }
