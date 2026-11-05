@@ -30,7 +30,7 @@ window.CustomerMenu = (function () {
         variants: Array.isArray(x.variants) ? x.variants : [],
         modifierGroups: Array.isArray(x.modifier_groups) ? x.modifier_groups : [],
         requiresChoices: !!x.requires_choices,
-    })).filter(x => x.id !== null);
+    })).filter(x => x.id !== null && Number.isFinite(x.price) && x.price >= 0);
 
     const LOCATION_CODE = @json($location->code);
     const CART_KEY = 'dahab_cart_' + LOCATION_CODE;
@@ -124,6 +124,7 @@ window.CustomerMenu = (function () {
                 (sum, modifier) => sum + modifier.price_delta * modifier.quantity,
                 0
             );
+            if (!Number.isFinite(price) || price < 0) return;
 
             const modifierSignature = modifiers
                 .slice()
@@ -255,6 +256,10 @@ window.CustomerMenu = (function () {
             .filter(Boolean);
 
         unitPrice += resolvedModifiers.reduce((sum, m) => sum + m.price_delta * m.quantity, 0);
+        if (!Number.isFinite(unitPrice) || unitPrice < 0) {
+            toast('تعذر تحديد سعر الصنف. حدّث المنيو وحاول مرة أخرى.');
+            return false;
+        }
 
         const key = lineKey(p.id, variantId, resolvedModifiers);
         const displayName = [p.name, variantName].filter(Boolean).join(' - ');
