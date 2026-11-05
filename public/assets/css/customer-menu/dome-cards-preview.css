@@ -298,3 +298,142 @@ body.reference-home.crisp-customer-menu .cm-showcase-slide .product .details {
     animation: none !important;
   }
 }
+
+
+/* v7 polish: clearer circular cards, legible prices, and better visual depth.
+   Explicitly keep the 1:1 shape approved in the latest screenshot. */
+body.reference-home.crisp-customer-menu .catalog-section .grid,
+body.reference-home.crisp-customer-menu #productGrid,
+body.crisp-customer-menu #productGrid {
+  column-gap: clamp(14px,3vw,24px) !important;
+  row-gap: clamp(19px,4.2vw,34px) !important;
+  padding-block: 7px 18px;
+}
+body.reference-home.crisp-customer-menu .catalog-section .product,
+body.reference-home.crisp-customer-menu #productGrid .product,
+body.crisp-customer-menu #productGrid .product,
+body.reference-home.crisp-customer-menu .cm-showcase-slide .product {
+  border: 3px solid color-mix(in srgb,var(--surface) 93%,var(--primary)) !important;
+  border-radius: 50% !important;
+  box-shadow:
+    0 2px 4px color-mix(in srgb,var(--text) 6%,transparent),
+    0 10px 21px color-mix(in srgb,var(--primary) 12%,transparent),
+    0 23px 36px color-mix(in srgb,var(--text) 8%,transparent) !important;
+  outline: 1px solid color-mix(in srgb,var(--primary) 9%,transparent);
+  outline-offset: -1px;
+}
+body.reference-home.crisp-customer-menu .catalog-section .product,
+body.reference-home.crisp-customer-menu #productGrid .product,
+body.crisp-customer-menu #productGrid .product {
+  aspect-ratio: 1 / 1 !important;
+  height: auto !important;
+}
+body.crisp-customer-menu .product .product-media,
+body.reference-home.crisp-customer-menu .product .product-media {
+  flex-basis: 52% !important;
+  height: 52% !important;
+}
+body.crisp-customer-menu .product .product-body,
+body.reference-home.crisp-customer-menu .product .product-body {
+  flex-basis: 48% !important;
+  padding: 4px 12% 8px !important;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb,var(--surface) 97%,var(--accent) 3%),
+    color-mix(in srgb,var(--surface) 94%,var(--primary) 6%)
+  ) !important;
+}
+body.crisp-customer-menu .product h3 {
+  color: var(--text);
+  letter-spacing: 0;
+  font-weight: 900;
+}
+body.crisp-customer-menu .product .product-desc {
+  color: color-mix(in srgb,var(--text) 69%,var(--surface));
+}
+body.crisp-customer-menu .product .price {
+  color: var(--primary);
+  font-weight: 900;
+}
+body.crisp-customer-menu .product .details {
+  box-shadow: 0 3px 7px color-mix(in srgb,var(--primary) 14%,transparent),
+              0 8px 16px color-mix(in srgb,var(--primary) 20%,transparent) !important;
+}
+body.crisp-customer-menu .product .fav {
+  background: color-mix(in srgb,var(--surface) 96%,transparent);
+  box-shadow: 0 4px 12px rgba(0,0,0,.11);
+}
+body.reference-home.crisp-customer-menu .cm-featured-showcase {
+  min-height: 440px;
+}
+body.reference-home.crisp-customer-menu .cm-showcase-stage {
+  height: 394px;
+}
+body.reference-home.crisp-customer-menu .cm-showcase-slide {
+  width: clamp(278px,38vw,385px) !important;
+}
+body.reference-home.crisp-customer-menu .cm-showcase-slide .product .product-body {
+  padding-inline: 15% !important;
+}
+body.reference-home.crisp-customer-menu .cm-showcase-nav {
+  z-index: 15;
+  box-shadow: 0 5px 18px color-mix(in srgb,var(--primary) 18%,transparent);
+}
+@media(max-width:560px) {
+  body.reference-home.crisp-customer-menu .catalog-section .grid,
+  body.reference-home.crisp-customer-menu #productGrid,
+  body.crisp-customer-menu #productGrid {
+    column-gap: 14px !important;
+    row-gap: 20px !important;
+    padding-inline: 2px;
+  }
+  body.crisp-customer-menu .product .product-body,
+  body.reference-home.crisp-customer-menu .product .product-body {
+    padding: 4px 10% 7px !important;
+  }
+  body.crisp-customer-menu .product h3 {
+    font-size: clamp(.7rem,2.9vw,.86rem) !important;
+  }
+  body.crisp-customer-menu .product .product-desc {
+    font-size: clamp(.54rem,2.12vw,.68rem) !important;
+  }
+  body.crisp-customer-menu .product .price {
+    font-size: clamp(.76rem,2.75vw,.96rem) !important;
+  }
+  body.crisp-customer-menu .product .details {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+  }
+  body.reference-home.crisp-customer-menu .cm-featured-showcase {
+    min-height: 353px !important;
+    padding-inline: 23px !important;
+  }
+  body.reference-home.crisp-customer-menu .cm-showcase-stage {
+    height: 315px !important;
+  }
+  body.reference-home.crisp-customer-menu .cm-showcase-slide {
+    width: min(85vw,304px) !important;
+  }
+  body.reference-home.crisp-customer-menu .cm-showcase-slide .product .product-body {
+    padding: 6px 14% 11px !important;
+  }
+  body.reference-home.crisp-customer-menu .cm-showcase-slide .product h3 {
+    font-size: 1.04rem !important;
+  }
+  body.reference-home.crisp-customer-menu .cm-showcase-slide .product .price {
+    font-size: 1.1rem !important;
+  }
+  body.reference-home.crisp-customer-menu .cm-showcase-slide .product .details {
+    width: 45px !important;
+    min-width: 45px !important;
+    height: 45px !important;
+    min-height: 45px !important;
+  }
+  body.reference-home.crisp-customer-menu .cm-showcase-nav {
+    width: 38px;
+    height: 38px;
+    top: 43%;
+  }
+}
