@@ -559,14 +559,18 @@
         const receipt = @json([
             'brand' => $brandName,
             'branch' => $order->location->name,
-            'number' => (string) $order->order_number,
+            'number' => (string) ($order->invoice?->invoice_number ?? $order->order_number),
+            'order_number' => (string) $order->order_number,
             'date' => $order->created_at?->format('Y-m-d H:i'),
-            'items' => $order->items->map(fn ($item) => [
-                'name' => $item->product_name,
+            'items' => $order->invoice->items->map(fn ($item) => [
+                'name' => $item->description,
                 'quantity' => (string) $item->quantity,
                 'total' => number_format((float) $item->line_total, 2),
             ])->values()->all(),
-            'total' => number_format((float) $order->total_amount, 2),
+            'subtotal' => number_format((float) $order->invoice->subtotal, 2),
+            'discount' => number_format((float) $order->invoice->discount_amount, 2),
+            'tax' => number_format((float) $order->invoice->tax_amount, 2),
+            'total' => number_format((float) $order->invoice->total_amount, 2),
             'currency' => $menuCurrencySymbol,
         ]);
         saveInvoiceButton?.addEventListener('click', async () => {
@@ -586,7 +590,7 @@
                     const pieces = name.match(/.{1,34}(?:\\s|$)|.{1,34}/gu) || [name];
                     rows.push({ item, lines: pieces.map(x => x.trim()) });
                 }
-                const height = 390 + rows.reduce((sum, row) => sum + Math.max(62, row.lines.length * 38 + 18), 0);
+                const height = 515 + rows.reduce((sum, row) => sum + Math.max(62, row.lines.length * 38 + 18), 0);
                 canvas.width = width * 2;
                 canvas.height = height * 2;
                 ctx.scale(2, 2);
@@ -601,8 +605,8 @@
                 };
                 draw(receipt.brand, width - pad, 86, 'bold 39px Cairo, Arial, sans-serif', '#851535');
                 draw(receipt.branch, width - pad, 130, '25px Cairo, Arial, sans-serif');
-                draw('فاتورة طلب رقم ' + receipt.number, width - pad, 199, 'bold 31px Cairo, Arial, sans-serif');
-                draw(receipt.date || '', width - pad, 240, '22px Cairo, Arial, sans-serif', '#666');
+                draw('فاتورة رقم ' + receipt.number, width - pad, 199, 'bold 31px Cairo, Arial, sans-serif');
+                draw('الطلب: ' + receipt.order_number + '  |  ' + (receipt.date || ''), width - pad, 240, '22px Cairo, Arial, sans-serif', '#666');
                 ctx.fillStyle = '#dedede'; ctx.fillRect(pad, 267, width - pad * 2, 2);
                 let y = 313;
                 for (const row of rows) {
@@ -616,7 +620,13 @@
                     ctx.fillStyle = '#eeeeee';
                     ctx.fillRect(pad, y - 22, width - pad * 2, 1);
                 }
-                y += 28;
+                y += 22;
+                draw('المجموع الفرعي: ' + receipt.subtotal + ' ' + receipt.currency, width - pad, y, '24px Cairo, Arial, sans-serif');
+                y += 42;
+                draw('الخصم: ' + receipt.discount + ' ' + receipt.currency, width - pad, y, '24px Cairo, Arial, sans-serif');
+                y += 42;
+                draw('الضريبة: ' + receipt.tax + ' ' + receipt.currency, width - pad, y, '24px Cairo, Arial, sans-serif');
+                y += 55;
                 draw('الإجمالي: ' + receipt.total + ' ' + receipt.currency, width - pad, y, 'bold 31px Cairo, Arial, sans-serif', '#851535');
                 draw('احتفظ بهذه الصورة للرجوع إلى تفاصيل طلبك', width - pad, height - 42, '21px Cairo, Arial, sans-serif', '#666');
                 const blob = await new Promise((resolve, reject) => canvas.toBlob(b => b ? resolve(b) : reject(new Error('PNG export failed')), 'image/png'));
