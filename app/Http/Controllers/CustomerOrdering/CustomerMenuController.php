@@ -306,7 +306,7 @@ class CustomerMenuController extends Controller
     public function track(string $token): View
     {
         $order = $this->publicOrder($token);
-        $order->loadMissing('invoice');
+        $order->loadMissing('invoice.items');
 
         return view('customer-menu.track', [
             'order' => $order,
