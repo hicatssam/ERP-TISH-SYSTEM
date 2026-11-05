@@ -209,6 +209,23 @@
 }
 
 </style>
+<style>
+/* Prevent an already-dismissed intro from flashing during navigation. */
+html.cm-skip-menu-intro #intro{display:none!important}
+</style>
+<script>
+(function () {
+    const branch = @json($location->code);
+    const mode = @json($introMode);
+    if (mode === 'off') return;
+    try {
+        const key = 'tish_menu_intro_seen_' + branch;
+        const visited = sessionStorage.getItem(key) === '1'
+            || (mode === 'first_visit' && localStorage.getItem(key) === '1');
+        if (visited) document.documentElement.classList.add('cm-skip-menu-intro');
+    } catch (error) { /* Private browsing: normal intro remains available. */ }
+})();
+</script>
 </head>
 <body class="crisp-customer-menu reference-home">
 @php
@@ -616,13 +633,23 @@
 
     const intro = document.getElementById('intro');
     if (intro) {
-        const key = 'dahab_menu_intro_seen_' + CM.LOCATION_CODE;
-        const hideIntro = function () {
-            intro.classList.add('hide');
-            try { sessionStorage.setItem(key, '1'); } catch (error) { /* private browsing */ }
-            setTimeout(function () { intro.remove(); }, 500);
+        const mode = intro.dataset.mode;
+        const key = 'tish_menu_intro_seen_' + CM.LOCATION_CODE;
+        const hasSeenIntro = function () {
+            try {
+                return sessionStorage.getItem(key) === '1'
+                    || (mode === 'first_visit' && localStorage.getItem(key) === '1');
+            } catch (error) { return false; }
         };
-        if (intro.dataset.mode === 'first_visit' && (function () { try { return sessionStorage.getItem(key) === '1'; } catch (error) { return false; } })()) {
+        const hideIntro = function () {
+            try {
+                sessionStorage.setItem(key, '1');
+                if (mode === 'first_visit') localStorage.setItem(key, '1');
+            } catch (error) { /* Storage may be disabled. */ }
+            intro.classList.add('hide');
+            window.setTimeout(() => intro.remove(), 500);
+        };
+        if (hasSeenIntro() || document.documentElement.classList.contains('cm-skip-menu-intro')) {
             intro.remove();
         } else {
             document.getElementById('introEnter')?.addEventListener('click', hideIntro);
