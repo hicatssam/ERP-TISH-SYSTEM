@@ -36,7 +36,7 @@ class CircularMenuDesignTest extends TestCase
 
         $this->assertStringContainsString('id="pwaInstallBtn" aria-label="ثبّت التطبيق"', $install);
         $this->assertStringContainsString('tish-circular-ui.css', $shared);
-        $this->assertStringContainsString('v=4', $shared);
+        $this->assertStringContainsString('v=5', $shared);
         $this->assertStringContainsString('body.crisp-customer-menu #pwaInstallBtn', $css);
         $this->assertStringContainsString('border-radius:50%!important', $css);
         $this->assertStringContainsString('cm-has-sticky-cart #pwaInstallBtn', $css);
@@ -66,6 +66,22 @@ class CircularMenuDesignTest extends TestCase
         $this->assertStringContainsString('CM.addToCart(item.id, 1)', $product);
         $this->assertStringContainsString('item.requiresChoices || item.isVariantProduct', $product);
         $this->assertStringContainsString('tish-addon-card', $css);
+    }
+
+    #[Test]
+    public function home_categories_use_one_circular_visual_and_safe_rtl_scrolling(): void
+    {
+        $home = file_get_contents(resource_path('views/customer-menu/show.blade.php'));
+        $css = file_get_contents(public_path('assets/css/customer-menu/tish-circular-ui.css'));
+
+        $this->assertStringContainsString('id="categories"', $home);
+        $this->assertStringContainsString('data-cat="all"', $home);
+        $this->assertStringContainsString('class="cat-visual"', $home);
+        $this->assertStringContainsString('#categories .cat[data-cat="all"]::before', $css);
+        $this->assertStringContainsString('content:none!important', $css);
+        $this->assertStringContainsString('scroll-padding-inline:12px', $css);
+        $this->assertStringContainsString('direction:rtl', $css);
+        $this->assertStringContainsString('#categories .cat.active .cat-visual', $css);
     }
 
     #[Test]
