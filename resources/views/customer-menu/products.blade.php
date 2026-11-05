@@ -116,10 +116,12 @@ function renderCard(p) {
 function priceMatches(price) {
     if (priceRange === 'all') return true;
     const [min, max] = priceRange.split('-').map(Number);
-    // Price chips are disjoint: 0-20, 20-50, and 50+.
+    // Price chips are disjoint: under 20, 20 through 50, and over 50.
     // Do not show a 20/50-priced item in two different filters.
     if (!Number.isFinite(price)) return false;
-    return price >= min && (priceRange === '50-999999' ? price <= max : price < max);
+    if (priceRange === '50-999999') return price > 50;
+    if (priceRange === '20-50') return price >= 20 && price <= 50;
+    return price >= 0 && price < 20;
 }
 
 const menuMotionReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
