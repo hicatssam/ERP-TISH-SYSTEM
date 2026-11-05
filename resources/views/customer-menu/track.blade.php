@@ -581,23 +581,36 @@
         // cross-origin libraries or server-side file storage.
         @if($order->invoice)
         const saveInvoiceButton = document.getElementById('saveInvoiceImage');
-        const receipt = @json([
-            'brand' => $brandName,
-            'branch' => $order->location->name,
-            'number' => (string) ($order->invoice?->invoice_number ?? $order->order_number),
-            'order_number' => (string) $order->order_number,
-            'date' => $order->created_at?->format('Y-m-d H:i'),
-            'items' => $order->invoice->items->map(fn ($item) => [
-                'name' => $item->description,
-                'quantity' => (string) $item->quantity,
-                'total' => number_format((float) $item->line_total, 2),
-            ])->values()->all(),
-            'subtotal' => number_format((float) $order->invoice->subtotal, 2),
-            'discount' => number_format((float) $order->invoice->discount_amount, 2),
-            'tax' => number_format((float) $order->invoice->tax_amount, 2),
-            'total' => number_format((float) $order->invoice->total_amount, 2),
-            'currency' => $menuCurrencySymbol,
-        ]);
+        @php
+            // Keep complex PHP expressions out of Blade's @json directive.
+            // Blade's directive parser cannot safely balance nested callbacks.
+            $receiptInvoice = $order->invoice;
+            $receiptLines = $receiptInvoice->items->isNotEmpty()
+                ? $receiptInvoice->items->map(fn ($item) => [
+                    'name' => $item->description ?: ($item->product?->name_ar ?? $item->product?->name ?? 'صنف'),
+                    'quantity' => (string) $item->quantity,
+                    'total' => number_format((float) $item->line_total, 2),
+                ])->values()->all()
+                : $order->items->map(fn ($item) => [
+                    'name' => $item->product_name ?: 'صنف',
+                    'quantity' => (string) $item->quantity,
+                    'total' => number_format((float) $item->line_total, 2),
+                ])->values()->all();
+            $receiptData = [
+                'brand' => $brandName,
+                'branch' => $order->location->name,
+                'number' => (string) ($receiptInvoice->invoice_number ?? $order->order_number),
+                'order_number' => (string) $order->order_number,
+                'date' => ($receiptInvoice->issued_at ?? $order->created_at)?->format('Y-m-d H:i'),
+                'items' => $receiptLines,
+                'subtotal' => number_format((float) $receiptInvoice->subtotal, 2),
+                'discount' => number_format((float) $receiptInvoice->discount_amount, 2),
+                'tax' => number_format((float) $receiptInvoice->tax_amount, 2),
+                'total' => number_format((float) $receiptInvoice->total_amount, 2),
+                'currency' => $menuCurrencySymbol,
+            ];
+        @endphp
+        const receipt = {{ \Illuminate\Support\Js::from($receiptData) }};
         saveInvoiceButton?.addEventListener('click', async () => {
             saveInvoiceButton.disabled = true;
             const oldLabel = saveInvoiceButton.innerHTML;
