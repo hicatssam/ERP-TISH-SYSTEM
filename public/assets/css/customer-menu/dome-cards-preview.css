@@ -1,206 +1,247 @@
-/* Experimental dome cards — intentionally isolated to this Git branch.
-   Inspired by the approved reference: arch-shaped photography, softly rounded
-   lower body, centered copy and a circular add button. Keeps all existing
-   routes, catalog data, cart handlers and client theme tokens unchanged. */
-
-body.crisp-customer-menu {
-  --tish-dome-shadow: 0 12px 28px color-mix(in srgb, var(--primary) 14%, transparent);
-  --tish-dome-outline: color-mix(in srgb, var(--primary) 13%, var(--surface));
+/* Tish customer menu • balanced dome cards v5
+ * A rounded dome (not an oval/egg), with a wide body, readable product info
+ * and a subdued multi-layer shadow. Only public home/catalog product cards.
+ * Uses existing markup and cart/favourite interactions without changes.
+ */
+body.crisp-customer-menu{
+ --tish-dome-shadow:
+    0 3px 8px color-mix(in srgb,var(--primary) 7%,transparent),
+    0 13px 28px color-mix(in srgb,var(--primary) 11%,transparent),
+    0 25px 42px color-mix(in srgb,var(--text) 5%,transparent);
 }
-
-/* The entire product panel has a pronounced arched top and rounded bottom. */
 body.crisp-customer-menu .product,
 body.reference-home.crisp-customer-menu .product,
-body.crisp-customer-menu .related-row .product {
-  border-radius: 50% 50% 43% 43% / 34% 34% 17% 17% !important;
-  border: 2px solid var(--surface) !important;
-  box-shadow: var(--tish-dome-shadow) !important;
-  background: var(--surface);
-  isolation: isolate;
-  overflow: hidden;
-  text-align: center;
+body.crisp-customer-menu .related-row .product,
+body.reference-home.crisp-customer-menu .cm-showcase-slide .product{
+ position:relative;
+ display:flex;
+ flex-direction:column;
+ min-width:0;
+ height:100%;
+ background:var(--surface);
+ border:2px solid color-mix(in srgb,var(--surface) 95%,white)!important;
+ /* Pronounced dome at top; softly rounded base, not a full oval */
+ border-radius:48% 48% 76px 76px / 29% 29% 63px 63px!important;
+ box-shadow:var(--tish-dome-shadow)!important;
+ overflow:hidden;
+ isolation:isolate;
+ text-align:center;
 }
-
-/* The first image fills the arch instead of looking like a rounded rectangle. */
 body.crisp-customer-menu .product .product-media,
-body.reference-home.crisp-customer-menu .product .product-media {
-  width: 100%;
-  aspect-ratio: 1.2 / 1 !important;
-  border-radius: 50% 50% 6% 6% / 56% 56% 6% 6% !important;
-  overflow: hidden;
-  flex: 0 0 auto;
+body.reference-home.crisp-customer-menu .product .product-media{
+ display:block;
+ flex:0 0 auto;
+ width:100%;
+ height:auto;
+ aspect-ratio:1.42 / 1!important;
+ overflow:hidden;
+ /* Wide arch follows the top of the outer card */
+ border-radius:48% 48% 15px 15px / 47% 47% 12px 12px!important;
 }
-body.crisp-customer-menu .product .product-media img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+body.crisp-customer-menu .product .product-media img,
+body.crisp-customer-menu .product .product-media .product-placeholder{
+ width:100%;
+ height:100%;
+ display:block;
+ object-fit:cover;
 }
 body.crisp-customer-menu .product .product-body,
-body.reference-home.crisp-customer-menu .product .product-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 12px 18px 8px !important;
-  border-radius: 0 0 44% 44% / 0 0 20% 20% !important;
-  text-align: center;
+body.reference-home.crisp-customer-menu .product .product-body{
+ flex:1 1 auto;
+ display:flex;
+ flex-direction:column;
+ align-items:center;
+ justify-content:space-between;
+ min-width:0;
+ min-height:0;
+ width:100%;
+ padding:9px 12px 14px!important;
+ text-align:center;
+ border-radius:0 0 66px 66px / 0 0 50px 50px!important;
 }
-body.crisp-customer-menu .product .product-copy {
-  width: 100%;
-  text-align: center;
+body.crisp-customer-menu .product .product-copy{
+ display:block;
+ width:100%;
+ min-width:0;
+ text-align:center;
 }
-body.crisp-customer-menu .product h3 {
-  min-height: 0;
-  font-weight: 900;
-  line-height: 1.4;
+body.crisp-customer-menu .product h3{
+ margin:0 0 3px!important;
+ min-height:0!important;
+ font-size:clamp(.77rem,2.2vw,1.05rem)!important;
+ line-height:1.3!important;
+ font-weight:900;
+ -webkit-line-clamp:2;
 }
-body.crisp-customer-menu .product .product-desc {
-  min-height: 0;
-  margin: 4px 0 7px;
+body.crisp-customer-menu .product .product-desc{
+ margin:0 0 5px!important;
+ min-height:0!important;
+ font-size:clamp(.59rem,1.75vw,.78rem)!important;
+ line-height:1.3!important;
+ -webkit-line-clamp:1;
 }
-body.crisp-customer-menu .product .product-foot {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 5px;
-  width: 100%;
-  margin-top: auto;
+body.crisp-customer-menu .product .product-foot{
+ display:flex;
+ flex:0 0 auto;
+ flex-direction:column;
+ align-items:center;
+ width:100%;
+ gap:3px!important;
+ margin-top:auto;
 }
-body.crisp-customer-menu .product .product-price-row {
-  display: flex;
-  justify-content: center;
-  width: 100%;
+body.crisp-customer-menu .product .product-price-row{
+ display:flex;
+ justify-content:center;
+ width:100%;
+ min-height:0;
 }
-body.crisp-customer-menu .product .price {
-  font-size: 1.08rem;
-  font-weight: 900;
+body.crisp-customer-menu .product .price{
+ font-size:clamp(.83rem,2.25vw,1.08rem)!important;
+ font-weight:900;
 }
-
-/* The existing add action keeps its actual click handler and readable name. */
-body.crisp-customer-menu .product .details {
-  width: 52px !important;
-  min-width: 52px;
-  height: 52px;
-  min-height: 52px !important;
-  display: grid !important;
-  place-items: center;
-  border-radius: 50% !important;
-  padding: 0 !important;
-  margin: 2px auto 0;
-  font-size: 1.3rem;
-  box-shadow: 0 5px 15px color-mix(in srgb, var(--primary) 21%, transparent);
+body.crisp-customer-menu .product .details{
+ position:relative;
+ z-index:5;
+ display:inline-grid!important;
+ place-items:center;
+ flex:0 0 auto;
+ width:42px!important;
+ min-width:42px!important;
+ height:42px!important;
+ min-height:42px!important;
+ margin:3px auto 0!important;
+ padding:0!important;
+ border-radius:50%!important;
+ box-shadow:0 3px 8px color-mix(in srgb,var(--primary) 13%,transparent),0 8px 16px color-mix(in srgb,var(--primary) 17%,transparent)!important;
 }
-body.crisp-customer-menu .product .details span {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
+body.crisp-customer-menu .product .details span{
+ position:absolute;
+ width:1px;
+ height:1px;
+ overflow:hidden;
+ margin:-1px;
+ padding:0;
+ white-space:nowrap;
+ clip-path:inset(50%);
 }
-body.crisp-customer-menu .product .details:disabled {
-  opacity: .52;
-}
-
-/* Small, circular action bubbles sit safely inside the top arch. */
-body.crisp-customer-menu .product .fav {
-  top: 16px;
-  left: 16px;
-  right: auto;
-  width: 43px;
-  height: 43px;
-  border-radius: 50% !important;
+body.crisp-customer-menu .product .fav{
+ position:absolute;
+ z-index:6;
+ top:12px!important;
+ left:12px!important;
+ right:auto!important;
+ display:grid;
+ place-items:center;
+ width:36px!important;
+ height:36px!important;
+ border-radius:50%!important;
 }
 body.crisp-customer-menu .product .product-status,
-body.crisp-customer-menu .product .product-ribbon {
-  top: 17px;
-  right: 12px;
-  left: auto;
-  max-width: calc(100% - 73px);
-  border-radius: 999px;
-  white-space: nowrap;
+body.crisp-customer-menu .product .product-ribbon{
+ position:absolute;
+ z-index:6;
+ top:12px!important;
+ right:10px!important;
+ left:auto!important;
+ max-width:calc(100% - 61px);
+ padding:4px 8px!important;
+ border-radius:999px!important;
+ overflow:hidden;
+ white-space:nowrap;
+ text-overflow:ellipsis;
+ font-size:.63rem!important;
 }
-
-/* Featured 3D carousel adopts the same arch with sufficient text room. */
-body.reference-home .cm-featured-showcase {
-  min-height: 525px;
+body.reference-home.crisp-customer-menu .cm-featured-showcase{
+ min-height:460px;
 }
-body.reference-home .cm-showcase-stage {
-  height: 465px;
+body.reference-home.crisp-customer-menu .cm-showcase-stage{
+ height:424px;
 }
-body.reference-home .cm-showcase-slide {
-  height: 420px;
-  width: clamp(246px, 33vw, 345px);
+body.reference-home.crisp-customer-menu .cm-showcase-slide{
+ width:clamp(238px,34vw,326px);
+ height:390px;
 }
-body.reference-home .cm-showcase-slide .product .product-media {
-  aspect-ratio: 1.23 / 1 !important;
+body.reference-home.crisp-customer-menu .cm-showcase-slide .product-media{
+ aspect-ratio:1.5/1!important;
 }
-body.reference-home .cm-showcase-slide .product-body {
-  justify-content: flex-start;
+body.reference-home.crisp-customer-menu .cm-showcase-slide .product-body{
+ justify-content:space-between!important;
 }
-body.reference-home .cm-showcase-slide .product-desc {
-  margin: 4px 0 6px;
+body.crisp-customer-menu #productGrid,
+body.reference-home.crisp-customer-menu .catalog-section .grid{
+ align-items:stretch;
 }
-body.reference-home .cm-showcase-slide .product .details {
-  margin-top: 0;
+@media(max-width:560px){
+ body.reference-home.crisp-customer-menu .catalog-section .grid,
+ body.reference-home.crisp-customer-menu #productGrid,
+ body.crisp-customer-menu #productGrid{
+   grid-template-columns:repeat(2,minmax(0,1fr));
+   gap:12px;
+ }
+ body.reference-home.crisp-customer-menu .catalog-section .product,
+ body.reference-home.crisp-customer-menu #productGrid .product,
+ body.crisp-customer-menu #productGrid .product{
+   border-radius:46% 46% 60px 60px / 26% 26% 48px 48px!important;
+ }
+ body.crisp-customer-menu .product .product-media,
+ body.reference-home.crisp-customer-menu .product .product-media{
+   aspect-ratio:1.38/1!important;
+ }
+ body.crisp-customer-menu .product .product-body,
+ body.reference-home.crisp-customer-menu .product .product-body{
+   padding:7px 7px 11px!important;
+ }
+ body.crisp-customer-menu .product h3{
+   font-size:clamp(.66rem,2.95vw,.84rem)!important;
+ }
+ body.crisp-customer-menu .product .product-desc{
+   font-size:clamp(.54rem,2.35vw,.7rem)!important;
+ }
+ body.crisp-customer-menu .product .price{
+   font-size:clamp(.75rem,2.9vw,.93rem)!important;
+ }
+ body.crisp-customer-menu .product .details{
+   width:36px!important;
+   min-width:36px!important;
+   height:36px!important;
+   min-height:36px!important;
+ }
+ body.crisp-customer-menu .product .fav{
+   top:11px!important;
+   left:9px!important;
+   width:30px!important;
+   height:30px!important;
+ }
+ body.crisp-customer-menu .product .product-status,
+ body.crisp-customer-menu .product .product-ribbon{
+   top:11px!important;
+   right:7px!important;
+   max-width:calc(100% - 45px);
+   font-size:.55rem!important;
+   padding:3px 5px!important;
+ }
+ body.reference-home.crisp-customer-menu .cm-featured-showcase{
+   min-height:405px;
+   padding-inline:34px;
+ }
+ body.reference-home.crisp-customer-menu .cm-showcase-stage{height:370px}
+ body.reference-home.crisp-customer-menu .cm-showcase-slide{
+   width:min(78vw,275px);
+   height:345px;
+ }
+ body.reference-home.crisp-customer-menu .cm-showcase-slide .product-media{
+   aspect-ratio:1.5/1!important;
+ }
+ body.reference-home.crisp-customer-menu .cm-showcase-slide .product .details{
+   width:43px!important;
+   min-width:43px!important;
+   height:43px!important;
+   min-height:43px!important;
+ }
 }
-
-/* All-products page uses the same card geometry. */
-body.crisp-customer-menu #productGrid .product {
-  min-width: 0;
-}
-body.crisp-customer-menu #productGrid .product .product-body {
-  min-height: 156px;
-}
-
-/* Maintain usable, non-overlapping controls on small screens. */
-@media(max-width:700px) {
-  body.reference-home .cm-featured-showcase {
-    min-height: 448px;
-    padding-inline: 32px;
-  }
-  body.reference-home .cm-showcase-stage { height: 395px; }
-  body.reference-home .cm-showcase-slide {
-    width: min(73vw, 285px);
-    height: 360px;
-  }
-  body.reference-home .cm-showcase-slide .product .product-media {
-    aspect-ratio: 1.3 / 1 !important;
-  }
-  body.reference-home .cm-showcase-nav { top: 42%; }
-}
-@media(max-width:560px) {
-  body.crisp-customer-menu .product .product-body,
-  body.reference-home.crisp-customer-menu .product .product-body {
-    padding: 9px 9px 8px !important;
-  }
-  body.crisp-customer-menu .product .details {
-    width: 44px !important;
-    min-width: 44px;
-    height: 44px;
-    min-height: 44px !important;
-  }
-  body.crisp-customer-menu .product .fav {
-    top: 12px;
-    left: 9px;
-    width: 36px;
-    height: 36px;
-  }
-  body.crisp-customer-menu .product .product-status,
-  body.crisp-customer-menu .product .product-ribbon {
-    top: 12px;
-    right: 7px;
-    max-width: calc(100% - 50px);
-    font-size: .58rem;
-  }
-  body.crisp-customer-menu #productGrid .product .product-body {
-    min-height: 144px;
-  }
-}
-@media(prefers-reduced-motion:reduce) {
-  body.reference-home .cm-showcase-slide[data-offset="0"] .product {
-    animation: none !important;
-  }
+/* Images and shadows remain stable; animation off for reduced motion. */
+@media(prefers-reduced-motion:reduce){
+ body.reference-home.crisp-customer-menu .cm-showcase-slide[data-offset="0"] .product{
+   animation:none!important;
+ }
 }
