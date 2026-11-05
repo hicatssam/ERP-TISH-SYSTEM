@@ -31,7 +31,7 @@
         if (img.dataset.tishImageBound) return;
         img.dataset.tishImageBound = '1';
         img.decoding = 'async';
-        if (!img.hasAttribute('loading')) img.loading = 'lazy';
+        if (!frame.classList.contains('detail-media') && !img.hasAttribute('loading')) img.loading = 'lazy';
         if (img.complete) {
             finalizeImage(img, frame);
             return;
@@ -64,6 +64,9 @@
         let index = 0;
         if (root.matches?.('.product, .tish-addon-card')) prepareCard(root, index++);
         root.querySelectorAll('.product, .tish-addon-card').forEach(card => prepareCard(card, index++));
+        const detailImage = root.matches?.('.detail-media img') ? root : null;
+        if (detailImage) prepareImage(detailImage, detailImage.closest('.detail-media'));
+        root.querySelectorAll('.detail-media img').forEach(img => prepareImage(img, img.closest('.detail-media')));
     }
 
     function start() {
