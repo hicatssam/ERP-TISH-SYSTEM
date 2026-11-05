@@ -28,15 +28,15 @@ class CircularMenuDesignTest extends TestCase
     }
 
     #[Test]
-    public function install_button_is_accessible_and_shows_text_inside_a_round_pill(): void
+    public function install_button_is_accessible_with_text_inside_a_circle(): void
     {
         $install = file_get_contents(resource_path('views/customer-menu/partials/pwa-install.blade.php'));
         $shared = file_get_contents(resource_path('views/customer-menu/partials/styles.blade.php'));
         $css = file_get_contents(public_path('assets/css/customer-menu/tish-circular-ui.css'));
 
-        $this->assertStringContainsString('id="pwaInstallBtn" aria-label="ثبّت التطبيق"', $install);
+        $this->assertStringContainsString('id="pwaInstallBtn" aria-label="ثبّت المنيو"', $install);
         $this->assertStringContainsString('tish-circular-ui.css', $shared);
-        $this->assertStringContainsString('v=4', $shared);
+        $this->assertStringContainsString('v=7', $shared);
         $this->assertStringContainsString('body.crisp-customer-menu #pwaInstallBtn', $css);
         $this->assertStringContainsString('border-radius:50%!important', $css);
         $this->assertStringContainsString('cm-has-sticky-cart #pwaInstallBtn', $css);
@@ -66,6 +66,35 @@ class CircularMenuDesignTest extends TestCase
         $this->assertStringContainsString('CM.addToCart(item.id, 1)', $product);
         $this->assertStringContainsString('item.requiresChoices || item.isVariantProduct', $product);
         $this->assertStringContainsString('tish-addon-card', $css);
+    }
+
+    #[Test]
+    public function home_categories_use_one_circular_visual_and_safe_rtl_scrolling(): void
+    {
+        $home = file_get_contents(resource_path('views/customer-menu/show.blade.php'));
+        $css = file_get_contents(public_path('assets/css/customer-menu/tish-circular-ui.css'));
+
+        $this->assertStringContainsString('id="categories"', $home);
+        $this->assertStringContainsString('data-cat="all"', $home);
+        $this->assertStringContainsString('class="cat-visual"', $home);
+        $this->assertStringContainsString('#categories .cat[data-cat="all"]::before', $css);
+        $this->assertStringContainsString('content:none!important', $css);
+        $this->assertStringContainsString('scroll-padding-inline:12px', $css);
+        $this->assertStringContainsString('direction:rtl', $css);
+        $this->assertStringContainsString('slightly elevated cards', $css);
+        $this->assertStringContainsString('padding:8px 4px 20px', $css);
+        $this->assertStringContainsString('#categories .cat.active .cat-visual', $css);
+    }
+
+    #[Test]
+    public function dismissed_intro_does_not_reappear_during_menu_navigation(): void
+    {
+        $home = file_get_contents(resource_path('views/customer-menu/show.blade.php'));
+        $this->assertStringContainsString('cm-skip-menu-intro', $home);
+        $this->assertStringContainsString('tish_menu_intro_seen_', $home);
+        $this->assertStringContainsString("sessionStorage.setItem(key, '1')", $home);
+        $this->assertStringContainsString("localStorage.setItem(key, '1')", $home);
+        $this->assertStringContainsString('intro.remove()', $home);
     }
 
     #[Test]
