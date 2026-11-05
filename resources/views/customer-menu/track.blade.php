@@ -156,6 +156,17 @@
             white-space:nowrap;
         }
         .statusDot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+        .paymentSummary{display:flex;align-items:center;gap:12px;margin:0 0 16px;padding:15px 16px;border:1px solid color-mix(in srgb,var(--primary) 13%,var(--surface));border-radius:24px;background:var(--surface);box-shadow:0 8px 24px color-mix(in srgb,var(--text) 6%,transparent)}
+        .paymentSummaryIcon{width:44px;height:44px;flex:0 0 44px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--primary) 8%,var(--surface));color:var(--primary);font-size:1.05rem}
+        .paymentSummaryText{flex:1;min-width:0;display:grid;gap:4px}
+        .paymentSummaryText strong{font-size:.92rem}
+        .paymentSummaryText small{font-size:.77rem;line-height:1.5;color:var(--muted)}
+        .paymentSummaryBadge{display:inline-flex;align-items:center;justify-content:center;max-width:44%;border-radius:999px;padding:8px 11px;font-size:.75rem;line-height:1.35;text-align:center;font-weight:900;background:color-mix(in srgb,var(--primary) 9%,var(--surface));color:var(--primary)}
+        .paymentSummaryBadge[data-payment-state="paid"]{background:#e3f5eb;color:#116b3c}
+        .paymentSummaryBadge[data-payment-state="partial"],.paymentSummaryBadge[data-payment-state="review"]{background:#fff1d5;color:#875300}
+        .paymentSummaryBadge[data-payment-state="refunded"]{background:#e9e9f4;color:#514d79}
+        @media(max-width:400px){.paymentSummary{gap:9px;padding:12px}.paymentSummaryBadge{font-size:.7rem;padding:8px;max-width:43%}.paymentSummaryIcon{width:38px;height:38px;flex-basis:38px}}
+
         .progress{padding:28px 0 25px}
         .progressLine{display:grid;grid-template-columns:repeat(4,1fr);position:relative}
         .progressLine::before{
@@ -302,7 +313,14 @@
 
             <div class="notice" id="eta"></div>
 
-            <div class="notice" id="payment"></div>
+            <div class="paymentSummary" id="paymentSummary" aria-live="polite" aria-atomic="true">
+                <div class="paymentSummaryIcon" aria-hidden="true"><i class="fa-solid fa-credit-card"></i></div>
+                <div class="paymentSummaryText">
+                    <strong>حالة الدفع</strong>
+                    <small id="paymentDescription">يتم تحديث حالة الدفع تلقائيًا.</small>
+                </div>
+                <span class="paymentSummaryBadge" id="paymentBadge" data-payment-state="unknown">جاري التحديث</span>
+            </div>
 
             <div class="notice show" id="statusDescription"></div>
 
@@ -351,7 +369,8 @@
         const url = @json(route('customer-menu.status',$order->public_token));
         const initialStatus = @json($statusPayload ?? null);
         const label = document.querySelector('#label span:last-child');
-        const payment = document.querySelector('#payment');
+        const paymentBadge = document.getElementById('paymentBadge');
+        const paymentDescription = document.getElementById('paymentDescription');
         const eta = document.querySelector('#eta');
         const statusDescription = document.querySelector('#statusDescription');
         const customerMessage = document.querySelector('#customerMessage');
@@ -421,9 +440,21 @@
             customerMessage.classList.toggle('show', Boolean(data.customer_message));
 
             const paymentStatus = String(data.payment_status || '').toLowerCase();
-            const needsReview = paymentStatus === 'pending_payment_verification';
-            payment.textContent = needsReview ? 'إثبات الدفع قيد المراجعة — سنحدّث الحالة فور اعتماد العملية.' : '';
-            payment.classList.toggle('show', needsReview);
+            const paymentArrangement = String(data.payment_arrangement || '').toLowerCase();
+            // Only use server-confirmed payment_status; order preparation never implies paid.
+            const paymentStates = {
+                payment_pending: ['في انتظار الدفع', 'لم يتم تأكيد الدفع بعد.', 'pending'],
+                partially_paid: ['مدفوع جزئيًا', 'تم استلام جزء من المبلغ.', 'partial'],
+                paid: ['مدفوع', 'تم تأكيد دفع الطلب.', 'paid'],
+                pending_payment_verification: ['بانتظار التحقق', 'إثبات الدفع قيد المراجعة لدى المطعم.', 'review'],
+                partially_refunded: ['مسترجع جزئيًا', 'تم استرجاع جزء من المبلغ.', 'refunded'],
+                refunded: ['مسترجع', 'تم استرجاع المبلغ.', 'refunded']
+            };
+            const stateInfo = paymentStates[paymentStatus] || ['الحالة غير متاحة', 'يرجى التواصل مع المطعم لتأكيد حالة الدفع.', 'unknown'];
+            const payOnPickup = paymentStatus === 'payment_pending' && paymentArrangement === 'pay_on_pickup';
+            paymentBadge.textContent = menuT(stateInfo[0]);
+            paymentBadge.dataset.paymentState = stateInfo[2];
+            paymentDescription.textContent = menuT(payOnPickup ? 'الدفع عند الاستلام — لم يتم تحصيل المبلغ بعد.' : stateInfo[1]);
 
             const minutes = Number(data.estimated_ready_minutes);
             const showEta = !cancelled && Number.isFinite(minutes) && minutes > 0;
