@@ -12,7 +12,7 @@ class MenuCheckoutAuditTest extends TestCase
     {
         $view = file_get_contents(resource_path('views/customer-menu/checkout/checkout.blade.php'));
 
-        $this->assertStringContainsString('id="paymentAccountSelect" required', $view);
+        $this->assertStringContainsString('id="paymentAccountSelect" aria-required="true"', $view);
         $this->assertStringContainsString('configuredAccounts.length > 0', $view);
         $this->assertStringContainsString('اختر حساب الدفع أو التحويل قبل تأكيد الطلب.', $view);
         $this->assertStringContainsString('paymentProofPreviewUrl', $view);
