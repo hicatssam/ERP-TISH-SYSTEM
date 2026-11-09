@@ -259,12 +259,10 @@ class CustomerAccountService
             $allocationMode,
             $status
         ): CustomerPayment {
-            if ($method->type === 'cash' && ! $receiptLocationId) {
-                throw ValidationException::withMessages(['location_id' => 'حدد الفرع الذي استلم النقد.']);
+            if (! $receiptLocationId) {
+                throw ValidationException::withMessages(['location_id' => 'حدد الفرع الذي استلم الدفعة قبل تسجيلها.']);
             }
-            if ($receiptLocationId) {
-                app(\App\Services\Finance\CashDayGuard::class)->forMethod((int) $receiptLocationId, $method);
-            }
+            app(\App\Services\Finance\CashDayGuard::class)->forMethod((int) $receiptLocationId, $method);
 
             $payment = CustomerPayment::create([
                 'customer_id' => $customer->id,
