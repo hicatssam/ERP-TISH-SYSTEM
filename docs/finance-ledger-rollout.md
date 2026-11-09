@@ -76,3 +76,19 @@ The PR runs ERP CI, PDF regression and HR regression through GitHub Actions.
 Successful SQLite CI does not prove compatibility with a populated
 production MySQL database. Preserve the PR as draft until a restored
 production-database run and approved accounting review are complete.
+
+
+## MySQL-specific preflight
+
+The new `.github/workflows/finance-mysql.yml` job uses MySQL 8 rather
+than only the SQLite unit-test database. It first runs all 170 historical
+migrations on a fresh database, then tests ledger, cash, payments and payroll
+against MySQL. A historical menu migration formerly dropped an index still
+required by an InnoDB product foreign key; the forward migration now installs
+a replacement product-leading index first. Its rollback must **not** discard
+duplicate-per-branch menu rows. 
+
+For an existing production database, MySQL fresh-install tests cannot prove
+that its live historical schema/data match; restore a real backup to staging,
+inspect `php artisan migrate:status` and preview migrations before deployment.
+Never run `php artisan migrate:fresh` or `php artisan test` against production.
