@@ -65,4 +65,5 @@ jobs:
           php artisan test \
             tests/Feature/Finance \
             tests/Feature/OrderUpdateInventoryGuardTest.php \
-            tests/Feature/Procurement
+            tests/Feature/Payroll \
+            tests/Feature/Restaurant/RestaurantPosNonCashDetailsValidationTest.php
