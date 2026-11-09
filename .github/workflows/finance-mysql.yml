@@ -60,10 +60,14 @@ jobs:
           php artisan config:clear
           php artisan tinker --execute="if (config('database.default') !== 'mysql') { throw new RuntimeException('Finance integration tests must run on MySQL'); }"
 
-      - name: Test finance, procurement and confirmed-order accounting on MySQL
-        run: |
-          php artisan test \
-            tests/Feature/Finance \
-            tests/Feature/OrderUpdateInventoryGuardTest.php \
-            tests/Feature/Payroll \
-            tests/Feature/Restaurant/RestaurantPosNonCashDetailsValidationTest.php
+      - name: MySQL — accounting books and branch cash reconciliation
+        run: timeout 300 php artisan test tests/Feature/Finance/AccountingBooksTest.php tests/Feature/Finance/DailyCashReconciliationTest.php --stop-on-failure
+
+      - name: MySQL — additional finance workflows
+        run: timeout 300 php artisan test tests/Feature/Finance/AccountingOverviewTest.php tests/Feature/Finance/OrderBankTransferFlowTest.php tests/Feature/Finance/EmployeePurchaseAccountTest.php --stop-on-failure
+
+      - name: MySQL — confirmed order and cashier regressions
+        run: timeout 300 php artisan test tests/Feature/OrderUpdateInventoryGuardTest.php tests/Feature/Restaurant/RestaurantPosNonCashDetailsValidationTest.php --stop-on-failure
+
+      - name: MySQL — payroll integration regressions
+        run: timeout 300 php artisan test tests/Feature/Payroll --stop-on-failure
