@@ -71,6 +71,13 @@ class SupplierPaymentService
                 (int) $invoice->location_id, $paymentMethod, (string) $data['payment_date']
             );
 
+            if ($paymentMethod->type === 'cash' && ! \App\Models\Currency::query()
+                ->whereKey($data['currency_id'])->where('is_base', true)->exists()) {
+                throw ValidationException::withMessages([
+                    'currency_id' => 'النقد الأجنبي يحتاج صندوق عملة مستقلًا؛ لا يمكن جمعه في الصندوق الأساسي.',
+                ]);
+            }
+
             $payment = SupplierPayment::query()->create([
                 'payment_number' => $this->numbers->next('supplier_payment', 'SPY'),
                 'supplier_id' => $invoice->supplier_id,
@@ -89,6 +96,8 @@ class SupplierPaymentService
                 'created_by' => $actor->id,
             ]);
 
+            app(\App\Services\Finance\GeneralLedgerIntegrationService::class)
+                ->supplierPayment($payment, $actor);
             $invoice = $this->invoices->syncPaymentAmounts($invoice);
 
             ActivityLogger::log(
