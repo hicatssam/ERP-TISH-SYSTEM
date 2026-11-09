@@ -424,10 +424,15 @@ class CustomerOrderingService
                 // Idempotent retry: do not create a second payment for the same public order.
                 $payment->forceFill($attributes)->save();
             } else {
-                Payment::query()->create(array_merge($attributes, [
+                $payment = Payment::query()->create(array_merge($attributes, [
                     'order_type' => 'order',
                     'order_id' => (int) $order->id,
                 ]));
+            }
+
+            if (! $requiresVerification) {
+                app(\App\Services\Finance\FinancialPostingService::class)
+                    ->collection($payment, $actor);
             }
 
             $order->forceFill([
