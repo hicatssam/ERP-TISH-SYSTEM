@@ -330,13 +330,8 @@ class FinancialPeriodService
                             $row->order_count,
                         'average_order_value' =>
                             $row->average_order_value,
-                        'opening_balance' =>
-                            round(
-                                (float) $locked->opening_balance,
-                                2
-                            ),
-                        'closing_balance' =>
-                            $closingBalance,
+                        'opening_balance' => round((float) $row->opening_balance, 2),
+                        'closing_balance' => round((float) $row->closing_balance, 2),
                         'generated_at' => now(),
                         'generated_by' => $user->id,
                     ]);
