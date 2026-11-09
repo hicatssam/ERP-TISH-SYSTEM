@@ -136,7 +136,7 @@ class PaymentService
             }
 
             if ($approved) {
-                app(CashDayGuard::class)->forMethod((int) $locked->location_id, $locked->paymentMethod);
+                app(CashDayGuard::class)->forMethod((int) $locked->location_id, PaymentMethod::withTrashed()->findOrFail($locked->payment_method_id));
             }
 
             $locked->update([
@@ -191,7 +191,7 @@ class PaymentService
                 ]);
             }
 
-            app(CashDayGuard::class)->forMethod((int) $locked->location_id, $locked->paymentMethod);
+            app(CashDayGuard::class)->forMethod((int) $locked->location_id, PaymentMethod::withTrashed()->findOrFail($locked->payment_method_id));
 
             PaymentCorrection::query()->create([
                 'original_payment_id' => $locked->id,
