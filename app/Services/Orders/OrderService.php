@@ -250,6 +250,8 @@ $this->salesChannelService->apply(
                 $order->fresh(['items.product']),
                 $user
             );
+            app(\App\Services\Finance\GeneralLedgerIntegrationService::class)
+                ->orderCost($order, $user);
 
             $order->update([
                 'status' => 'confirmed',
@@ -330,12 +332,16 @@ private function createPaymentIfNeeded(Order $order, array $data, ?int $location
         ]);
     }
 
+    if (! $isVerification && $method->type === 'cash') {
+        app(\App\Services\Finance\CashDayGuard::class)->assertOpen((int) $locationId);
+    }
+
     $proofPath = null;
     if (! empty($data['payment_proof']) && $data['payment_proof'] instanceof \Illuminate\Http\UploadedFile) {
         $proofPath = $data['payment_proof']->store('payment-proofs', 'local');
     }
 
-    \App\Models\Payment::create([
+    $payment = \App\Models\Payment::create([
         'order_type'        => 'order',
         'order_id'          => $order->id,
         'payment_method_id' => $data['payment_method_id'],
@@ -352,6 +358,10 @@ private function createPaymentIfNeeded(Order $order, array $data, ?int $location
         'verified_at'       => $isVerification ? null : now(),
         'paid_at'           => now(),
     ]);
+
+    if (! $isVerification) {
+        $this->financialPosting->collection($payment, $user);
+    }
 
     $paymentStatus = $isVerification
         ? 'pending_payment_verification'
