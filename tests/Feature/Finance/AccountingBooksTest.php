@@ -198,6 +198,57 @@ class AccountingBooksTest extends TestCase
         $this->assertEquals(0, $report['position']['difference']);
     }
 
+    public function test_approved_payroll_accrual_is_idempotent_and_voided_payment_keeps_cash_outflow(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
+        [$branch, $user] = $this->branchUser($this->allPermissions());
+        $currency = $this->baseCurrency();
+        $this->openPeriod($user);
+        $cash = $this->method('cash');
+        $period = new \App\Models\PayrollPeriod([
+            'code' => 'PAY-2026-10', 'location_id' => $branch->id,
+            'currency_id' => $currency->id, 'end_date' => '2026-10-02',
+        ]);
+        $period->id = 99001;
+        $item = new \App\Models\PayrollItem([
+            'payroll_period_id' => $period->id, 'employee_id' => $user->employee_id,
+            'net_salary' => 100,
+        ]);
+        $item->id = 99002;
+        $item->setRelation('period', $period);
+        $posting = app(\App\Services\Finance\GeneralLedgerIntegrationService::class);
+
+        $posting->payrollAccrual($item, $user);
+        $posting->payrollAccrual($item, $user);
+        $this->assertSame(1, AccountingJournal::query()
+            ->where('source_type', 'payroll_item_accruals')->count());
+
+        $payment = new \App\Models\PayrollPayment([
+            'payroll_item_id' => $item->id,
+            'payment_method_id' => $cash->id, 'location_id' => $branch->id,
+            'amount' => 40, 'base_amount' => 40, 'paid_at' => now(),
+        ]);
+        $payment->id = 99003;
+        $payment->setRelation('item', $item);
+        $posting->payrollPayment($payment, $user);
+        $posted = AccountingJournal::query()->where('source_type', 'payroll_payments')->sole();
+        $this->assertEquals(40, $posted->lines()->whereHas('account',
+            fn ($q) => $q->where('code', '2100'))->value('debit'));
+
+        $posting->reversePayrollPayment($payment, $user);
+        $posting->reversePayrollPayment($payment, $user);
+        $reversal = AccountingJournal::query()->where('source_type', 'payroll_payment_reversals')->sole();
+        $this->assertEquals(40, $reversal->lines()->whereHas('account',
+            fn ($q) => $q->where('code', '1160'))->value('debit'));
+        $this->assertEquals(40, $reversal->lines()->whereHas('account',
+            fn ($q) => $q->where('code', '2100'))->value('credit'));
+        $this->assertSame(3, AccountingJournal::query()->count());
+
+        $report = app(AccountingReportService::class)->report([$branch->id], '2026-10-01', '2026-10-02');
+        $this->assertEquals(0, $report['position']['difference']);
+        $this->assertEquals(10000, $report['income']['expenses']);
+    }
+
     public function test_read_only_audit_reports_missing_postings_without_mutating_the_ledger(): void
     {
         $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
