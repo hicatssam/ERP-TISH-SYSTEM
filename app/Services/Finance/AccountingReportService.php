@@ -89,6 +89,7 @@ class AccountingReportService
         $unlinkedOperations += $this->unpostedSources('customer_payments', 'paid_at', $locationIds, $endExclusive, ['confirmed']);
         $unlinkedOperations += $this->unpostedSources('supplier_invoices', 'invoice_date', $locationIds, $endExclusive, null, ['cancelled']);
         $unlinkedOperations += $this->unpostedSources('supplier_payments', 'payment_date', $locationIds, $endExclusive, ['confirmed']);
+        $unlinkedOperations += $this->unpostedSources('purchase_returns', 'posted_at', $locationIds, $endExclusive, ['posted']);
         $unlinkedOperations += $this->unpostedSources('payroll_payments', 'paid_at', $locationIds, $endExclusive, ['posted', 'voided']);
         $unlinkedOperations += $this->unpostedSources('branch_cash_movements', 'occurred_at', $locationIds, $endExclusive);
 
