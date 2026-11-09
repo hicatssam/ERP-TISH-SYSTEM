@@ -467,7 +467,7 @@ class EmployeeAdvanceRepaymentTest extends TestCase
         return PaymentMethod::query()->create([
             'name' => 'Test ' . $type . ' ' . uniqid(),
             'name_ar' => 'طريقة اختبار',
-            'code' => 'test-' . $type . '-' . uniqid(),
+            'code' => 'test-' . substr($type, 0, 4) . '-' . bin2hex(random_bytes(6)),
             'type' => $type,
             'requires_verification' => $requiresVerification,
             'requires_reference' => $requiresReference,
