@@ -121,7 +121,7 @@ class AccountingBooksTest extends TestCase
         $this->baseCurrency();
         $this->openPeriod($user);
         $cash = $this->method('cash');
-        $bank = $this->method('bank');
+        $bank = $this->method('bank_transfer');
         $journalService = app(\App\Services\Finance\GeneralLedgerIntegrationService::class);
 
         $customerReceipt = new \App\Models\CustomerPayment([
@@ -170,6 +170,7 @@ class AccountingBooksTest extends TestCase
         DailyCashReconciliation::query()->create([
             'location_id' => $branch->id, 'business_date' => '2026-10-02',
             'opening_balance' => 0, 'expected_closing' => 0, 'actual_closing' => 0,
+            'variance' => 0,
             'closed_by' => $user->id, 'closed_at' => now(),
         ]);
 
