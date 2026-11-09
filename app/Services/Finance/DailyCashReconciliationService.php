@@ -91,7 +91,7 @@ class DailyCashReconciliationService
             ->join('payment_methods as pm', 'pm.id', '=', 'pp.payment_method_id')
             ->leftJoin('currencies as c', 'c.id', '=', 'pp.currency_id')
             ->where('pp.location_id', $locationId)->where('pm.type', 'cash')
-            ->whereIn('pp.status', ['posted', 'void'])
+            ->whereIn('pp.status', ['posted', 'voided', 'void'])
             ->where('pp.paid_at', '>=', $start)->where('pp.paid_at', '<', $end);
         $unclassifiedPayroll = (clone $payroll)->whereNull('pp.currency_id')->count();
         $foreignCashPayroll = (clone $payroll)->where('c.is_base', false)->count();
