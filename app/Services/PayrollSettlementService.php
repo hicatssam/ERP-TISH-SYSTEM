@@ -140,6 +140,10 @@ class PayrollSettlementService
                 ]);
             }
 
+            app(\App\Services\Finance\CashDayGuard::class)->forMethod(
+                (int) $locationId, $method, $paidAt
+            );
+
             $proofPath = $proof
                 ? $proof->store('payroll/payment-proofs', 'public')
                 : null;
@@ -203,6 +207,9 @@ class PayrollSettlementService
             }
 
             PayrollItem::query()->whereKey($payment->payroll_item_id)->lockForUpdate()->firstOrFail();
+            app(\App\Services\Finance\CashDayGuard::class)->forMethod(
+                (int) $payment->location_id, $payment->paymentMethod, $payment->paid_at
+            );
             $payment->update([
                 'status' => 'posted',
                 'verified_by' => $actor->id,
