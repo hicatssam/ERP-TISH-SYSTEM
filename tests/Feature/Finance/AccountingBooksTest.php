@@ -84,6 +84,36 @@ class AccountingBooksTest extends TestCase
             ->firstOrFail()->lines()->whereHas('account', fn ($q) => $q->where('code', '1000'))->value('debit'));
     }
 
+    public function test_invoice_adjustment_posts_only_signed_delta_and_noop_does_not_duplicate(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
+        [$branch, $user] = $this->branchUser($this->allPermissions());
+        $this->baseCurrency();
+        $this->openPeriod($user);
+        $invoice = Invoice::query()->create([
+            'invoice_number' => 'GL-AMEND-001', 'invoice_type' => 'regular_order',
+            'order_type' => 'order', 'order_id' => 99921,
+            'location_id' => $branch->id, 'status' => 'active',
+            'subtotal' => 100, 'total_amount' => 100,
+            'issued_by' => $user->id, 'issued_at' => now(),
+        ]);
+        $posting = app(FinancialPostingService::class);
+        $posting->sale($invoice, $user);
+
+        $invoice->total_amount = 130;
+        $posting->saleAdjustment($invoice, 100, $user);
+        $posting->saleAdjustment($invoice, 130, $user);
+
+        $invoice->total_amount = 90;
+        $posting->saleAdjustment($invoice, 130, $user);
+
+        $this->assertSame(3, AccountingJournal::query()->count());
+        $report = app(AccountingReportService::class)->report([$branch->id], '2026-10-01', '2026-10-02');
+        $this->assertEquals(90, $report['income']['revenue'] / 100);
+        $this->assertEquals(0, $report['position']['difference']);
+        $this->assertSame(0, $report['unlinked_operations']);
+    }
+
     public function test_expense_and_void_use_opposite_accounts_and_refund_uses_its_own_method(): void
     {
         $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
