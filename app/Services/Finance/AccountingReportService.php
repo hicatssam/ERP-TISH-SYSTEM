@@ -83,6 +83,15 @@ class AccountingReportService
                 'refund', 'expense', 'expense_reversal', 'employee_purchase', 'employee_collection',
             ])->whereNull('posted.id')->count();
 
+        // Newly integrated operating sources and pre-integration historical
+        // records must be visible as posting gaps instead of being silently
+        // omitted from the trial balance.
+        $unlinkedOperations += $this->unpostedSources('customer_payments', 'paid_at', $locationIds, $endExclusive, ['confirmed']);
+        $unlinkedOperations += $this->unpostedSources('supplier_invoices', 'invoice_date', $locationIds, $endExclusive, null, ['cancelled']);
+        $unlinkedOperations += $this->unpostedSources('supplier_payments', 'payment_date', $locationIds, $endExclusive, ['confirmed']);
+        $unlinkedOperations += $this->unpostedSources('payroll_payments', 'paid_at', $locationIds, $endExclusive, ['posted', 'voided']);
+        $unlinkedOperations += $this->unpostedSources('branch_cash_movements', 'occurred_at', $locationIds, $endExclusive);
+
         return [
             'currency' => $currency,
             'unlinked_operations' => $unlinkedOperations,
@@ -113,6 +122,35 @@ class AccountingReportService
         return $query->select('line.accounting_account_id')
             ->selectRaw('SUM(line.debit) AS debit_total, SUM(line.credit) AS credit_total')
             ->groupBy('line.accounting_account_id')->get()->keyBy('accounting_account_id')->all();
+    }
+
+    /**
+     * Count source rows with no accounting journal. This exposes legacy gaps
+     * without fabricating or mutating historical entries.
+     */
+    private function unpostedSources(
+        string $table, string $dateColumn, array $locations, string $endExclusive,
+        ?array $statuses = null, ?array $excludedStatuses = null
+    ): int {
+        if (! \Illuminate\Support\Facades\Schema::hasTable($table)) {
+            return 0;
+        }
+        $query = DB::table($table.' as source')
+            ->leftJoin('accounting_journals as posted', function ($join) use ($table): void {
+                $join->on('posted.source_id', '=', 'source.id')
+                    ->where('posted.source_type', '=', $table);
+            })
+            ->whereIn('source.location_id', $locations)
+            ->where('source.'.$dateColumn, '<', $endExclusive)
+            ->whereNull('posted.id');
+        if ($statuses !== null) {
+            $query->whereIn('source.status', $statuses);
+        }
+        if ($excludedStatuses !== null) {
+            $query->whereNotIn('source.status', $excludedStatuses);
+        }
+
+        return $query->count();
     }
 
     private function cents(string|float|int $amount): int
