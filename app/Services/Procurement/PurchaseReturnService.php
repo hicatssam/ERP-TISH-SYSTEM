@@ -225,6 +225,8 @@ class PurchaseReturnService
             if ($return->supplierInvoice) {
                 $this->invoices->syncPaymentAmounts($return->supplierInvoice);
             }
+            app(\App\Services\Finance\GeneralLedgerIntegrationService::class)
+                ->purchaseReturn($return, $actor);
 
             ActivityLogger::log(
                 userId: $actor->id,
