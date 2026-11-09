@@ -39,19 +39,67 @@ class GeneralLedgerIntegrationService
 
     public function supplierInvoice(SupplierInvoice $invoice, User $actor): void
     {
-        $this->post('supplier_invoices', $invoice->id, (int) $invoice->location_id,
-            $invoice->invoice_date, (float) $invoice->base_grand_total,
-            '1200', '2000', "فاتورة مورد {$invoice->invoice_number}", $actor);
+        $this->postSupplierInvoice($invoice, $actor, false);
     }
 
     public function supplierInvoiceCancellation(SupplierInvoice $invoice, User $actor): void
     {
-        if (! $this->hasJournal('supplier_invoices', $invoice->id)) {
+        if ($this->hasJournal('supplier_invoices', $invoice->id)) {
+            $this->postSupplierInvoice($invoice, $actor, true);
+        }
+    }
+
+    /**
+     * Allocate the invoice's base-currency grand total proportionally.
+     * Stock-linked products increase inventory; free-text/service items
+     * are expensed rather than incorrectly inflating inventory value.
+     */
+    private function postSupplierInvoice(SupplierInvoice $invoice, User $actor, bool $reversal): void
+    {
+        if (! $this->ready()) {
             return;
         }
-        $this->post('supplier_invoice_cancellations', $invoice->id, (int) $invoice->location_id,
-            now(), (float) $invoice->base_grand_total, '2000', '1200',
-            "عكس فاتورة المورد {$invoice->invoice_number}", $actor);
+        $total = round((float) $invoice->base_grand_total, 2);
+        if ($total <= 0) {
+            return;
+        }
+        $invoice->loadMissing('items');
+        $linesTotal = (float) $invoice->items->sum('line_total');
+        $stockTotal = (float) $invoice->items
+            ->filter(fn ($item) => $item->product_id !== null)->sum('line_total');
+        $stock = $linesTotal > 0 ? round($total * $stockTotal / $linesTotal, 2) : 0;
+        $services = round($total - $stock, 2);
+
+        $accounts = AccountingAccount::query()
+            ->whereIn('code', ['1200', '6000', '2000'])
+            ->where('is_active', true)->get()->keyBy('code');
+        if (! isset($accounts['1200'], $accounts['6000'], $accounts['2000'])) {
+            throw ValidationException::withMessages(['accounting' => 'حسابات المخزون والمصروفات وذمم الموردين غير مكتملة.']);
+        }
+
+        $lines = [];
+        foreach ([['code' => '1200', 'amount' => $stock], ['code' => '6000', 'amount' => $services]] as $row) {
+            if ($row['amount'] > 0) {
+                $lines[] = [
+                    'account_id' => $accounts[$row['code']]->id,
+                    'debit' => $reversal ? 0 : $row['amount'],
+                    'credit' => $reversal ? $row['amount'] : 0,
+                ];
+            }
+        }
+        $lines[] = [
+            'account_id' => $accounts['2000']->id,
+            'debit' => $reversal ? $total : 0,
+            'credit' => $reversal ? 0 : $total,
+        ];
+
+        $this->books->postSourceEntry(
+            $reversal ? 'supplier_invoice_cancellations' : 'supplier_invoices',
+            $invoice->id, (int) $invoice->location_id,
+            $reversal ? now()->toDateString() : $invoice->invoice_date->toDateString(),
+            ($reversal ? 'عكس ' : '')."فاتورة مورد {$invoice->invoice_number}",
+            $lines, $actor
+        );
     }
 
     public function purchaseReturn(PurchaseReturn $return, User $actor): void
