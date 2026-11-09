@@ -307,6 +307,9 @@ class PayrollSettlementService
                 ]);
             }
 
+            app(\App\Services\Finance\GeneralLedgerIntegrationService::class)
+                ->reversePayrollPayment($payment, $actor);
+
             $payment->update([
                 'status' => 'voided',
                 'voided_by' => $actor->id,
@@ -342,6 +345,8 @@ class PayrollSettlementService
             $payment,
             $actor->id
         );
+        app(\App\Services\Finance\GeneralLedgerIntegrationService::class)
+            ->payrollPayment($payment, $actor);
 
         $item = PayrollItem::query()->lockForUpdate()->findOrFail($payment->payroll_item_id);
         $remaining = max(0, $this->ledger->balance($item->employee_id));
