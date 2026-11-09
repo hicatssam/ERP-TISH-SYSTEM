@@ -181,6 +181,7 @@ class GeneralLedgerIntegrationService
         string $source, int $sourceId, int $locationId, CarbonInterface|string $date,
         float $amount, string $debitCode, string $creditCode, string $description, User $actor
     ): void {
+        $amount = round($amount, 2);
         if (! $this->ready() || $amount <= 0) {
             return;
         }
