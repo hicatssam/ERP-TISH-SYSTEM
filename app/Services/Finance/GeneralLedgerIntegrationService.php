@@ -32,7 +32,7 @@ class GeneralLedgerIntegrationService
     public function customerReceipt(CustomerPayment $payment, User $actor): void
     {
         $this->post('customer_payments', $payment->id, (int) $payment->location_id,
-            $payment->paid_at, (float) $payment->amount, $this->treasuryCode($payment->paymentMethod),
+            $payment->paid_at, (float) $payment->amount, $this->treasuryCode(PaymentMethod::withTrashed()->findOrFail($payment->payment_method_id)),
             '1100', "تحصيل من حساب العميل #{$payment->id}", $actor);
     }
 
@@ -57,7 +57,7 @@ class GeneralLedgerIntegrationService
     {
         $this->post('supplier_payments', $payment->id, (int) $payment->location_id,
             $payment->payment_date, (float) $payment->base_amount, '2000',
-            $this->treasuryCode($payment->paymentMethod),
+            $this->treasuryCode(PaymentMethod::withTrashed()->findOrFail($payment->payment_method_id)),
             "سداد فاتورة مورد {$payment->supplier_invoice_id}", $actor);
     }
 
@@ -70,7 +70,7 @@ class GeneralLedgerIntegrationService
     {
         $this->post('payroll_payments', $payment->id, (int) $payment->location_id,
             $payment->paid_at, (float) $payment->base_amount, '6100',
-            $this->treasuryCode($payment->paymentMethod),
+            $this->treasuryCode(PaymentMethod::withTrashed()->findOrFail($payment->payment_method_id)),
             "صرف راتب #{$payment->id}", $actor);
     }
 
