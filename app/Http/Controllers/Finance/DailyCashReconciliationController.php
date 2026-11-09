@@ -91,12 +91,16 @@ class DailyCashReconciliationController extends Controller
             $this->assertDayEditable((int) $data['location_id'], $data['date']);
             $time = $data['date'] === now()->toDateString() ? now()->format('H:i:s') : '12:00:00';
 
-            return BranchCashMovement::query()->create([
+            $movement = BranchCashMovement::query()->create([
                 'location_id' => $data['location_id'], 'type' => $data['type'],
                 'amount' => $data['amount'], 'occurred_at' => $data['date'].' '.$time,
                 'reference' => $data['reference'] ?? null,
                 'description' => $data['description'], 'created_by' => $request->user()->id,
             ]);
+            app(\App\Services\Finance\GeneralLedgerIntegrationService::class)
+                ->cashMovement($movement, $request->user());
+
+            return $movement;
         });
         ActivityLogger::log(
             userId: $request->user()->id, action: 'branch_cash.movement_created',
@@ -126,6 +130,8 @@ class DailyCashReconciliationController extends Controller
                 'voided_at' => now(), 'voided_by' => $request->user()->id,
                 'void_reason' => $data['reason'],
             ]);
+            app(\App\Services\Finance\GeneralLedgerIntegrationService::class)
+                ->reverseCashMovement($locked, $request->user());
         });
         ActivityLogger::log(
             userId: $request->user()->id, action: 'branch_cash.movement_voided',

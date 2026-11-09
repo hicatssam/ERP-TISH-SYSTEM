@@ -141,6 +141,57 @@ class OrderUpdateInventoryGuardTest extends TestCase
     // ─── Tests ────────────────────────────────────────────────────────────────────
 
     #[Test]
+    public function confirmed_order_edits_update_invoice_and_post_the_difference_once(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(12, 0));
+        $location = $this->makeLocation();
+        $user = $this->makeUserWithUpdatePermission($location);
+        \App\Models\Currency::query()->create([
+            'code' => 'ILS', 'name' => 'Shekel', 'is_base' => true, 'is_active' => true,
+        ]);
+        \App\Models\FinancialPeriod::query()->create([
+            'name' => 'October 2026', 'year' => 2026, 'month' => 10,
+            'start_date' => '2026-10-01', 'end_date' => '2026-10-31',
+            'status' => 'open', 'opened_by' => $user->id, 'opened_at' => now(),
+        ]);
+        $product = $this->makeProduct();
+        $order = $this->makeConfirmedOrder($location, $user);
+        $item = $this->addItem($order, $product, 5.0);
+        $order->update(['subtotal' => 50, 'total_amount' => 50]);
+        $this->setInventory($location, $product, 20.0);
+        $invoice = \App\Models\Invoice::query()->create([
+            'invoice_number' => 'ORDER-AMEND-001',
+            'invoice_type' => 'regular_order', 'order_type' => 'order',
+            'order_id' => $order->id, 'location_id' => $location->id,
+            'status' => 'active', 'subtotal' => 50, 'total_amount' => 50,
+            'issued_by' => $user->id, 'issued_at' => now(),
+        ]);
+        app(\App\Services\Finance\FinancialPostingService::class)->sale($invoice, $user);
+
+        $this->actingAs($user)->put(route('orders.update', $order),
+            $this->updatePayload($order->fresh(['items']), [$item->id => 7.0]))
+            ->assertSessionHasNoErrors();
+        $this->assertEquals(70, (float) $invoice->fresh()->total_amount);
+        $this->assertSame(2, \App\Models\AccountingJournal::query()->count());
+
+        // Re-submitting the same desired quantity is not a second sale.
+        $this->actingAs($user)->put(route('orders.update', $order),
+            $this->updatePayload($order->fresh(['items']), [$item->id => 7.0]))
+            ->assertSessionHasNoErrors();
+        $this->assertSame(2, \App\Models\AccountingJournal::query()->count());
+
+        $this->actingAs($user)->put(route('orders.update', $order),
+            $this->updatePayload($order->fresh(['items']), [$item->id => 4.0]))
+            ->assertSessionHasNoErrors();
+        $this->assertEquals(40, (float) $invoice->fresh()->total_amount);
+        $this->assertSame(3, \App\Models\AccountingJournal::query()->count());
+        $report = app(\App\Services\Finance\AccountingReportService::class)
+            ->report([$location->id], '2026-10-01', '2026-10-02');
+        $this->assertEquals(40, $report['income']['revenue'] / 100);
+        $this->assertEquals(0, $report['position']['difference']);
+    }
+
+    #[Test]
     public function editing_a_confirmed_order_with_sufficient_stock_saves_and_adjusts_inventory(): void
     {
         $location = $this->makeLocation();

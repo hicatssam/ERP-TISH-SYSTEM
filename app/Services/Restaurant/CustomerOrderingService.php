@@ -421,13 +421,30 @@ class CustomerOrderingService
             }
 
             if ($payment) {
-                // Idempotent retry: do not create a second payment for the same public order.
+                // A repeated public request must not re-date or mutate a
+                // confirmed financial collection.
+                if (in_array($payment->statusValue(), ['confirmed', 'corrected', 'refunded'], true)) {
+                    if ((int) $payment->payment_method_id !== (int) $method->id
+                        || abs((float) $payment->amount - (float) $attributes['amount']) > 0.004
+                        || $requiresVerification) {
+                        throw ValidationException::withMessages([
+                            'payment' => 'تم تثبيت الدفعة مسبقًا؛ استخدم إجراء تصحيح مالي موثق.',
+                        ]);
+                    }
+                    $attributes['status'] = $payment->statusValue();
+                    $attributes['paid_at'] = $payment->paid_at;
+                }
                 $payment->forceFill($attributes)->save();
             } else {
-                Payment::query()->create(array_merge($attributes, [
+                $payment = Payment::query()->create(array_merge($attributes, [
                     'order_type' => 'order',
                     'order_id' => (int) $order->id,
                 ]));
+            }
+
+            if (! $requiresVerification) {
+                app(\App\Services\Finance\FinancialPostingService::class)
+                    ->collection($payment, $actor);
             }
 
             $order->forceFill([

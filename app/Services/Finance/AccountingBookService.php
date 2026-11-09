@@ -195,6 +195,50 @@ class AccountingBookService
         });
     }
 
+    /**
+     * Book non-order operating sources (customers, suppliers, payroll, cash).
+     * Unique (source_type, source_id) guards double posting across retries.
+     * The caller must invoke this in its source transaction.
+     *
+     * @param array<int, array{account_id:int, debit:float|int|string, credit:float|int|string}> $lines
+     */
+    public function postSourceEntry(
+        string $sourceType, int $sourceId, int $locationId, string $date,
+        string $description, array $lines, User $actor
+    ): AccountingJournal {
+        return DB::transaction(function () use ($sourceType, $sourceId, $locationId, $date, $description, $lines, $actor): AccountingJournal {
+            $existing = AccountingJournal::query()->where('source_type', $sourceType)
+                ->where('source_id', $sourceId)->lockForUpdate()->first();
+            if ($existing) {
+                // Idempotency must not hide a changed source amount/account.
+                // An operator must create a new documented adjustment instead.
+                $expected = collect($lines)->map(fn ($line): array => [
+                    'account_id' => (int) $line['account_id'],
+                    'debit' => $this->cents((string) ($line['debit'] ?? 0)),
+                    'credit' => $this->cents((string) ($line['credit'] ?? 0)),
+                ])->sortBy(fn (array $l) => $l['account_id'].':'.$l['debit'].':'.$l['credit'])
+                    ->values()->all();
+                $actual = $existing->lines()->get()->map(fn ($line): array => [
+                    'account_id' => (int) $line->accounting_account_id,
+                    'debit' => $this->cents((string) $line->debit),
+                    'credit' => $this->cents((string) $line->credit),
+                ])->sortBy(fn (array $l) => $l['account_id'].':'.$l['debit'].':'.$l['credit'])
+                    ->values()->all();
+                if ((int) $existing->location_id !== $locationId || $expected !== $actual) {
+                    throw ValidationException::withMessages([
+                        'accounting' => 'تغيّر مبلغ أو حساب عملية مُرحّلة؛ لا يمكن إعادة استخدام القيد. أنشئ تسوية محاسبية موثقة.',
+                    ]);
+                }
+                return $existing;
+            }
+
+            return $this->postJournal(
+                $locationId, $date, 'operational', $description, $lines, $actor,
+                $sourceType, $sourceId
+            );
+        });
+    }
+
     public function reverseVoucher(AccountingVoucher $voucher, string $reason, User $actor): AccountingVoucher
     {
         return DB::transaction(function () use ($voucher, $reason, $actor): AccountingVoucher {

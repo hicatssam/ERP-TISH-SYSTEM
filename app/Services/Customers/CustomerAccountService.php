@@ -259,6 +259,11 @@ class CustomerAccountService
             $allocationMode,
             $status
         ): CustomerPayment {
+            if (! $receiptLocationId) {
+                throw ValidationException::withMessages(['location_id' => 'حدد الفرع الذي استلم الدفعة قبل تسجيلها.']);
+            }
+            app(\App\Services\Finance\CashDayGuard::class)->forMethod((int) $receiptLocationId, $method);
+
             $payment = CustomerPayment::create([
                 'customer_id' => $customer->id,
                 'location_id' => $receiptLocationId,
@@ -281,6 +286,8 @@ class CustomerAccountService
 
             if ($payment->isConfirmed()) {
                 $this->allocatePayment($payment);
+                app(\App\Services\Finance\GeneralLedgerIntegrationService::class)
+                    ->customerReceipt($payment, $user);
             }
 
             ActivityLogger::log(
@@ -348,14 +355,23 @@ class CustomerAccountService
                 return $locked->fresh();
             }
 
+            if ($locked->location_id) {
+                app(\App\Services\Finance\CashDayGuard::class)->forMethod(
+                    (int) $locked->location_id, PaymentMethod::withTrashed()->findOrFail($locked->payment_method_id)
+                );
+            }
+
             $locked->update([
                 'status' => 'confirmed',
                 'verified_by' => $user->id,
                 'verified_at' => now(),
                 'rejection_reason' => null,
+                'paid_at' => now(),
             ]);
 
             $this->allocatePayment($locked);
+            app(\App\Services\Finance\GeneralLedgerIntegrationService::class)
+                ->customerReceipt($locked, $user);
 
             ActivityLogger::log(
                 userId: $user->id,

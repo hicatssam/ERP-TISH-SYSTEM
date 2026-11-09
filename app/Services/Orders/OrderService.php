@@ -250,6 +250,8 @@ $this->salesChannelService->apply(
                 $order->fresh(['items.product']),
                 $user
             );
+            app(\App\Services\Finance\GeneralLedgerIntegrationService::class)
+                ->orderCost($order, $user);
 
             $order->update([
                 'status' => 'confirmed',
@@ -330,12 +332,16 @@ private function createPaymentIfNeeded(Order $order, array $data, ?int $location
         ]);
     }
 
+    if (! $isVerification && $method->type === 'cash') {
+        app(\App\Services\Finance\CashDayGuard::class)->assertOpen((int) $locationId);
+    }
+
     $proofPath = null;
     if (! empty($data['payment_proof']) && $data['payment_proof'] instanceof \Illuminate\Http\UploadedFile) {
         $proofPath = $data['payment_proof']->store('payment-proofs', 'local');
     }
 
-    \App\Models\Payment::create([
+    $payment = \App\Models\Payment::create([
         'order_type'        => 'order',
         'order_id'          => $order->id,
         'payment_method_id' => $data['payment_method_id'],
@@ -352,6 +358,10 @@ private function createPaymentIfNeeded(Order $order, array $data, ?int $location
         'verified_at'       => $isVerification ? null : now(),
         'paid_at'           => now(),
     ]);
+
+    if (! $isVerification) {
+        $this->financialPosting->collection($payment, $user);
+    }
 
     $paymentStatus = $isVerification
         ? 'pending_payment_verification'
@@ -432,6 +442,8 @@ public function confirmOrder(Order $order, User $user): Order
             $locked->fresh(['items.product']),
             $user
         );
+        app(\App\Services\Finance\GeneralLedgerIntegrationService::class)
+            ->orderCost($locked, $user);
 
         $locked->update([
             'status' => 'confirmed',
@@ -644,11 +656,14 @@ public function confirmOrder(Order $order, User $user): Order
             }
 
             if ($isConfirmed) {
+                $previousCost = round((float) $order->items()->sum('cost_total_snapshot'), 2);
                 // Keep the original confirmation unit-cost snapshot immutable.
                 // Quantity changes only recalculate total cost/revenue allocation.
                 $this->costingService->recalculateConfirmedOrder(
                     $order->fresh(['items'])
                 );
+                app(\App\Services\Finance\GeneralLedgerIntegrationService::class)
+                    ->orderCostDifference($order, $previousCost, $user);
             }
 
             // ── Invoice sync (confirmed orders only) ─────────────────────────────
@@ -661,6 +676,7 @@ public function confirmOrder(Order $order, User $user): Order
 
                 if ($invoice) {
                     $freshOrder   = $order->fresh(['items']);
+                    $previousInvoiceTotal = (float) $invoice->total_amount;
                     $paidAmount   = (float) ($invoice->paid_amount ?? 0);
                     $newSubtotal  = (float) $freshOrder->subtotal;
                     $newTotal     = (float) $freshOrder->total_amount;
@@ -672,6 +688,10 @@ public function confirmOrder(Order $order, User $user): Order
                         'total_amount'    => $newTotal,
                         'remaining_amount'=> $newRemaining,
                     ]);
+
+                    // Preserve the original posting and journalize only the
+                    // change in a confirmed invoice, within this transaction.
+                    $this->financialPosting->saleAdjustment($invoice->fresh(), $previousInvoiceTotal, $user);
 
                     // New invoices carry order_item_id so two Latte lines with
                     // different sizes/modifiers never overwrite each other.
@@ -792,6 +812,11 @@ public function confirmOrder(Order $order, User $user): Order
                     'cancellation_reason' => 'إلغاء الطلب: '.trim($reason),
                 ]);
                 $this->financialPosting->saleCancellation($order->invoice, $user);
+            }
+
+            if ($oldStatus === 'confirmed') {
+                app(\App\Services\Finance\GeneralLedgerIntegrationService::class)
+                    ->cancelOrderCost($order, $user);
             }
 
             $order->update([

@@ -12,6 +12,7 @@ use App\Models\SpecialCakeOrder;
 use App\Models\User;
 use App\Services\ActivityLogger;
 use App\Services\Finance\FinancialPostingService;
+use App\Services\Finance\CashDayGuard;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -62,6 +63,8 @@ class PaymentService
                     'amount' => sprintf('المبلغ يتجاوز الرصيد المتبقي القابل للتحصيل: ₪%.2f.', $available),
                 ]);
             }
+
+            app(CashDayGuard::class)->forMethod($locationId, $method);
 
             $proofPath = $proof instanceof UploadedFile ? $proof->store('payment-proofs', 'local') : null;
             $needsVerification = (bool) $method->requires_verification
@@ -132,11 +135,17 @@ class PaymentService
                 }
             }
 
+            if ($approved) {
+                app(CashDayGuard::class)->forMethod((int) $locked->location_id, PaymentMethod::withTrashed()->findOrFail($locked->payment_method_id));
+            }
+
             $locked->update([
                 'status' => $approved ? 'confirmed' : 'rejected',
                 'rejection_reason' => $approved ? null : $reason,
                 'verified_by' => $user->id,
                 'verified_at' => now(),
+                // Settlement is recognized on approval, not while awaiting proof.
+                'paid_at' => $approved ? now() : $locked->paid_at,
             ]);
 
             $this->syncSourcePaymentStatus($source, $locked->orderTypeValue());
@@ -181,6 +190,8 @@ class PaymentService
                     'corrected_amount' => sprintf('التصحيح يتجاوز إجمالي المستند. أقصى مبلغ: ₪%.2f.', max(0, $total - $otherPaid + $refunded)),
                 ]);
             }
+
+            app(CashDayGuard::class)->forMethod((int) $locked->location_id, PaymentMethod::withTrashed()->findOrFail($locked->payment_method_id));
 
             PaymentCorrection::query()->create([
                 'original_payment_id' => $locked->id,

@@ -269,6 +269,13 @@ class PayrollService
                 ]);
 
                 $this->recoverAdvancesAgainstApprovedSalary($item);
+
+                // Activate only after the opening GL salary liabilities have
+                // been reconciled. Never retroactively accrue old periods.
+                if (filter_var(\App\Models\SystemSetting::get('finance_payroll_accrual_enabled', false), FILTER_VALIDATE_BOOLEAN)) {
+                    app(\App\Services\Finance\GeneralLedgerIntegrationService::class)
+                        ->payrollAccrual($item->fresh(['period']), $actor);
+                }
             }
 
             $period->update([

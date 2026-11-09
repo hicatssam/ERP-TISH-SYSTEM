@@ -20,6 +20,7 @@ use App\Services\ActivityLogger;
 use App\Services\Invoices\InvoiceService;
 use App\Services\Payments\PaymentService;
 use App\Services\Finance\FinancialPostingService;
+use App\Services\Finance\CashDayGuard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -598,6 +599,9 @@ class PaymentController extends Controller
             | الاسترداد يسجل كسجل مستقل في refunds.
             |
             */
+            $refundMethod = PaymentMethod::query()->active()->findOrFail($validated['payment_method_id']);
+            app(CashDayGuard::class)->forMethod((int) $payment->location_id, $refundMethod);
+
             $refund = Refund::create([
                 'payment_id' => $payment->id,
                 'order_type' => $payment->order_type,

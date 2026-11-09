@@ -36,7 +36,14 @@ return new class extends Migration
                 }
             });
 
-        Schema::table('restaurant_menu_items', function (Blueprint $table) {
+        // In MySQL, a foreign key on product_id needs a product_id-leading
+        // index. Install a non-unique supporting index BEFORE dropping the
+        // legacy global unique index or InnoDB rejects the migration (1553).
+        Schema::table('restaurant_menu_items', function (Blueprint $table): void {
+            $table->index('product_id', 'restaurant_menu_product_fk_idx');
+        });
+
+        Schema::table('restaurant_menu_items', function (Blueprint $table): void {
             $table->dropUnique('restaurant_menu_items_product_id_unique');
             $table->unique(
                 ['location_id', 'product_id'],
@@ -51,22 +58,28 @@ return new class extends Migration
 
     public function down(): void
     {
-        // Keep one row per product before restoring the old global unique rule.
-        DB::table('restaurant_menu_items')
-            ->orderBy('id')
-            ->get()
+        // Reverting the branch-scoped schema would collapse multiple branch
+        // menu records for one product. Reject rollback instead of destroying
+        // real customer menu configurations.
+        $duplicated = DB::table('restaurant_menu_items')
+            ->select('product_id')
             ->groupBy('product_id')
-            ->each(function ($rows): void {
-                $rows->slice(1)->each(function ($row): void {
-                    DB::table('restaurant_menu_items')->where('id', $row->id)->delete();
-                });
-            });
+            ->havingRaw('COUNT(*) > 1')
+            ->exists();
+        if ($duplicated) {
+            throw new RuntimeException(
+                'Cannot revert branch-scoped restaurant menu while the same product has multiple branch rows.'
+            );
+        }
 
-        Schema::table('restaurant_menu_items', function (Blueprint $table) {
+        Schema::table('restaurant_menu_items', function (Blueprint $table): void {
+            $table->unique('product_id', 'restaurant_menu_items_product_id_unique');
+        });
+        Schema::table('restaurant_menu_items', function (Blueprint $table): void {
             $table->dropIndex('restaurant_menu_pos_scope_idx');
             $table->dropUnique('restaurant_menu_location_product_unique');
             $table->dropConstrainedForeignId('location_id');
-            $table->unique('product_id');
+            $table->dropIndex('restaurant_menu_product_fk_idx');
         });
     }
 };

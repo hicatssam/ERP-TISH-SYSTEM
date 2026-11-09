@@ -84,6 +84,400 @@ class AccountingBooksTest extends TestCase
             ->firstOrFail()->lines()->whereHas('account', fn ($q) => $q->where('code', '1000'))->value('debit'));
     }
 
+    public function test_invoice_adjustment_posts_only_signed_delta_and_noop_does_not_duplicate(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
+        [$branch, $user] = $this->branchUser($this->allPermissions());
+        $this->baseCurrency();
+        $this->openPeriod($user);
+        $invoice = Invoice::query()->create([
+            'invoice_number' => 'GL-AMEND-001', 'invoice_type' => 'regular_order',
+            'order_type' => 'order', 'order_id' => 99921,
+            'location_id' => $branch->id, 'status' => 'active',
+            'subtotal' => 100, 'total_amount' => 100,
+            'issued_by' => $user->id, 'issued_at' => now(),
+        ]);
+        $posting = app(FinancialPostingService::class);
+        $posting->sale($invoice, $user);
+
+        $invoice->total_amount = 130;
+        $posting->saleAdjustment($invoice, 100, $user);
+        $posting->saleAdjustment($invoice, 130, $user);
+
+        $invoice->total_amount = 90;
+        $posting->saleAdjustment($invoice, 130, $user);
+
+        $this->assertSame(3, AccountingJournal::query()->count());
+        $report = app(AccountingReportService::class)->report([$branch->id], '2026-10-01', '2026-10-02');
+        $this->assertEquals(90, $report['income']['revenue'] / 100);
+        $this->assertEquals(0, $report['position']['difference']);
+        $this->assertSame(0, $report['unlinked_operations']);
+    }
+
+    public function test_operational_source_journals_are_balanced_idempotent_and_traceable(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
+        [$branch, $user] = $this->branchUser($this->allPermissions());
+        $this->baseCurrency();
+        $this->openPeriod($user);
+        $cash = $this->method('cash');
+        $bank = $this->method('bank_transfer');
+        $journalService = app(\App\Services\Finance\GeneralLedgerIntegrationService::class);
+
+        $customerReceipt = new \App\Models\CustomerPayment([
+            'location_id' => $branch->id, 'payment_method_id' => $cash->id,
+            'amount' => 30, 'status' => 'confirmed', 'paid_at' => now(),
+        ]);
+        $customerReceipt->id = 8801;
+        $journalService->customerReceipt($customerReceipt, $user);
+        $journalService->customerReceipt($customerReceipt, $user);
+        $customerReceipt->amount = 31;
+        try {
+            $journalService->customerReceipt($customerReceipt, $user);
+            $this->fail('Changing a posted receipt must require a separate adjustment.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('accounting', $exception->errors());
+        }
+        $customerReceipt->amount = 30;
+        $supplierPayment = new \App\Models\SupplierPayment([
+            'location_id' => $branch->id, 'payment_method_id' => $bank->id,
+            'base_amount' => 20, 'payment_date' => now()->toDateString(),
+        ]);
+        $supplierPayment->id = 8802;
+        $journalService->supplierPayment($supplierPayment, $user);
+        $payroll = new \App\Models\PayrollPayment([
+            'location_id' => $branch->id, 'payment_method_id' => $cash->id,
+            'base_amount' => 12, 'paid_at' => now(),
+        ]);
+        $payroll->id = 8803;
+        $journalService->payrollPayment($payroll, $user);
+
+        $this->assertSame(3, AccountingJournal::query()->count());
+        $this->assertEquals(30, AccountingJournal::query()->where('source_type', 'customer_payments')
+            ->firstOrFail()->lines()->whereHas('account', fn ($q) => $q->where('code', '1000'))->value('debit'));
+        $this->assertEquals(20, AccountingJournal::query()->where('source_type', 'supplier_payments')
+            ->firstOrFail()->lines()->whereHas('account', fn ($q) => $q->where('code', '1010'))->value('credit'));
+        $this->assertEquals(12, AccountingJournal::query()->where('source_type', 'payroll_payments')
+            ->firstOrFail()->lines()->whereHas('account', fn ($q) => $q->where('code', '6100'))->value('debit'));
+        $report = app(AccountingReportService::class)->report([$branch->id], '2026-10-01', '2026-10-02');
+        $this->assertEquals(0, $report['position']['difference']);
+    }
+
+    public function test_supplier_fx_settlements_post_realized_gains_and_losses_without_changing_invoice_liability(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
+        [$branch, $user] = $this->branchUser($this->allPermissions());
+        $this->baseCurrency();
+        $this->openPeriod($user);
+        $bank = $this->method('bank_transfer');
+
+        // The original USD invoice was valued at 3.50 ILS per USD.
+        $invoice = new \App\Models\SupplierInvoice([
+            'exchange_rate' => '3.50000000', 'location_id' => $branch->id,
+        ]);
+        $invoice->id = 96311;
+        $service = app(\App\Services\Finance\GeneralLedgerIntegrationService::class);
+
+        foreach ([[96312, 370, '6200', 'debit', 20], [96313, 330, '4200', 'credit', 20], [96314, 350, null, null, 0]] as [$id, $base, $fxCode, $direction, $fxAmount]) {
+            $payment = new \App\Models\SupplierPayment([
+                'location_id' => $branch->id, 'payment_method_id' => $bank->id,
+                'payment_date' => '2026-10-02', 'base_amount' => $base,
+                'applied_amount' => 100, 'supplier_invoice_id' => $invoice->id,
+            ]);
+            $payment->id = $id;
+            $payment->setRelation('supplierInvoice', $invoice);
+            $service->supplierPayment($payment, $user);
+            $service->supplierPayment($payment, $user);
+
+            $journal = AccountingJournal::query()
+                ->where('source_type', 'supplier_payments')->where('source_id', $id)->sole();
+            $this->assertEquals(350, $journal->lines()->whereHas('account',
+                fn ($q) => $q->where('code', '2000'))->value('debit'));
+            $this->assertEquals($base, $journal->lines()->whereHas('account',
+                fn ($q) => $q->where('code', '1010'))->value('credit'));
+            if ($fxCode) {
+                $this->assertEquals($fxAmount, $journal->lines()->whereHas('account',
+                    fn ($q) => $q->where('code', $fxCode))->value($direction));
+            }
+        }
+
+        $this->assertSame(3, AccountingJournal::query()->where('source_type', 'supplier_payments')->count());
+        $report = app(AccountingReportService::class)->report([$branch->id], '2026-10-01', '2026-10-02');
+        $this->assertEquals(0, $report['position']['difference']);
+    }
+
+    public function test_approved_payroll_accrual_is_idempotent_and_voided_payment_keeps_cash_outflow(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
+        [$branch, $user] = $this->branchUser($this->allPermissions());
+        $currency = $this->baseCurrency();
+        $this->openPeriod($user);
+        $cash = $this->method('cash');
+        $period = new \App\Models\PayrollPeriod([
+            'code' => 'PAY-2026-10', 'location_id' => $branch->id,
+            'currency_id' => $currency->id, 'end_date' => '2026-10-02',
+        ]);
+        $period->id = 99001;
+        $item = new \App\Models\PayrollItem([
+            'payroll_period_id' => $period->id, 'employee_id' => $user->employee_id,
+            'net_salary' => 100,
+        ]);
+        $item->id = 99002;
+        $item->setRelation('period', $period);
+        $posting = app(\App\Services\Finance\GeneralLedgerIntegrationService::class);
+
+        $posting->payrollAccrual($item, $user);
+        $posting->payrollAccrual($item, $user);
+        $this->assertSame(1, AccountingJournal::query()
+            ->where('source_type', 'payroll_item_accruals')->count());
+
+        $payment = new \App\Models\PayrollPayment([
+            'payroll_item_id' => $item->id,
+            'payment_method_id' => $cash->id, 'location_id' => $branch->id,
+            'amount' => 40, 'base_amount' => 40, 'paid_at' => now(),
+        ]);
+        $payment->id = 99003;
+        $payment->setRelation('item', $item);
+        $posting->payrollPayment($payment, $user);
+        $posted = AccountingJournal::query()->where('source_type', 'payroll_payments')->sole();
+        $this->assertEquals(40, $posted->lines()->whereHas('account',
+            fn ($q) => $q->where('code', '2100'))->value('debit'));
+
+        $posting->reversePayrollPayment($payment, $user);
+        $posting->reversePayrollPayment($payment, $user);
+        $reversal = AccountingJournal::query()->where('source_type', 'payroll_payment_reversals')->sole();
+        $this->assertEquals(40, $reversal->lines()->whereHas('account',
+            fn ($q) => $q->where('code', '1160'))->value('debit'));
+        $this->assertEquals(40, $reversal->lines()->whereHas('account',
+            fn ($q) => $q->where('code', '2100'))->value('credit'));
+        $this->assertSame(3, AccountingJournal::query()->count());
+
+        $report = app(AccountingReportService::class)->report([$branch->id], '2026-10-01', '2026-10-02');
+        $this->assertEquals(0, $report['position']['difference']);
+        $this->assertEquals(10000, $report['income']['expenses']);
+    }
+
+    public function test_supplier_payment_service_uses_current_fx_for_invoice_currency_and_posts_realized_loss(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
+        [$branch, $user] = $this->branchUser($this->allPermissions());
+        $ils = $this->baseCurrency();
+        $this->openPeriod($user);
+        $usd = Currency::query()->create([
+            'code' => 'USD', 'name' => 'US dollar', 'is_base' => false, 'is_active' => true,
+        ]);
+        \App\Models\ExchangeRate::query()->create([
+            'currency_id' => $usd->id, 'rate_to_base' => '3.70000000',
+            'effective_date' => '2026-10-02', 'created_by' => $user->id,
+        ]);
+        $bank = $this->method('bank_transfer');
+        $supplier = \App\Models\Supplier::query()->create([
+            'supplier_code' => 'FX-SUP-001', 'name' => 'FX supplier',
+            'currency_id' => $usd->id, 'status' => 'active', 'created_by' => $user->id,
+        ]);
+
+        foreach ([[$usd->id, 100, 'USD-SETTLED'], [$ils->id, 370, 'ILS-SETTLED']] as [$paymentCurrencyId, $paid, $invoiceNumber]) {
+            $invoice = \App\Models\SupplierInvoice::query()->create([
+                'invoice_number' => $invoiceNumber, 'supplier_id' => $supplier->id,
+                'location_id' => $branch->id, 'currency_id' => $usd->id,
+                'exchange_rate' => '3.50000000', 'invoice_date' => '2026-10-01',
+                'grand_total' => 100, 'base_grand_total' => 350,
+                'subtotal' => 100, 'remaining_amount' => 100,
+                'paid_amount' => 0, 'credited_amount' => 0,
+                'status' => 'unpaid', 'created_by' => $user->id,
+            ]);
+            $payment = app(\App\Services\Procurement\SupplierPaymentService::class)->record([
+                'supplier_invoice_id' => $invoice->id, 'supplier_id' => $supplier->id,
+                'location_id' => $branch->id, 'currency_id' => $paymentCurrencyId,
+                'amount' => $paid, 'payment_date' => '2026-10-02',
+                'payment_method_id' => $bank->id,
+            ], $user);
+
+            $this->assertEquals(100, (float) $payment->applied_amount);
+            $this->assertEquals(370, (float) $payment->base_amount);
+            $this->assertEquals(0, (float) $invoice->fresh()->remaining_amount);
+            $journal = AccountingJournal::query()->where('source_type', 'supplier_payments')
+                ->where('source_id', $payment->id)->sole();
+            $this->assertEquals(350, $journal->lines()->whereHas('account',
+                fn ($q) => $q->where('code', '2000'))->value('debit'));
+            $this->assertEquals(20, $journal->lines()->whereHas('account',
+                fn ($q) => $q->where('code', '6200'))->value('debit'));
+            $this->assertEquals(370, $journal->lines()->whereHas('account',
+                fn ($q) => $q->where('code', '1010'))->value('credit'));
+        }
+    }
+
+    public function test_read_only_audit_reports_missing_postings_without_mutating_the_ledger(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
+        [$branch, $user] = $this->branchUser($this->allPermissions());
+        $this->baseCurrency();
+        $this->openPeriod($user);
+
+        SalesLedgerEntry::query()->create([
+            'location_id' => $branch->id,
+            'entry_date' => '2026-10-02', 'entry_type' => 'sale',
+            'amount' => 25, 'reference_type' => 'invoices',
+            'reference_id' => 9011, 'currency_code' => 'ILS',
+            'description' => 'Historical operation without GL', 'created_by' => $user->id,
+            'created_at' => now(),
+        ]);
+
+        $audit = app(\App\Services\Finance\LedgerReconciliationAuditService::class)
+            ->report('2026-10-01', '2026-10-02', $branch->id);
+        $this->assertEquals(1, $audit['summary']['sales_ledger_entries']['unlinked']);
+        $this->assertSame('review_source_before_posting', $audit['missing'][0]['action']);
+        $this->assertSame(0, AccountingJournal::query()->count());
+
+        $this->artisan('finance:audit-ledger', [
+            '--from' => '2026-10-01', '--to' => '2026-10-02', '--location' => $branch->id,
+        ])->assertExitCode(0);
+        $this->assertSame(0, AccountingJournal::query()->count());
+    }
+
+    public function test_closed_cash_day_prevents_new_cash_payment_without_creating_records(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(16, 0));
+        [$branch, $user] = $this->branchUser($this->allPermissions());
+        $this->baseCurrency();
+        $this->openPeriod($user);
+        $cash = $this->method('cash');
+        $order = Order::query()->create([
+            'order_number' => 'CLOSED-CASH-ORDER', 'location_id' => $branch->id,
+            'status' => 'confirmed', 'payment_arrangement' => 'pay_now',
+            'subtotal' => 100, 'total_amount' => 100, 'created_by' => $user->id,
+        ]);
+        DailyCashReconciliation::query()->create([
+            'location_id' => $branch->id, 'business_date' => '2026-10-02',
+            'opening_balance' => 0, 'expected_closing' => 0, 'actual_closing' => 0,
+            'variance' => 0,
+            'closed_by' => $user->id, 'closed_at' => now(),
+        ]);
+
+        try {
+            app(PaymentService::class)->recordPayment([
+                'order_type' => 'order', 'order_id' => $order->id,
+                'payment_method_id' => $cash->id, 'amount' => 40,
+            ], $user);
+            $this->fail('A reconciled cash day must reject new collections.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('cash', $exception->errors());
+        }
+
+        $this->assertSame(0, Payment::query()->count());
+        $this->assertSame(0, AccountingJournal::query()->count());
+    }
+
+    public function test_manual_cash_movement_and_void_post_balanced_offsetting_journals(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(16, 0));
+        [$branch, $user] = $this->branchUser([...$this->allPermissions(), 'financial.cash.movements.manage']);
+        $this->baseCurrency();
+        $this->openPeriod($user);
+
+        $this->actingAs($user)->post(route('daily-cash.movements.store'), [
+            'location_id' => $branch->id, 'date' => '2026-10-02',
+            'type' => 'transfer_out', 'amount' => 25, 'reference' => 'TX-2026-TEST',
+            'description' => 'Transfer to another branch',
+        ])->assertSessionHasNoErrors();
+        $movement = \App\Models\BranchCashMovement::query()->sole();
+        $this->assertSame(1, AccountingJournal::query()->where('source_type', 'branch_cash_movements')->count());
+
+        $this->actingAs($user)->post(route('daily-cash.movements.void', $movement), [
+            'reason' => 'Incorrect branch transfer',
+        ])->assertSessionHasNoErrors();
+        $this->assertSame(1, AccountingJournal::query()->where('source_type', 'branch_cash_movement_reversals')->count());
+        $report = app(AccountingReportService::class)->report([$branch->id], '2026-10-01', '2026-10-02');
+        $this->assertEquals(0, $report['position']['difference']);
+        $this->assertEquals(0, $report['position']['assets']);
+    }
+
+    public function test_financial_close_uses_distinct_branch_treasury_balances_instead_of_repeating_global_total(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
+        [$first, $manager] = $this->branchUser($this->allPermissions());
+        [$second, $secondManager] = $this->branchUser($this->allPermissions());
+        $this->baseCurrency();
+        $period = $this->openPeriod($manager);
+        $cash = $this->method('cash');
+        $books = app(AccountingBookService::class);
+
+        $firstVoucher = $books->createVoucher($this->voucher($first, $cash, 'receipt', '70.00', 'BR-01'), null, $manager);
+        $secondVoucher = $books->createVoucher($this->voucher($second, $cash, 'receipt', '30.00', 'BR-02'), null, $secondManager);
+        $books->postVoucher($firstVoucher, $manager);
+        $books->postVoucher($secondVoucher, $secondManager);
+
+        $closed = app(\App\Services\Finance\FinancialPeriodService::class)
+            ->closePeriod($period, $manager);
+        $this->assertEquals(100, (float) $closed->closing_balance);
+        $this->assertEquals(70, (float) $closed->summaries()->where('location_id', $first->id)->value('closing_balance'));
+        $this->assertEquals(30, (float) $closed->summaries()->where('location_id', $second->id)->value('closing_balance'));
+    }
+
+    public function test_financial_close_rejects_operational_entries_without_general_ledger_journals(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
+        [$branch, $user] = $this->branchUser($this->allPermissions());
+        $this->baseCurrency();
+        $period = $this->openPeriod($user);
+        SalesLedgerEntry::query()->create([
+            'location_id' => $branch->id,
+            'financial_period_id' => $period->id,
+            'entry_date' => now(),
+            'entry_type' => 'sale',
+            'amount' => 15,
+            'reference_type' => 'invoices',
+            'reference_id' => 99341,
+            'description' => 'Unposted operational sale',
+            'currency_code' => 'ILS',
+            'created_by' => $user->id,
+            'created_at' => now(),
+        ]);
+
+        try {
+            app(\App\Services\Finance\FinancialPeriodService::class)
+                ->closePeriod($period, $user);
+            $this->fail('A period with unposted operating movements must not close.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('period', $exception->errors());
+        }
+        $this->assertTrue($period->fresh()->isOpen());
+    }
+
+    public function test_mixed_supplier_invoice_splits_stock_and_service_expenses_and_reverses_precisely(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
+        [$branch, $user] = $this->branchUser($this->allPermissions());
+        $this->baseCurrency();
+        $this->openPeriod($user);
+        $invoice = new \App\Models\SupplierInvoice([
+            'invoice_number' => 'MIXED-001', 'location_id' => $branch->id,
+            'invoice_date' => '2026-10-02', 'base_grand_total' => 110,
+        ]);
+        $invoice->id = 99101;
+        $invoice->setRelation('items', collect([
+            new \App\Models\SupplierInvoiceItem(['product_id' => 21, 'line_total' => 60]),
+            new \App\Models\SupplierInvoiceItem(['description' => 'Repair service', 'line_total' => 40]),
+        ]));
+        $posting = app(\App\Services\Finance\GeneralLedgerIntegrationService::class);
+        $posting->supplierInvoice($invoice, $user);
+        $posting->supplierInvoice($invoice, $user);
+
+        $journal = AccountingJournal::query()->where('source_type', 'supplier_invoices')->sole();
+        $this->assertEquals(66, (float) $journal->lines()->whereHas('account',
+            fn ($q) => $q->where('code', '1200'))->value('debit'));
+        $this->assertEquals(44, (float) $journal->lines()->whereHas('account',
+            fn ($q) => $q->where('code', '6000'))->value('debit'));
+        $this->assertEquals(110, (float) $journal->lines()->whereHas('account',
+            fn ($q) => $q->where('code', '2000'))->value('credit'));
+
+        $posting->supplierInvoiceCancellation($invoice, $user);
+        $this->assertSame(2, AccountingJournal::query()->count());
+        $report = app(AccountingReportService::class)->report([$branch->id], '2026-10-01', '2026-10-02');
+        $this->assertEquals(0, $report['position']['difference']);
+        $this->assertEquals(0, $report['income']['expenses']);
+    }
+
     public function test_expense_and_void_use_opposite_accounts_and_refund_uses_its_own_method(): void
     {
         $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
