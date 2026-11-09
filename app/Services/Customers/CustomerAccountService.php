@@ -359,7 +359,7 @@ class CustomerAccountService
 
             if ($locked->location_id) {
                 app(\App\Services\Finance\CashDayGuard::class)->forMethod(
-                    (int) $locked->location_id, $locked->paymentMethod
+                    (int) $locked->location_id, PaymentMethod::withTrashed()->findOrFail($locked->payment_method_id)
                 );
             }
 
