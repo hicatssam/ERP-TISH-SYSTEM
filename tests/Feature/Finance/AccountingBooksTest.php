@@ -114,6 +114,103 @@ class AccountingBooksTest extends TestCase
         $this->assertSame(0, $report['unlinked_operations']);
     }
 
+    public function test_operational_source_journals_are_balanced_idempotent_and_traceable(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
+        [$branch, $user] = $this->branchUser($this->allPermissions());
+        $this->baseCurrency();
+        $this->openPeriod($user);
+        $cash = $this->method('cash');
+        $bank = $this->method('bank');
+        $journalService = app(\App\Services\Finance\GeneralLedgerIntegrationService::class);
+
+        $customerReceipt = new \App\Models\CustomerPayment([
+            'location_id' => $branch->id, 'payment_method_id' => $cash->id,
+            'amount' => 30, 'status' => 'confirmed', 'paid_at' => now(),
+        ]);
+        $customerReceipt->id = 8801;
+        $journalService->customerReceipt($customerReceipt, $user);
+        $journalService->customerReceipt($customerReceipt, $user);
+        $supplierPayment = new \App\Models\SupplierPayment([
+            'location_id' => $branch->id, 'payment_method_id' => $bank->id,
+            'base_amount' => 20, 'payment_date' => now()->toDateString(),
+        ]);
+        $supplierPayment->id = 8802;
+        $journalService->supplierPayment($supplierPayment, $user);
+        $payroll = new \App\Models\PayrollPayment([
+            'location_id' => $branch->id, 'payment_method_id' => $cash->id,
+            'base_amount' => 12, 'paid_at' => now(),
+        ]);
+        $payroll->id = 8803;
+        $journalService->payrollPayment($payroll, $user);
+
+        $this->assertSame(3, AccountingJournal::query()->count());
+        $this->assertEquals(30, AccountingJournal::query()->where('source_type', 'customer_payments')
+            ->firstOrFail()->lines()->whereHas('account', fn ($q) => $q->where('code', '1000'))->value('debit'));
+        $this->assertEquals(20, AccountingJournal::query()->where('source_type', 'supplier_payments')
+            ->firstOrFail()->lines()->whereHas('account', fn ($q) => $q->where('code', '1010'))->value('credit'));
+        $this->assertEquals(12, AccountingJournal::query()->where('source_type', 'payroll_payments')
+            ->firstOrFail()->lines()->whereHas('account', fn ($q) => $q->where('code', '6100'))->value('debit'));
+        $report = app(AccountingReportService::class)->report([$branch->id], '2026-10-01', '2026-10-02');
+        $this->assertEquals(0, $report['position']['difference']);
+    }
+
+    public function test_closed_cash_day_prevents_new_cash_payment_without_creating_records(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(16, 0));
+        [$branch, $user] = $this->branchUser($this->allPermissions());
+        $this->baseCurrency();
+        $this->openPeriod($user);
+        $cash = $this->method('cash');
+        $order = Order::query()->create([
+            'order_number' => 'CLOSED-CASH-ORDER', 'location_id' => $branch->id,
+            'status' => 'confirmed', 'payment_arrangement' => 'pay_now',
+            'subtotal' => 100, 'total_amount' => 100, 'created_by' => $user->id,
+        ]);
+        DailyCashReconciliation::query()->create([
+            'location_id' => $branch->id, 'business_date' => '2026-10-02',
+            'opening_balance' => 0, 'expected_closing' => 0, 'actual_closing' => 0,
+            'closed_by' => $user->id, 'closed_at' => now(),
+        ]);
+
+        try {
+            app(PaymentService::class)->recordPayment([
+                'order_type' => 'order', 'order_id' => $order->id,
+                'payment_method_id' => $cash->id, 'amount' => 40,
+            ], $user);
+            $this->fail('A reconciled cash day must reject new collections.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('cash', $exception->errors());
+        }
+
+        $this->assertSame(0, Payment::query()->count());
+        $this->assertSame(0, AccountingJournal::query()->count());
+    }
+
+    public function test_manual_cash_movement_and_void_post_balanced_offsetting_journals(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(16, 0));
+        [$branch, $user] = $this->branchUser([...$this->allPermissions(), 'financial.cash.movements.manage']);
+        $this->baseCurrency();
+        $this->openPeriod($user);
+
+        $this->actingAs($user)->post(route('daily-cash.movements.store'), [
+            'location_id' => $branch->id, 'date' => '2026-10-02',
+            'type' => 'transfer_out', 'amount' => 25, 'reference' => 'TX-2026-TEST',
+            'description' => 'Transfer to another branch',
+        ])->assertSessionHasNoErrors();
+        $movement = \App\Models\BranchCashMovement::query()->sole();
+        $this->assertSame(1, AccountingJournal::query()->where('source_type', 'branch_cash_movements')->count());
+
+        $this->actingAs($user)->post(route('daily-cash.movements.void', $movement), [
+            'reason' => 'Incorrect branch transfer',
+        ])->assertSessionHasNoErrors();
+        $this->assertSame(1, AccountingJournal::query()->where('source_type', 'branch_cash_movement_reversals')->count());
+        $report = app(AccountingReportService::class)->report([$branch->id], '2026-10-01', '2026-10-02');
+        $this->assertEquals(0, $report['position']['difference']);
+        $this->assertEquals(0, $report['position']['assets']);
+    }
+
     public function test_expense_and_void_use_opposite_accounts_and_refund_uses_its_own_method(): void
     {
         $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
