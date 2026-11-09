@@ -208,7 +208,7 @@ class PayrollSettlementService
 
             PayrollItem::query()->whereKey($payment->payroll_item_id)->lockForUpdate()->firstOrFail();
             app(\App\Services\Finance\CashDayGuard::class)->forMethod(
-                (int) $payment->location_id, $payment->paymentMethod, $payment->paid_at
+                (int) $payment->location_id, PaymentMethod::withTrashed()->findOrFail($payment->payment_method_id), $payment->paid_at
             );
             $payment->update([
                 'status' => 'posted',
