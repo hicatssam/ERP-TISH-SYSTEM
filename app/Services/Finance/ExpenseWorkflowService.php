@@ -206,6 +206,13 @@ class ExpenseWorkflowService
                 ]);
             }
 
+            if ($locked->payment_method_id) {
+                app(CashDayGuard::class)->forMethod(
+                    (int) $locked->location_id,
+                    \App\Models\PaymentMethod::withTrashed()->findOrFail($locked->payment_method_id),
+                    $locked->expense_date
+                );
+            }
             $period = $this->periods->openForDate($locked->expense_date, true);
             $key = 'expense:' . $locked->id . ':post';
 
