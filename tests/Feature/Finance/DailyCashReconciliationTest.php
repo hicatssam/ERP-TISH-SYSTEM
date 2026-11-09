@@ -211,7 +211,7 @@ class DailyCashReconciliationTest extends TestCase
         ])->assertSessionHasErrors('movement');
     }
 
-    public function test_posted_cash_payroll_is_an_expense_but_bank_payroll_is_not(): void
+    public function test_posted_and_voided_cash_payroll_remain_real_outflows_but_bank_is_excluded(): void
     {
         $this->travelTo(now()->setDate(2026, 9, 28)->setTime(15, 0));
         $branch = $this->branch();
@@ -230,23 +230,23 @@ class DailyCashReconciliationTest extends TestCase
             'payroll_period_id' => $period, 'employee_id' => $user->employee_id,
             'created_at' => now(), 'updated_at' => now(),
         ]);
-        foreach ([[$cash, 7], [$bank, 30]] as [$method, $amount]) {
+        foreach ([[$cash, 7, 'posted'], [$bank, 30, 'posted'], [$cash, 5, 'voided']] as [$method, $amount, $status]) {
             DB::table('payroll_payments')->insert([
                 'payroll_item_id' => $item, 'employee_id' => $user->employee_id,
                 'location_id' => $branch->id, 'currency_id' => $currency->id,
                 'amount' => $amount, 'base_amount' => $amount,
                 'payment_method_id' => $method->id, 'paid_at' => now(),
-                'status' => 'posted', 'created_by' => $user->id,
+                'status' => $status, 'created_by' => $user->id,
                 'created_at' => now(), 'updated_at' => now(),
             ]);
         }
 
         $this->actingAs($user)->post(route('daily-cash.close'), [
             'location_id' => $branch->id, 'date' => '2026-09-28',
-            'opening_balance' => 20, 'actual_closing' => 13,
+            'opening_balance' => 20, 'actual_closing' => 8,
         ])->assertSessionHasNoErrors();
-        $this->assertEquals(7, DailyCashReconciliation::query()->sole()->expenses);
-        $this->assertEquals(13, DailyCashReconciliation::query()->sole()->expected_closing);
+        $this->assertEquals(12, DailyCashReconciliation::query()->sole()->expenses);
+        $this->assertEquals(8, DailyCashReconciliation::query()->sole()->expected_closing);
     }
 
     private function branch(): Location
