@@ -11,6 +11,7 @@ use App\Models\FinancialPeriod;
 use App\Models\Order;
 use App\Models\PaymentMethod;
 use App\Models\PayrollPayment;
+use App\Models\PurchaseReturn;
 use App\Models\SupplierInvoice;
 use App\Models\SupplierPayment;
 use App\Models\User;
@@ -51,6 +52,16 @@ class GeneralLedgerIntegrationService
         $this->post('supplier_invoice_cancellations', $invoice->id, (int) $invoice->location_id,
             now(), (float) $invoice->base_grand_total, '2000', '1200',
             "عكس فاتورة المورد {$invoice->invoice_number}", $actor);
+    }
+
+    public function purchaseReturn(PurchaseReturn $return, User $actor): void
+    {
+        // Linked return reduces accounts payable; an unallocated supplier
+        // credit remains a recoverable receivable until applied or refunded.
+        $debit = $return->supplier_invoice_id ? '2000' : '1160';
+        $this->post('purchase_returns', $return->id, (int) $return->location_id,
+            $return->posted_at ?? now(), (float) $return->base_grand_total,
+            $debit, '1200', "مرتجع للمورد {$return->return_number}", $actor);
     }
 
     public function supplierPayment(SupplierPayment $payment, User $actor): void
