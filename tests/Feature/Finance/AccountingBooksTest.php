@@ -264,6 +264,40 @@ class AccountingBooksTest extends TestCase
         $this->assertTrue($period->fresh()->isOpen());
     }
 
+    public function test_mixed_supplier_invoice_splits_stock_and_service_expenses_and_reverses_precisely(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
+        [$branch, $user] = $this->branchUser($this->allPermissions());
+        $this->baseCurrency();
+        $this->openPeriod($user);
+        $invoice = new \App\Models\SupplierInvoice([
+            'invoice_number' => 'MIXED-001', 'location_id' => $branch->id,
+            'invoice_date' => '2026-10-02', 'base_grand_total' => 110,
+        ]);
+        $invoice->id = 99101;
+        $invoice->setRelation('items', collect([
+            new \App\Models\SupplierInvoiceItem(['product_id' => 21, 'line_total' => 60]),
+            new \App\Models\SupplierInvoiceItem(['description' => 'Repair service', 'line_total' => 40]),
+        ]));
+        $posting = app(\App\Services\Finance\GeneralLedgerIntegrationService::class);
+        $posting->supplierInvoice($invoice, $user);
+        $posting->supplierInvoice($invoice, $user);
+
+        $journal = AccountingJournal::query()->where('source_type', 'supplier_invoices')->sole();
+        $this->assertEquals(66, (float) $journal->lines()->whereHas('account',
+            fn ($q) => $q->where('code', '1200'))->value('debit'));
+        $this->assertEquals(44, (float) $journal->lines()->whereHas('account',
+            fn ($q) => $q->where('code', '6000'))->value('debit'));
+        $this->assertEquals(110, (float) $journal->lines()->whereHas('account',
+            fn ($q) => $q->where('code', '2000'))->value('credit'));
+
+        $posting->supplierInvoiceCancellation($invoice, $user);
+        $this->assertSame(2, AccountingJournal::query()->count());
+        $report = app(AccountingReportService::class)->report([$branch->id], '2026-10-01', '2026-10-02');
+        $this->assertEquals(0, $report['position']['difference']);
+        $this->assertEquals(0, $report['income']['expenses']);
+    }
+
     public function test_expense_and_void_use_opposite_accounts_and_refund_uses_its_own_method(): void
     {
         $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
