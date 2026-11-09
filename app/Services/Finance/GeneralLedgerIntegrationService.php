@@ -74,6 +74,17 @@ class GeneralLedgerIntegrationService
             "صرف راتب #{$payment->id}", $actor);
     }
 
+    /** Voiding a paid salary makes the amount recoverable; it does not refill cash. */
+    public function reversePayrollPayment(PayrollPayment $payment, User $actor): void
+    {
+        if (! $this->hasJournal('payroll_payments', $payment->id)) {
+            return;
+        }
+        $this->post('payroll_payment_reversals', $payment->id, (int) $payment->location_id,
+            now(), (float) $payment->base_amount, '1160', '6100',
+            "عكس مصروف راتب #{$payment->id} إلى ذمة استرداد", $actor);
+    }
+
     public function cashMovement(BranchCashMovement $movement, User $actor): void
     {
         [$debit, $credit] = match ($movement->type) {
