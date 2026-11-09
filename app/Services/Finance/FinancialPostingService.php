@@ -14,6 +14,7 @@ use App\Models\User;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class FinancialPostingService
 {
@@ -35,6 +36,33 @@ class FinancialPostingService
             referenceId: $invoice->id,
             invoiceId: $invoice->id,
             description: "فاتورة {$invoice->invoice_number}",
+        );
+    }
+
+    /**
+     * A confirmed order can be edited without issuing a new invoice. Post only
+     * the difference; never overwrite a historical sale journal.
+     *
+     * The caller must hold the order lock and invoke this in its transaction.
+     */
+    public function saleAdjustment(Invoice $invoice, float $previousTotal, User $actor): void
+    {
+        $delta = round((float) $invoice->total_amount - $previousTotal, 2);
+        if (abs($delta) < 0.005) {
+            return;
+        }
+
+        $this->post(
+            key: "invoice:{$invoice->id}:adjustment:".Str::uuid(),
+            type: $delta > 0 ? LedgerEntryType::Sale : LedgerEntryType::SaleCancellation,
+            amount: abs($delta),
+            date: now(),
+            locationId: (int) $invoice->location_id,
+            actorId: $actor->id,
+            referenceType: 'invoices',
+            referenceId: $invoice->id,
+            invoiceId: $invoice->id,
+            description: "تسوية قيمة الفاتورة {$invoice->invoice_number}",
         );
     }
 
