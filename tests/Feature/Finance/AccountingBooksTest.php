@@ -155,6 +155,49 @@ class AccountingBooksTest extends TestCase
         $this->assertEquals(0, $report['position']['difference']);
     }
 
+    public function test_supplier_fx_settlements_post_realized_gains_and_losses_without_changing_invoice_liability(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
+        [$branch, $user] = $this->branchUser($this->allPermissions());
+        $this->baseCurrency();
+        $this->openPeriod($user);
+        $bank = $this->method('bank_transfer');
+
+        // The original USD invoice was valued at 3.50 ILS per USD.
+        $invoice = new \App\Models\SupplierInvoice([
+            'exchange_rate' => '3.50000000', 'location_id' => $branch->id,
+        ]);
+        $invoice->id = 96311;
+        $service = app(\App\Services\Finance\GeneralLedgerIntegrationService::class);
+
+        foreach ([[96312, 370, '6200', 'debit', 20], [96313, 330, '4200', 'credit', 20], [96314, 350, null, null, 0]] as [$id, $base, $fxCode, $direction, $fxAmount]) {
+            $payment = new \App\Models\SupplierPayment([
+                'location_id' => $branch->id, 'payment_method_id' => $bank->id,
+                'payment_date' => '2026-10-02', 'base_amount' => $base,
+                'applied_amount' => 100, 'supplier_invoice_id' => $invoice->id,
+            ]);
+            $payment->id = $id;
+            $payment->setRelation('supplierInvoice', $invoice);
+            $service->supplierPayment($payment, $user);
+            $service->supplierPayment($payment, $user);
+
+            $journal = AccountingJournal::query()
+                ->where('source_type', 'supplier_payments')->where('source_id', $id)->sole();
+            $this->assertEquals(350, $journal->lines()->whereHas('account',
+                fn ($q) => $q->where('code', '2000'))->value('debit'));
+            $this->assertEquals($base, $journal->lines()->whereHas('account',
+                fn ($q) => $q->where('code', '1010'))->value('credit'));
+            if ($fxCode) {
+                $this->assertEquals($fxAmount, $journal->lines()->whereHas('account',
+                    fn ($q) => $q->where('code', $fxCode))->value($direction));
+            }
+        }
+
+        $this->assertSame(3, AccountingJournal::query()->where('source_type', 'supplier_payments')->count());
+        $report = app(AccountingReportService::class)->report([$branch->id], '2026-10-01', '2026-10-02');
+        $this->assertEquals(0, $report['position']['difference']);
+    }
+
     public function test_closed_cash_day_prevents_new_cash_payment_without_creating_records(): void
     {
         $this->travelTo(now()->setDate(2026, 10, 2)->setTime(16, 0));
