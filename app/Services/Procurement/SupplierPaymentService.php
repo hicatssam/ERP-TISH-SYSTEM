@@ -52,13 +52,29 @@ class SupplierPaymentService
                 ]);
             }
 
+            $paymentDate = Carbon::parse($data['payment_date']);
+            $paymentCurrencyId = (int) $data['currency_id'];
             $paymentRate = $this->currencies->resolveRate(
-                (int) $data['currency_id'],
+                $paymentCurrencyId,
                 $data['exchange_rate'] ?? null,
-                Carbon::parse($data['payment_date']),
+                $paymentDate,
             );
             $baseAmount = (float) $this->currencies->toBase($amount, $paymentRate);
-            $appliedAmount = (float) $this->currencies->fromBase($baseAmount, (string) $invoice->exchange_rate);
+
+            // Liability is denominated in the ORIGINAL INVOICE currency.
+            // Its recorded exchange rate is historical and must not be used
+            // to calculate how much of that currency was paid today.
+            // Same-currency settlement credits the nominal amount exactly.
+            // Cross-currency settlement uses the invoice currency's CURRENT
+            // effective rate; realized FX is booked separately in the GL.
+            $invoiceCurrencyId = (int) $invoice->currency_id;
+            $invoiceSpotRate = $invoiceCurrencyId === $paymentCurrencyId
+                ? $paymentRate
+                : $this->currencies->resolveRate($invoiceCurrencyId, null, $paymentDate);
+            $appliedAmount = $invoiceCurrencyId === $paymentCurrencyId
+                ? $amount
+                : (float) $this->currencies->fromBase($baseAmount, $invoiceSpotRate);
+            $appliedAmount = round($appliedAmount, 2);
 
             if ($appliedAmount > (float) $invoice->remaining_amount + 0.004) {
                 throw ValidationException::withMessages([
