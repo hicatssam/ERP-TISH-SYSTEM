@@ -212,6 +212,58 @@ class AccountingBooksTest extends TestCase
         $this->assertEquals(0, $report['position']['assets']);
     }
 
+    public function test_financial_close_uses_distinct_branch_treasury_balances_instead_of_repeating_global_total(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
+        [$first, $manager] = $this->branchUser($this->allPermissions());
+        [$second, $secondManager] = $this->branchUser($this->allPermissions());
+        $this->baseCurrency();
+        $period = $this->openPeriod($manager);
+        $cash = $this->method('cash');
+        $books = app(AccountingBookService::class);
+
+        $firstVoucher = $books->createVoucher($this->voucher($first, $cash, 'receipt', '70.00', 'BR-01'), null, $manager);
+        $secondVoucher = $books->createVoucher($this->voucher($second, $cash, 'receipt', '30.00', 'BR-02'), null, $secondManager);
+        $books->postVoucher($firstVoucher, $manager);
+        $books->postVoucher($secondVoucher, $secondManager);
+
+        $closed = app(\App\Services\Finance\FinancialPeriodService::class)
+            ->closePeriod($period, $manager);
+        $this->assertEquals(100, (float) $closed->closing_balance);
+        $this->assertEquals(70, (float) $closed->summaries()->where('location_id', $first->id)->value('closing_balance'));
+        $this->assertEquals(30, (float) $closed->summaries()->where('location_id', $second->id)->value('closing_balance'));
+    }
+
+    public function test_financial_close_rejects_operational_entries_without_general_ledger_journals(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
+        [$branch, $user] = $this->branchUser($this->allPermissions());
+        $this->baseCurrency();
+        $period = $this->openPeriod($user);
+        SalesLedgerEntry::query()->create([
+            'location_id' => $branch->id,
+            'financial_period_id' => $period->id,
+            'entry_date' => now(),
+            'entry_type' => 'sale',
+            'amount' => 15,
+            'reference_type' => 'invoices',
+            'reference_id' => 99341,
+            'description' => 'Unposted operational sale',
+            'currency_code' => 'ILS',
+            'created_by' => $user->id,
+            'created_at' => now(),
+        ]);
+
+        try {
+            app(\App\Services\Finance\FinancialPeriodService::class)
+                ->closePeriod($period, $user);
+            $this->fail('A period with unposted operating movements must not close.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('period', $exception->errors());
+        }
+        $this->assertTrue($period->fresh()->isOpen());
+    }
+
     public function test_expense_and_void_use_opposite_accounts_and_refund_uses_its_own_method(): void
     {
         $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
