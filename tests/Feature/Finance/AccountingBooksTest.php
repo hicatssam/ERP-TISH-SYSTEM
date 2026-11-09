@@ -257,6 +257,56 @@ class AccountingBooksTest extends TestCase
         $this->assertEquals(10000, $report['income']['expenses']);
     }
 
+    public function test_supplier_payment_service_uses_current_fx_for_invoice_currency_and_posts_realized_loss(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
+        [$branch, $user] = $this->branchUser($this->allPermissions());
+        $ils = $this->baseCurrency();
+        $this->openPeriod($user);
+        $usd = Currency::query()->create([
+            'code' => 'USD', 'name' => 'US dollar', 'is_base' => false, 'is_active' => true,
+        ]);
+        \App\Models\ExchangeRate::query()->create([
+            'currency_id' => $usd->id, 'rate_to_base' => '3.70000000',
+            'effective_date' => '2026-10-02', 'created_by' => $user->id,
+        ]);
+        $bank = $this->method('bank_transfer');
+        $supplier = \App\Models\Supplier::query()->create([
+            'supplier_code' => 'FX-SUP-001', 'name' => 'FX supplier',
+            'currency_id' => $usd->id, 'status' => 'active', 'created_by' => $user->id,
+        ]);
+
+        foreach ([[$usd->id, 100, 'USD-SETTLED'], [$ils->id, 370, 'ILS-SETTLED']] as [$paymentCurrencyId, $paid, $invoiceNumber]) {
+            $invoice = \App\Models\SupplierInvoice::query()->create([
+                'invoice_number' => $invoiceNumber, 'supplier_id' => $supplier->id,
+                'location_id' => $branch->id, 'currency_id' => $usd->id,
+                'exchange_rate' => '3.50000000', 'invoice_date' => '2026-10-01',
+                'grand_total' => 100, 'base_grand_total' => 350,
+                'subtotal' => 100, 'remaining_amount' => 100,
+                'paid_amount' => 0, 'credited_amount' => 0,
+                'status' => 'unpaid', 'created_by' => $user->id,
+            ]);
+            $payment = app(\App\Services\Procurement\SupplierPaymentService::class)->record([
+                'supplier_invoice_id' => $invoice->id, 'supplier_id' => $supplier->id,
+                'location_id' => $branch->id, 'currency_id' => $paymentCurrencyId,
+                'amount' => $paid, 'payment_date' => '2026-10-02',
+                'payment_method_id' => $bank->id,
+            ], $user);
+
+            $this->assertEquals(100, (float) $payment->applied_amount);
+            $this->assertEquals(370, (float) $payment->base_amount);
+            $this->assertEquals(0, (float) $invoice->fresh()->remaining_amount);
+            $journal = AccountingJournal::query()->where('source_type', 'supplier_payments')
+                ->where('source_id', $payment->id)->sole();
+            $this->assertEquals(350, $journal->lines()->whereHas('account',
+                fn ($q) => $q->where('code', '2000'))->value('debit'));
+            $this->assertEquals(20, $journal->lines()->whereHas('account',
+                fn ($q) => $q->where('code', '6200'))->value('debit'));
+            $this->assertEquals(370, $journal->lines()->whereHas('account',
+                fn ($q) => $q->where('code', '1010'))->value('credit'));
+        }
+    }
+
     public function test_read_only_audit_reports_missing_postings_without_mutating_the_ledger(): void
     {
         $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
