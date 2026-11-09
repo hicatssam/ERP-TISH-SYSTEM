@@ -112,12 +112,64 @@ class GeneralLedgerIntegrationService
             $debit, '1200', "مرتجع للمورد {$return->return_number}", $actor);
     }
 
+    /**
+     * Realized FX is the difference between the settled invoice liability
+     * at its original invoice rate and the base-currency cash/bank outflow.
+     *
+     * A stronger transaction currency costs more base currency when its
+     * rate rises: debit FX loss. On a fall, credit FX gain.
+     */
     public function supplierPayment(SupplierPayment $payment, User $actor): void
     {
-        $this->post('supplier_payments', $payment->id, (int) $payment->location_id,
-            $payment->payment_date, (float) $payment->base_amount, '2000',
-            $this->treasuryCode(PaymentMethod::withTrashed()->findOrFail($payment->payment_method_id)),
-            "سداد فاتورة مورد {$payment->supplier_invoice_id}", $actor);
+        if (! $this->ready()) {
+            return;
+        }
+
+        $method = PaymentMethod::withTrashed()->findOrFail($payment->payment_method_id);
+        $treasuryCode = $this->treasuryCode($method);
+        $basePaid = round((float) $payment->base_amount, 2);
+        $invoice = $payment->supplierInvoice;
+        $bookedLiability = $invoice
+            ? round((float) $payment->applied_amount * (float) $invoice->exchange_rate, 2)
+            : $basePaid;
+        $variance = round($basePaid - $bookedLiability, 2);
+        if ($basePaid <= 0 || $bookedLiability <= 0) {
+            throw ValidationException::withMessages(['amount' => 'قيمة التسوية المحاسبية للمورد غير صالحة.']);
+        }
+
+        $required = ['2000', $treasuryCode];
+        if ($variance > 0.004) {
+            $required[] = '6200';
+        } elseif ($variance < -0.004) {
+            $required[] = '4200';
+        }
+        $accounts = AccountingAccount::query()->whereIn('code', $required)
+            ->where('is_active', true)->get()->keyBy('code');
+
+        foreach ($required as $code) {
+            if (! isset($accounts[$code])) {
+                throw ValidationException::withMessages([
+                    'accounting' => "الحساب المحاسبي {$code} غير متاح لترحيل فروقات العملة.",
+                ]);
+            }
+        }
+
+        $lines = [
+            ['account_id' => $accounts['2000']->id, 'debit' => $bookedLiability, 'credit' => 0],
+            ['account_id' => $accounts[$treasuryCode]->id, 'debit' => 0, 'credit' => $basePaid],
+        ];
+        if ($variance > 0.004) {
+            $lines[] = ['account_id' => $accounts['6200']->id, 'debit' => $variance, 'credit' => 0];
+        } elseif ($variance < -0.004) {
+            $lines[] = ['account_id' => $accounts['4200']->id, 'debit' => 0, 'credit' => abs($variance)];
+        }
+
+        $this->books->postSourceEntry(
+            'supplier_payments', $payment->id, (int) $payment->location_id,
+            $payment->payment_date->toDateString(),
+            "سداد فاتورة مورد {$payment->supplier_invoice_id} مع فروقات الصرف المحققة",
+            $lines, $actor
+        );
     }
 
     /**
