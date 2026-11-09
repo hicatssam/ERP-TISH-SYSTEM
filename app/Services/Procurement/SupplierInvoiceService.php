@@ -117,6 +117,8 @@ class SupplierInvoiceService
             foreach ($totals['items'] as $item) {
                 $invoice->items()->create($item);
             }
+            app(\App\Services\Finance\GeneralLedgerIntegrationService::class)
+                ->supplierInvoice($invoice, $actor);
 
             ActivityLogger::log(
                 userId: $actor->id,
@@ -216,6 +218,8 @@ class SupplierInvoiceService
                 'cancelled_by' => $actor->id,
                 'cancelled_at' => now(),
             ]);
+            app(\App\Services\Finance\GeneralLedgerIntegrationService::class)
+                ->supplierInvoiceCancellation($invoice, $actor);
 
             ActivityLogger::log(
                 userId: $actor->id,
