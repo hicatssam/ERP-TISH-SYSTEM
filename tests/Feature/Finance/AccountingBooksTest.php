@@ -198,6 +198,34 @@ class AccountingBooksTest extends TestCase
         $this->assertEquals(0, $report['position']['difference']);
     }
 
+    public function test_read_only_audit_reports_missing_postings_without_mutating_the_ledger(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
+        [$branch, $user] = $this->branchUser($this->allPermissions());
+        $this->baseCurrency();
+        $this->openPeriod($user);
+
+        SalesLedgerEntry::query()->create([
+            'location_id' => $branch->id,
+            'entry_date' => '2026-10-02', 'entry_type' => 'sale',
+            'amount' => 25, 'reference_type' => 'invoices',
+            'reference_id' => 9011, 'currency_code' => 'ILS',
+            'description' => 'Historical operation without GL', 'created_by' => $user->id,
+            'created_at' => now(),
+        ]);
+
+        $audit = app(\App\Services\Finance\LedgerReconciliationAuditService::class)
+            ->report('2026-10-01', '2026-10-02', $branch->id);
+        $this->assertEquals(1, $audit['summary']['sales_ledger_entries']['unlinked']);
+        $this->assertSame('review_source_before_posting', $audit['missing'][0]['action']);
+        $this->assertSame(0, AccountingJournal::query()->count());
+
+        $this->artisan('finance:audit-ledger', [
+            '--from' => '2026-10-01', '--to' => '2026-10-02', '--location' => $branch->id,
+        ])->assertExitCode(0);
+        $this->assertSame(0, AccountingJournal::query()->count());
+    }
+
     public function test_closed_cash_day_prevents_new_cash_payment_without_creating_records(): void
     {
         $this->travelTo(now()->setDate(2026, 10, 2)->setTime(16, 0));
