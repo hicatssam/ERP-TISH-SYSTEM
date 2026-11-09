@@ -274,6 +274,24 @@ class FinancialPeriodService
 
                 $rows = $this->calculateSummaryRows($locked);
 
+                // Never certify the period while known operating sources are
+                // absent from the immutable double-entry books.
+                $locationIds = $rows->pluck('location_id')->all();
+                $gaps = $locationIds === [] ? 0 : app(AccountingReportService::class)
+                    ->report($locationIds, $locked->start_date->toDateString(), $locked->end_date->toDateString())['unlinked_operations'];
+                if ($gaps > 0) {
+                    throw ValidationException::withMessages([
+                        'period' => "لا يمكن الإقفال: توجد {$gaps} حركة تشغيلية لم تُرحّل إلى دفتر الأستاذ.",
+                    ]);
+                }
+
+                $ledgerOpening = round((float) $rows->sum('opening_balance'), 2);
+                if (abs($ledgerOpening - (float) $locked->opening_balance) > 0.005) {
+                    throw ValidationException::withMessages([
+                        'opening_balance' => 'رصيد افتتاح الفترة لا يطابق أرصدة الخزينة في دفتر الأستاذ؛ سجّل تسوية افتتاحية موثقة أولًا.',
+                    ]);
+                }
+
                 FinancialPeriodSummary::query()
                     ->where(
                         'financial_period_id',
@@ -282,18 +300,11 @@ class FinancialPeriodService
                     ->delete();
 
                 $totalOutstanding = round((float) $rows->sum('outstanding_amount'), 2);
-                $netCashMovement = round(
-                    (float) $rows->sum('confirmed_collections')
-                    - (float) $rows->sum('refunds')
-                    - $this->periodExpenseNet($locked),
-                    2
-                );
-
-                $closingBalance = round(
-                    (float) $locked->opening_balance
-                    + $netCashMovement,
-                    2
-                );
+                // Treasury movement must include every posted cash/bank
+                // source (suppliers, payroll, vouchers and transfers), not
+                // just sales less a subset of operating expenses.
+                $closingBalance = round((float) $rows->sum('closing_balance'), 2);
+                $netCashMovement = round($closingBalance - $ledgerOpening, 2);
 
                 foreach ($rows as $row) {
                     FinancialPeriodSummary::create([
@@ -539,6 +550,13 @@ class FinancialPeriodService
                             )
                             : 0.0;
 
+                    $branchOpening = $this->treasuryBalance(
+                        (int) $location->id, $start->toDateString(), true
+                    );
+                    $branchClosing = $this->treasuryBalance(
+                        (int) $location->id, $end->toDateString(), false
+                    );
+
                     return (object) [
                         'location_id' =>
                             $location->id,
@@ -561,18 +579,29 @@ class FinancialPeriodService
                             $orderCount,
                         'average_order_value' =>
                             $averageOrderValue,
-                        'opening_balance' =>
-                            round(
-                                (float)
-                                $period->opening_balance,
-                                2
-                            ),
-                        'closing_balance' =>
-                            $period->closing_balance,
+                        'opening_balance' => $branchOpening,
+                        'closing_balance' => $branchClosing,
                     ];
                 }
             )
             ->values();
+    }
+
+    /**
+     * Branch treasury position in the base currency as posted to GL.
+     * For an opening date exclude the date; for a closing date include it.
+     */
+    private function treasuryBalance(int $locationId, string $boundary, bool $before): float
+    {
+        $query = DB::table('accounting_journal_lines as line')
+            ->join('accounting_journals as journal', 'journal.id', '=', 'line.accounting_journal_id')
+            ->join('accounting_accounts as account', 'account.id', '=', 'line.accounting_account_id')
+            ->where('journal.location_id', $locationId)
+            ->whereIn('account.code', ['1000', '1010'])
+            ->where('journal.entry_date', $before ? '<' : '<=', $boundary);
+
+        return round((float) ($query->selectRaw('COALESCE(SUM(line.debit - line.credit), 0) as total')
+            ->value('total') ?? 0), 2);
     }
 
     private function periodExpenseNet(FinancialPeriod $period): float
