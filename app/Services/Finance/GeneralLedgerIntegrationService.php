@@ -11,6 +11,9 @@ use App\Models\FinancialPeriod;
 use App\Models\Order;
 use App\Models\PaymentMethod;
 use App\Models\PayrollPayment;
+use App\Models\PayrollItem;
+use App\Services\Procurement\CurrencyConversionService;
+use Illuminate\Support\Facades\DB;
 use App\Models\PurchaseReturn;
 use App\Models\SupplierInvoice;
 use App\Models\SupplierPayment;
@@ -173,27 +176,137 @@ class GeneralLedgerIntegrationService
     }
 
     /**
-     * Salary expense is currently recognized on payment (cash basis).
-     * Do not also accrue account 2100 until a distinct payroll-accrual flow
-     * has been integrated and tested.
+     * Optional payroll accrual, one immutable journal per approved payroll item.
+     * Feature stays OFF until current liabilities and opening balances have
+     * been reconciled by the accountant.
      */
-    public function payrollPayment(PayrollPayment $payment, User $actor): void
+    public function payrollAccrual(PayrollItem $item, User $actor): void
     {
-        $this->post('payroll_payments', $payment->id, (int) $payment->location_id,
-            $payment->paid_at, (float) $payment->base_amount, '6100',
-            $this->treasuryCode(PaymentMethod::withTrashed()->findOrFail($payment->payment_method_id)),
-            "صرف راتب #{$payment->id}", $actor);
-    }
-
-    /** Voiding a paid salary makes the amount recoverable; it does not refill cash. */
-    public function reversePayrollPayment(PayrollPayment $payment, User $actor): void
-    {
-        if (! $this->hasJournal('payroll_payments', $payment->id)) {
+        if (! $this->ready() || (float) $item->net_salary <= 0) {
             return;
         }
-        $this->post('payroll_payment_reversals', $payment->id, (int) $payment->location_id,
-            now(), (float) $payment->base_amount, '1160', '6100',
-            "عكس مصروف راتب #{$payment->id} إلى ذمة استرداد", $actor);
+        $item->loadMissing('period');
+        $period = $item->period;
+        $locationId = $period->location_id ?: DB::table('employee_locations')
+            ->where('employee_id', $item->employee_id)
+            ->where('is_primary', true)->value('location_id');
+        if (! $locationId) {
+            throw ValidationException::withMessages(['payroll' => 'لا يمكن ترحيل الاستحقاق دون تحديد فرع الموظف.']);
+        }
+
+        $currencyId = $period->currency_id ?: Currency::query()->where('is_base', true)->value('id');
+        $rate = app(CurrencyConversionService::class)->resolveRate(
+            (int) $currencyId, null, $period->end_date
+        );
+        $baseAmount = round((float) $item->net_salary * (float) $rate, 2);
+        $this->post('payroll_item_accruals', $item->id, (int) $locationId,
+            $period->end_date, $baseAmount, '6100', '2100',
+            "استحقاق راتب الموظف #{$item->employee_id} للفترة {$period->code}", $actor);
+    }
+
+    /** Settle the accrued liability first; legacy/unaccrued salary is expensed at payment. */
+    public function payrollPayment(PayrollPayment $payment, User $actor): void
+    {
+        if (! $this->ready()) {
+            return;
+        }
+        $basePaid = round((float) $payment->base_amount, 2);
+        if ($basePaid <= 0) {
+            return;
+        }
+        $method = PaymentMethod::withTrashed()->findOrFail($payment->payment_method_id);
+        $treasuryCode = $this->treasuryCode($method);
+        $accrual = AccountingJournal::query()
+            ->where('source_type', 'payroll_item_accruals')
+            ->where('source_id', $payment->payroll_item_id)->first();
+
+        $accruedLiability = 0.0;
+        $legacyExpense = $basePaid;
+        if ($accrual) {
+            $item = $payment->item;
+            $net = (float) $item->net_salary;
+            if ($net <= 0) {
+                throw ValidationException::withMessages(['payroll' => 'مبلغ الاستحقاق المعتمد غير صالح.']);
+            }
+            $paidBefore = (float) PayrollPayment::query()
+                ->where('payroll_item_id', $item->id)
+                ->where('id', '!=', $payment->id)
+                ->where('status', 'posted')->sum('amount');
+            $nominal = min((float) $payment->amount, max(0, $net - $paidBefore));
+            $accruedLiability = round((float) $accrual->total_credit * $nominal / $net, 2);
+            $legacyExpense = round($basePaid * (1 - $nominal / (float) $payment->amount), 2);
+        }
+
+        $variance = round($basePaid - $accruedLiability - $legacyExpense, 2);
+        $codes = array_values(array_unique(array_filter([
+            $treasuryCode,
+            $accruedLiability > 0 ? '2100' : null,
+            $legacyExpense > 0 ? '6100' : null,
+            $variance > 0.004 ? '6200' : ($variance < -0.004 ? '4200' : null),
+        ])));
+        $accounts = AccountingAccount::query()->whereIn('code', $codes)->where('is_active', true)
+            ->get()->keyBy('code');
+        foreach ($codes as $code) {
+            if (! isset($accounts[$code])) {
+                throw ValidationException::withMessages(['accounting' => "الحساب {$code} غير متاح."]);
+            }
+        }
+
+        $lines = [];
+        if ($accruedLiability > 0) {
+            $lines[] = ['account_id' => $accounts['2100']->id, 'debit' => $accruedLiability, 'credit' => 0];
+        }
+        if ($legacyExpense > 0) {
+            $lines[] = ['account_id' => $accounts['6100']->id, 'debit' => $legacyExpense, 'credit' => 0];
+        }
+        if ($variance > 0.004) {
+            $lines[] = ['account_id' => $accounts['6200']->id, 'debit' => $variance, 'credit' => 0];
+        } elseif ($variance < -0.004) {
+            $lines[] = ['account_id' => $accounts['4200']->id, 'debit' => 0, 'credit' => abs($variance)];
+        }
+        $lines[] = ['account_id' => $accounts[$treasuryCode]->id, 'debit' => 0, 'credit' => $basePaid];
+        $this->books->postSourceEntry('payroll_payments', $payment->id,
+            (int) $payment->location_id, $payment->paid_at->toDateString(),
+            "صرف راتب #{$payment->id}", $lines, $actor);
+    }
+
+    /**
+     * A void does not restore the physical cash. Create a recoverable claim
+     * while reinstating only the non-treasury legs of the original payment.
+     */
+    public function reversePayrollPayment(PayrollPayment $payment, User $actor): void
+    {
+        $original = AccountingJournal::query()->where('source_type', 'payroll_payments')
+            ->where('source_id', $payment->id)->first();
+        if (! $original) {
+            return;
+        }
+
+        $recoverable = AccountingAccount::query()->where('code', '1160')
+            ->where('is_active', true)->firstOrFail();
+        $lines = [];
+        $treasury = 0.0;
+        foreach ($original->lines()->with('account')->get() as $line) {
+            if (in_array($line->account->code, ['1000', '1010'], true)) {
+                $treasury += (float) $line->credit - (float) $line->debit;
+                continue;
+            }
+            $lines[] = [
+                'account_id' => $line->accounting_account_id,
+                'debit' => $line->credit,
+                'credit' => $line->debit,
+            ];
+        }
+        if ($treasury <= 0) {
+            throw ValidationException::withMessages(['payroll' => 'قيد الصرف الأصلي لا يحتوي على مبلغ خزينة صحيح.']);
+        }
+        $lines[] = [
+            'account_id' => $recoverable->id, 'debit' => round($treasury, 2), 'credit' => 0,
+        ];
+
+        $this->books->postSourceEntry('payroll_payment_reversals', $payment->id,
+            (int) $payment->location_id, now()->toDateString(),
+            "إلغاء راتب #{$payment->id} وفتح ذمة استرداد", $lines, $actor);
     }
 
     public function cashMovement(BranchCashMovement $movement, User $actor): void
