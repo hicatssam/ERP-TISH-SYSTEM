@@ -131,6 +131,14 @@ class AccountingBooksTest extends TestCase
         $customerReceipt->id = 8801;
         $journalService->customerReceipt($customerReceipt, $user);
         $journalService->customerReceipt($customerReceipt, $user);
+        $customerReceipt->amount = 31;
+        try {
+            $journalService->customerReceipt($customerReceipt, $user);
+            $this->fail('Changing a posted receipt must require a separate adjustment.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('accounting', $exception->errors());
+        }
+        $customerReceipt->amount = 30;
         $supplierPayment = new \App\Models\SupplierPayment([
             'location_id' => $branch->id, 'payment_method_id' => $bank->id,
             'base_amount' => 20, 'payment_date' => now()->toDateString(),
