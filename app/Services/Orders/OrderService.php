@@ -432,6 +432,8 @@ public function confirmOrder(Order $order, User $user): Order
             $locked->fresh(['items.product']),
             $user
         );
+        app(\App\Services\Finance\GeneralLedgerIntegrationService::class)
+            ->orderCost($locked, $user);
 
         $locked->update([
             'status' => 'confirmed',
@@ -644,11 +646,14 @@ public function confirmOrder(Order $order, User $user): Order
             }
 
             if ($isConfirmed) {
+                $previousCost = round((float) $order->items()->sum('cost_total_snapshot'), 2);
                 // Keep the original confirmation unit-cost snapshot immutable.
                 // Quantity changes only recalculate total cost/revenue allocation.
                 $this->costingService->recalculateConfirmedOrder(
                     $order->fresh(['items'])
                 );
+                app(\App\Services\Finance\GeneralLedgerIntegrationService::class)
+                    ->orderCostDifference($order, $previousCost, $user);
             }
 
             // ── Invoice sync (confirmed orders only) ─────────────────────────────
@@ -797,6 +802,11 @@ public function confirmOrder(Order $order, User $user): Order
                     'cancellation_reason' => 'إلغاء الطلب: '.trim($reason),
                 ]);
                 $this->financialPosting->saleCancellation($order->invoice, $user);
+            }
+
+            if ($oldStatus === 'confirmed') {
+                app(\App\Services\Finance\GeneralLedgerIntegrationService::class)
+                    ->cancelOrderCost($order, $user);
             }
 
             $order->update([
