@@ -661,6 +661,7 @@ public function confirmOrder(Order $order, User $user): Order
 
                 if ($invoice) {
                     $freshOrder   = $order->fresh(['items']);
+                    $previousInvoiceTotal = (float) $invoice->total_amount;
                     $paidAmount   = (float) ($invoice->paid_amount ?? 0);
                     $newSubtotal  = (float) $freshOrder->subtotal;
                     $newTotal     = (float) $freshOrder->total_amount;
@@ -672,6 +673,10 @@ public function confirmOrder(Order $order, User $user): Order
                         'total_amount'    => $newTotal,
                         'remaining_amount'=> $newRemaining,
                     ]);
+
+                    // Preserve the original posting and journalize only the
+                    // change in a confirmed invoice, within this transaction.
+                    $this->financialPosting->saleAdjustment($invoice->fresh(), $previousInvoiceTotal, $user);
 
                     // New invoices carry order_item_id so two Latte lines with
                     // different sizes/modifiers never overwrite each other.
