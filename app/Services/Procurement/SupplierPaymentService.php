@@ -66,6 +66,11 @@ class SupplierPaymentService
                 ]);
             }
 
+            $paymentMethod = \App\Models\PaymentMethod::query()->active()->findOrFail($data['payment_method_id']);
+            app(\App\Services\Finance\CashDayGuard::class)->forMethod(
+                (int) $invoice->location_id, $paymentMethod, (string) $data['payment_date']
+            );
+
             $payment = SupplierPayment::query()->create([
                 'payment_number' => $this->numbers->next('supplier_payment', 'SPY'),
                 'supplier_id' => $invoice->supplier_id,
