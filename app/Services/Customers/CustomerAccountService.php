@@ -288,6 +288,8 @@ class CustomerAccountService
 
             if ($payment->isConfirmed()) {
                 $this->allocatePayment($payment);
+                app(\App\Services\Finance\GeneralLedgerIntegrationService::class)
+                    ->customerReceipt($payment, $user);
             }
 
             ActivityLogger::log(
@@ -370,6 +372,8 @@ class CustomerAccountService
             ]);
 
             $this->allocatePayment($locked);
+            app(\App\Services\Finance\GeneralLedgerIntegrationService::class)
+                ->customerReceipt($locked, $user);
 
             ActivityLogger::log(
                 userId: $user->id,
