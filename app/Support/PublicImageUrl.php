@@ -10,6 +10,8 @@ final class PublicImageUrl
         'images/sweets-menu/',
         'branding/',
         'products/',
+        'product-variants/',
+        'menu-cutouts/',
         'categories/',
         'customer-menu/',
         'customer-display/',

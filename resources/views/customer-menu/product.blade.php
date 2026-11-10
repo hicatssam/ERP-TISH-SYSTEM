@@ -18,7 +18,7 @@
  <div class="shell">
   <div class="detail-media" id="detailMedia">
    @if(!empty($product['image']))
-    <img src="{{ $product['image'] }}" alt="{{ $product['name'] }}" onerror="this.remove(); this.parentElement.insertAdjacentHTML('afterbegin', '<div class=&quot;product-placeholder&quot;>{{ mb_substr($product['name'], 0, 1) }}</div>')">
+    <img src="{{ $product['cutout_image'] ?: $product['image'] }}" data-fallback="{{ $product['cutout_image'] ? $product['image'] : '' }}" alt="{{ $product['name'] }}" onerror="if(this.dataset.fallback){const original=this.dataset.fallback;this.dataset.fallback='';this.src=original;}else{this.remove();this.parentElement.insertAdjacentHTML('afterbegin', '<div class=&quot;product-placeholder&quot;>{{ mb_substr($product['name'], 0, 1) }}</div>');}">
    @else
     <div class="product-placeholder">{{ mb_substr($product['name'], 0, 1) }}</div>
    @endif
@@ -205,6 +205,7 @@ function updateMedia() {
     if (!PRODUCT.isVariantProduct) return;
     const v = variants.find(v => String(v.id) === String(selectedVariantId));
     if (!v || !v.image) return;
+    const picture = v.cutout_image || v.image;
     const media = document.getElementById('detailMedia');
     let img = media.querySelector('img');
     if (!img) {
@@ -212,8 +213,18 @@ function updateMedia() {
         media.querySelector('.product-placeholder')?.remove();
         media.prepend(img);
     }
-    if (img.getAttribute('src') === v.image) return;
-    img.src = v.image;
+    if (img.getAttribute('src') === picture) return;
+    img.dataset.fallback = v.cutout_image ? v.image : '';
+    img.onerror = function () {
+        if (this.dataset.fallback) {
+            const original = this.dataset.fallback;
+            this.dataset.fallback = '';
+            this.src = original;
+        } else {
+            this.style.display = 'none';
+        }
+    };
+    img.src = picture;
     img.alt = PRODUCT.name;
     document.dispatchEvent(new CustomEvent('tish:product-image-changed', { detail: { image: img } }));
 }

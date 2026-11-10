@@ -174,6 +174,7 @@ trait ResolvesCustomerMenuBranding
      */
     protected function menuItemsFor(Location $location): Collection
     {
+        $cutouts = app(\App\Services\Restaurant\MenuCutoutService::class);
         $showUnavailable = (bool) SystemSetting::get('customer_menu_show_unavailable', false);
 
         $categoryColumns = ['id', 'name', 'name_ar'];
@@ -216,7 +217,7 @@ trait ResolvesCustomerMenuBranding
 
         return $menuQuery
             ->get()
-            ->map(function (RestaurantMenuItem $menuItem) use ($location): array {
+            ->map(function (RestaurantMenuItem $menuItem) use ($location, $cutouts): array {
                 $product = $menuItem->product;
                 $locationProduct = $product?->locationProducts->first();
 
@@ -232,6 +233,7 @@ trait ResolvesCustomerMenuBranding
                                 : (float) $product->getEffectivePriceForLocation((int) $location->id),
                             'is_default' => (bool) $variant->is_default,
                             'image' => $this->assetFromPath($variant->image),
+                            'cutout_image' => $cutouts->cutoutUrl($variant->image),
                         ])
                         ->values()
                         ->all()
@@ -300,6 +302,11 @@ trait ResolvesCustomerMenuBranding
                 })->all();
                 $modifierGroups = $allModifierGroups->whereNull('variant_id')->unique('id')->values()->all();
 
+                // Match the exact source used by the existing public menu.
+                $cutoutSource = ($product->image ?? null)
+                    ?: $menuItem->image
+                    ?: $product->activeVariants->sortByDesc('is_default')->pluck('image')->filter()->first();
+
                 return [
                     'menu_item_id' => (int) $menuItem->id,
                     'product_id' => (int) $product->id,
@@ -318,6 +325,7 @@ trait ResolvesCustomerMenuBranding
                         ($product->image ?? null)
                         ?: $menuItem->image
                     ) ?: $fallbackVariantImage,
+                    'cutout_image' => $cutouts->cutoutUrl($cutoutSource),
                     'category_id' => $product->category?->id,
                     'category' => CustomerMenuLanguage::name($product->category?->name, $product->category?->name_ar) ?: (CustomerMenuLanguage::isEnglish() ? 'Other' : 'أخرى'),
                     'category_icon' => $product->category?->icon_key

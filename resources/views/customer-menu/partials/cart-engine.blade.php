@@ -21,6 +21,7 @@ window.CustomerMenu = (function () {
         name: x.name ?? '',
         description: x.description ?? '',
         image: x.image ?? '',
+        cutoutImage: x.cutout_image ?? '',
         category: String(x.category_id ?? x.category?.id ?? 'uncategorized'),
         category_name: x.category ?? '',
         price: Number(x.price ?? 0),
@@ -167,8 +168,10 @@ window.CustomerMenu = (function () {
 
     function image(p, cls = '') {
         const initial = esc((p.name || 'د').slice(0, 1));
-        return p.image
-            ? `<img class="${cls}" src="${esc(p.image)}" alt="${esc(p.name)}" onerror="this.outerHTML='<div class=&quot;product-placeholder&quot;>${initial}</div>'">`
+        const picture = p.cutoutImage || p.image;
+        const fallback = p.cutoutImage && p.image ? esc(p.image) : '';
+        return picture
+            ? `<img class="${cls}" src="${esc(picture)}" data-fallback="${fallback}" alt="${esc(p.name)}" onerror="if(this.dataset.fallback){const old=this.dataset.fallback;this.dataset.fallback='';this.src=old;}else{this.outerHTML='<div class=&quot;product-placeholder&quot;>${initial}</div>';}">`
             : `<div class="product-placeholder">${initial}</div>`;
     }
 

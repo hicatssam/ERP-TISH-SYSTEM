@@ -71,6 +71,28 @@ class AppServiceProvider extends ServiceProvider
         CarbonImmutable::setLocale('ar');
 
         Schema::defaultStringLength(191);
+
+        // Process only new/replaced product images. A dedicated worker keeps
+        // rembg CPU work outside the HTTP request and preserves originals.
+        if (config('menu_cutouts.enabled', false)) {
+            foreach ([
+                \App\Models\Product::class,
+                \App\Models\RestaurantMenuItem::class,
+                \App\Models\ProductVariant::class,
+            ] as $imageModel) {
+                $imageModel::saved(static function ($model): void {
+                    if (! $model->wasChanged('image') || ! filled($model->image)) {
+                        return;
+                    }
+
+                    \App\Jobs\GenerateMenuCutout::dispatch((string) $model->image)
+                        ->onConnection((string) config('menu_cutouts.queue_connection', 'database'))
+                        ->onQueue('menu-cutouts')
+                        ->afterCommit();
+                });
+            }
+        }
+
         Gate::policy(ReportSchedule::class, ReportSchedulePolicy::class);
         Paginator::defaultView('pagination.custom');
 
