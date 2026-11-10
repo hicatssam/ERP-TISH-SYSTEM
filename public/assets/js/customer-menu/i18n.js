@@ -10,6 +10,7 @@
   "سلتك": "Your cart",
   "عرض السلة": "View cart",
   "تغيير الفرع": "Change branch",
+  "ثبّت المنيو": "Pin menu",
   "رجوع": "Back",
   "كل الأصناف": "All products",
   "الكل": "All",

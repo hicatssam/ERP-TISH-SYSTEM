@@ -243,8 +243,9 @@
             .websiteLink span{display:none}
         }
     </style>
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-v2.css') }}?v=1">
 </head>
-<body>
+<body class="tish-paper tish-paper-track">
     @if($appDownloadUrl || $websiteUrl)
         <div class="appBar">
             <div class="wrap appBarInner">
