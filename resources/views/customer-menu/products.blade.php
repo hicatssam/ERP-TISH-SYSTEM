@@ -19,13 +19,26 @@
 @media(prefers-reduced-motion:reduce){.crisp-customer-menu .product.cm-card-motion{animation:none!important}.crisp-customer-menu .cat{transition:none!important}}
 </style>
 </head>
-<body class="crisp-customer-menu tish-paper">
+<body class="crisp-customer-menu tish-paper tish-paper-products">
 @include('customer-menu.partials.brand-watermark')
 <div class="app crisp-menu-app">
 @include('customer-menu.partials.topbar', ['pageTitle' => 'المنيو الكامل', 'pageSubtitle' => $location->name])
 
 <main class="menu-area" id="menu">
  <div class="shell">
+  <div class="tish-paper-products-header">
+   <div class="tish-paper-products-hero-row">
+    <div class="tish-paper-products-brand">
+     <img src="{{ asset('assets/tish-paper/brand/telephone.webp') }}" alt="" class="tish-paper-products-booth">
+     <img src="{{ asset('assets/tish-paper/brand/slogan.svg') }}" alt="Hear it, Feel it!" class="tish-paper-products-slogan">
+    </div>
+    <img src="{{ $branding['logo'] ?? asset('assets/tish-paper/brand/logo-disc.webp') }}" alt="{{ $branding['name'] ?? 'Tish' }}" class="tish-paper-products-logo">
+   </div>
+   <div class="tish-paper-products-title">
+    <h1>كل الأصناف</h1>
+    <button type="button" class="tish-paper-products-pin" id="tishPaperPin" aria-label="ثبّت المنيو"><i class="fa-solid fa-thumbtack" aria-hidden="true"></i> ثبّت المنيو</button>
+   </div>
+  </div>
   <div class="tools">
    <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input id="searchInput" type="search" placeholder="{{ \App\Support\CustomerMenuCopy::searchPlaceholder() }}" autocomplete="off" value="{{ $initialSearch }}"></div>
    <button class="filter-square" type="button" id="openFilters" aria-label="تصفية الأصناف"><i class="fa-solid fa-sliders"></i></button>
@@ -41,7 +54,7 @@
    @endforeach
   </div>
 
-  <div class="section-title"><div><h2>كل الأصناف</h2></div><small id="resultCount" style="color:var(--muted);font-size:.8rem"></small></div>
+  <div class="section-title"><div><h2>اختر صنفك المفضل</h2></div><small id="resultCount" style="color:var(--muted);font-size:.8rem"></small></div>
   <div class="grid" id="productGrid"></div>
  </div>
 </main>
@@ -209,6 +222,7 @@ document.getElementById('resetFilters').addEventListener('click', () => {
 });
 
 renderProducts();
+document.getElementById('tishPaperPin')?.addEventListener('click', () => document.getElementById('pwaInstallBtn')?.click());
 </script>
 </body>
 </html>

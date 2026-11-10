@@ -281,11 +281,62 @@ html.cm-skip-menu-intro #intro{display:none!important}
 
 
   {{-- Paper collage: independent art layers, existing branch logo/settings remain live. --}}
+  {{-- Campaign banners stay at the TOP of the menu, supplied by ERP settings. --}}
+  @if(($theme['show_hero'] ?? true) && ($banners->isNotEmpty() || $coverImage))
+  <section class="reference-hero tish-paper-top-ads" aria-label="إعلانات المنيو">
+   @if($banners->isNotEmpty())
+    <div class="banner-track" id="bannerTrack">
+     @foreach($banners as $banner)
+      @if($banner['link_url'])
+       <a href="{{ $banner['link_url'] }}" class="banner-slide"
+          @unless(str_starts_with($banner['link_url'], '#')) target="_blank" rel="noopener" @endunless>
+      @else
+       <article class="banner-slide">
+      @endif
+        <img src="{{ $banner['image'] }}" alt="{{ $banner['title'] ?: 'إعلان من ' . $branding['name'] }}" loading="eager">
+        @if($banner['title'] || $banner['subtitle'] || $banner['badge_text'] || $banner['cta_text'])
+        <div class="banner-copy">
+         @if($banner['badge_text'])<span class="tag">{{ $banner['badge_text'] }}</span>@endif
+         @if($banner['title'])<h2>{{ $banner['title'] }}</h2>@endif
+         @if($banner['subtitle'])<p>{{ $banner['subtitle'] }}</p>@endif
+         @if($banner['cta_text'])<span class="banner-cta">{{ $banner['cta_text'] }} <i class="fa-solid fa-arrow-left"></i></span>@endif
+        </div>
+        @endif
+      @if($banner['link_url'])
+       </a>
+      @else
+       </article>
+      @endif
+     @endforeach
+    </div>
+    @if($banners->count() > 1)
+     <div class="banner-dots" id="bannerDots">
+      @foreach($banners as $index => $banner)
+       <button type="button" class="{{ $index === 0 ? 'active' : '' }}" data-banner-dot="{{ $index }}" aria-label="{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Slide ' . ($index + 1) : 'العرض ' . ($index + 1) }}"></button>
+      @endforeach
+     </div>
+    @endif
+   @else
+    <article class="reference-hero-fallback tish-paper-cover-banner" @if($coverImage) style="background-image:linear-gradient(90deg,rgba(8,4,5,.12),rgba(8,4,5,.78)),url('{{ $coverImage }}')" @endif>
+     <div class="banner-copy">
+      <span class="tag">اختيارات اليوم</span>
+      <h2>{{ $branding['tagline'] ?: 'مذاق استثنائي' }}</h2>
+      <p>اختار صنفك المفضل واطلبه مباشرة من المنيو.</p>
+      <span class="banner-cta" data-scroll-menu>اطلب الآن <i class="fa-solid fa-arrow-left"></i></span>
+     </div>
+    </article>
+   @endif
+  </section>
+  @endif
+
+  @else
   <div class="tish-paper-brand-hero" aria-label="Tish — Hear it, Feel it">
     <img class="paper-booth" src="{{ asset('assets/tish-paper/brand/telephone.webp') }}" alt="" loading="eager">
     <img class="paper-claim" src="{{ asset('assets/tish-paper/brand/slogan.svg') }}" alt="Hear it, Feel it!" loading="eager">
     <img class="paper-stamp" src="{{ asset('assets/tish-paper/brand/logo-disc.webp') }}" alt="Tish" loading="eager">
   </div>
+
+  @endif
 
   @if($showSearch)
   <div class="tools">
@@ -343,55 +394,6 @@ html.cm-skip-menu-intro #intro{display:none!important}
 
 
   {{-- Static image decoration; destination uses the REAL Laravel products route. --}}
-  <div class="tish-paper-food-promo">
-    <img src="{{ asset('assets/tish-paper/food/grilled-chicken.webp') }}" loading="lazy" alt="">
-    <button type="button" onclick="document.getElementById('pwaInstallBtn')?.click()" aria-label="ثبّت المنيو">ثبّت المنيو</button>
-  </div>
-
-  @if(($theme['show_hero'] ?? true) && ($banners->isNotEmpty() || $coverImage))
-  <section class="reference-hero" aria-label="العروض الحالية">
-   @if($banners->isNotEmpty())
-    <div class="banner-track" id="bannerTrack">
-     @foreach($banners as $banner)
-      @if($banner['link_url'])
-       <a href="{{ $banner['link_url'] }}" class="banner-slide"
-          @unless(str_starts_with($banner['link_url'], '#')) target="_blank" rel="noopener" @endunless>
-      @else
-       <article class="banner-slide">
-      @endif
-        <img src="{{ $banner['image'] }}" alt="{{ $banner['title'] ?: ((\App\Support\CustomerMenuLanguage::isEnglish() ? 'Offer from ' : 'عرض من ') . $branding['name']) }}">
-        <div class="banner-copy">
-         @if($banner['badge_text'])<span class="tag">{{ $banner['badge_text'] }}</span>@endif
-         <h2>{{ $banner['title'] ?: 'مذاق يستحق أن تعود إليه' }}</h2>
-         @if($banner['subtitle'])<p>{{ $banner['subtitle'] }}</p>@endif
-         <span class="banner-cta">{{ $banner['cta_text'] ?? (\App\Support\CustomerMenuLanguage::isEnglish() ? 'Order now' : 'اطلب الآن') }} <i class="fa-solid fa-arrow-left"></i></span>
-        </div>
-      @if($banner['link_url'])
-       </a>
-      @else
-       </article>
-      @endif
-     @endforeach
-    </div>
-    @if($banners->count() > 1)
-     <div class="banner-dots" id="bannerDots">
-      @foreach($banners as $index => $banner)
-       <button type="button" class="{{ $index === 0 ? 'active' : '' }}" data-banner-dot="{{ $index }}" aria-label="{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Slide ' . ($index + 1) : 'العرض ' . ($index + 1) }}"></button>
-      @endforeach
-     </div>
-    @endif
-   @else
-    <article class="reference-hero-fallback" @if($coverImage) style="background-image:linear-gradient(90deg,rgba(8,4,5,.12),rgba(8,4,5,.78)),url('{{ $coverImage }}')" @endif>
-     <div class="banner-copy">
-      <span class="tag">اختيارات اليوم</span>
-      <h2>{{ $branding['tagline'] ?: 'مذاق استثنائي' }}</h2>
-      <p>اختار صنفك المفضل واطلبه مباشرة من المنيو.</p>
-      <span class="banner-cta" data-scroll-menu>اطلب الآن <i class="fa-solid fa-arrow-left"></i></span>
-     </div>
-    </article>
-   @endif
-  </section>
-  @endif
 
 
   @if($showFeatured)
