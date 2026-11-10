@@ -318,7 +318,16 @@ body.tish-paper.tish-paper-products .tish-paper-products-pin {
 body.tish-paper.tish-paper-products .tish-paper-products-pin i {
  color:var(--tish-paper-red);margin-inline-end:4px;
 }
-body.tish-paper.tish-paper-products .tools {display:none!important}
+body.tish-paper.tish-paper-products .tools {
+ display:flex!important;align-items:center!important;gap:8px!important;
+ margin:8px 2px 12px!important;
+}
+body.tish-paper.tish-paper-products .tools .search input {
+ min-height:46px!important;height:46px!important;font-size:.82rem!important;
+}
+body.tish-paper.tish-paper-products .tools .filter-square {
+ min-width:46px!important;width:46px!important;height:46px!important;
+}
 body.tish-paper.tish-paper-products .categories {
  display:flex;flex-wrap:nowrap;gap:7px;align-items:center;
  overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;
