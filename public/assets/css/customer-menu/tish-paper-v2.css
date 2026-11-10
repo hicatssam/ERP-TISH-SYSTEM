@@ -3,6 +3,10 @@
  * The body.tish-paper opt-in isolates this skin from admin/POS and other clients.
  */
 :root{--tish-paper-red:#a91f17;--tish-paper-ink:#252525;--tish-paper-ivory:#f3eee6;--tish-paper-muted:#62584f;--tish-paper-green:#257d35}
+
+/* Keep the legacy UI intact anywhere this skin is not enabled. */
+body:not(.tish-paper) :is(.tish-paper-sublogo,.tish-paper-nav-icon,.tish-paper-brand-hero,.tish-paper-food-promo){display:none!important}
+
 body.tish-paper{
  --primary:var(--tish-paper-red);--on-primary:#fff8ed;--text:var(--tish-paper-ink);
  --muted:var(--tish-paper-muted);--bg:var(--tish-paper-ivory);

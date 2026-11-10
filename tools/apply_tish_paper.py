@@ -98,11 +98,20 @@ NAV = {
   'fa-solid fa-receipt': 'orders',
 }
 def nav(s):
+    # Only change the actual navigation, not the separate sticky-cart icon.
+    marker = '<nav class="bottom-nav" aria-label="التنقل">'
+    if s.count(marker) != 1:
+        raise ValueError('nav: missing bottom navigation')
+    before, nav_html = s.split(marker, 1)
+    changed = False
     for fa, name in NAV.items():
-        old=f'<i class="{fa}"></i>'
-        new=f'<img class="tish-paper-nav-icon" src="{{{{ asset(\'assets/tish-paper/icons/{name}.svg\') }}}}" alt="" aria-hidden="true">'
-        s,_=replace_once(s,old,new,f'nav {name}')
-    return s,True
+        old = f'<i class="{fa}"></i>'
+        icon = f'<img class="tish-paper-nav-icon" src="{{{{ asset(\'assets/tish-paper/icons/{name}.svg\') }}}}" alt="" aria-hidden="true">'
+        if icon in nav_html:
+            continue
+        nav_html, did_change = replace_once(nav_html, old, old + icon, f'nav {name}')
+        changed = changed or did_change
+    return before + marker + nav_html, changed
 TRANSFORMS['resources/views/customer-menu/partials/bottom-nav.blade.php']=nav
 
 # Branch-aware topbar: uses admin-controlled brand logo, with the kit logo fallback.
