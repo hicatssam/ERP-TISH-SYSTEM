@@ -10,7 +10,7 @@
 @include('customer-menu.partials.styles')
 @include('customer-menu.partials.pwa-head')
 </head>
-<body class="crisp-customer-menu tish-product-page">
+<body class="crisp-customer-menu tish-paper tish-product-page">
 <div class="app crisp-menu-app">
 @include('customer-menu.partials.topbar', ['backUrl' => route('customer-menu.products', $location->code)])
 

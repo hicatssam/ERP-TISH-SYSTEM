@@ -228,7 +228,7 @@ html.cm-skip-menu-intro #intro{display:none!important}
 })();
 </script>
 </head>
-<body class="crisp-customer-menu reference-home">
+<body class="crisp-customer-menu reference-home tish-paper">
 @php
  $floatingBrandingEnabled = true;
 @endphp
@@ -278,6 +278,14 @@ html.cm-skip-menu-intro #intro{display:none!important}
     </div>
    </div>
   </header>
+
+
+  {{-- Paper collage: independent art layers, existing branch logo/settings remain live. --}}
+  <div class="tish-paper-brand-hero" aria-label="Tish — Hear it, Feel it">
+    <img class="paper-booth" src="{{ asset('assets/tish-paper/brand/telephone.webp') }}" alt="" loading="eager">
+    <img class="paper-claim" src="{{ asset('assets/tish-paper/brand/slogan.svg') }}" alt="Hear it, Feel it!" loading="eager">
+    <img class="paper-stamp" src="{{ asset('assets/tish-paper/brand/logo-disc.webp') }}" alt="Tish" loading="eager">
+  </div>
 
   @if($showSearch)
   <div class="tools">
@@ -332,6 +340,13 @@ html.cm-skip-menu-intro #intro{display:none!important}
    </div>
   </section>
   @endif
+
+
+  {{-- Static image decoration; destination uses the REAL Laravel products route. --}}
+  <div class="tish-paper-food-promo">
+    <img src="{{ asset('assets/tish-paper/food/grilled-chicken.webp') }}" loading="lazy" alt="">
+    <button type="button" onclick="document.getElementById('pwaInstallBtn')?.click()" aria-label="ثبّت المنيو">ثبّت المنيو</button>
+  </div>
 
   @if(($theme['show_hero'] ?? true) && ($banners->isNotEmpty() || $coverImage))
   <section class="reference-hero" aria-label="العروض الحالية">

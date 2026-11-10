@@ -19,7 +19,7 @@
 @media(prefers-reduced-motion:reduce){.crisp-customer-menu .product.cm-card-motion{animation:none!important}.crisp-customer-menu .cat{transition:none!important}}
 </style>
 </head>
-<body class="crisp-customer-menu">
+<body class="crisp-customer-menu tish-paper">
 @include('customer-menu.partials.brand-watermark')
 <div class="app crisp-menu-app">
 @include('customer-menu.partials.topbar', ['pageTitle' => 'المنيو الكامل', 'pageSubtitle' => $location->name])
