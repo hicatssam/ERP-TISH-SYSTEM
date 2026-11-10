@@ -4,7 +4,7 @@
 
 ## المزايا
 - الصورة الأصلية في products أو restaurant-menu أو product-variants تبقى كما هي.
-- أي صورة تُرفع أو تُغيّر في لوحة الإدارة تذهب إلى طابور menu-cutouts باستخدام اتصال database، بعد حفظ العملية.
+- أي صورة تُرفع أو تُغيّر في لوحة الإدارة تذهب إلى طابور menu-cutouts باستخدام اتصال menu_cutouts، بعد حفظ العملية.
 - أمر مستقل يعالج الصور القديمة كلها مرة واحدة، مع تجاهل المكرر والجديد.
 - يتم استخدام الصور الشفافة في بطاقات الرئيسية والمنتجات والمفضلة وتفاصيل المنتج.
 - لا حاجة لتغيير الجداول أو الأسعار أو الطلبات؛ التحويل صور فقط.
@@ -29,7 +29,7 @@
     TISH_CUTOUTS_PYTHON=/absolute/path/to/ERP-TISH-SYSTEM/.venv-menu-cutouts/bin/python
     TISH_CUTOUTS_MODEL=u2net
     TISH_CUTOUTS_TIMEOUT=360
-    TISH_CUTOUTS_QUEUE_CONNECTION=database
+    TISH_CUTOUTS_QUEUE_CONNECTION=menu_cutouts
 
 ثم:
 
@@ -47,9 +47,9 @@
 
 شغّل عاملاً مخصصاً لهذا الطابور في طرفية أخرى (أو Supervisor على السيرفر):
 
-    php artisan queue:work database --queue=menu-cutouts --sleep=3 --tries=2 --timeout=420 --memory=512
+    php artisan queue:work menu_cutouts --queue=menu-cutouts --sleep=3 --tries=2 --timeout=420 --memory=512
 
-مهم: شغّل عاملاً واحداً فقط لهذا الطابور إن لم تُضبط إعدادات queue retry_after للعمل الطويل. يفضّل ضبط retry_after لاتصال قاعدة البيانات على قيمة أكبر من أقصى مدة تشغيل للعملية (مثلاً 600 ثانية)، وتخصيص ذاكرة كافية. افحص logs عند الفشل. لا تجعل HTTP أو queue الافتراضي يشغّلان Rembg بشكل متزامن.
+مهم: أنشأنا اتصال طابور menu_cutouts مستقل على نفس جدول jobs مع retry_after لا يقل عن 600 ثانية لتجنّب تكرار مهام AI الطويلة. شغّل عاملاً واحداً في البداية، وخذ بالحسبان استهلاك الذاكرة أثناء تشغيل النموذج. لا تجعل HTTP أو queue الافتراضي يشغّلان Rembg بشكل متزامن.
 
 ## أوامر الإدارة
 

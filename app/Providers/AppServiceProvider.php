@@ -24,6 +24,24 @@ class AppServiceProvider extends ServiceProvider
 {
        public function register(): void
 {
+    // Dedicated queue connection: the AI inference job can legitimately run
+    // longer than a normal notification without being picked twice.
+    if (config('menu_cutouts.enabled', false)) {
+        $databaseQueue = (array) config('queue.connections.database', []);
+        config([
+            'queue.connections.menu_cutouts' => array_replace([
+                'driver' => 'database',
+                'connection' => null,
+                'table' => 'jobs',
+            ], $databaseQueue, [
+                'driver' => 'database',
+                'queue' => 'menu-cutouts',
+                'retry_after' => max(600, (int) config('menu_cutouts.timeout', 360) + 120),
+                'after_commit' => true,
+            ]),
+        ]);
+    }
+
     $this->app->singleton(RestaurantContextService::class, function ($app) {
         return new RestaurantContextService();
     });
