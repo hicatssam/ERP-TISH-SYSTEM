@@ -1,0 +1,221 @@
+/* TISH paper-collage skin, v2 — customer-facing pages ONLY.
+ * Product data, totals, fulfillment, payments, and order status remain server driven.
+ * The body.tish-paper opt-in isolates this skin from admin/POS and other clients.
+ */
+:root{--tish-paper-red:#a91f17;--tish-paper-ink:#252525;--tish-paper-ivory:#f3eee6;--tish-paper-muted:#62584f;--tish-paper-green:#257d35}
+body.tish-paper{
+ --primary:var(--tish-paper-red);--on-primary:#fff8ed;--text:var(--tish-paper-ink);
+ --muted:var(--tish-paper-muted);--bg:var(--tish-paper-ivory);
+ --surface:#f9eddd;--line:#d9c9b4;--accent:#cf9d73;
+ background:var(--tish-paper-ivory) url('../../tish-paper/paper/background.webp') center top / 540px auto repeat!important;
+ color:var(--tish-paper-ink);font-family:'Noto Sans Arabic',Cairo,Tajawal,'Segoe UI',Arial,sans-serif;
+ text-rendering:optimizeLegibility;overflow-x:hidden;
+}
+body.tish-paper::before{content:'';position:absolute;pointer-events:none;left:0;right:0;top:0;height:29px;background:url('../../tish-paper/decor/red-torn-top.svg') center top/100% 100% no-repeat;z-index:6}
+body.tish-paper .app{background:transparent!important}
+body.tish-paper .shell{width:min(100% - 24px,920px);max-width:920px}
+body.tish-paper .menu-area{padding-top:12px;padding-bottom:calc(128px + env(safe-area-inset-bottom,0px));background:transparent!important}
+body.tish-paper a{text-decoration:none}
+body.tish-paper :is(button,a,input,select,textarea):focus-visible{outline:3px solid var(--tish-paper-red)!important;outline-offset:3px}
+body.tish-paper :is(button,a){-webkit-tap-highlight-color:transparent}
+body.tish-paper :is(button,[role="button"]){touch-action:manipulation}
+body.tish-paper .cm-brand-watermark{display:none!important}
+/* Headers: texture, logo disc, strong typography and paper controls */
+body.tish-paper.reference-home .reference-masthead{height:auto!important;min-height:0!important;padding:14px 12px 17px;margin-top:6px;border-radius:0;background:transparent!important;box-shadow:none!important;overflow:visible}
+body.tish-paper.reference-home .reference-masthead::before{content:'';position:absolute;pointer-events:none;top:0;left:-15px;width:125px;height:135px;background:url('../../tish-paper/decor/halftone.svg') center/contain no-repeat;z-index:-1}
+body.tish-paper.reference-home .reference-masthead-image{display:none}
+body.tish-paper .reference-header{padding:10px 0 4px}
+body.tish-paper .reference-header-row{gap:8px;min-height:72px}
+body.tish-paper .reference-brand{flex:1;gap:12px}
+body.tish-paper .reference-logo-square{display:grid!important;place-items:center;width:70px!important;height:70px!important;flex:0 0 70px;overflow:visible!important;background:url('../../tish-paper/paper/logo-disc.webp') center/contain no-repeat!important;border:0!important;box-shadow:none!important;border-radius:50%!important;padding:9px}
+body.tish-paper .reference-logo-square .reference-client-logo{display:block;max-width:100%;max-height:100%;width:100%;height:100%;object-fit:contain;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:0}
+body.tish-paper .reference-branch{color:var(--tish-paper-ink);font-size:.84rem;white-space:normal;line-height:1.35;font-weight:900}
+body.tish-paper .reference-actions{gap:7px;align-items:center}
+body.tish-paper :is(.icon-btn,.filter-square,.page-back,.close-btn,.back){background:url('../../tish-paper/paper/favorite-disc.webp') center/100% 100% no-repeat!important;color:var(--tish-paper-red)!important;border:0!important;border-radius:50%!important;box-shadow:0 5px 10px #3827181c!important;width:49px;height:49px;min-width:44px;display:inline-grid;place-items:center}
+body.tish-paper .reference-actions .icon-btn{width:47px;height:47px}
+body.tish-paper .badge,body.tish-paper .nav-badge{background:var(--tish-paper-red)!important;color:white!important;border:2px solid #fff4e6!important;border-radius:100px!important;font-weight:900;box-shadow:0 2px 4px #2a0a0826}
+body.tish-paper .cm-language-switch{border:0!important;border-radius:5px!important;background:url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;box-shadow:none!important;color:var(--tish-paper-ink)!important;padding:12px 18px;min-height:43px;font-weight:900}
+body.tish-paper .reference-home .cm-language-switch{margin-inline-start:0}
+/* London branding composition — real independent art assets, never a flattened UI. */
+body.tish-paper .tish-paper-brand-hero{position:relative;display:flex;align-items:center;justify-content:space-between;direction:ltr;gap:8px;margin:8px 0 15px;min-height:156px;background:linear-gradient(180deg,transparent 70%,#a91f1722 90%,transparent);overflow:visible}
+body.tish-paper .tish-paper-brand-hero .paper-booth{width:27%;max-width:125px;max-height:180px;object-fit:contain;filter:drop-shadow(1px 6px 1px #2d222655)}
+body.tish-paper .tish-paper-brand-hero .paper-claim{width:26%;max-width:160px;object-fit:contain;transform:rotate(-6deg);filter:drop-shadow(1px 4px 3px #2d222628)}
+body.tish-paper .tish-paper-brand-hero .paper-stamp{width:42%;max-width:250px;object-fit:contain;filter:drop-shadow(0 7px 3px #312c2b55)}
+body.tish-paper .tish-paper-brand-hero::before{content:'';position:absolute;left:0;right:0;bottom:0;height:8px;background:linear-gradient(90deg,transparent,#211f1d66,transparent);filter:blur(5px);z-index:-1}
+body.tish-paper .tools{display:flex;flex-direction:row;gap:11px;margin:13px 0 16px}
+body.tish-paper .search{min-width:0;flex:1}
+body.tish-paper .search input{width:100%;height:60px!important;min-height:60px;background:url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;border:0!important;border-radius:0!important;box-shadow:0 5px 6px #45321f25!important;color:var(--tish-paper-ink)!important;padding-inline:52px 20px;font-size:1rem}
+body.tish-paper .search i{color:var(--tish-paper-ink)!important}
+body.tish-paper .filter-square{height:60px!important;width:60px!important;font-size:1.17rem}
+body.tish-paper .reference-greeting{margin:15px 0 18px!important;background:url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat;padding:15px 24px!important;text-align:start;box-shadow:0 7px 8px #54382222;border:0!important;border-radius:0!important}
+body.tish-paper .reference-greeting h1{font-size:clamp(1.35rem,4.2vw,1.95rem)!important;font-weight:900;letter-spacing:0;line-height:1.5}
+body.tish-paper .reference-greeting p{font-size:.91rem!important;margin:3px 0 0;color:var(--tish-paper-muted)!important}
+body.tish-paper .reference-greeting .reference-welcome-tagline{font-style:italic;color:var(--tish-paper-red)!important}
+/* Category icon discs: paper, red ink, red paper selection */
+body.tish-paper .reference-section{margin-top:23px}
+body.tish-paper .reference-section-head{gap:8px;align-items:center;margin-bottom:14px}
+body.tish-paper .reference-section-head h2,body.tish-paper .section-title h2{color:var(--tish-paper-ink);font-size:clamp(1.3rem,4.8vw,1.85rem);font-weight:900;line-height:1.4}
+body.tish-paper .reference-section-head p{color:var(--tish-paper-muted);font-size:.82rem;margin-top:0}
+body.tish-paper .reference-see-all{border:0!important;box-shadow:0 5px 6px #41231f1e;background:url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;color:var(--tish-paper-red)!important;border-radius:0!important;padding:14px 22px;min-height:49px;font-weight:900}
+body.tish-paper .categories{align-items:start;gap:7px;scrollbar-width:none;padding:12px 2px 12px;scroll-snap-type:x mandatory}
+body.tish-paper .categories::-webkit-scrollbar{display:none}
+body.tish-paper .cat{background:none!important;border:0!important;box-shadow:none!important;width:94px;min-width:94px;min-height:123px;padding:3px 2px;display:flex;align-items:center;flex-direction:column;gap:4px;color:var(--tish-paper-ink)!important}
+body.tish-paper .cat .cat-visual,body.tish-paper .cat[data-cat="all"]::before,body.tish-paper .categories .cat>img{display:grid;place-items:center;background:url('../../tish-paper/paper/product-disc.webp') center/100% 100% no-repeat!important;border:0!important;border-radius:50%!important;width:76px;height:76px;box-shadow:none!important;outline:0!important;color:var(--tish-paper-red)!important;font-size:1.35rem;overflow:hidden;object-fit:contain;padding:9px}
+body.tish-paper .cat[data-cat="all"]::before{content:'✦';font-size:1.7rem;color:var(--tish-paper-red)}
+body.tish-paper .cat.active :is(.cat-visual,img),body.tish-paper .cat.active[data-cat="all"]::before{background:url('../../tish-paper/paper/nav-active.webp') center/100% 100% no-repeat!important;color:white!important;transform:none!important}
+body.tish-paper .cat.active i{color:#fff!important}
+body.tish-paper .cat b{color:var(--tish-paper-ink)!important;font-size:.82rem!important;font-weight:900;max-width:none}
+body.tish-paper .cat.active b{color:var(--tish-paper-red)!important}
+/* Featured paper hero: keeps banners and their admin-managed links intact. */
+body.tish-paper .tish-paper-food-promo{position:relative;display:flex;align-items:center;justify-content:center;min-height:206px;padding:14px 15px 8px;overflow:hidden;background:url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat;filter:drop-shadow(0 7px 5px #6d472b35)}
+body.tish-paper .tish-paper-food-promo img{width:65%;max-width:365px;object-fit:contain;filter:drop-shadow(0 5px 1px #2d251c55)}
+body.tish-paper .tish-paper-food-promo :is(a,button){position:absolute;right:2%;top:17%;width:27%;min-height:80px;display:grid;place-items:center;text-align:center;color:#fff;line-height:1.3;font-size:1.02rem;font-weight:900;background:url('../../tish-paper/paper/nav-active.webp') center/100% 100% no-repeat;transform:rotate(6deg);border:0;cursor:pointer;font-family:inherit;padding:10px 8px}
+body.tish-paper .reference-hero{border-radius:0!important;background:#ead2b9;overflow:hidden;box-shadow:0 5px 15px #5134253d;clip-path:polygon(0 2%,3% 0,7% 2%,11% 0,18% 1%,23% 0,30% 2%,40% 0,51% 2%,62% 0,70% 1%,82% 0,93% 2%,100% 0,100% 96%,95% 100%,85% 98%,70% 100%,56% 98%,42% 100%,32% 98%,17% 100%,5% 98%,0 100%)}
+body.tish-paper .banner-copy .tag{border-radius:0;background:var(--tish-paper-red)}
+body.tish-paper .banner-cta{background:var(--tish-paper-red);border-radius:0;padding:9px 14px}
+/* Product artwork: data-driven photos on circular paper, paper prices, true accessible actions. */
+body.tish-paper :is(#productGrid,.catalog-section .grid){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 9px;align-items:start}
+body.tish-paper .product{position:relative;display:flex!important;flex-direction:column;min-width:0;overflow:visible!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;transform:none!important;padding:4px 3px 11px;isolation:isolate}
+body.tish-paper .product::before{content:'';position:absolute;inset:0 0 7px;background:url('../../tish-paper/paper/product-disc.webp') center/100% 100% no-repeat;z-index:-1;filter:drop-shadow(0 6px 3px #442f2338)}
+body.tish-paper .product-media{width:82%;aspect-ratio:1/.83!important;height:auto!important;min-height:0!important;position:relative;display:grid;place-items:center;margin:4% auto 0;background:transparent!important;border:0!important;border-radius:0!important;overflow:visible!important}
+body.tish-paper .product-media img{position:relative;width:100%;height:100%;padding:3px!important;max-height:205px;object-fit:contain!important;background:transparent!important;border-radius:0!important;filter:drop-shadow(0 4px 2px #35231555)}
+body.tish-paper .product-status,body.tish-paper .product-ribbon{position:absolute;z-index:3;top:8px;right:0;left:auto;min-width:53px;display:inline-flex;justify-content:center;align-items:center;white-space:nowrap;padding:6px 11px!important;border:0!important;border-radius:0!important;background:url('../../tish-paper/paper/availability-green.webp') center/100% 100% no-repeat!important;box-shadow:none!important;color:#f5ffed!important;font-size:.6rem!important;font-weight:900}
+body.tish-paper .product-status.is-unavailable{background-image:url('../../tish-paper/paper/price-ticket.webp')!important}
+body.tish-paper .product-ribbon{background-image:url('../../tish-paper/paper/price-ticket.webp')!important}
+body.tish-paper .product .fav{position:absolute;z-index:5;left:2%;top:10%;display:grid;place-items:center;width:45px!important;height:45px!important;min-width:44px;min-height:44px;background:url('../../tish-paper/paper/favorite-disc.webp') center/100% 100% no-repeat!important;border:0!important;border-radius:50%!important;box-shadow:none!important;color:var(--tish-paper-red)!important;font-size:1rem}
+body.tish-paper .product-body{display:flex;flex-direction:column;flex:1;gap:3px;padding:2px 9px 12px!important;background:transparent!important;border:0!important;box-shadow:none!important;min-height:0}
+body.tish-paper .product-copy{text-align:center;color:var(--tish-paper-ink)!important}
+body.tish-paper .product h3{font-size:clamp(.86rem,3vw,1.02rem)!important;font-weight:900;line-height:1.35;min-height:2.7em;margin:0 auto}
+body.tish-paper .product-desc{font-size:.67rem!important;color:var(--tish-paper-muted)!important;margin:0 auto 3px!important;min-height:0!important;line-height:1.3;max-height:2.6em;overflow:hidden;text-align:center}
+body.tish-paper .product-foot{display:flex;flex-direction:column;gap:5px;justify-content:center;align-items:center;margin-top:auto}
+body.tish-paper .product-price-row{background:url('../../tish-paper/paper/price-ticket.webp') center/100% 100% no-repeat!important;min-width:78%;min-height:42px;display:grid;place-items:center;padding:8px 18px;border:0!important;box-shadow:none!important}
+body.tish-paper .product-price-row .price{color:#fff4e7!important;font-variant-numeric:tabular-nums;font-size:1.02rem!important;font-weight:900;white-space:nowrap}
+body.tish-paper .details{border:0!important;border-radius:100px!important;background:var(--tish-paper-red)!important;color:white!important;min-height:44px;font-weight:900;box-shadow:0 3px 5px #76191233}
+body.tish-paper .details[disabled]{background:#8f8880!important;color:#fff}
+/* All-product page / filters */
+body.tish-paper .page-head{padding:11px 2px 14px;min-height:83px;display:flex;gap:10px;align-items:center}
+body.tish-paper .page-head h1{font-weight:900;font-size:clamp(1.13rem,4vw,1.48rem)}
+body.tish-paper .page-head p{margin:3px 0 0;color:var(--tish-paper-muted);font-size:.78rem}
+body.tish-paper .page-head>a:last-child{background:url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;border:0!important;padding:11px 15px;color:var(--tish-paper-red)!important;font-weight:900;white-space:nowrap}
+body.tish-paper .tish-paper-sublogo{width:65px;height:65px;flex:0 0 65px;display:grid;place-items:center;background:url('../../tish-paper/paper/logo-disc.webp') center/100% 100% no-repeat!important;padding:10px}
+body.tish-paper .tish-paper-sublogo img{object-fit:contain;max-width:100%;max-height:100%}
+body.tish-paper .section-title{margin:18px 0 10px}
+body.tish-paper .filter-sheet{border-radius:16px 16px 0 0;background:var(--tish-paper-ivory) url('../../tish-paper/paper/background.webp') center/540px auto repeat}
+body.tish-paper :is(.chip,.filter-apply){border-radius:0!important}
+/* Favorites screenshot: horizontal irregular paper rows, source data and actions unchanged */
+body.tish-paper #favoritesItems{display:grid;gap:16px}
+body.tish-paper .fav-row{display:grid;grid-template-columns:110px minmax(0,1fr);grid-template-areas:'thumb copy' 'thumb actions';align-items:center;gap:2px 12px;padding:17px 13px;min-height:155px;border:0!important;border-radius:0!important;box-shadow:0 7px 8px #53382825!important;background:url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important}
+body.tish-paper .fav-row .fav-thumb{grid-area:thumb;width:110px;height:110px;display:grid;place-items:center;background:url('../../tish-paper/paper/product-disc.webp') center/100% 100% no-repeat;border-radius:50%!important;padding:11px}
+body.tish-paper .fav-row .fav-thumb img{width:100%;height:100%;object-fit:contain;border-radius:0!important;background:transparent!important}
+body.tish-paper .fav-row .row-copy{grid-area:copy;display:flex;flex-direction:column;gap:7px;text-align:start;min-width:0;align-self:end}
+body.tish-paper .fav-row .row-copy strong{font-size:1rem;font-weight:900;line-height:1.35}
+body.tish-paper .fav-row .row-copy small{color:#fff4e6!important;font-size:1rem;font-weight:900;display:inline-grid;place-items:center;align-self:flex-start;min-width:95px;min-height:40px;padding:6px 16px;background:url('../../tish-paper/paper/price-ticket.webp') center/100% 100% no-repeat}
+body.tish-paper .fav-row .row-actions{grid-area:actions;justify-content:flex-start;display:flex;gap:6px;align-self:start}
+body.tish-paper .fav-row .row-actions :is(a,button){display:grid;place-items:center;min-width:44px;width:44px;height:44px;background:url('../../tish-paper/paper/favorite-disc.webp') center/100% 100% no-repeat!important;border:0!important;color:var(--tish-paper-red)!important;font-size:1rem}
+body.tish-paper .empty{margin:20px auto;padding:65px 18px!important;max-width:500px;background:url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;color:var(--tish-paper-ink);text-align:center;font-weight:900}
+body.tish-paper .empty a{display:inline-grid;place-items:center;padding:12px 24px;margin-top:14px;min-height:44px;background:url('../../tish-paper/paper/price-ticket.webp') center/100% 100% no-repeat;color:white!important}
+/* Cart: no fake quantity or pricing; existing CM engine updates all totals. */
+body.tish-paper #cartItems{display:grid;gap:12px}
+body.tish-paper .cart-row{border:0!important;border-radius:0!important;background:url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;box-shadow:0 5px 8px #51332224!important;padding:18px 14px;grid-template-columns:76px 1fr auto;gap:7px}
+body.tish-paper .cart-thumb{border-radius:50%!important;background:url('../../tish-paper/paper/product-disc.webp') center/100% 100% no-repeat!important;overflow:hidden;display:grid;place-items:center;padding:5px}
+body.tish-paper .cart-thumb img{width:100%;height:100%;object-fit:contain!important;background:transparent!important;border:0!important}
+body.tish-paper .row-copy strong{font-weight:900}
+body.tish-paper .cart-row .row-copy small{color:var(--tish-paper-red)!important;font-weight:900}
+body.tish-paper .row-actions :is(button,a){display:grid;place-items:center;width:44px;min-width:44px;height:44px;border-radius:50%!important;border:0!important;background:url('../../tish-paper/paper/favorite-disc.webp') center/100% 100% no-repeat!important;color:var(--tish-paper-red)!important}
+body.tish-paper #cartItems .empty::before{content:'';display:block;width:118px;height:118px;margin:-10px auto 16px;background:url('../../tish-paper/paper/product-disc.webp') center/100% 100% no-repeat}
+body.tish-paper .order-summary{border:0!important;border-radius:0!important;background:url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;box-shadow:0 6px 10px #51332125!important;padding:25px 22px;margin-top:18px}
+body.tish-paper .summary-row{border-bottom:1px dashed #b6a28d;padding-bottom:12px}
+body.tish-paper .cart-total{font-size:1.2rem;font-weight:900;padding-top:12px}
+body.tish-paper .cart-note{color:var(--tish-paper-muted);font-size:.79rem;line-height:1.6}
+body.tish-paper .checkout-start{width:100%;border:0!important;border-radius:0!important;color:white!important;background:url('../../tish-paper/paper/price-ticket.webp') center/100% 100% no-repeat!important;font-size:1.2rem;font-weight:900;min-height:64px;margin-top:15px}
+body.tish-paper .checkout-start:disabled{filter:grayscale(1);opacity:.56}
+/* Checkout & product detail retain actual input names and variant/modifier logic. */
+body.tish-paper :is(.detail-body,.payment-card,.option-row,.checkout-grid :is(input,textarea,select)){background-color:#f9eee0!important;border-color:#d7bea5!important;box-shadow:0 3px 9px #7659411b!important}
+body.tish-paper :is(.add-detail,.submit-order,.filter-apply){background:var(--tish-paper-red)!important;color:white!important}
+/* My Orders — uses the real local device order list + its status refresh. */
+body.tish-paper.cm-my-orders .topbar,body.tish-paper.tish-paper-track .topbar{position:relative!important;background:transparent!important;border:0!important;backdrop-filter:none!important;box-shadow:none!important;margin-top:8px}
+body.tish-paper.cm-my-orders .brand img,body.tish-paper.tish-paper-track .brand img{width:65px;height:65px;object-fit:contain;padding:7px;background:url('../../tish-paper/paper/logo-disc.webp') center/100% 100% no-repeat}
+body.tish-paper.cm-my-orders .brand b,body.tish-paper.tish-paper-track .brand b{font-size:1.1rem;font-weight:900}
+body.tish-paper.cm-my-orders .titleRow h1{font-size:clamp(2rem,6.8vw,2.7rem);font-weight:900;margin-bottom:5px}
+body.tish-paper.cm-my-orders .titleRow p{font-size:1rem;color:var(--tish-paper-muted)}
+body.tish-paper.cm-my-orders .order{display:flex;gap:11px;border:0!important;border-radius:0!important;box-shadow:0 7px 8px #5436222c!important;background:url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;padding:24px 16px!important;min-height:130px}
+body.tish-paper.cm-my-orders .orderIcon{width:52px;height:52px;border-radius:50%;background:url('../../tish-paper/paper/favorite-disc.webp') center/100% 100% no-repeat;color:var(--tish-paper-red)!important;font-size:1.65rem}
+body.tish-paper.cm-my-orders .orderInfo strong{font-weight:900;color:var(--tish-paper-ink);font-size:1rem}
+body.tish-paper.cm-my-orders .orderStatus[data-state="ready"],body.tish-paper.cm-my-orders .orderStatus[data-state="completed"]{display:inline-block;max-width:max-content;background:url('../../tish-paper/paper/availability-green.webp') center/100% 100% no-repeat;color:white!important;padding:5px 16px;font-weight:900}
+body.tish-paper.cm-my-orders .arrow{color:var(--tish-paper-red)!important;background:none!important;border:0!important}
+/* Tracking: stage statuses are never inferred from payment; server remains source. */
+body.tish-paper.tish-paper-track .wrap{width:min(850px,calc(100% - 24px))}
+body.tish-paper.tish-paper-track .card{border:0!important;border-radius:0!important;background:var(--tish-paper-ivory) url('../../tish-paper/paper/background.webp') center/540px auto repeat!important;box-shadow:0 9px 16px #50362838!important;padding:clamp(20px,4vw,34px);clip-path:polygon(0 1%,5% 0,10% 1%,15% 0,24% 1%,32% 0,46% 1%,53% 0,65% 1%,74% 0,86% 1%,92% 0,100% 1%,100% 99%,92% 100%,81% 99%,68% 100%,55% 99%,43% 100%,32% 99%,21% 100%,9% 99%,0 100%)}
+body.tish-paper.tish-paper-track .orderHead{border-bottom:0;flex-wrap:wrap;gap:9px}
+body.tish-paper.tish-paper-track .eyebrow{font-size:1.02rem;color:var(--tish-paper-ink);font-weight:900}
+body.tish-paper.tish-paper-track .orderHead h1{font-size:clamp(1.45rem,5.2vw,2.15rem);font-weight:900;overflow-wrap:anywhere;direction:ltr;text-align:right}
+body.tish-paper.tish-paper-track .status{background:url('../../tish-paper/paper/availability-green.webp') center/100% 100% no-repeat!important;border-radius:0!important;padding:12px 22px;color:#fff!important;font-weight:900;white-space:normal}
+body.tish-paper.tish-paper-track .statusDot{background:#fff}
+body.tish-paper.tish-paper-track .progressItem .dot{background:url('../../tish-paper/paper/favorite-disc.webp') center/100% 100% no-repeat!important;border:0!important;color:var(--tish-paper-red)!important;width:52px;height:52px}
+body.tish-paper.tish-paper-track .progressItem.on .dot{background:url('../../tish-paper/paper/nav-active.webp') center/100% 100% no-repeat!important;color:#fff!important}
+body.tish-paper.tish-paper-track .progressItem{font-size:.7rem;color:var(--tish-paper-ink);font-weight:900}
+body.tish-paper.tish-paper-track .progressLine::before{background:var(--tish-paper-ink);height:2px;top:25px}
+body.tish-paper.tish-paper-track .paymentSummary{border:0!important;border-radius:0!important;background:url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;box-shadow:0 6px 7px #573b2326!important;padding:18px 16px}
+body.tish-paper.tish-paper-track .paymentSummaryIcon{background:url('../../tish-paper/paper/favorite-disc.webp') center/100% 100% no-repeat;color:var(--tish-paper-red)}
+body.tish-paper.tish-paper-track #paymentBadge[data-payment-state="paid"]{background:url('../../tish-paper/paper/availability-green.webp') center/100% 100% no-repeat!important;color:white!important}
+body.tish-paper.tish-paper-track #paymentBadge:not([data-payment-state="paid"]){background:#eadcca;color:#6b3c19}
+body.tish-paper.tish-paper-track .notice.show,body.tish-paper.tish-paper-track .customer-status-alert.show{border-radius:0;background:#f7d6d0;color:#922017}
+body.tish-paper.tish-paper-track .customer-alert-controls button{border:2px solid var(--tish-paper-red);border-radius:0!important;background:url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;color:var(--tish-paper-red)!important;font-weight:900;font-family:inherit;min-height:50px}
+body.tish-paper.tish-paper-track .sectionTitle{margin-top:22px}
+body.tish-paper.tish-paper-track .sectionTitle h2{font-size:1.35rem;font-weight:900}
+body.tish-paper.tish-paper-track .item b,body.tish-paper.tish-paper-track .total span:last-child{color:var(--tish-paper-red)}
+body.tish-paper.tish-paper-track .total{font-size:1.25rem}
+body.tish-paper.tish-paper-track .footerActions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+body.tish-paper.tish-paper-track .footerActions .action{border:0!important;border-radius:0!important;display:grid;place-items:center;background:url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat;color:var(--tish-paper-ink);min-height:55px;padding:10px 12px}
+body.tish-paper.tish-paper-track .footerActions .action.primary{background-image:url('../../tish-paper/paper/price-ticket.webp');color:white}
+/* Dark torn-paper fixed nav, exact working destinations and existing badge IDs. */
+body.tish-paper .bottom-nav{direction:rtl!important;position:fixed;z-index:50;bottom:0;right:0;left:0;width:min(100%,980px);margin:0 auto;min-height:calc(84px + env(safe-area-inset-bottom,0px));height:auto!important;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:stretch;padding:8px 5px calc(7px + env(safe-area-inset-bottom,0px));border:0!important;border-radius:0!important;background:#242322 url('../../tish-paper/decor/nav-background.svg') center/100% 100% no-repeat!important;box-shadow:0 -3px 18px #1a110d30}
+body.tish-paper .bottom-nav .nav-btn{position:relative;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:3px;height:65px!important;min-width:0;padding:4px 1px;color:#f4e7d8!important;border:0!important;border-radius:0!important;background:transparent!important;font-size:.66rem;font-weight:900;line-height:1.3}
+body.tish-paper .bottom-nav .nav-btn.active{background:url('../../tish-paper/paper/nav-active.webp') center/100% 100% no-repeat!important;color:#fff!important}
+body.tish-paper .bottom-nav .nav-btn i{display:none!important}
+body.tish-paper .bottom-nav .nav-btn .tish-paper-nav-icon{display:block!important;object-fit:contain;width:28px;height:28px;max-height:28px;filter:none!important;transform:none!important;background:none!important;padding:0!important;border:0!important;border-radius:0!important}
+body.tish-paper .bottom-nav .nav-btn>span{color:inherit!important;line-height:1.45;white-space:nowrap}
+body.tish-paper .bottom-nav .nav-badge{position:absolute;top:-1px;right:calc(50% - 26px);z-index:2;min-width:19px;height:19px;padding-inline:3px;font-size:.65rem;display:grid;place-items:center}
+body.tish-paper .cm-sticky-cart:not([hidden]){bottom:calc(93px + env(safe-area-inset-bottom,0px));z-index:46;border-radius:3px!important}
+body.tish-paper #pwaInstallBtn{bottom:calc(162px + env(safe-area-inset-bottom,0px));z-index:40;background:var(--tish-paper-red)!important}
+@media(min-width:700px){
+ body.tish-paper .bottom-nav{width:min(100%,920px);border-left:1px solid #443b36!important;border-right:1px solid #443b36!important}
+ body.tish-paper .bottom-nav .nav-btn{font-size:.82rem}
+ body.tish-paper :is(#productGrid,.catalog-section .grid){grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 18px}
+ body.tish-paper .product .product-media img{max-height:255px}
+ body.tish-paper .reference-masthead .tish-paper-brand-hero{max-width:550px;margin-inline:auto}
+}
+@media(max-width:530px){
+ body.tish-paper .shell{width:calc(100% - 19px)}
+ body.tish-paper .page-head{gap:6px}
+ body.tish-paper .page-head h1{font-size:1.1rem}
+ body.tish-paper .tish-paper-sublogo{width:56px;height:56px;flex-basis:56px}
+ body.tish-paper .reference-branch{font-size:.72rem}
+ body.tish-paper .reference-logo-square{width:58px!important;height:58px!important;flex-basis:58px}
+ body.tish-paper .reference-actions .icon-btn{width:43px;height:43px}
+ body.tish-paper .tish-paper-brand-hero{min-height:125px!important}
+ body.tish-paper .tish-paper-brand-hero .paper-booth{max-height:140px}
+ body.tish-paper .cat{width:78px;min-width:78px}
+ body.tish-paper .cat .cat-visual,body.tish-paper .cat[data-cat="all"]::before,body.tish-paper .cat>img{width:66px;height:66px}
+ body.tish-paper .product-body{padding-inline:6px!important}
+ body.tish-paper .product-media{width:88%}
+ body.tish-paper .product h3{font-size:.81rem!important}
+ body.tish-paper .product-price-row{min-height:37px}
+ body.tish-paper .product-price-row .price{font-size:.86rem!important}
+ body.tish-paper .product .fav{width:44px!important;height:44px!important;left:0}
+ body.tish-paper .product-status,body.tish-paper .product-ribbon{font-size:.55rem!important;right:0}
+ body.tish-paper .details{font-size:.72rem;min-height:44px}
+ body.tish-paper .fav-row{grid-template-columns:96px minmax(0,1fr);gap:2px 7px;padding:13px 8px;min-height:138px}
+ body.tish-paper .fav-row .fav-thumb{width:96px;height:96px}
+ body.tish-paper .fav-row .row-copy strong{font-size:.89rem}
+ body.tish-paper .fav-row .row-actions :is(a,button){min-width:44px;width:44px;height:44px}
+ body.tish-paper .cart-row{grid-template-columns:65px minmax(0,1fr)!important}
+ body.tish-paper .cart-row .row-actions{grid-column:2}
+ body.tish-paper .bottom-nav .nav-btn{font-size:.64rem}
+ body.tish-paper.tish-paper-track .footerActions{grid-template-columns:1fr}
+ body.tish-paper.tish-paper-track .progressItem .dot{width:40px;height:40px}
+ body.tish-paper.tish-paper-track .progressLine::before{top:19px}
+}
+@media(max-width:350px){body.tish-paper .bottom-nav .nav-btn{font-size:.57rem}body.tish-paper .bottom-nav .nav-btn .tish-paper-nav-icon{width:24px;height:24px}body.tish-paper .fav-row .row-actions{gap:0}body.tish-paper .reference-logo-square{width:50px!important;height:50px!important;flex-basis:50px}}
+@media(prefers-reduced-motion:reduce){body.tish-paper *,body.tish-paper *::before,body.tish-paper *::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+@media print{body.tish-paper::before,body.tish-paper .bottom-nav{display:none!important}body.tish-paper{background:white!important}}
