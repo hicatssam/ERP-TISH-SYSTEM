@@ -327,8 +327,6 @@ html.cm-skip-menu-intro #intro{display:none!important}
     </article>
    @endif
   </section>
-  @endif
-
   @else
   <div class="tish-paper-brand-hero" aria-label="Tish — Hear it, Feel it">
     <img class="paper-booth" src="{{ asset('assets/tish-paper/brand/telephone.webp') }}" alt="" loading="eager">

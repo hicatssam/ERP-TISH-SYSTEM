@@ -223,3 +223,146 @@ body.tish-paper #pwaInstallBtn{bottom:calc(162px + env(safe-area-inset-bottom,0p
 @media(max-width:350px){body.tish-paper .bottom-nav .nav-btn{font-size:.57rem}body.tish-paper .bottom-nav .nav-btn .tish-paper-nav-icon{width:24px;height:24px}body.tish-paper .fav-row .row-actions{gap:0}body.tish-paper .reference-logo-square{width:50px!important;height:50px!important;flex-basis:50px}}
 @media(prefers-reduced-motion:reduce){body.tish-paper *,body.tish-paper *::before,body.tish-paper *::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 @media print{body.tish-paper::before,body.tish-paper .bottom-nav{display:none!important}body.tish-paper{background:white!important}}
+
+
+
+/* ========== Top campaigns, no lower decorative advert ========== */
+/* The images and URLs are taken from the existing ERP menu-banner settings. */
+body.tish-paper.reference-home .reference-masthead .tish-paper-top-ads {
+ margin:10px auto 18px!important;width:100%;max-width:850px;
+ border:0!important;border-radius:0!important;isolation:isolate;
+ clip-path:polygon(0 2%,4% 0,12% 1%,24% 0,36% 1%,52% 0,66% 2%,80% 0,92% 2%,100% 0,100% 98%,91% 100%,78% 98%,64% 100%,48% 98%,32% 100%,17% 98%,4% 100%,0 97%);
+ box-shadow:0 12px 22px #432d232c!important;
+ background:var(--tish-paper-ivory)!important;
+}
+body.tish-paper.reference-home .tish-paper-top-ads .banner-track {
+ width:100%;background:var(--tish-paper-ivory);
+}
+body.tish-paper.reference-home .tish-paper-top-ads .banner-slide {
+ position:relative;aspect-ratio:2.65/1;min-height:160px;
+ background:var(--tish-paper-ivory)!important;direction:rtl;
+}
+body.tish-paper.reference-home .tish-paper-top-ads .banner-slide img {
+ display:block;width:100%;height:100%;object-fit:cover;
+}
+body.tish-paper.reference-home .tish-paper-top-ads .banner-slide::after {display:none!important}
+body.tish-paper.reference-home .tish-paper-top-ads .banner-copy {
+ position:absolute;inset:auto 0 0 0;max-width:none;
+ display:flex;align-items:flex-start;justify-content:flex-end;
+ padding:clamp(8px,2.8vw,24px);gap:5px;
+ color:#fff;z-index:2;pointer-events:none;
+ background:linear-gradient(0deg,#2c1816e8 0%,#2c1816a0 55%,transparent 100%);
+}
+body.tish-paper.reference-home .tish-paper-top-ads .banner-copy :is(h2,p){margin:0;color:#fff;line-height:1.4}
+body.tish-paper.reference-home .tish-paper-top-ads .banner-copy h2{font-size:clamp(.97rem,3.4vw,1.55rem)}
+body.tish-paper.reference-home .tish-paper-top-ads .banner-copy p{font-size:clamp(.73rem,2.2vw,.95rem)}
+body.tish-paper.reference-home .tish-paper-top-ads .banner-cta {display:none!important}
+body.tish-paper.reference-home .tish-paper-top-ads .banner-dots {
+ display:flex;justify-content:center;gap:7px;
+ background:var(--tish-paper-ivory);padding:8px 0 12px;
+}
+body.tish-paper.reference-home .tish-paper-top-ads .banner-dots button {
+ width:10px;height:10px;background:#b9a493;border:0;border-radius:50%;padding:0;
+}
+body.tish-paper.reference-home .tish-paper-top-ads .banner-dots button.active {
+ width:26px;border-radius:99px;background:var(--tish-paper-red);
+}
+body.tish-paper.reference-home .tish-paper-top-ads .tish-paper-cover-banner {
+ min-height:170px;aspect-ratio:2.65/1;background-position:center!important;
+}
+/* Remove the former lower large food-promo from new Tish pages. */
+body.tish-paper .tish-paper-food-promo {display:none!important}
+
+/* ========== All products: London paper collage hero and torn category tabs ========== */
+body.tish-paper.tish-paper-products .menu-area {padding-top:4px}
+body.tish-paper.tish-paper-products .page-head {min-height:65px;padding:9px 3px}
+body.tish-paper.tish-paper-products .page-head .tish-paper-sublogo {display:none!important}
+body.tish-paper.tish-paper-products .page-head h1{font-size:.9rem!important}
+body.tish-paper.tish-paper-products .page-head p{font-size:.73rem!important}
+body.tish-paper.tish-paper-products .tish-paper-products-header{
+ position:relative;padding:10px 5px 7px;margin:3px 0 10px;
+ background:transparent;
+}
+body.tish-paper.tish-paper-products .tish-paper-products-hero-row {
+ display:flex;direction:ltr;align-items:center;justify-content:space-between;gap:8px;
+}
+body.tish-paper.tish-paper-products .tish-paper-products-brand {
+ display:flex;align-items:center;gap:0;direction:ltr;width:57%;min-width:0;height:155px;
+}
+body.tish-paper.tish-paper-products .tish-paper-products-booth {
+ width:35%;height:100%;object-fit:contain;filter:drop-shadow(0 4px 2px #372b2855);
+}
+body.tish-paper.tish-paper-products .tish-paper-products-slogan {
+ width:64%;height:95px;object-fit:contain;object-position:left center;
+ filter:drop-shadow(0 5px 2px #372b2848);
+}
+body.tish-paper.tish-paper-products .tish-paper-products-logo {
+ width:35%;max-width:230px;height:164px;object-fit:contain;
+ filter:drop-shadow(0 6px 4px #352b2b58);
+}
+body.tish-paper.tish-paper-products .tish-paper-products-title {
+ display:flex;direction:rtl;align-items:center;justify-content:space-between;
+ gap:8px;margin:1px 0 17px;padding:0 6px;
+}
+body.tish-paper.tish-paper-products .tish-paper-products-title h1 {
+ color:var(--tish-paper-ink);font-weight:900;
+ font-size:clamp(1.8rem,6.8vw,3.1rem);line-height:1.32;margin:0;
+}
+body.tish-paper.tish-paper-products .tish-paper-products-pin {
+ border:0!important;color:var(--tish-paper-ink)!important;
+ background:url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;
+ padding:10px 13px;min-height:44px;min-width:103px;white-space:nowrap;
+ font:900 .8rem 'Noto Sans Arabic',Cairo,Tajawal,Arial,sans-serif;
+ box-shadow:none!important;cursor:pointer;
+}
+body.tish-paper.tish-paper-products .tish-paper-products-pin i {
+ color:var(--tish-paper-red);margin-inline-end:4px;
+}
+body.tish-paper.tish-paper-products .tools {display:none!important}
+body.tish-paper.tish-paper-products .categories {
+ display:flex;flex-wrap:nowrap;gap:7px;align-items:center;
+ overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;
+ padding:7px 2px 12px;margin-bottom:9px;
+}
+body.tish-paper.tish-paper-products .categories .cat {
+ display:inline-flex!important;flex:0 0 auto!important;
+ justify-content:center!important;align-items:center!important;
+ width:auto!important;min-width:82px!important;min-height:50px!important;height:auto!important;
+ padding:12px clamp(11px,3vw,23px)!important;
+ border:0!important;border-radius:0!important;
+ background:url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;
+ box-shadow:0 5px 5px #4c302e20!important;
+ text-align:center;scroll-snap-align:center;transform:none!important;
+}
+body.tish-paper.tish-paper-products .categories .cat.active {
+ background-image:url('../../tish-paper/paper/category-red.webp')!important;
+}
+body.tish-paper.tish-paper-products .categories .cat>b {
+ display:block!important;max-width:none!important;color:var(--tish-paper-ink)!important;
+ font-size:clamp(.82rem,2.8vw,1.02rem)!important;font-weight:900;
+ white-space:nowrap;line-height:1.6;
+}
+body.tish-paper.tish-paper-products .categories .cat.active>b {color:#fff!important}
+body.tish-paper.tish-paper-products .categories .cat::before,
+body.tish-paper.tish-paper-products .categories .cat>img,
+body.tish-paper.tish-paper-products .categories .cat .cat-visual {display:none!important;content:none!important}
+body.tish-paper.tish-paper-products .section-title {margin:10px 3px 7px!important}
+body.tish-paper.tish-paper-products .section-title h2 {
+ font-size:1.02rem!important;color:var(--tish-paper-ink)!important;
+}
+body.tish-paper.tish-paper-products .product .details {display:none!important}
+body.tish-paper.tish-paper-products .product-body {padding-bottom:17px!important}
+body.tish-paper.tish-paper-products .product-media {width:86%;margin-top:8%}
+body.tish-paper.tish-paper-products .product-price-row {min-width:74%}
+@media(max-width:530px){
+ body.tish-paper.reference-home .tish-paper-top-ads .banner-slide {aspect-ratio:2/1;min-height:172px}
+ body.tish-paper.tish-paper-products .tish-paper-products-brand {height:117px;width:60%}
+ body.tish-paper.tish-paper-products .tish-paper-products-slogan {height:71px}
+ body.tish-paper.tish-paper-products .tish-paper-products-logo {height:124px;width:36%}
+ body.tish-paper.tish-paper-products .tish-paper-products-title {margin-bottom:9px}
+ body.tish-paper.tish-paper-products .tish-paper-products-pin {font-size:.73rem;min-width:92px;padding:8px}
+ body.tish-paper.tish-paper-products .categories .cat {min-height:49px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ body.tish-paper.reference-home .tish-paper-top-ads .banner-track{transition:none!important}
+}
