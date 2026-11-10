@@ -87,7 +87,7 @@
        <article class="tish-addon-card" <?php if ($addOnIndex >= 2): ?> data-addon-extra hidden <?php endif; ?>>
         <a class="tish-addon-photo" href="{{ route('customer-menu.product.show', [$location->code, $addOn['product_id']]) }}" aria-label="{{ $addOn['name'] }}">
          @if(!empty($addOn['image']))
-          <img src="{{ $addOn['image'] }}" alt="{{ $addOn['name'] }}" loading="lazy" onerror="this.style.display='none'">
+          <img src="{{ $addOn['cutout_image'] ?: $addOn['image'] }}" data-fallback="{{ $addOn['cutout_image'] ? $addOn['image'] : '' }}" alt="{{ $addOn['name'] }}" loading="lazy" onerror="if(this.dataset.fallback){const f=this.dataset.fallback;this.dataset.fallback='';this.src=f;}else{this.style.display='none';}">
          @else
           <span class="tish-addon-placeholder"><i class="fa-solid fa-utensils" aria-hidden="true"></i></span>
          @endif
@@ -123,7 +123,7 @@
     @foreach($relatedItems as $related)
      <a class="product" href="{{ route('customer-menu.product.show', [$location->code, $related['product_id']]) }}">
       <div class="product-media">
-       @if(!empty($related['image']))<img src="{{ $related['image'] }}" alt="{{ $related['name'] }}" onerror="this.outerHTML='<div class=&quot;product-placeholder&quot;>{{ mb_substr($related['name'], 0, 1) }}</div>'">@else<div class="product-placeholder">{{ mb_substr($related['name'], 0, 1) }}</div>@endif
+       @if(!empty($related['image']))<img src="{{ $related['cutout_image'] ?: $related['image'] }}" data-fallback="{{ $related['cutout_image'] ? $related['image'] : '' }}" alt="{{ $related['name'] }}" onerror="if(this.dataset.fallback){const f=this.dataset.fallback;this.dataset.fallback='';this.src=f;}else{this.outerHTML='<div class=&quot;product-placeholder&quot;>{{ mb_substr($related['name'], 0, 1) }}</div>';}">@else<div class="product-placeholder">{{ mb_substr($related['name'], 0, 1) }}</div>@endif
       </div>
       <div class="product-body">
        <h3>{{ $related['name'] }}</h3>
@@ -224,6 +224,7 @@ function updateMedia() {
             this.style.display = 'none';
         }
     };
+    img.style.display = '';
     img.src = picture;
     img.alt = PRODUCT.name;
     document.dispatchEvent(new CustomEvent('tish:product-image-changed', { detail: { image: img } }));

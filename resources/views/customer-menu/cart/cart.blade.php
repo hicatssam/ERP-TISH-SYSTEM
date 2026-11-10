@@ -45,7 +45,7 @@ function renderCart() {
             const subtitle = [x.variant_name, modifierLine].filter(Boolean).join(' — ');
             return `
           <div class="cart-row">
-            <div class="cart-thumb">${x.image ? `<img src="${CM.esc(x.image)}" alt="">` : ''}</div>
+            <div class="cart-thumb">${x.image ? `<img src="${CM.esc(x.image)}" data-fallback="${CM.esc(x.original_image && x.original_image !== x.image ? x.original_image : '')}" alt="" onerror="if(this.dataset.fallback){const f=this.dataset.fallback;this.dataset.fallback='';this.src=f;}else{this.style.display='none';}">` : ''}</div>
             <div class="row-copy">
               <strong>${CM.esc(x.name.split(' - ')[0])}</strong>
               ${subtitle ? `<span style="display:block;font-size:.74rem;color:var(--muted)">${CM.esc(subtitle)}</span>` : ''}

@@ -134,7 +134,8 @@ window.CustomerMenu = (function () {
                     name: [p.name, variant?.name].filter(Boolean).join(' - '),
                     price,
                     quantity: 0,
-                    image: p.image || '',
+                    image: p.cutoutImage || p.image || '',
+                    original_image: p.image || '',
                     prep_time_minutes: p.prepTimeMinutes ?? null,
                 };
             }
@@ -260,7 +261,8 @@ window.CustomerMenu = (function () {
                 name: displayName,
                 price: unitPrice,
                 quantity: 0,
-                image: p.image || '',
+                image: p.cutoutImage || p.image || '',
+                original_image: p.image || '',
                 prep_time_minutes: p.prepTimeMinutes ?? null,
             };
         }
