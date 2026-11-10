@@ -30,3 +30,8 @@ Thumbs.db
 /database/database.sqlite
 /database/database.sqlite-shm
 /database/database.sqlite-wal
+
+# Local AI model environment/cache (never commit downloaded models)
+/.venv-menu-cutouts/
+**/__pycache__/
+*.pyc
