@@ -12,7 +12,7 @@ class InstallCompatibilityTest extends TestCase
     {
         $head = file_get_contents(resource_path('views/customer-menu/partials/pwa-head.blade.php'));
         $this->assertStringContainsString("route('customer-menu.manifest')", $head);
-        $this->assertStringContainsString("route('pwa.icon', ['size' => 180])", $head);
+        $this->assertStringContainsString("apple-touch-icon-180.png", $head);
         $this->assertStringContainsString('beforeinstallprompt', $head);
         $this->assertStringContainsString('dahabCustomerPwa.prompt = event', $head);
     }
