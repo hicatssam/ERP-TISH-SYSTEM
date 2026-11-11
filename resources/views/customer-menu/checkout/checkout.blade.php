@@ -10,7 +10,7 @@
 <title>إتمام الطلب - {{ $branding['name'] ?? config('app.name') }}</title>
 @if(!empty($branding['favicon']))<link rel="icon" href="{{ $branding['favicon'] }}">@endif
 @include('customer-menu.partials.styles')
-<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-checkout-paper.css') }}?v=3">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-checkout-paper.css') }}?v=4">
 @include('customer-menu.partials.pwa-head')
 </head>
 <body class="crisp-customer-menu tish-paper tish-checkout-page">
@@ -90,7 +90,7 @@
     </label>
    </div>
 
-   <div id="paymentProofField" hidden style="margin-top:12px">
+   <div id="paymentProofField" hidden>
     <label class="upload-field" for="paymentProofInput">
      <i class="fa-solid fa-cloud-arrow-up"></i>
      <span>إرفاق إشعار إثبات الدفع (صورة أو PDF) <span class="required-star" id="proofRequiredStar" hidden>*</span></span>
@@ -231,12 +231,19 @@ function paymentIcon(type) {
     }
 }
 
+document.getElementById('paymentMethods').addEventListener('error', event => {
+    if (!event.target.matches('.payment-method-logo')) return;
+    const fallback = event.target.nextElementSibling;
+    event.target.remove();
+    fallback.hidden = false;
+}, true);
+
 function renderPayments() {
     document.getElementById('paymentMethods').innerHTML = methods.length
         ? methods.map(m => `
           <button class="payment-card" type="button" aria-pressed="false" data-pay="${m.id}">
             <span class="radio"></span>
-            <span class="p-icon">${m.logo ? `<img src="${CM.esc(m.logo)}" alt="${CM.esc(m.name)}">` : `<i class="${paymentIcon(m.type)}"></i>`}</span>
+            <span class="p-icon" aria-hidden="true">${m.logo ? `<img class="payment-method-logo" src="${CM.esc(m.logo)}" alt="" decoding="async">` : ''}<i class="${paymentIcon(m.type)}" ${m.logo ? 'hidden' : ''}></i></span>
             <span class="p-copy"><strong>${CM.esc(m.name)}</strong><small>${CM.esc(menuT(({cash:'نقد',card_pos:'بطاقة',bank_transfer:'تحويل بنكي',electronic_wallet:'محفظة إلكترونية'})[m.type] || m.type || ''))}</small></span>
           </button>`).join('')
         : 'لا توجد طرق دفع مفعلة.';
@@ -245,7 +252,9 @@ function renderPayments() {
 function choosePayment(id) {
     const method = methods.find(x => String(x.id) === String(id));
     if (!method) return;
-    document.getElementById('paymentMethodId').value = method.id;
+    const methodInput = document.getElementById('paymentMethodId');
+    if (methodInput.value === String(method.id)) return;
+    methodInput.value = method.id;
     document.getElementById('paymentAccountId').value = '';
     document.getElementById('paymentReferenceInput').required = !!method.requires_reference;
     document.querySelectorAll('[data-pay]').forEach(button => {
@@ -274,6 +283,19 @@ function choosePayment(id) {
     proofInput.required = !!method.requires_verification;
     proofStar.hidden = !method.requires_verification;
     if (isPureCash) { proofInput.value = ''; document.getElementById('uploadPreview').hidden = true; }
+    if (!window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+        document.querySelector('.payment-card.active')?.animate?.(
+            [{scale: '.975'}, {scale: '1.012', offset: .65}, {scale: '1'}],
+            {duration: 240, easing: 'ease-out'}
+        );
+        const details = document.getElementById('paymentAccountDetails');
+        for (const field of [accounts.length ? details : null, refField, proofField]) {
+            if (field && !field.hidden) field.animate?.(
+                [{opacity: .6, translate: '0 -5px'}, {opacity: 1, translate: '0 0'}],
+                {duration: 220, easing: 'ease-out'}
+            );
+        }
+    }
 }
 
 function renderSelectedPaymentAccount() {

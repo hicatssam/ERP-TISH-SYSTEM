@@ -48,13 +48,13 @@ body.tish-paper.tish-checkout-page #checkoutForm :is(input:not([type=hidden]):no
   font-size:16px;
 }
 /* The paper artwork sits behind the editable area and keeps the focus ring intact. */
-body.tish-paper.tish-checkout-page #checkoutForm :is(input[name="name"],input[name="phone"]) {
+body.tish-paper.tish-checkout-page #checkoutForm :is(input[name="name"],input[name="phone"],#paymentReferenceInput,#paymentAccountSelect,textarea) {
   min-height:52px;
   padding:9px 14px 13px;
   background:transparent url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;
   border:0!important;
 }
-body.tish-paper.tish-checkout-page #checkoutForm :is(input[name="name"],input[name="phone"]):focus {
+body.tish-paper.tish-checkout-page #checkoutForm :is(input[name="name"],input[name="phone"],#paymentReferenceInput,#paymentAccountSelect,textarea):focus {
   outline:2px solid var(--tish-paper-red);
   outline-offset:2px;
 }
@@ -200,4 +200,41 @@ body.tish-paper.tish-checkout-page .checkout-install #pwaInstallBtn.tish-paper-p
   .tish-checkout-page .checkout-payment {grid-area:2 / 1;}
   .tish-checkout-page .checkout-receipt {grid-area:1 / 2 / 3;}
   .tish-checkout-page .checkout-confirm {grid-column:1 / -1;}
+}
+
+/* Preserve uploaded brand colors and reserve a predictable logo area. */
+body.tish-paper.tish-checkout-page .payment-card {
+  gap:9px;
+  min-height:70px;
+  padding:10px 15px 12px;
+  text-align:start;
+}
+body.tish-paper.tish-checkout-page .payment-card .p-icon {
+  width:52px;
+  height:46px;
+  padding:5px;
+  border-radius:5px;
+  background:#fff7e9!important;
+  color:var(--tish-paper-red)!important;
+}
+body.tish-paper.tish-checkout-page .payment-card .p-icon img {
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  border-radius:0;
+}
+body.tish-paper.tish-checkout-page .payment-card.active .radio {
+  border-color:#fff8ed;
+}
+body.tish-paper.tish-checkout-page .payment-card.active .radio::after {
+  background:#fff8ed;
+}
+.tish-checkout-page #paymentReferenceInput {
+  direction:ltr;
+  text-align:start;
+}
+.tish-checkout-page .upload-field {
+  padding:18px 12px;
+  background:transparent url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat;
+  border:1px dashed #aa8868;
 }
