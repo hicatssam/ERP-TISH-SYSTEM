@@ -1,7 +1,7 @@
 /* Paper Motion v10 — animation ONLY. Does not change layout, colors or prices. */
 :root {
   --paper-ease:cubic-bezier(.22,1,.36,1);
-  --paper-card-duration:480ms;
+  --paper-card-duration:220ms;
   --paper-image-duration:420ms;
   --paper-text-duration:300ms;
   --paper-button-duration:320ms;
@@ -15,12 +15,14 @@ body.tish-paper.paper-motion-enabled .tish-circle-card.paper-motion-pending:not(
   opacity:0;
 }
 body.tish-paper.paper-motion-enabled .tish-circle-card.paper-motion-visible:not(.paper-motion-done) {
+  transform-origin:center top;
   animation:paper-card-reveal var(--paper-card-duration) var(--paper-ease) both;
   animation-delay:var(--paper-delay,0ms);
 }
 @keyframes paper-card-reveal {
-  from {opacity:0;transform:translateY(var(--paper-reveal-offset)) scale(.97);}
-  to {opacity:1;transform:translateY(0) scale(1);}
+  from {opacity:0;scale:.96 .76;translate:0 calc(-1 * var(--paper-reveal-offset));}
+  72% {opacity:1;scale:1 1.025;}
+  to {opacity:1;scale:1;translate:0 0;}
 }
 body.tish-paper.paper-motion-enabled .paper-motion-pending:not(.paper-motion-visible) .tish-circle-image,
 body.tish-paper.paper-motion-enabled .paper-motion-pending:not(.paper-motion-visible) .tish-circle-name,

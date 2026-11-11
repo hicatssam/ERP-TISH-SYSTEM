@@ -393,21 +393,22 @@ body.crisp-customer-menu > .app{position:relative;z-index:1}
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-circular-ui.css') }}?v=12">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-v2.css') }}?v=1">
 <style id="tish-product-card-client-theme">
-/* Use the admin-configured CUSTOMER colors, not the legacy fixed TISH red. */
+/* TISH paper uses the same signature red for interactive accents. */
 body.tish-paper {
-    --tish-card-primary: {{ $theme['primary'] ?? '#A91F16' }};
+    --primary: var(--tish-paper-red);
+    --tish-card-primary: var(--tish-paper-red);
     --tish-card-on-primary: {{ $theme['on_primary'] ?? '#FFFFFF' }};
     --tish-card-ink: {{ $theme['text'] ?? '#352014' }};
     --tish-card-muted: {{ $theme['muted'] ?? '#9B8068' }};
-    --tish-card-accent: {{ $theme['accent'] ?? '#F5BF55' }};
+    --tish-card-accent: var(--tish-paper-red);
     --tish-card-paper: {{ $theme['surface'] ?? '#F5E4CD' }};
 }
 </style>
 {{-- Shared paper-theme text spacing for all public TISH screens. Does not affect ERP/admin. --}}
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-typography-v7.css') }}?v=7">
 {{-- Paper install, cart and bag controls; scoped to public TISH pages only. --}}
-<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-controls-v12.css') }}?v=12">
-<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-polish-v13.css') }}?v=13">
-<script src="{{ asset('assets/js/customer-menu/tish-paper-controls-v12.js') }}?v=12" defer></script>
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-controls-v12.css') }}?v=14">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-polish-v13.css') }}?v=17">
+<script src="{{ asset('assets/js/customer-menu/tish-paper-controls-v12.js') }}?v=14" defer></script>
 
 <script src="{{ asset('assets/js/customer-menu/tish-visuals.js') }}?v=3" defer></script>

@@ -7,6 +7,7 @@
     const seenIds = new Set();
     let observer = null;
     const elements = new WeakSet();
+    const categoryFolds = new WeakMap();
 
     function finish(card) {
         card.classList.add('paper-motion-visible', 'paper-motion-done');
@@ -23,10 +24,7 @@
                 const key = String(card.dataset.id || '');
                 if (key) seenIds.add(key);
                 card.classList.add('paper-motion-visible');
-                // Animation ends after stagger and 480ms. Motion may be disabled
-                // after creation; the time cap is a safety fallback only.
-                // Allow the last CTA to finish its own 320ms animation
-                // (280ms delay), even though the paper ends after 480ms.
+                // Allow the staggered CTA to finish its own animation.
                 const delay = Number(card.dataset.paperDelay || 0);
                 window.setTimeout(function () { finish(card); }, 650 + delay);
             }
@@ -86,6 +84,7 @@
             indicator.className='paper-category-indicator';
             indicator.setAttribute('aria-hidden','true');
             root.appendChild(indicator);
+            categoryFolds.set(indicator, {target});
             // Initial position is written before enabling transitions.
             indicator.style.transition='none';
             root.classList.add('paper-category-motion');
@@ -94,6 +93,15 @@
                 window.requestAnimationFrame(function(){indicator.style.transition='';});
             });
         } else {
+            const previous = categoryFolds.get(indicator);
+            if (!noMotion() && previous?.target !== target && indicator.animate) {
+                previous?.animation?.cancel();
+                const animation = indicator.animate(
+                    [{scale: '1'}, {scale: '.68 .85', offset: .36}, {scale: '1'}],
+                    {duration: 250, easing: 'ease-out'}
+                );
+                categoryFolds.set(indicator, {target, animation});
+            }
             setPosition(indicator,target);
         }
     }

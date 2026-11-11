@@ -8,6 +8,7 @@
 <title>{{ $product['name'] }} - {{ $branding['name'] ?? config('app.name') }}</title>
 @if(!empty($branding['favicon']))<link rel="icon" href="{{ $branding['favicon'] }}">@endif
 @include('customer-menu.partials.styles')
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-product-paper.css') }}?v=4">
 @include('customer-menu.partials.pwa-head')
 </head>
 <body class="crisp-customer-menu tish-paper tish-product-page">
@@ -16,6 +17,7 @@
 
 <main class="menu-area">
  <div class="shell">
+  <div class="tish-detail-sheet">
   <div class="detail-media" id="detailMedia">
    @if(!empty($product['image']))
     <img src="{{ $product['cutout_image'] ?: $product['image'] }}" data-fallback="{{ $product['cutout_image'] ? $product['image'] : '' }}" alt="{{ $product['name'] }}" onerror="if(this.dataset.fallback){const original=this.dataset.fallback;this.dataset.fallback='';this.src=original;}else{this.remove();this.parentElement.insertAdjacentHTML('afterbegin', '<div class=&quot;product-placeholder&quot;>{{ mb_substr($product['name'], 0, 1) }}</div>');}">
@@ -35,9 +37,9 @@
    <div class="detail-meta">
     <div class="detail-price" id="detailPrice">{{ number_format($product['price'], 2) }} {{ $menuCurrencySymbol }}</div>
     <div class="qty">
-     <button type="button" id="detailMinus">−</button>
+     <button type="button" id="detailMinus" aria-label="{{ __('تقليل الكمية') }}">−</button>
      <strong id="detailQty">1</strong>
-     <button type="button" id="detailPlus">+</button>
+     <button type="button" id="detailPlus" aria-label="{{ __('زيادة الكمية') }}">+</button>
     </div>
    </div>
 
@@ -50,6 +52,8 @@
     <i class="fa-solid fa-basket-shopping"></i> عرض السلة <span id="detailCartCount">0</span>
    </button>
    <div class="tish-install-inline">@include('customer-menu.partials.pwa-install')</div>
+  </div>
+
   </div>
 
   @if($addOnGroups->isNotEmpty())
@@ -118,9 +122,18 @@
   @endif
 
   @if($relatedItems->isNotEmpty())
-   <div class="section-title"><div><h2>قد يعجبك أيضًا</h2></div></div>
-   <div class="related-row">
+   <section id="relatedShowcase" class="related-showcase" aria-labelledby="relatedTitle"
+            aria-roledescription="carousel" data-autoplay-ms="1000" data-slide-label="{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Show product' : 'عرض الصنف' }}">
+    <div class="section-title">
+     <h2 id="relatedTitle">{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'You may also like' : 'قد يعجبك أيضًا' }}</h2>
+     <button type="button" data-showcase-pause hidden aria-pressed="false"
+             aria-label="{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Pause automatic rotation' : 'إيقاف التبديل التلقائي' }}">
+      <i class="fa-solid fa-pause" aria-hidden="true"></i>
+     </button>
+    </div>
+    <div class="related-row" id="featuredGrid">
     @foreach($relatedItems as $related)
+     <div class="related-slide" data-showcase-slide>
      <a class="product" href="{{ route('customer-menu.product.show', [$location->code, $related['product_id']]) }}">
       <div class="product-media">
        @if(!empty($related['image']))<img src="{{ $related['cutout_image'] ?: $related['image'] }}" data-fallback="{{ $related['cutout_image'] ? $related['image'] : '' }}" alt="{{ $related['name'] }}" onerror="if(this.dataset.fallback){const f=this.dataset.fallback;this.dataset.fallback='';this.src=f;}else{this.outerHTML='<div class=&quot;product-placeholder&quot;>{{ mb_substr($related['name'], 0, 1) }}</div>';}">@else<div class="product-placeholder">{{ mb_substr($related['name'], 0, 1) }}</div>@endif
@@ -130,15 +143,25 @@
        <div class="product-foot"><span class="price">{{ number_format($related['price'], 2) }} {{ $menuCurrencySymbol }}</span></div>
       </div>
      </a>
+     </div>
     @endforeach
-   </div>
+    </div>
+    <div class="related-controls">
+     <button type="button" data-showcase-prev hidden aria-label="{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Previous product' : 'الصنف السابق' }}"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
+     <div id="featuredDots" hidden></div>
+     <button type="button" data-showcase-next hidden aria-label="{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Next product' : 'الصنف التالي' }}"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
+    </div>
+   </section>
   @endif
  </div>
 </main>
 </div>
 
-@include('customer-menu.partials.bottom-nav', ['activeNav' => 'menu'])
+@include('customer-menu.partials.bottom-nav', ['activeNav' => 'menu', 'showStickyCart' => false])
 @include('customer-menu.partials.cart-engine')
+@if($relatedItems->isNotEmpty())
+<script src="{{ asset('assets/js/customer-menu/featured-carousel.js') }}?v=3" defer></script>
+@endif
 
 <script>
 const CM = window.CustomerMenu;
@@ -168,6 +191,7 @@ document.querySelector('.tish-addons-grid')?.addEventListener('click', event => 
     if (!item || !item.available || item.requiresChoices || item.isVariantProduct) return;
     if (!CM.addToCart(item.id, 1)) return;
     button.classList.add('added');
+    pulseProductControl(button);
     button.innerHTML = '<i class="fa-solid fa-check" aria-hidden="true"></i>';
     if (addonFeedback) addonFeedback.textContent = menuT('تمت الإضافة للسلة') + ': ' + item.name;
     window.setTimeout(() => {
@@ -371,6 +395,7 @@ document.getElementById('detailAdd').onclick = () => {
     if (!ok) return;
 
     const btn = document.getElementById('detailAdd');
+    pulseProductControl(btn);
     btn.innerHTML = `<i class="fa-solid fa-check"></i> تمت الإضافة`;
     setTimeout(() => { btn.innerHTML = '<i class="fa-solid fa-bag-shopping"></i> إضافة المزيد للسلة'; }, 900);
 };
@@ -379,13 +404,27 @@ document.getElementById('detailOpenCart').onclick = () => {
     window.location.href = @json(route('customer-menu.cart', $location->code));
 };
 
+function pulseProductControl(button) {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !button.animate) return;
+    button.paperPulse?.cancel();
+    button.paperPulse = button.animate([
+        {scale: '1'}, {scale: '1.12', offset: .25}, {scale: '.97', offset: .48},
+        {scale: '1.07', offset: .68}, {scale: '1'}
+    ], {duration: 360, easing: 'ease-out'});
+}
+
 const favBtn = document.getElementById('detailFav');
 function paintFav() {
     const active = CM.isFavorite(PRODUCT_ID);
     favBtn.classList.toggle('active', active);
+    favBtn.setAttribute('aria-pressed', String(active));
     favBtn.innerHTML = `<i class="fa-${active ? 'solid' : 'regular'} fa-heart"></i>`;
 }
-favBtn.addEventListener('click', () => { CM.toggleFavorite(PRODUCT_ID); paintFav(); });
+favBtn.addEventListener('click', () => {
+    CM.toggleFavorite(PRODUCT_ID);
+    paintFav();
+    pulseProductControl(favBtn);
+});
 paintFav();
 </script>
 </body>

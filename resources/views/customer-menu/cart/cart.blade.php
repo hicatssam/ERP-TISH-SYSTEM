@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-cart-v3.css') }}?v=3">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-cart-v4.css') }}?v=4">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-cart-summary-v5.css') }}?v=5">
-<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-polish-v13.css') }}?v=13">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-polish-v13.css') }}?v=17">
 @include('customer-menu.partials.pwa-head')
 </head>
 <body class="crisp-customer-menu tish-paper tish-cart-page">
@@ -68,8 +68,7 @@ function renderCart() {
         }).join('')
         : `<section class="tish-cart-empty-paper" aria-label="السلة فارغة">
           <div class="tish-cart-bag-art" aria-hidden="true">
-            <img class="tish-cart-bag-illustration" src="{{ asset('assets/tish-paper/decor/empty-shopping-bag.svg') }}" alt="" loading="eager">
-            <img class="tish-cart-bag-logo" src="{{ asset('assets/tish-paper/brand/logo-disc.webp') }}" alt="" loading="eager">
+            <img class="tish-cart-bag-illustration" src="{{ asset('assets/tish-paper/decor/kraft-cart-bag.webp') }}" width="274" height="336" alt="" loading="eager">
             <span class="tish-cart-spark spark-one"></span><span class="tish-cart-spark spark-two"></span>
           </div>
           <h2 class="tish-cart-empty-title">السلة فارغة</h2>

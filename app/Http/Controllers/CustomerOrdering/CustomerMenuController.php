@@ -223,7 +223,7 @@ class CustomerMenuController extends Controller
                     'name' => CustomerMenuLanguage::name($method->name, $method->name_ar),
                     'code' => (string) $method->code,
                     'type' => (string) $method->type,
-                    'logo' => $this->assetFromPath($method->logo ?: $method->logo_path),
+                    'logo' => $this->assetFromPath($method->logo_path) ?? $this->assetFromPath($method->logo),
                     'requires_verification' => (bool) $method->requires_verification,
                     'requires_reference' => (bool) $method->requires_reference,
                     'accounts' => $accounts->all(),

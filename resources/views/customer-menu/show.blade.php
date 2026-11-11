@@ -14,8 +14,8 @@
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-featured-showcase-v6.css') }}?v=6">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-product-circle-card-v8.css') }}?v=9">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-product-layout-v10.css') }}?v=11">
-<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-motion-v10.css') }}?v=11">
-<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-polish-v13.css') }}?v=13">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-motion-v10.css') }}?v=12">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-polish-v13.css') }}?v=17">
 @include('customer-menu.partials.pwa-head')
 <script src="{{ asset('assets/js/customer-menu/branch-entry.js') }}?v=1"
         data-branch-code="{{ $location->code }}"
@@ -36,9 +36,7 @@
     $introTitle = (string) $cmSetting('customer_menu_intro_title', 'أهلاً بك');
     $introSubtitle = (string) $cmSetting('customer_menu_intro_subtitle', 'تجربة ألذ تبدأ من هنا');
     $introEyebrow = (string) $cmSetting('customer_menu_intro_eyebrow', '');
-    $introCta = (string) $cmSetting('customer_menu_intro_cta', 'ابدأ الطلب');
     $introShowLogo = (bool) $cmSetting('customer_menu_intro_show_logo', true);
-    $introImage = \App\Models\SystemSetting::assetUrl('customer_menu_intro_image');
     $coverImage = \App\Models\SystemSetting::assetUrl('customer_menu_cover_image')
         ?: ($theme['cover'] ?? null);
     $overlay = max(0, min(90, (int) $cmSetting('customer_menu_cover_overlay', 48)));
@@ -93,14 +91,65 @@
 }
 .reference-home .shell{width:min({{ $contentWidth }}px,calc(100% - 30px))}
 .reference-home .menu-area{padding-bottom:112px}
+body.tish-paper.reference-home .reference-masthead .tish-paper-banner-frame{
+ background:none!important;
+ filter:none!important;
+}
+body.tish-paper.reference-home .reference-masthead .tish-paper-banner-frame:has(.banner-artwork-only){
+ padding:clamp(6px,1.35vw,16px)!important;
+}
+body.tish-paper.reference-home .reference-masthead .tish-paper-banner-frame .banner-slide.banner-artwork-only{
+ aspect-ratio:3 / 1;
+ min-height:0!important;
+ display:grid;
+ place-items:center;
+}
+body.tish-paper.reference-home .reference-masthead .tish-paper-banner-frame .banner-artwork-only img{
+ display:block;
+ width:100%;
+ height:auto!important;
+ max-height:100%;
+ aspect-ratio:3 / 1;
+ object-fit:contain!important;
+}
+body.tish-paper.reference-home .reference-brand-copy .reference-brand-name{display:block;font-size:clamp(.9rem,3.5vw,1.25rem);line-height:1.35;margin:0}
+body.tish-paper.reference-home .reference-brand-copy p{font-size:.72rem;line-height:1.35;margin:2px 0 5px;color:var(--tish-paper-red)}
+body.tish-paper.reference-home .reference-home-copy{margin-block:5px 9px}
+body.tish-paper.reference-home .reference-home-copy h1{margin:0;font-size:clamp(1rem,4vw,1.35rem);line-height:1.4}
+body.tish-paper.reference-home .reference-home-copy p{margin:1px 0 0;color:var(--muted);font-size:.78rem}
+body.tish-paper.reference-home .reference-masthead::before{content:none!important}
+body.tish-paper.reference-home .reference-header-row{gap:10px;min-height:72px}
+body.tish-paper.reference-home .reference-brand{gap:8px;min-width:0}
+body.tish-paper.reference-home .reference-brand-copy{min-width:0;overflow-wrap:anywhere}
+body.tish-paper.reference-home .reference-actions{flex:0 0 auto}
+body.tish-paper.reference-home .reference-logo-square{
+ padding:0;background:transparent!important;
+}
+body.tish-paper.reference-home .reference-logo-square .reference-client-logo{
+ border-radius:50%!important;
+}
+body.tish-paper.reference-home .reference-masthead .tish-paper-banner-frame .banner-slide,
+body.tish-paper.reference-home .reference-masthead .tish-paper-banner-frame .tish-paper-cover-banner{
+ aspect-ratio:3 / 1;min-height:clamp(118px,29vw,230px)!important;
+}
+body.tish-paper.reference-home .tish-home-install{display:flex;justify-content:center;margin:16px 0 30px}
+body.tish-paper.reference-home .tish-home-install #pwaInstallBtn.tish-paper-pin-control:not([hidden]){
+ position:relative!important;inset:auto!important;z-index:auto!important;
+ width:auto!important;height:auto!important;min-width:112px!important;min-height:48px!important;
+ max-width:none!important;flex-direction:row!important;gap:7px!important;padding:8px 14px!important;
+}
+/* Let the shared paper canvas show through the full masthead, including search. */
+body.tish-paper.reference-home .reference-masthead.is-illustrated::after{
+ display:none;
+}
 .reference-header{padding:20px 0 8px}
 .reference-header-row{display:flex;align-items:center;justify-content:space-between;gap:16px}
 .reference-brand{display:flex;align-items:center;gap:12px;min-width:0}
 .reference-logo,.reference-logo-fallback{width:62px;height:62px;border-radius:18px;border:1px solid var(--line);background:var(--surface);box-shadow:0 8px 24px rgba(20,17,18,.07);flex:0 0 auto}
 .reference-logo{object-fit:contain;padding:5px}
 .reference-logo-fallback{display:grid;place-items:center;background:var(--primary);color:#fff;font-size:1.4rem;font-weight:900}
-.reference-branch{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:1rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.reference-branch i{color:var(--primary);font-size:.8rem}
+
+
 .reference-actions{display:flex;gap:10px;direction:ltr}
 .reference-actions .icon-btn{width:58px;height:58px;border-radius:18px;display:grid;place-items:center;font-size:1.35rem;box-shadow:0 8px 24px rgba(20,17,18,.06)}
 .reference-actions .badge{top:-4px;left:auto;right:-4px;min-width:24px;height:24px;font-size:.78rem;border:2px solid var(--bg)}
@@ -112,7 +161,29 @@
 .reference-home .search i{right:21px;font-size:1.35rem;color:var(--text)}
 .reference-home .filter-square{width:66px;height:66px;border-radius:20px;font-size:1.25rem;box-shadow:0 8px 26px rgba(20,17,18,.045)}
 .reference-hero{position:relative;overflow:hidden;margin:10px 0 0;border-radius:24px;background:#1b1214;box-shadow:0 14px 34px rgba(24,15,17,.14)}
-.banner-track{display:flex;direction:ltr;transition:transform .5s cubic-bezier(.2,.75,.25,1)}
+body.tish-paper.reference-home #bannerTrack{
+ display:grid!important;
+ grid-template-columns:minmax(0,1fr);
+ width:100%;
+}
+body.tish-paper.reference-home #bannerTrack > .banner-slide{
+ grid-area:1 / 1;
+ width:100%;
+ min-width:0;
+ visibility:hidden;
+ opacity:0;
+ pointer-events:none;
+}
+body.tish-paper.reference-home #bannerTrack > .banner-slide[data-banner-active]{
+ z-index:1;
+ visibility:visible;
+ opacity:1;
+ pointer-events:auto;
+}
+@media(prefers-reduced-motion:no-preference){
+ body.tish-paper.reference-home #bannerTrack > .banner-slide[data-banner-active]{animation:tish-banner-appear 260ms ease-out}
+}
+@keyframes tish-banner-appear{from{opacity:0}to{opacity:1}}
 .banner-slide{position:relative;min-width:100%;aspect-ratio:2.9/1;overflow:hidden;color:#fff;direction:rtl;display:block}
 .banner-slide img{width:100%;height:100%;object-fit:cover}
 .banner-slide::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(9,5,6,.12),rgba(9,5,6,var(--home-overlay)) 62%,rgba(9,5,6,.82))}
@@ -166,7 +237,7 @@
  .reference-header{padding-top:14px}
  .reference-logo,.reference-logo-fallback{width:52px;height:52px;border-radius:15px}
  .reference-actions .icon-btn{width:50px;height:50px;border-radius:15px}
- .reference-branch{font-size:.86rem}
+
  .banner-slide{aspect-ratio:2.55/1;min-height:170px}
  .banner-copy{max-width:88%;padding:20px}
  .banner-copy p{font-size:.78rem}
@@ -179,7 +250,7 @@
 }
 @media(max-width:380px){
  .reference-brand{gap:7px}
- .reference-branch{max-width:120px}
+
  .reference-actions{gap:6px}
  .reference-actions .icon-btn{width:44px;height:44px}
  .reference-home .cat{min-width:84px}
@@ -220,6 +291,31 @@
 <style>
 /* Prevent an already-dismissed intro from flashing during navigation. */
 html.cm-skip-menu-intro #intro{display:none!important}
+html.cm-intro-open{overflow:hidden}
+body.tish-paper #intro.tish-reel-intro{overflow:hidden;background:#f5e4cd;overscroll-behavior:contain}
+#intro.tish-reel-intro::before{display:none}
+#intro .intro-reel{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+#intro .intro-reel-tools{
+ position:absolute;z-index:2;inset-inline:16px;top:calc(12px + env(safe-area-inset-top,0px));
+ display:flex;justify-content:space-between;gap:8px;
+}
+#intro .intro-reel-tools button,
+#intro .intro-enter{
+ min-height:44px;border:0;border-radius:0;font:inherit;font-weight:900;padding:8px 17px;
+ color:var(--tish-paper-red);background:url('{{ asset('assets/tish-paper/paper/category-ivory.webp') }}') center/100% 100% no-repeat;
+}
+#intro .intro-enter{
+ min-height:56px;min-width:160px;font-size:1.12rem;color:#fff8ed;
+ background:url('{{ asset('assets/tish-paper/paper/nav-active.webp') }}') center/100% 100% no-repeat;
+}
+#intro.tish-reel-intro.has-reel-frame .intro-box{
+ position:absolute;inset-inline:12px;bottom:calc(24px + env(safe-area-inset-bottom,0px));max-width:none;padding:0;
+}
+#intro.has-reel-frame .intro-copy{display:none}
+#intro .intro-copy{color:#352014}
+#intro .intro-copy :is(p,small){color:#594131}
+@media(prefers-reduced-motion:reduce){#intro.tish-reel-intro{transition:none}}
+
 </style>
 <script>
 (function () {
@@ -227,7 +323,7 @@ html.cm-skip-menu-intro #intro{display:none!important}
     const mode = @json($introMode);
     if (mode === 'off') return;
     try {
-        const key = 'tish_menu_intro_seen_' + branch;
+        const key = 'tish_menu_intro_seen_' + branch + '_reel_v1';
         const visited = sessionStorage.getItem(key) === '1'
             || (mode === 'first_visit' && localStorage.getItem(key) === '1');
         if (visited) document.documentElement.classList.add('cm-skip-menu-intro');
@@ -242,21 +338,28 @@ html.cm-skip-menu-intro #intro{display:none!important}
 @include('customer-menu.partials.brand-watermark')
 
 @if($introMode !== 'off')
-<div id="intro" class="intro" data-mode="{{ $introMode }}" @if($introImage) style="background-image:url('{{ $introImage }}')" @endif>
+<div id="intro" class="intro tish-reel-intro" role="dialog" aria-modal="true" aria-label="{{ $introTitle }}" data-mode="{{ $introMode }}">
+ <video id="introReel" class="intro-reel" data-src="{{ asset('assets/tish-paper/intro/menu-reel.mp4') }}" preload="none" playsinline muted aria-hidden="true" hidden></video>
+ <div class="intro-reel-tools" id="introReelTools" hidden>
+  <button type="button" id="introSkip">{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Skip video' : 'تخطّي الفيديو' }}</button>
+  <button type="button" id="introSound" aria-pressed="false" aria-label="{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Video sound' : 'صوت الفيديو' }}"><i class="fa-solid fa-volume-xmark" aria-hidden="true"></i></button>
+ </div>
  <div class="intro-box">
+  <div class="intro-copy" id="introCopy">
   @if($introShowLogo && ($branding['logo'] ?? null))
    <img class="intro-logo" src="{{ $branding['logo'] }}" alt="{{ $branding['name'] }}">
   @endif
   @if($introEyebrow !== '')<small>{{ $introEyebrow }}</small>@endif
   <h1>{{ $introTitle }}</h1>
   <p>{{ $introSubtitle }}</p>
-  <button class="intro-enter" id="introEnter" type="button">{{ $introCta }}</button>
+  </div>
+  <button class="intro-enter" id="introEnter" type="button" hidden>{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Order now' : 'اطلب الآن' }}</button>
  </div>
 </div>
 @endif
 
 <div class="app crisp-menu-app">
-<main class="menu-area">
+<main class="menu-area" tabindex="-1">
  <div class="shell">
 
   <div class="reference-masthead {{ !empty($theme['header_image']) ? 'is-illustrated' : '' }}"
@@ -269,14 +372,11 @@ html.cm-skip-menu-intro #intro{display:none!important}
    <div class="reference-header-row">
     <div class="reference-brand">
      <span class="reference-logo-square">
-      @if($branding['logo'] ?? null)
-       <img class="reference-client-logo" src="{{ $branding['logo'] }}" alt="{{ $branding['name'] }}">
-      @else
-       <span aria-label="{{ $branding['name'] }}">{{ mb_substr($branding['name'] ?? '', 0, 1) }}</span>
-      @endif
+      <img class="reference-client-logo" src="{{ asset('assets/tish-paper/brand/logo-disc.webp') }}" alt="">
      </span>
      <div class="reference-brand-copy">
-     <a class="reference-branch" href="{{ route('customer-menu.index', ['choose' => 1]) }}" aria-label="تغيير الفرع">{{ $location->name }} <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></a>
+     <strong class="reference-brand-name">{{ $branding['name'] }}</strong>
+     @if(!empty($branding['tagline']))<p>{{ $branding['tagline'] }}</p>@endif
      </div>
     </div>
     <div class="reference-actions">
@@ -285,24 +385,71 @@ html.cm-skip-menu-intro #intro{display:none!important}
     </div>
    </div>
   </header>
+  <div class="reference-home-copy"><h1>{{ $homeTitle }}</h1><p>{{ $homeSubtitle }}</p></div>
 
 
-  {{-- Paper collage: independent art layers, existing branch logo/settings remain live. --}}
-  {{-- Campaign banners stay at the TOP of the menu, supplied by ERP settings. --}}
+  @if($showSearch)
+  <div class="tools">
+   <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input id="searchInput" type="search" placeholder="{{ \App\Support\CustomerMenuCopy::searchPlaceholder() }}" autocomplete="off"></div>
+   <button class="filter-square" type="button" id="openFullMenu" aria-label="فلترة الأصناف"><i class="fa-solid fa-sliders"></i></button>
+  </div>
+  @endif
+
+
+  @if($showCategories)
+  @php
+    $categoryPriority = ['برجر لحم', 'برجر دجاج', 'برجر نباتي', 'الفرايز'];
+    $homeCategories = collect($categories ?? [])->sortBy(static function ($category) use ($categoryPriority) {
+        $priority = array_search(trim($category['name']), $categoryPriority, true);
+        return $priority === false ? count($categoryPriority) : $priority;
+    });
+  @endphp
+  <section class="reference-section" aria-labelledby="categoriesTitle">
+   <div class="reference-section-head">
+    <div>
+     <h2 id="categoriesTitle">التصنيفات</h2>
+    </div>
+    <button class="reference-see-all" type="button" data-show-all>عرض الكل <i class="fa-solid fa-chevron-left"></i></button>
+   </div>
+   <div class="categories" id="categories">
+    <button class="cat active" type="button" data-cat="all">
+     <span class="cat-visual" style="--category-color:var(--primary)"><i class="fa-solid fa-utensils"></i></span>
+     <b>الكل</b>
+    </button>
+    @foreach($homeCategories as $category)
+     @php
+      $iconClass = $categoryIconClasses[$category['icon_key'] ?? 'sparkles'] ?? 'fa-wand-magic-sparkles';
+     @endphp
+     <button class="cat" type="button" data-cat="{{ $category['id'] }}" data-cat-name="{{ $category['name'] }}">
+      <span class="cat-visual" style="--category-color:var(--tish-paper-red)">
+       @if(($theme['category_visual'] ?? 'icons') === 'images' && !empty($category['image']))
+        <img src="{{ $category['image'] }}" alt="" loading="lazy" onerror="this.outerHTML='<i class=&quot;fa-solid {{ $iconClass }}&quot;></i>'">
+       @else
+        <i class="fa-solid {{ $iconClass }}"></i>
+       @endif
+      </span>
+      <b>{{ $category['name'] }}</b>
+     </button>
+    @endforeach
+   </div>
+  </section>
+  @endif
+
+
   @if(($theme['show_hero'] ?? true) && ($banners->isNotEmpty() || $coverImage))
-  <div class="tish-paper-banner-frame">
+  <div id="homePromotion" class="tish-paper-banner-frame">
    <section class="reference-hero tish-paper-top-ads" aria-label="إعلانات المنيو">
    @if($banners->isNotEmpty())
     <div class="banner-track" id="bannerTrack">
      @foreach($banners as $banner)
       @if($banner['link_url'])
-       <a href="{{ $banner['link_url'] }}" class="banner-slide"
+       <a href="{{ $banner['link_url'] }}" class="banner-slide {{ ($banner['artwork_only'] ?? false) ? 'banner-artwork-only' : '' }}" @if($loop->first) data-banner-active @else inert @endif
           @unless(str_starts_with($banner['link_url'], '#')) target="_blank" rel="noopener" @endunless>
       @else
-       <article class="banner-slide">
+       <article class="banner-slide {{ ($banner['artwork_only'] ?? false) ? 'banner-artwork-only' : '' }}" @if($loop->first) data-banner-active @else inert @endif>
       @endif
         <img src="{{ $banner['image'] }}" alt="{{ $banner['title'] ?: 'إعلان من ' . $branding['name'] }}" loading="eager">
-        @if($banner['title'] || $banner['subtitle'] || $banner['badge_text'] || $banner['cta_text'])
+        @if(!($banner['artwork_only'] ?? false) && ($banner['title'] || $banner['subtitle'] || $banner['badge_text'] || $banner['cta_text']))
         <div class="banner-copy">
          @if($banner['badge_text'])<span class="tag">{{ $banner['badge_text'] }}</span>@endif
          @if($banner['title'])<h2>{{ $banner['title'] }}</h2>@endif
@@ -336,71 +483,8 @@ html.cm-skip-menu-intro #intro{display:none!important}
    @endif
   </section>
   </div>
-  @else
-  <div class="tish-paper-brand-hero" aria-label="Tish — Hear it, Feel it">
-    <img class="paper-booth" src="{{ asset('assets/tish-paper/brand/telephone.webp') }}" alt="" loading="eager">
-    <img class="paper-claim" src="{{ asset('assets/tish-paper/brand/slogan.svg') }}" alt="Hear it, Feel it!" loading="eager">
-    <img class="paper-stamp" src="{{ asset('assets/tish-paper/brand/logo-disc.webp') }}" alt="Tish" loading="eager">
-  </div>
-
   @endif
-
-  @if($showSearch)
-  <div class="tools">
-   <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input id="searchInput" type="search" placeholder="{{ \App\Support\CustomerMenuCopy::searchPlaceholder() }}" autocomplete="off"></div>
-   <button class="filter-square" type="button" id="openFullMenu" aria-label="فلترة الأصناف"><i class="fa-solid fa-sliders"></i></button>
-  </div>
-  @endif
-
   </div>{{-- /reference-masthead --}}
-
-   <div class="reference-greeting reference-welcome-strip">
-    <h1>{{ $homeTitle }} <span aria-hidden="true">👋</span></h1>
-    <p>{{ $homeSubtitle }}</p>
-    @if(!empty($branding['tagline']))
-     <p class="reference-welcome-tagline">{{ $branding['tagline'] }}</p>
-    @endif
-   </div>
-
-
-  @if($showCategories)
-  <section class="reference-section" aria-labelledby="categoriesTitle">
-   <div class="reference-section-head">
-    <div>
-     <h2 id="categoriesTitle">التصنيفات</h2>
-     <p>اختر اللي على بالك</p>
-    </div>
-    <button class="reference-see-all" type="button" data-show-all>عرض الكل <i class="fa-solid fa-chevron-left"></i></button>
-   </div>
-   <div class="categories" id="categories">
-    <button class="cat active" type="button" data-cat="all">
-     <span class="cat-visual" style="--category-color:var(--primary)"><i class="fa-solid fa-utensils"></i></span>
-     <b>الكل</b>
-    </button>
-    @foreach(($categories ?? []) as $category)
-     @php
-      $categoryColor = preg_match('/^#[0-9A-Fa-f]{6}$/', (string) ($category['icon_color'] ?? ''))
-          ? $category['icon_color']
-          : '#B0003A';
-      $iconClass = $categoryIconClasses[$category['icon_key'] ?? 'sparkles'] ?? 'fa-wand-magic-sparkles';
-     @endphp
-     <button class="cat" type="button" data-cat="{{ $category['id'] }}" data-cat-name="{{ $category['name'] }}">
-      <span class="cat-visual" style="--category-color:{{ $categoryColor }}">
-       @if(($theme['category_visual'] ?? 'icons') === 'images' && !empty($category['image']))
-        <img src="{{ $category['image'] }}" alt="" loading="lazy" onerror="this.outerHTML='<i class=&quot;fa-solid {{ $iconClass }}&quot;></i>'">
-       @else
-        <i class="fa-solid {{ $iconClass }}"></i>
-       @endif
-      </span>
-      <b>{{ $category['name'] }}</b>
-     </button>
-    @endforeach
-   </div>
-  </section>
-  @endif
-
-
-  {{-- Static image decoration; destination uses the REAL Laravel products route. --}}
 
 
   @if($showFeatured)
@@ -435,16 +519,16 @@ html.cm-skip-menu-intro #intro{display:none!important}
    </div>
    <div class="grid" id="productGrid"></div>
   </section>
+  <div class="tish-home-install">@include('customer-menu.partials.pwa-install')</div>
  </div>
 </main>
 </div>
 
 @include('customer-menu.partials.bottom-nav', ['activeNav' => 'home'])
-@include('customer-menu.partials.pwa-install')
 @include('customer-menu.partials.cart-engine')
 <script src="{{ asset('assets/js/customer-menu/tish-product-circle-card-v8.js') }}?v=8"></script>
-<script src="{{ asset('assets/js/customer-menu/tish-paper-motion-v10.js') }}?v=10"></script>
-<script src="{{ asset('assets/js/customer-menu/featured-carousel.js') }}?v=1"></script>
+<script src="{{ asset('assets/js/customer-menu/tish-paper-motion-v10.js') }}?v=11"></script>
+<script src="{{ asset('assets/js/customer-menu/featured-carousel.js') }}?v=3"></script>
 
 <script>
 (function () {
@@ -487,6 +571,11 @@ html.cm-skip-menu-intro #intro{display:none!important}
         window.TishPaperMotion?.observe(document.getElementById('productGrid'));
     }
 
+    function prioritizeBurgers(products) {
+        const burgers = products.filter(product => /برجر|برغر|burger/i.test(product.category_name || ''));
+        return burgers.concat(products.filter(product => !burgers.includes(product)));
+    }
+
     function render() {
         const rows = filteredProducts();
         const ranked = popularProductIds
@@ -497,7 +586,7 @@ html.cm-skip-menu-intro #intro{display:none!important}
                 return String(rankedProduct.id) === String(product.id);
             });
         });
-        const featured = ranked.concat(fallback).slice(0, featuredLimit);
+        const featured = prioritizeBurgers(ranked).concat(prioritizeBurgers(fallback)).slice(0, featuredLimit);
         const featuredGrid = document.getElementById('featuredGrid');
         const featuredSection = document.getElementById('featuredSection');
         const hasFocus = activeCat !== 'all' || Boolean(document.getElementById('searchInput')?.value.trim());
@@ -511,6 +600,8 @@ html.cm-skip-menu-intro #intro{display:none!important}
                 : '<div class="cm-featured-empty">لا توجد أصناف مميزة متاحة حالياً.</div>';
         }
         if (featuredSection) featuredSection.hidden = hasFocus;
+        const promotion = document.getElementById('homePromotion');
+        if (promotion) promotion.hidden = hasFocus;
         window.CustomerMenuFeaturedCarousel?.refresh();
 
         document.getElementById('productGrid').innerHTML = rows.length
@@ -577,17 +668,23 @@ html.cm-skip-menu-intro #intro{display:none!important}
 
     const track = document.getElementById('bannerTrack');
     const dots = Array.from(document.querySelectorAll('[data-banner-dot]'));
+    const slides = track ? Array.from(track.querySelectorAll('.banner-slide')) : [];
     let bannerIndex = 0;
     let bannerTimer = null;
 
     function showBanner(index) {
-        if (!track) return;
-        bannerIndex = (index + Math.max(dots.length, 1)) % Math.max(dots.length, 1);
-        track.style.transform = 'translateX(-' + (bannerIndex * 100) + '%)';
+        if (!slides.length) return;
+        bannerIndex = (index + slides.length) % slides.length;
+        slides.forEach(function (slide, slideIndex) {
+            const active = slideIndex === bannerIndex;
+            slide.toggleAttribute('data-banner-active', active);
+            slide.inert = !active;
+        });
         dots.forEach(function (dot, dotIndex) { dot.classList.toggle('active', dotIndex === bannerIndex); });
     }
 
-    if (track && dots.length > 1) {
+    if (track && slides.length > 1) {
+        showBanner(0);
         const hero = track.closest('.reference-hero');
         let hovered = false;
         let focused = false;
@@ -628,7 +725,7 @@ html.cm-skip-menu-intro #intro{display:none!important}
     const intro = document.getElementById('intro');
     if (intro) {
         const mode = intro.dataset.mode;
-        const key = 'tish_menu_intro_seen_' + CM.LOCATION_CODE;
+        const key = 'tish_menu_intro_seen_' + CM.LOCATION_CODE + '_reel_v1';
         const hasSeenIntro = function () {
             try {
                 return sessionStorage.getItem(key) === '1'
@@ -640,14 +737,58 @@ html.cm-skip-menu-intro #intro{display:none!important}
                 sessionStorage.setItem(key, '1');
                 if (mode === 'first_visit') localStorage.setItem(key, '1');
             } catch (error) { /* Storage may be disabled. */ }
+            document.documentElement.classList.remove('cm-intro-open');
             intro.classList.add('hide');
+            document.querySelector('main.menu-area')?.focus({preventScroll:true});
             window.setTimeout(() => intro.remove(), 500);
         };
         if (hasSeenIntro() || document.documentElement.classList.contains('cm-skip-menu-intro')) {
             intro.remove();
         } else {
-            document.getElementById('introEnter')?.addEventListener('click', hideIntro);
-            if (reducedMotion.matches) intro.classList.add('cm-reduced-motion');
+            const reel = document.getElementById('introReel');
+            const tools = document.getElementById('introReelTools');
+            const enter = document.getElementById('introEnter');
+            const skip = document.getElementById('introSkip');
+            const sound = document.getElementById('introSound');
+            let timeout;
+            let revealed = false;
+
+            function revealOrderButton(keepFrame = false) {
+                if (revealed) return;
+                revealed = true;
+                window.clearTimeout(timeout);
+                reel.pause();
+                reel.hidden = !keepFrame;
+                intro.classList.toggle('has-reel-frame', keepFrame);
+                tools.hidden = true;
+                enter.hidden = false;
+                enter.focus({preventScroll:true});
+            }
+
+            document.documentElement.classList.add('cm-intro-open');
+            enter.addEventListener('click', hideIntro);
+            if (reducedMotion.matches) {
+                revealOrderButton();
+            } else {
+                reel.addEventListener('playing', function () {
+                    if (!revealed) intro.classList.add('has-reel-frame');
+                });
+                reel.addEventListener('ended', () => revealOrderButton(true), {once:true});
+                reel.addEventListener('error', () => revealOrderButton(), {once:true});
+                skip.addEventListener('click', () => revealOrderButton(reel.readyState >= 2));
+                sound.addEventListener('click', function () {
+                    reel.muted = !reel.muted;
+                    sound.setAttribute('aria-pressed', String(!reel.muted));
+                    sound.querySelector('i').className = reel.muted ? 'fa-solid fa-volume-xmark' : 'fa-solid fa-volume-high';
+                });
+                reel.muted = true;
+                reel.src = reel.dataset.src;
+                reel.hidden = false;
+                tools.hidden = false;
+                skip.focus({preventScroll:true});
+                timeout = window.setTimeout(() => revealOrderButton(), 16000);
+                reel.play().catch(() => revealOrderButton());
+            }
         }
     }
 

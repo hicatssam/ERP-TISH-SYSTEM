@@ -10,37 +10,44 @@
 <title>إتمام الطلب - {{ $branding['name'] ?? config('app.name') }}</title>
 @if(!empty($branding['favicon']))<link rel="icon" href="{{ $branding['favicon'] }}">@endif
 @include('customer-menu.partials.styles')
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-checkout-paper.css') }}?v=4">
 @include('customer-menu.partials.pwa-head')
 </head>
-<body class="crisp-customer-menu tish-paper">
+<body class="crisp-customer-menu tish-paper tish-checkout-page">
 <div class="app crisp-menu-app">
 @include('customer-menu.partials.topbar', ['pageTitle' => 'إتمام الطلب', 'pageSubtitle' => $location->name, 'backUrl' => route('customer-menu.cart', $location->code)])
 
 <main class="menu-area">
  <div class="shell">
-  <div class="eta-banner" id="etaBanner" hidden>
-   <i class="fa-solid fa-clock"></i>
-   <span id="etaText"></span>
-  </div>
-
-  <div class="order-summary">
-   <div id="summaryItems"></div>
-   <div class="cart-total"><span>الإجمالي</span><span id="summaryTotal">0.00 {{ $menuCurrencySymbol }}</span></div>
-  </div>
-
   <form id="checkoutForm" enctype="multipart/form-data">
+   <section class="checkout-sheet checkout-details" aria-labelledby="checkoutDetailsTitle">
+   <h2 id="checkoutDetailsTitle">بيانات الطلب</h2>
    <div class="checkout-grid">
-    <label>الاسم<input name="name" required maxlength="120"></label>
-    <label>رقم الجوال<input name="phone" required maxlength="20" inputmode="tel"></label>
-    <label>نوع الطلب
+    <label class="full" id="checkoutServiceFallback">نوع الطلب
      <select name="service_type" id="serviceType" required>
       @foreach(($serviceOptions ?? []) as $option)
        <option value="{{ $option['value'] ?? $option }}">{{ $option['label'] ?? $option }}</option>
       @endforeach
      </select>
     </label>
-    <label id="tableField" class="full" hidden>
-     <span>الطاولة</span>
+    <div class="full checkout-service-picker" id="checkoutServicePicker" role="group" aria-labelledby="checkoutServiceTitle" hidden>
+     <span id="checkoutServiceTitle">نوع الطلب</span>
+     <div class="checkout-service-options">
+      @foreach(($serviceOptions ?? []) as $option)
+       @php
+           $serviceValue = $option['value'] ?? $option;
+       @endphp
+       <button class="checkout-paper-choice" type="button" data-service-choice="{{ $serviceValue }}" aria-pressed="false">
+        <i class="fa-solid {{ match($serviceValue) { 'dine_in' => 'fa-utensils', 'delivery' => 'fa-motorcycle', default => 'fa-bag-shopping' } }}" aria-hidden="true"></i>
+        <span>{{ $option['label'] ?? $option }}</span>
+       </button>
+      @endforeach
+     </div>
+    </div>
+    <label>الاسم<input name="name" autocomplete="name" required maxlength="120"></label>
+    <label>رقم الجوال<input name="phone" type="tel" autocomplete="tel" required maxlength="20" inputmode="tel" dir="ltr"></label>
+    <div id="tableField" class="full" role="group" aria-labelledby="checkoutTableTitle" hidden>
+     <span id="checkoutTableTitle">الطاولة</span>
      <div class="table-legend">
       <span><span class="dot" style="background:#22a35c"></span> متاحة</span>
       <span><span class="dot" style="background:#d64545"></span> مشغولة</span>
@@ -52,7 +59,7 @@
        @endphp
        <button type="button"
                class="table-card {{ $isAvailable ? 'available' : 'occupied' }}"
-               data-table-id="{{ $table['id'] }}"
+               data-table-id="{{ $table['id'] }}" aria-pressed="false"
                {{ $isAvailable ? '' : 'disabled' }}>
         <span class="dot {{ $isAvailable ? 'available' : 'occupied' }}"></span>
         {{ $table['name'] ?? ('طاولة '.$table['id']) }}
@@ -63,24 +70,27 @@
       @endforelse
      </div>
      <input type="hidden" name="restaurant_table_id" id="tableIdInput">
-    </label>
-    <label class="full" id="addressField" hidden>عنوان التوصيل<textarea name="address" maxlength="500"></textarea></label>
+    </div>
+    <label class="full" id="addressField" hidden>عنوان التوصيل<textarea name="address" autocomplete="street-address" maxlength="500"></textarea></label>
     <label class="full">ملاحظات الطلب<textarea name="notes" maxlength="700"></textarea></label>
    </div>
 
-   <h3>طريقة الدفع</h3>
+   </section>
+
+   <section class="checkout-sheet checkout-payment" aria-labelledby="checkoutPaymentTitle">
+   <h2 id="checkoutPaymentTitle">طريقة الدفع</h2>
    <div class="payment-methods" id="paymentMethods">جاري تحميل طرق الدفع...</div>
    <div id="paymentAccountDetails"></div>
    <input type="hidden" name="payment_method_id" id="paymentMethodId">
    <input type="hidden" name="payment_account_id" id="paymentAccountId">
 
-   <div id="paymentReferenceField" hidden style="margin-top:12px">
+   <div id="paymentReferenceField" hidden>
     <label>رقم مرجع العملية (اختياري)
      <input type="text" name="payment_reference" id="paymentReferenceInput" maxlength="150" placeholder="مثال: TX123456">
     </label>
    </div>
 
-   <div id="paymentProofField" hidden style="margin-top:12px">
+   <div id="paymentProofField" hidden>
     <label class="upload-field" for="paymentProofInput">
      <i class="fa-solid fa-cloud-arrow-up"></i>
      <span>إرفاق إشعار إثبات الدفع (صورة أو PDF) <span class="required-star" id="proofRequiredStar" hidden>*</span></span>
@@ -89,15 +99,31 @@
     <div class="upload-preview" id="uploadPreview" hidden></div>
    </div>
 
+   </section>
+   <section class="checkout-sheet checkout-receipt" aria-labelledby="checkoutSummaryTitle">
+  <div class="eta-banner" id="etaBanner" hidden>
+   <i class="fa-solid fa-clock"></i>
+   <span id="etaText"></span>
+  </div>
+
+  <div class="order-summary">
+   <h2 id="checkoutSummaryTitle">ملخص الطلب</h2>
+   <a class="checkout-edit-cart" href="{{ route('customer-menu.cart', $location->code) }}">تعديل السلة</a>
+   <div id="summaryItems"></div>
+   <div class="cart-total"><span>الإجمالي</span><span id="summaryTotal">0.00 {{ $menuCurrencySymbol }}</span></div>
+  </div>
+   </section>
+   <div class="checkout-confirm">
    <div class="error" id="checkoutError" role="alert" tabindex="-1"></div>
    <button class="submit-order" id="checkoutSubmit" type="submit" disabled>تأكيد وإرسال الطلب</button>
+   </div>
   </form>
+  <div class="checkout-install">@include('customer-menu.partials.pwa-install')</div>
  </div>
 </main>
 </div>
 
 @include('customer-menu.partials.bottom-nav', ['activeNav' => 'cart'])
-@include('customer-menu.partials.pwa-install')
 @include('customer-menu.partials.cart-engine')
 
 <script>
@@ -146,22 +172,35 @@ function preselectQrTable() {
         .find(item => String(item.dataset.tableId) === String(table.id) && !item.disabled);
     if (!card) return;
     service.value = 'dine_in';
-    card.classList.add('selected');
-    document.getElementById('tableIdInput').value = table.id;
+    selectCheckoutTable(card);
 }
 
 function serviceFields() {
     const value = document.getElementById('serviceType').value;
-    document.getElementById('tableField').hidden = value !== 'dine_in';
-    document.getElementById('addressField').hidden = value !== 'delivery';
+    const table = document.getElementById('tableField');
+    const address = document.getElementById('addressField');
+    table.hidden = value !== 'dine_in';
+    document.getElementById('tableIdInput').disabled = table.hidden;
+    address.hidden = value !== 'delivery';
+    address.querySelector('textarea').disabled = address.hidden;
+    document.querySelectorAll('[data-service-choice]').forEach(button => {
+        button.setAttribute('aria-pressed', String(button.dataset.serviceChoice === value));
+    });
+}
+
+function selectCheckoutTable(card) {
+    document.querySelectorAll('.table-card').forEach(button => {
+        const selected = button === card;
+        button.classList.toggle('selected', selected);
+        button.setAttribute('aria-pressed', String(selected));
+    });
+    document.getElementById('tableIdInput').value = card.dataset.tableId;
 }
 
 document.getElementById('tableGrid').addEventListener('click', e => {
     const card = e.target.closest('.table-card');
     if (!card || card.disabled) return;
-    document.querySelectorAll('.table-card').forEach(c => c.classList.remove('selected'));
-    card.classList.add('selected');
-    document.getElementById('tableIdInput').value = card.dataset.tableId;
+    selectCheckoutTable(card);
 });
 
 async function loadPayments() {
@@ -192,12 +231,19 @@ function paymentIcon(type) {
     }
 }
 
+document.getElementById('paymentMethods').addEventListener('error', event => {
+    if (!event.target.matches('.payment-method-logo')) return;
+    const fallback = event.target.nextElementSibling;
+    event.target.remove();
+    fallback.hidden = false;
+}, true);
+
 function renderPayments() {
     document.getElementById('paymentMethods').innerHTML = methods.length
         ? methods.map(m => `
-          <button class="payment-card" type="button" data-pay="${m.id}">
+          <button class="payment-card" type="button" aria-pressed="false" data-pay="${m.id}">
             <span class="radio"></span>
-            <span class="p-icon">${m.logo ? `<img src="${CM.esc(m.logo)}" alt="${CM.esc(m.name)}">` : `<i class="${paymentIcon(m.type)}"></i>`}</span>
+            <span class="p-icon" aria-hidden="true">${m.logo ? `<img class="payment-method-logo" src="${CM.esc(m.logo)}" alt="" decoding="async">` : ''}<i class="${paymentIcon(m.type)}" ${m.logo ? 'hidden' : ''}></i></span>
             <span class="p-copy"><strong>${CM.esc(m.name)}</strong><small>${CM.esc(menuT(({cash:'نقد',card_pos:'بطاقة',bank_transfer:'تحويل بنكي',electronic_wallet:'محفظة إلكترونية'})[m.type] || m.type || ''))}</small></span>
           </button>`).join('')
         : 'لا توجد طرق دفع مفعلة.';
@@ -206,10 +252,16 @@ function renderPayments() {
 function choosePayment(id) {
     const method = methods.find(x => String(x.id) === String(id));
     if (!method) return;
-    document.getElementById('paymentMethodId').value = method.id;
+    const methodInput = document.getElementById('paymentMethodId');
+    if (methodInput.value === String(method.id)) return;
+    methodInput.value = method.id;
     document.getElementById('paymentAccountId').value = '';
     document.getElementById('paymentReferenceInput').required = !!method.requires_reference;
-    document.querySelectorAll('[data-pay]').forEach(b => b.classList.toggle('active', String(b.dataset.pay) === String(id)));
+    document.querySelectorAll('[data-pay]').forEach(button => {
+        const selected = String(button.dataset.pay) === String(id);
+        button.classList.toggle('active', selected);
+        button.setAttribute('aria-pressed', String(selected));
+    });
     const accounts = method.accounts || [];
     document.getElementById('paymentAccountDetails').innerHTML = accounts.length
         ? `<label>الحساب<select id="paymentAccountSelect" aria-required="true"><option value="">اختر الحساب</option>${accounts.map(a => `<option value="${a.id}">${CM.esc(a.name || a.provider_name || a.account_number || 'حساب')}</option>`).join('')}</select></label>`
@@ -231,6 +283,19 @@ function choosePayment(id) {
     proofInput.required = !!method.requires_verification;
     proofStar.hidden = !method.requires_verification;
     if (isPureCash) { proofInput.value = ''; document.getElementById('uploadPreview').hidden = true; }
+    if (!window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+        document.querySelector('.payment-card.active')?.animate?.(
+            [{scale: '.975'}, {scale: '1.012', offset: .65}, {scale: '1'}],
+            {duration: 240, easing: 'ease-out'}
+        );
+        const details = document.getElementById('paymentAccountDetails');
+        for (const field of [accounts.length ? details : null, refField, proofField]) {
+            if (field && !field.hidden) field.animate?.(
+                [{opacity: .6, translate: '0 -5px'}, {opacity: 1, translate: '0 0'}],
+                {duration: 220, easing: 'ease-out'}
+            );
+        }
+    }
 }
 
 function renderSelectedPaymentAccount() {
@@ -274,7 +339,19 @@ document.addEventListener('change', e => {
     }
 });
 
-document.getElementById('serviceType').addEventListener('change', serviceFields);
+const serviceSelect = document.getElementById('serviceType');
+const servicePicker = document.getElementById('checkoutServicePicker');
+if (servicePicker.querySelector('[data-service-choice]')) {
+    document.getElementById('checkoutServiceFallback').hidden = true;
+    servicePicker.hidden = false;
+    servicePicker.addEventListener('click', event => {
+        const option = event.target.closest('[data-service-choice]');
+        if (!option) return;
+        serviceSelect.value = option.dataset.serviceChoice;
+        serviceFields();
+    });
+}
+serviceSelect.addEventListener('change', serviceFields);
 
 document.getElementById('checkoutForm').addEventListener('submit', async e => {
     e.preventDefault();

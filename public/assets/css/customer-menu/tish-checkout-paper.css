@@ -1,0 +1,240 @@
+/* Paper checkout surfaces and responsive order review. */
+body.tish-paper.tish-checkout-page .menu-area .shell {
+  width:min(100% - 28px, 980px);
+  max-width:none;
+}
+.tish-checkout-page #checkoutForm {
+  display:grid;
+  gap:16px;
+  align-items:start;
+}
+.tish-checkout-page .checkout-sheet {
+  position:relative;
+  isolation:isolate;
+  min-width:0;
+  padding:clamp(16px, 4vw, 24px);
+  filter:drop-shadow(0 4px 3px #4b2c1d26);
+}
+.tish-checkout-page .checkout-sheet::before {
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
+  background:#fbefd9 url('../../tish-paper/paper/background.webp') center/400px auto;
+  background-blend-mode:soft-light;
+  clip-path:polygon(0 4px, 8% 1px, 18% 5px, 30% 0, 43% 4px, 57% 1px, 70% 5px, 83% 0, 94% 3px, 100% 1px, 100% calc(100% - 4px), 89% 100%, 76% calc(100% - 4px), 63% 100%, 50% calc(100% - 3px), 37% 100%, 22% calc(100% - 3px), 11% 100%, 0 calc(100% - 3px));
+}
+.tish-checkout-page .checkout-sheet h2 {
+  margin:0 0 13px;
+  font-size:clamp(1.05rem, 4vw, 1.35rem);
+  line-height:1.4;
+}
+.tish-checkout-page .checkout-grid {
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+body.tish-paper.tish-checkout-page #checkoutForm :is(input:not([type=hidden]):not([type=file]),select,textarea) {
+  width:100%;
+  min-width:0;
+  min-height:46px;
+  margin-top:5px;
+  padding:8px 10px;
+  color:var(--tish-p13-ink);
+  background:#fff8eb!important;
+  border:1px solid #c7a98a!important;
+  border-bottom:2px solid #a78161!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  font-size:16px;
+}
+/* The paper artwork sits behind the editable area and keeps the focus ring intact. */
+body.tish-paper.tish-checkout-page #checkoutForm :is(input[name="name"],input[name="phone"],#paymentReferenceInput,#paymentAccountSelect,textarea) {
+  min-height:52px;
+  padding:9px 14px 13px;
+  background:transparent url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;
+  border:0!important;
+}
+body.tish-paper.tish-checkout-page #checkoutForm :is(input[name="name"],input[name="phone"],#paymentReferenceInput,#paymentAccountSelect,textarea):focus {
+  outline:2px solid var(--tish-paper-red);
+  outline-offset:2px;
+}
+body.tish-paper.tish-checkout-page #checkoutForm label {
+  color:var(--tish-p13-ink);
+  font-weight:800;
+}
+.tish-checkout-page #checkoutForm textarea {
+  min-height:76px;
+}
+body.tish-paper.tish-checkout-page :is(.payment-card,.table-card,.checkout-paper-choice) {
+  min-height:48px;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  background:transparent url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;
+}
+body.tish-paper.tish-checkout-page :is(.payment-card.active,.table-card.selected,.checkout-paper-choice[aria-pressed="true"]) {
+  background:transparent url('../../tish-paper/paper/nav-active.webp') center/100% 100% no-repeat!important;
+  color:#fff8ed!important;
+}
+.tish-checkout-page :is(.payment-card.active,.table-card.selected) small {
+  color:inherit!important;
+}
+.tish-checkout-page .checkout-service-options {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(76px,1fr));
+  gap:6px;
+  margin-top:6px;
+}
+.tish-checkout-page .checkout-paper-choice {
+  display:grid;
+  place-items:center;
+  align-content:center;
+  gap:4px;
+  min-height:65px;
+  padding:9px 5px;
+  color:var(--tish-paper-red);
+  font-weight:900;
+  font-size:.8rem;
+}
+.tish-checkout-page .checkout-paper-choice i {
+  font-size:1rem;
+}
+.tish-checkout-page .table-card {
+  padding:10px 8px 12px;
+}
+.tish-checkout-page .table-card.selected .dot {
+  background:#fff8ed;
+}
+.tish-checkout-page .checkout-sheet h2::after {
+  content:"";
+  display:block;
+  width:42px;
+  height:4px;
+  margin-top:5px;
+  background:url('../../tish-paper/paper/nav-active.webp') center/100% 100% no-repeat;
+}
+.tish-checkout-page :is(#paymentReferenceField,#paymentProofField,#paymentAccountDetails:not(:empty)) {
+  margin-top:12px;
+}
+.tish-checkout-page #selectedPaymentAccount:not(:empty),
+.tish-checkout-page .upload-preview:not([hidden]) {
+  padding:10px;
+  margin-top:8px;
+  background:#fff7e9;
+  overflow-wrap:anywhere;
+}
+.tish-checkout-page .upload-field {
+  position:relative;
+  border-radius:4px;
+  background:#fff7e9;
+}
+.tish-checkout-page .upload-field:focus-within {
+  outline:3px solid var(--tish-paper-red);
+  outline-offset:2px;
+}
+.tish-checkout-page .upload-field input[type=file] {
+  display:block;
+  position:absolute;
+  width:1px;
+  height:1px;
+  padding:0;
+  opacity:0;
+}
+body.tish-paper.tish-checkout-page .checkout-receipt .order-summary {
+  position:relative;
+  margin:0;
+  padding:0;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.tish-checkout-page .checkout-edit-cart {
+  display:inline-block;
+  color:var(--tish-paper-red);
+  font-weight:800;
+  text-decoration:underline;
+}
+.tish-checkout-page .checkout-receipt .cart-row {
+  grid-template-columns:44px minmax(0,1fr) auto;
+  gap:8px;
+}
+.tish-checkout-page .checkout-receipt .cart-thumb {
+  width:44px;
+  height:44px;
+}
+.tish-checkout-page .checkout-receipt .cart-total {
+  color:var(--tish-paper-red);
+  border-top:1px dashed #a78a70;
+}
+.tish-checkout-page #checkoutError:empty {
+  display:none;
+}
+body.tish-paper.tish-checkout-page #checkoutSubmit:not(:disabled) {
+  min-height:56px;
+  border-radius:0!important;
+  background:transparent url('../../tish-paper/paper/nav-active.webp') center/100% 100% no-repeat!important;
+}
+.tish-checkout-page .checkout-install {
+  display:flex;
+  justify-content:center;
+  margin-block:14px 24px;
+}
+body.tish-paper.tish-checkout-page .checkout-install #pwaInstallBtn.tish-paper-pin-control:not([hidden]) {
+  position:relative!important;
+  inset:auto!important;
+  width:auto!important;
+  height:auto!important;
+  min-width:112px!important;
+  min-height:48px!important;
+  max-width:none!important;
+  flex-direction:row!important;
+  gap:7px!important;
+  padding:8px 14px!important;
+}
+@media (min-width:800px) {
+  .tish-checkout-page #checkoutForm {
+    grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);
+  }
+  .tish-checkout-page .checkout-details {grid-area:1 / 1;}
+  .tish-checkout-page .checkout-payment {grid-area:2 / 1;}
+  .tish-checkout-page .checkout-receipt {grid-area:1 / 2 / 3;}
+  .tish-checkout-page .checkout-confirm {grid-column:1 / -1;}
+}
+
+/* Preserve uploaded brand colors and reserve a predictable logo area. */
+body.tish-paper.tish-checkout-page .payment-card {
+  gap:9px;
+  min-height:70px;
+  padding:10px 15px 12px;
+  text-align:start;
+}
+body.tish-paper.tish-checkout-page .payment-card .p-icon {
+  width:52px;
+  height:46px;
+  padding:5px;
+  border-radius:5px;
+  background:#fff7e9!important;
+  color:var(--tish-paper-red)!important;
+}
+body.tish-paper.tish-checkout-page .payment-card .p-icon img {
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  border-radius:0;
+}
+body.tish-paper.tish-checkout-page .payment-card.active .radio {
+  border-color:#fff8ed;
+}
+body.tish-paper.tish-checkout-page .payment-card.active .radio::after {
+  background:#fff8ed;
+}
+.tish-checkout-page #paymentReferenceInput {
+  direction:ltr;
+  text-align:start;
+}
+.tish-checkout-page .upload-field {
+  padding:18px 12px;
+  background:transparent url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat;
+  border:1px dashed #aa8868;
+}

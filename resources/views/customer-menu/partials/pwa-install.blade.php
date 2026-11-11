@@ -112,6 +112,8 @@
                 // Fall back to browser-specific instructions.
             }
         }
+        const fold = btn.getAnimations?.().find(animation => animation.animationName === 'tish-paper-complete-fold');
+        if (fold) await fold.finished.catch(() => {});
         openHelp();
     });
 

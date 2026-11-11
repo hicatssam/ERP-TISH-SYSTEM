@@ -30,6 +30,7 @@ body.tish-paper #pwaInstallBtn.tish-paper-pin-control:not([hidden]){
   border-radius:0!important;
   box-shadow:none!important;
   background:transparent url('../../tish-paper/paper/favorite-disc.webp') center/100% 100% no-repeat!important;
+  clip-path:polygon(0 5%,8% 2%,17% 4%,25% 0,36% 3%,47% 1%,58% 4%,68% 1%,79% 3%,90% 0,100% 5%,98% 22%,100% 37%,98% 55%,100% 71%,98% 87%,100% 97%,90% 100%,78% 97%,65% 100%,52% 97%,40% 100%,26% 98%,13% 100%,0 96%,2% 76%,0 57%,2% 40%,0 21%);
   color:var(--tish-control-color)!important;
   filter:drop-shadow(0 6px 4px rgba(60,37,25,.27))!important;
   font-family:Cairo,Tajawal,Arial,sans-serif!important;
@@ -65,7 +66,7 @@ body.tish-paper.cm-has-sticky-cart #pwaInstallBtn.tish-paper-pin-control:not([hi
   bottom:calc(180px + env(safe-area-inset-bottom,0px))!important;
 }
 @media(hover:hover) and (pointer:fine){
-  body.tish-paper #pwaInstallBtn.tish-paper-pin-control:not([hidden]):hover{
+  body.tish-paper #pwaInstallBtn.tish-paper-pin-control:not([hidden]):not(.paper-pin-fold):hover{
     transform:translateY(-3px)!important;
     filter:drop-shadow(0 9px 5px rgba(60,37,25,.3))!important;
   }
@@ -94,57 +95,17 @@ body.tish-paper #pwaInstallBtn.tish-paper-pin-control:focus-visible{
     padding:12px 6px!important;
   }
 }
-/* Cart navigation seal: authentic ivory torn paper + theme-colour cart glyph. */
-body.tish-paper .bottom-nav .nav-btn.tish-paper-cart-nav{
-  isolation:isolate;
-}
-body.tish-paper .bottom-nav .nav-btn.tish-paper-cart-nav .tish-paper-nav-icon{
-  display:none!important;
-}
+/* Cart uses the same unselected icon treatment and selected paper as the other tabs. */
 body.tish-paper .bottom-nav .nav-btn.tish-paper-cart-nav > .tish-paper-cart-icon-disc{
-  position:relative!important;
-  display:grid!important;
-  place-items:center!important;
-  flex:0 0 auto!important;
-  width:clamp(34px,8.5vw,38px)!important;
-  height:clamp(34px,8.5vw,38px)!important;
-  min-width:34px!important;
-  max-width:38px!important;
-  padding:8px!important;
-  margin:0!important;
-  border:0!important;
-  border-radius:0!important;
-  background:url('../../tish-paper/paper/favorite-disc.webp') center/100% 100% no-repeat!important;
-  color:var(--tish-control-color)!important;
-  line-height:1!important;
-  box-shadow:none!important;
-  transform-origin:center;
-}
-body.tish-paper .bottom-nav .nav-btn.tish-paper-cart-nav .tish-paper-cart-glyph{
-  display:block!important;
-  width:100%!important;
-  height:100%!important;
-  min-width:19px!important;
-  min-height:19px!important;
-  background:var(--tish-control-color)!important;
-  -webkit-mask:url('../../tish-paper/icons/cart.svg') center/contain no-repeat;
-  mask:url('../../tish-paper/icons/cart.svg') center/contain no-repeat;
-}
-body.tish-paper .bottom-nav .nav-btn.tish-paper-cart-nav > .nav-badge{
-  z-index:4!important;
-  right:calc(50% - 27px)!important;
-}
-body.tish-paper .bottom-nav .nav-btn.tish-paper-cart-nav > span:not(.tish-paper-cart-icon-disc){
-  font-weight:900!important;
+  display:none!important;
 }
 @keyframes tish-paper-cart-squish{
   0%,100%{transform:scale(1) rotate(0)}
   28%{transform:scale(.85,.93) rotate(-4deg)}
   64%{transform:scale(1.07,.99) rotate(2deg)}
 }
-body.tish-paper .bottom-nav .nav-btn.tish-paper-cart-nav:active .tish-paper-cart-icon-disc,
-body.tish-paper .bottom-nav .nav-btn.tish-paper-cart-nav.paper-cart-icon-pop .tish-paper-cart-icon-disc,
-body.tish-paper .cm-sticky-cart.paper-cart-icon-pop .cm-sticky-cart-icon,
+body.tish-paper .bottom-nav .nav-btn.tish-paper-cart-nav:active .tish-paper-nav-icon,
+body.tish-paper .bottom-nav .nav-btn.tish-paper-cart-nav.paper-cart-icon-pop .tish-paper-nav-icon,
 body.tish-paper.tish-cart-page #cartItems .cart-row .row-actions button.paper-cart-qty-press{
   animation:tish-paper-cart-squish 380ms var(--tish-control-ease) both!important;
 }
@@ -193,12 +154,24 @@ body.tish-paper.tish-cart-page #cartItems .row-actions button:active{
 }
 @media(prefers-reduced-motion:reduce){
   body.tish-paper #pwaInstallBtn.tish-paper-pin-control,
-  body.tish-paper .bottom-nav .nav-btn.tish-paper-cart-nav .tish-paper-cart-icon-disc,
+  body.tish-paper .bottom-nav .nav-btn.tish-paper-cart-nav .tish-paper-nav-icon,
   body.tish-paper .cm-sticky-cart .cm-sticky-cart-icon,
   body.tish-paper.tish-cart-page #cartItems .tish-cart-bag-art,
   body.tish-paper.tish-cart-page #cartItems .row-actions button{
     animation:none!important;
     transition:none!important;
     transform:none!important;
+  }
+}
+body.tish-paper .cm-sticky-cart:not([hidden]) {
+  animation:none;
+  transform-origin:center bottom;
+}
+@media(prefers-reduced-motion:no-preference) {
+  body.tish-paper .cm-sticky-cart .cm-sticky-cart-cta {
+    transition:scale 120ms ease-out;
+  }
+  body.tish-paper .cm-sticky-cart:active .cm-sticky-cart-cta {
+    scale:.94;
   }
 }

@@ -575,7 +575,8 @@ trait ResolvesCustomerMenuBranding
             ->get()
             ->map(fn ($banner): array => [
                 'id' => 'general-'.$banner->id,
-                'image' => $this->assetFromPath($banner->image),
+                'artwork_only' => str_starts_with((string) $banner->image, 'banners/tish-paper-campaign/'),
+                'image' => $this->generalBannerImage($banner->image),
                 'title' => $banner->title,
                 'subtitle' => $banner->subtitle,
                 'badge_text' => $banner->kicker,
@@ -644,6 +645,19 @@ trait ResolvesCustomerMenuBranding
             str_contains($text, 'حلويات'), str_contains($text, 'حلو'), str_contains($text, 'dessert') => 'dessert',
             default => 'sparkles',
         };
+    }
+
+    private function generalBannerImage(?string $path): ?string
+    {
+        if (str_starts_with((string) $path, 'banners/tish-paper-campaign/')) {
+            $artwork = 'assets/tish-paper/campaign/'.basename($path);
+
+            if ($url = $this->assetFromPath($artwork)) {
+                return $url;
+            }
+        }
+
+        return $this->assetFromPath($path);
     }
 
     protected function assetFromPath(?string $path): ?string
