@@ -8,7 +8,7 @@
 <title>{{ $product['name'] }} - {{ $branding['name'] ?? config('app.name') }}</title>
 @if(!empty($branding['favicon']))<link rel="icon" href="{{ $branding['favicon'] }}">@endif
 @include('customer-menu.partials.styles')
-<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-product-paper.css') }}?v=1">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-product-paper.css') }}?v=2">
 @include('customer-menu.partials.pwa-head')
 </head>
 <body class="crisp-customer-menu tish-paper tish-product-page">
@@ -141,7 +141,7 @@
 </main>
 </div>
 
-@include('customer-menu.partials.bottom-nav', ['activeNav' => 'menu'])
+@include('customer-menu.partials.bottom-nav', ['activeNav' => 'menu', 'showStickyCart' => false])
 @include('customer-menu.partials.cart-engine')
 
 <script>
