@@ -106,10 +106,10 @@ body.tish-paper .bottom-nav .nav-btn.tish-paper-cart-nav > .tish-paper-cart-icon
   display:grid!important;
   place-items:center!important;
   flex:0 0 auto!important;
-  width:clamp(35px,9vw,42px)!important;
-  height:clamp(35px,9vw,42px)!important;
-  min-width:35px!important;
-  max-width:42px!important;
+  width:clamp(34px,8.5vw,38px)!important;
+  height:clamp(34px,8.5vw,38px)!important;
+  min-width:34px!important;
+  max-width:38px!important;
   padding:8px!important;
   margin:0!important;
   border:0!important;
