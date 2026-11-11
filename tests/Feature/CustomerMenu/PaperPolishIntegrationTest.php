@@ -14,8 +14,7 @@ class PaperPolishIntegrationTest extends TestCase
         $styles = file_get_contents(public_path('assets/css/customer-menu/tish-paper-polish-v13.css'));
 
         $this->assertStringContainsString('tish-cart-bag-art', $cart);
-        $this->assertStringContainsString('empty-shopping-bag.svg', $cart);
-        $this->assertStringContainsString('assets/tish-paper/brand/logo-disc.webp', $cart);
+        $this->assertStringContainsString('kraft-cart-bag.webp', $cart);
         $this->assertStringContainsString("id=\"cartTotal\"", $cart);
         $this->assertStringContainsString('CM.cartTotal()', $cart);
         $this->assertStringContainsString("customer-menu.checkout", $cart);

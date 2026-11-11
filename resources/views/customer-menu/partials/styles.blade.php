@@ -407,7 +407,7 @@ body.tish-paper {
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-typography-v7.css') }}?v=7">
 {{-- Paper install, cart and bag controls; scoped to public TISH pages only. --}}
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-controls-v12.css') }}?v=13">
-<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-polish-v13.css') }}?v=14">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-polish-v13.css') }}?v=15">
 <script src="{{ asset('assets/js/customer-menu/tish-paper-controls-v12.js') }}?v=13" defer></script>
 
 <script src="{{ asset('assets/js/customer-menu/tish-visuals.js') }}?v=3" defer></script>
