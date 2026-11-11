@@ -311,7 +311,7 @@ body.tish-paper #intro.tish-reel-intro{overflow:hidden;background:#f5e4cd;oversc
 #intro.tish-reel-intro.has-reel-frame .intro-box{
  position:absolute;inset-inline:12px;top:67%;max-width:none;padding:0;
 }
-#intro .intro-enter{margin:0}
+#intro .intro-enter{margin:0;animation:none!important}
 @media(min-aspect-ratio: 1/1){
  #intro.tish-reel-intro.has-reel-frame .intro-box{top:24%}
 }
