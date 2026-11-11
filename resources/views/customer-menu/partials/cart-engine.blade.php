@@ -170,9 +170,11 @@ window.CustomerMenu = (function () {
     function image(p, cls = '') {
         const initial = esc((p.name || 'د').slice(0, 1));
         const picture = p.cutoutImage || p.image;
-        const fallback = p.cutoutImage && p.image ? esc(p.image) : '';
+        const isCutout = !!p.cutoutImage;
+        const photoClass = isCutout ? 'tish-photo-cutout' : 'tish-photo-source';
+        const fallback = isCutout && p.image ? esc(p.image) : '';
         return picture
-            ? `<img class="${cls}" src="${esc(picture)}" data-fallback="${fallback}" alt="${esc(p.name)}" onerror="if(this.dataset.fallback){const old=this.dataset.fallback;this.dataset.fallback='';this.src=old;}else{this.outerHTML='<div class=&quot;product-placeholder&quot;>${initial}</div>';}">`
+            ? `<img class="${esc(cls)} ${photoClass}" src="${esc(picture)}" data-fallback="${fallback}" alt="${esc(p.name)}" loading="lazy" decoding="async" onerror="if(this.dataset.fallback){const old=this.dataset.fallback;this.dataset.fallback='';this.classList.remove('tish-photo-cutout');this.classList.add('tish-photo-source');this.src=old;}else{this.outerHTML='<div class=&quot;product-placeholder&quot;>${initial}</div>';}">`
             : `<div class="product-placeholder">${initial}</div>`;
     }
 
