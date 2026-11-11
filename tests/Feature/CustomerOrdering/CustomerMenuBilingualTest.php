@@ -171,7 +171,7 @@ class CustomerMenuBilingualTest extends TestCase
         ]);
 
         $this->get(route('customer-menu.index', ['lang' => 'en']))
-            ->assertRedirect(route('customer-menu.show', ['location' => $branch->code, 'lang' => 'en']));
+            ->assertRedirect(route('customer-menu.show', ['location' => $branch->code, 'branch_selected' => 1, 'lang' => 'en']));
 
         foreach ([
             route('customer-menu.index', ['choose' => 1]),

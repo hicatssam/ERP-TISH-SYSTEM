@@ -44,6 +44,7 @@ class CustomerMenuController extends Controller
 
             return redirect()->route('customer-menu.show', [
                 'location' => $branch->code,
+                'branch_selected' => 1,
                 ...$request->only(['lang', 'table']),
             ]);
         }
