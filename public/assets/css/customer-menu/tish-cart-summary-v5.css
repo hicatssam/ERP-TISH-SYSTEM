@@ -1,0 +1,162 @@
+/* TISH cart summary — put ALL text inside the safe center of torn paper.
+   Applied after v2/v3/v4 so legacy summary heights cannot clip the note.
+   Values are unchanged, and checkout/cart behaviors are untouched. */
+
+body.tish-paper.tish-cart-page .menu-area .shell > .order-summary{
+  position:relative!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  align-content:center!important;
+  justify-content:stretch!important;
+  row-gap:11px!important;
+  width:100%!important;
+  height:auto!important;
+  min-height:244px!important;
+  max-height:none!important;
+  margin:16px auto 13px!important;
+  padding:40px clamp(26px,7%,54px) 60px!important;
+  border:0!important;
+  border-radius:0!important;
+  background:url('../../tish-paper/paper/category-ivory.webp') center center/100% 100% no-repeat!important;
+  box-sizing:border-box!important;
+  overflow:visible!important;
+  isolation:isolate!important;
+  filter:drop-shadow(0 6px 4px rgba(63,37,22,.20))!important;
+}
+body.tish-paper.tish-cart-page .menu-area .shell > .order-summary::before,
+body.tish-paper.tish-cart-page .menu-area .shell > .order-summary::after{
+  content:none!important;
+}
+body.tish-paper.tish-cart-page .menu-area .shell > .order-summary > .summary-row{
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:14px!important;
+  min-width:0!important;
+  width:100%!important;
+  margin:0!important;
+  padding:0 2px 11px!important;
+  border:0!important;
+  border-bottom:1px dashed #b6a08a!important;
+  background:transparent!important;
+  color:#2b241f!important;
+  font-size:clamp(1.03rem,2.1vw,1.2rem)!important;
+  line-height:1.55!important;
+  font-weight:800!important;
+}
+body.tish-paper.tish-cart-page .menu-area .shell > .order-summary > .summary-row > span{
+  display:block!important;
+  min-width:0!important;
+  margin:0!important;
+  padding:0!important;
+  line-height:1.5!important;
+  color:#2b241f!important;
+}
+body.tish-paper.tish-cart-page .menu-area .shell > .order-summary > .summary-row > span:last-child{
+  white-space:nowrap!important;
+  font-weight:900!important;
+  font-size:clamp(1.1rem,2.35vw,1.28rem)!important;
+  direction:ltr!important;
+  font-variant-numeric:tabular-nums!important;
+}
+body.tish-paper.tish-cart-page .menu-area .shell > .order-summary > .cart-total{
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  width:100%!important;
+  min-width:0!important;
+  gap:13px!important;
+  margin:0!important;
+  padding:2px 2px 0!important;
+  border:0!important;
+  background:transparent!important;
+  color:#27211c!important;
+  font-size:clamp(1.21rem,2.6vw,1.52rem)!important;
+  line-height:1.4!important;
+  font-weight:900!important;
+}
+body.tish-paper.tish-cart-page .menu-area .shell > .order-summary > .cart-total > strong{
+  display:block!important;
+  line-height:1.45!important;
+  font-weight:900!important;
+  color:#27211c!important;
+}
+body.tish-paper.tish-cart-page .menu-area .shell > .order-summary > .cart-total > strong:last-child{
+  direction:ltr!important;
+  white-space:nowrap!important;
+  text-align:left!important;
+  font-variant-numeric:tabular-nums!important;
+}
+body.tish-paper.tish-cart-page .menu-area .shell > .order-summary > .cart-note{
+  position:static!important;
+  display:block!important;
+  align-self:center!important;
+  justify-self:center!important;
+  width:min(100%,470px)!important;
+  max-width:100%!important;
+  min-width:0!important;
+  margin:0 auto!important;
+  padding:0 7px!important;
+  border:0!important;
+  color:#675447!important;
+  text-align:center!important;
+  font-size:clamp(.76rem,1.65vw,.9rem)!important;
+  font-weight:600!important;
+  line-height:1.7!important;
+  letter-spacing:0!important;
+  overflow-wrap:break-word!important;
+  background:transparent!important;
+}
+body.tish-paper.tish-cart-page .menu-area .shell > .order-summary .tish-note-next-step{
+  display:block;
+  width:100%;
+  margin-top:1px;
+  line-height:1.7;
+}
+body.tish-paper.tish-cart-page .menu-area .shell > #checkoutStart{
+  margin:0 auto 14px!important;
+  width:100%!important;
+  min-height:58px!important;
+  font-size:clamp(1.15rem,2.9vw,1.55rem)!important;
+  line-height:1.4!important;
+  font-weight:900!important;
+  text-align:center!important;
+}
+/* Keep every ticket, subtotal and note within the same paper regardless of viewport. */
+@media(max-width:650px){
+  body.tish-paper.tish-cart-page .menu-area .shell > .order-summary{
+    min-height:234px!important;
+    row-gap:9px!important;
+    margin:14px auto 11px!important;
+    padding:33px 8% 57px!important;
+  }
+  body.tish-paper.tish-cart-page .menu-area .shell > .order-summary > .summary-row{
+    font-size:.98rem!important;
+    padding-bottom:8px!important;
+  }
+  body.tish-paper.tish-cart-page .menu-area .shell > .order-summary > .cart-total{
+    font-size:1.16rem!important;
+  }
+  body.tish-paper.tish-cart-page .menu-area .shell > .order-summary > .cart-note{
+    width:100%!important;
+    padding-inline:3px!important;
+    font-size:clamp(.71rem,2.52vw,.84rem)!important;
+    line-height:1.65!important;
+  }
+}
+@media(max-width:385px){
+  body.tish-paper.tish-cart-page .menu-area .shell > .order-summary{
+    min-height:245px!important;
+    padding:32px 7% 58px!important;
+    row-gap:7px!important;
+  }
+  body.tish-paper.tish-cart-page .menu-area .shell > .order-summary > .cart-total{
+    font-size:1.04rem!important;
+  }
+  body.tish-paper.tish-cart-page .menu-area .shell > .order-summary > .cart-note{
+    font-size:.72rem!important;
+    line-height:1.57!important;
+  }
+}
