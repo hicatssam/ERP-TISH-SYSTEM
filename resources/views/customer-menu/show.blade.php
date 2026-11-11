@@ -445,7 +445,7 @@ html.cm-skip-menu-intro #intro{display:none!important}
 @include('customer-menu.partials.cart-engine')
 <script src="{{ asset('assets/js/customer-menu/tish-product-circle-card-v8.js') }}?v=8"></script>
 <script src="{{ asset('assets/js/customer-menu/tish-paper-motion-v10.js') }}?v=11"></script>
-<script src="{{ asset('assets/js/customer-menu/featured-carousel.js') }}?v=2"></script>
+<script src="{{ asset('assets/js/customer-menu/featured-carousel.js') }}?v=3"></script>
 
 <script>
 (function () {

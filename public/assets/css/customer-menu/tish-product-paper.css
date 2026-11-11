@@ -197,3 +197,90 @@ body.tish-paper.tish-product-page :is(.tish-addon-add,.tish-addon-pick) {
   0%,100% {translate:0 0;}
   50% {translate:0 -5px;rotate:-2deg;}
 }
+
+/* Related product cover flow. The plain horizontal row remains the no-JS fallback. */
+.tish-product-page .related-showcase .section-title {
+  align-items:center;
+}
+.tish-product-page .related-slide {
+  flex:0 0 clamp(140px, 40vw, 188px);
+  min-width:0;
+}
+.tish-product-page .related-slide .product {
+  width:100%;
+}
+.tish-product-page .related-showcase[data-showcase-ready] .related-row {
+  --related-width:clamp(142px, 43vw, 198px);
+  position:relative;
+  display:block;
+  height:clamp(212px, 58vw, 265px);
+  perspective:700px;
+  overflow:hidden;
+  touch-action:pan-y;
+}
+.tish-product-page .related-showcase[data-showcase-ready] .related-slide {
+  position:absolute;
+  inset:8px auto auto 50%;
+  width:var(--related-width);
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  transform:translateX(-50%) translateZ(-160px);
+}
+.tish-product-page .related-showcase[data-showcase-ready] .related-slide[data-offset="0"] {
+  z-index:2;
+  opacity:1;
+  visibility:visible;
+  pointer-events:auto;
+  transform:translateX(-50%);
+}
+.tish-product-page .related-showcase[data-showcase-ready] .related-slide:is([data-offset="-1"],[data-offset="1"]) {
+  --related-direction:-1;
+  z-index:1;
+  opacity:.68;
+  visibility:visible;
+  transform:translateX(calc(-50% + var(--related-direction) * 82%)) translateZ(-105px)
+    rotateY(calc(var(--related-direction) * -34deg));
+}
+.tish-product-page .related-showcase[data-showcase-ready] .related-slide[data-offset="1"] {
+  --related-direction:1;
+}
+.tish-product-page .related-controls,
+.tish-product-page .related-controls #featuredDots {
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:5px;
+}
+.tish-product-page .related-showcase button {
+  color:var(--tish-paper-red);
+  border:0;
+}
+.tish-product-page .related-showcase button:is([data-showcase-prev],[data-showcase-next],[data-showcase-pause]) {
+  width:44px;
+  height:44px;
+  background:transparent url('../../tish-paper/paper/favorite-disc.webp') center/100% 100% no-repeat;
+}
+.tish-product-page .related-showcase .cm-showcase-dot {
+  display:grid;
+  place-items:center;
+  width:22px;
+  min-height:44px;
+  padding:0;
+  background:transparent;
+}
+.tish-product-page .related-showcase .cm-showcase-dot::before {
+  content:"";
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#bda58c;
+}
+.tish-product-page .related-showcase .cm-showcase-dot[aria-current="true"]::before {
+  background:var(--tish-paper-red);
+}
+@media (prefers-reduced-motion:no-preference) {
+  .tish-product-page .related-showcase[data-showcase-ready] .related-slide {
+    transition:transform 330ms cubic-bezier(.22,1,.36,1), opacity 240ms, visibility 240ms;
+  }
+}

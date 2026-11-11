@@ -2,13 +2,16 @@
 (function () {
     'use strict';
 
-    const root = document.getElementById('featuredShowcase');
+    const root = document.getElementById('featuredShowcase') || document.getElementById('relatedShowcase');
     if (!root) return;
 
     const stage = root.querySelector('#featuredGrid');
     const prev = root.querySelector('[data-showcase-prev]');
     const next = root.querySelector('[data-showcase-next]');
     const dots = root.querySelector('#featuredDots');
+    const pause = root.querySelector('[data-showcase-pause]');
+    const autoplayMs = Number(root.dataset.autoplayMs) || 6000;
+    let manuallyPaused = false;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
     let slides = [];
     let index = 0;
@@ -20,11 +23,12 @@
     const folds = new WeakMap();
 
     function shouldPause() {
-        return reduced.matches || document.hidden || !inView || hovering || focusWithin || touchStartX !== null ||
+        return manuallyPaused || reduced.matches || document.hidden || !inView || hovering || focusWithin || touchStartX !== null ||
             root.closest('[hidden]') !== null || slides.length < 2;
     }
 
     function schedule() {
+        if (pause) pause.hidden = slides.length < 2 || reduced.matches;
         if (timer !== null) {
             window.clearInterval(timer);
             timer = null;
@@ -32,12 +36,12 @@
         if (!shouldPause()) {
             timer = window.setInterval(function () {
                 if (!shouldPause()) show(index + 1);
-            }, 6000);
+            }, autoplayMs);
         }
     }
 
     function fold(slide, keyframes) {
-        const card = slide.querySelector('.tish-circle-card, .tish-featured-card');
+        const card = slide.querySelector('.tish-circle-card, .tish-featured-card, .product');
         if (!card?.animate) return;
         folds.get(card)?.cancel();
         folds.set(card, card.animate(keyframes, {duration: 320, easing: 'cubic-bezier(.22,1,.36,1)'}));
@@ -73,17 +77,25 @@
     function refresh() {
         slides = Array.from(stage.querySelectorAll('[data-showcase-slide]'));
         const enabled = slides.length >= 2;
+        root.dataset.showcaseReady = 'true';
         prev.hidden = !enabled;
         next.hidden = !enabled;
         dots.hidden = !enabled;
         if (index >= slides.length) index = 0;
         dots.innerHTML = slides.map(function (_, i) {
             return '<button class="cm-showcase-dot" type="button" data-showcase-dot="' + i +
-                '" aria-label="عرض الصنف المميز ' + (i + 1) + '"></button>';
+                '" aria-label="' + (root.dataset.slideLabel || 'عرض الصنف المميز') + ' ' + (i + 1) + '"></button>';
         }).join('');
         show(index, false);
         schedule();
     }
+
+    pause?.addEventListener('click', function () {
+        manuallyPaused = !manuallyPaused;
+        pause.setAttribute('aria-pressed', String(manuallyPaused));
+        pause.querySelector('i').className = manuallyPaused ? 'fa-solid fa-play' : 'fa-solid fa-pause';
+        schedule();
+    });
 
     root.addEventListener('click', function (event) {
         const previous = event.target.closest('[data-showcase-prev]');
@@ -143,5 +155,6 @@
     if (typeof reduced.addEventListener === 'function') reduced.addEventListener('change', schedule);
     else if (typeof reduced.addListener === 'function') reduced.addListener(schedule);
 
-    window.CustomerMenuFeaturedCarousel = { refresh: refresh };
+    if (root.id === 'relatedShowcase') refresh();
+    else window.CustomerMenuFeaturedCarousel = { refresh: refresh };
 })();

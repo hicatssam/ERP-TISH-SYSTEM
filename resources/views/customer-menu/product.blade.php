@@ -8,7 +8,7 @@
 <title>{{ $product['name'] }} - {{ $branding['name'] ?? config('app.name') }}</title>
 @if(!empty($branding['favicon']))<link rel="icon" href="{{ $branding['favicon'] }}">@endif
 @include('customer-menu.partials.styles')
-<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-product-paper.css') }}?v=3">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-product-paper.css') }}?v=4">
 @include('customer-menu.partials.pwa-head')
 </head>
 <body class="crisp-customer-menu tish-paper tish-product-page">
@@ -122,9 +122,18 @@
   @endif
 
   @if($relatedItems->isNotEmpty())
-   <div class="section-title"><div><h2>قد يعجبك أيضًا</h2></div></div>
-   <div class="related-row">
+   <section id="relatedShowcase" class="related-showcase" aria-labelledby="relatedTitle"
+            aria-roledescription="carousel" data-autoplay-ms="1000" data-slide-label="{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Show product' : 'عرض الصنف' }}">
+    <div class="section-title">
+     <h2 id="relatedTitle">{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'You may also like' : 'قد يعجبك أيضًا' }}</h2>
+     <button type="button" data-showcase-pause hidden aria-pressed="false"
+             aria-label="{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Pause automatic rotation' : 'إيقاف التبديل التلقائي' }}">
+      <i class="fa-solid fa-pause" aria-hidden="true"></i>
+     </button>
+    </div>
+    <div class="related-row" id="featuredGrid">
     @foreach($relatedItems as $related)
+     <div class="related-slide" data-showcase-slide>
      <a class="product" href="{{ route('customer-menu.product.show', [$location->code, $related['product_id']]) }}">
       <div class="product-media">
        @if(!empty($related['image']))<img src="{{ $related['cutout_image'] ?: $related['image'] }}" data-fallback="{{ $related['cutout_image'] ? $related['image'] : '' }}" alt="{{ $related['name'] }}" onerror="if(this.dataset.fallback){const f=this.dataset.fallback;this.dataset.fallback='';this.src=f;}else{this.outerHTML='<div class=&quot;product-placeholder&quot;>{{ mb_substr($related['name'], 0, 1) }}</div>';}">@else<div class="product-placeholder">{{ mb_substr($related['name'], 0, 1) }}</div>@endif
@@ -134,8 +143,15 @@
        <div class="product-foot"><span class="price">{{ number_format($related['price'], 2) }} {{ $menuCurrencySymbol }}</span></div>
       </div>
      </a>
+     </div>
     @endforeach
-   </div>
+    </div>
+    <div class="related-controls">
+     <button type="button" data-showcase-prev hidden aria-label="{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Previous product' : 'الصنف السابق' }}"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
+     <div id="featuredDots" hidden></div>
+     <button type="button" data-showcase-next hidden aria-label="{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Next product' : 'الصنف التالي' }}"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
+    </div>
+   </section>
   @endif
  </div>
 </main>
@@ -143,6 +159,9 @@
 
 @include('customer-menu.partials.bottom-nav', ['activeNav' => 'menu', 'showStickyCart' => false])
 @include('customer-menu.partials.cart-engine')
+@if($relatedItems->isNotEmpty())
+<script src="{{ asset('assets/js/customer-menu/featured-carousel.js') }}?v=3" defer></script>
+@endif
 
 <script>
 const CM = window.CustomerMenu;
