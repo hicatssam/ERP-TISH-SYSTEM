@@ -93,6 +93,10 @@
 }
 .reference-home .shell{width:min({{ $contentWidth }}px,calc(100% - 30px))}
 .reference-home .menu-area{padding-bottom:112px}
+/* Let the shared paper canvas show through the full masthead, including search. */
+body.tish-paper.reference-home .reference-masthead.is-illustrated::after{
+ display:none;
+}
 .reference-header{padding:20px 0 8px}
 .reference-header-row{display:flex;align-items:center;justify-content:space-between;gap:16px}
 .reference-brand{display:flex;align-items:center;gap:12px;min-width:0}
