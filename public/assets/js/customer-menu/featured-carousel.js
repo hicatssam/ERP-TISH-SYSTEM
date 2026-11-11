@@ -16,9 +16,11 @@
     let hovering = false;
     let focusWithin = false;
     let touchStartX = null;
+    let inView = !('IntersectionObserver' in window);
+    const folds = new WeakMap();
 
     function shouldPause() {
-        return reduced.matches || document.hidden || hovering || focusWithin ||
+        return reduced.matches || document.hidden || !inView || hovering || focusWithin || touchStartX !== null ||
             root.closest('[hidden]') !== null || slides.length < 2;
     }
 
@@ -28,13 +30,27 @@
             timer = null;
         }
         if (!shouldPause()) {
-            timer = window.setInterval(function () { show(index + 1); }, 6000);
+            timer = window.setInterval(function () {
+                if (!shouldPause()) show(index + 1);
+            }, 6000);
         }
     }
 
-    function show(position) {
+    function fold(slide, keyframes) {
+        const card = slide.querySelector('.tish-circle-card, .tish-featured-card');
+        if (!card?.animate) return;
+        folds.get(card)?.cancel();
+        folds.set(card, card.animate(keyframes, {duration: 320, easing: 'cubic-bezier(.22,1,.36,1)'}));
+    }
+
+    function show(position, animate = true) {
         if (!slides.length) return;
+        const previous = index;
         index = (position % slides.length + slides.length) % slides.length;
+        if (animate && !reduced.matches && previous !== index) {
+            fold(slides[previous], [{scale: '1'}, {scale: '.76 .94', offset: .32}, {scale: '1'}]);
+            fold(slides[index], [{scale: '.74 .93'}, {scale: '1.025 1', offset: .72}, {scale: '1'}]);
+        }
         slides.forEach(function (slide, i) {
             let distance = i - index;
             if (distance > slides.length / 2) distance -= slides.length;
@@ -65,7 +81,7 @@
             return '<button class="cm-showcase-dot" type="button" data-showcase-dot="' + i +
                 '" aria-label="عرض الصنف المميز ' + (i + 1) + '"></button>';
         }).join('');
-        show(index);
+        show(index, false);
         schedule();
     }
 
@@ -103,15 +119,26 @@
     });
     stage.addEventListener('touchstart', function (event) {
         touchStartX = event.touches.length === 1 ? event.touches[0].clientX : null;
-    }, { passive: true });
-    stage.addEventListener('touchend', function (event) {
-        if (touchStartX === null || event.changedTouches.length !== 1) return;
-        const delta = event.changedTouches[0].clientX - touchStartX;
-        touchStartX = null;
-        if (Math.abs(delta) < 42) return;
-        show(index + (delta < 0 ? 1 : -1));
         schedule();
     }, { passive: true });
+    stage.addEventListener('touchend', function (event) {
+        if (touchStartX !== null && event.changedTouches.length === 1) {
+            const delta = event.changedTouches[0].clientX - touchStartX;
+            if (Math.abs(delta) >= 42) show(index + (delta < 0 ? 1 : -1));
+        }
+        touchStartX = null;
+        schedule();
+    }, { passive: true });
+    stage.addEventListener('touchcancel', function () {
+        touchStartX = null;
+        schedule();
+    }, { passive: true });
+    if ('IntersectionObserver' in window) {
+        new window.IntersectionObserver(function ([entry]) {
+            inView = entry.isIntersecting;
+            schedule();
+        }, {threshold: .2}).observe(stage);
+    }
     document.addEventListener('visibilitychange', schedule);
     if (typeof reduced.addEventListener === 'function') reduced.addEventListener('change', schedule);
     else if (typeof reduced.addListener === 'function') reduced.addListener(schedule);
