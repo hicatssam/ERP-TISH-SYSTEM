@@ -1,0 +1,214 @@
+/* TISH paper cart refinement v3: restore proper readable mobile layout
+   and a centered desktop receipt. Applied after tish-cart-v2.css. */
+body.tish-paper.tish-cart-page .shell{
+ width:min(100% - 30px,680px)!important;max-width:680px!important
+}
+body.tish-paper.tish-cart-page .menu-area{
+ padding-top:5px!important;padding-bottom:calc(125px + var(--safe-bottom))!important
+}
+body.tish-paper.tish-cart-page .page-head{
+ width:100%;padding:13px 0 14px!important;
+ min-height:84px!important;display:flex!important;align-items:center!important;gap:10px!important
+}
+body.tish-paper.tish-cart-page .page-head .tish-paper-sublogo{
+ flex:0 0 70px!important;width:70px!important;height:70px!important;
+ order:0!important;margin:0!important;padding:0!important;
+ background:url('../../tish-paper/brand/logo-disc.webp') center/contain no-repeat!important;
+ filter:drop-shadow(0 5px 3px #4329203d)
+}
+body.tish-paper.tish-cart-page .page-head .tish-paper-sublogo img{display:none!important}
+body.tish-paper.tish-cart-page .page-head .page-back{
+ order:3!important;flex:0 0 45px!important;width:45px!important;height:45px!important;
+ border:0!important;border-radius:0!important;
+ background:url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;
+ color:var(--tish-paper-red)!important;font-size:1.15rem!important
+}
+body.tish-paper.tish-cart-page .page-head>div{
+ order:1!important;display:flex!important;flex-direction:column!important;gap:3px!important;
+ min-width:0!important;flex:1!important;margin:0!important;text-align:right!important
+}
+body.tish-paper.tish-cart-page .page-head h1{
+ font-size:clamp(1.23rem,3.6vw,1.74rem)!important;
+ font-weight:900!important;color:#241e1a!important;line-height:1.24!important
+}
+body.tish-paper.tish-cart-page .page-head p{
+ font-size:.84rem!important;color:#5d5147!important;line-height:1.35!important
+}
+body.tish-paper.tish-cart-page .page-head>a:last-child{
+ order:2!important;margin:0!important;flex:0 0 auto!important;
+ padding:10px 13px!important;min-height:39px;
+ background:url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;
+ color:var(--tish-paper-red)!important;font-weight:900!important;font-size:.82rem!important
+}
+body.tish-paper.tish-cart-page .tish-cart-items-heading{
+ display:flex;align-items:center;gap:9px;margin:3px 4px 8px!important;
+ color:var(--tish-paper-ink);font-weight:900
+}
+body.tish-paper.tish-cart-page .tish-cart-items-heading[hidden]{display:none!important}
+body.tish-paper.tish-cart-page .tish-cart-items-heading i{color:var(--tish-paper-red);font-size:1.12rem}
+body.tish-paper.tish-cart-page .tish-cart-items-heading h2{
+ margin:0;font-size:clamp(1.1rem,3vw,1.35rem);font-weight:900
+}
+body.tish-paper.tish-cart-page #cartItems{
+ display:grid;gap:9px!important;align-items:start;padding:0 0 5px
+}
+body.tish-paper.tish-cart-page #cartItems .cart-row{
+ position:relative!important;display:grid!important;
+ grid-template-columns:92px minmax(0,1fr) auto!important;
+ min-height:132px!important;align-items:center!important;
+ column-gap:12px!important;row-gap:8px!important;
+ width:100%;margin:0!important;padding:21px 20px!important;
+ background:url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;
+ border:0!important;border-radius:0!important;box-shadow:none!important;
+ filter:drop-shadow(0 5px 4px #563d292c)!important;overflow:visible
+}
+body.tish-paper.tish-cart-page #cartItems .cart-row .tish-cart-row-index{display:none}
+body.tish-paper.tish-cart-page #cartItems .cart-thumb{
+ width:88px!important;height:88px!important;min-width:0!important;
+ display:grid!important;place-items:center!important;overflow:visible!important;
+ padding:4px!important;margin:0!important;border:0!important;border-radius:0!important;
+ background:url('../../tish-paper/paper/product-disc.webp') center/100% 100% no-repeat!important;
+}
+body.tish-paper.tish-cart-page #cartItems .cart-thumb img{
+ width:100%!important;height:100%!important;padding:3px!important;
+ object-fit:contain!important;object-position:center center!important;
+ border-radius:0!important;background:transparent!important;
+ filter:drop-shadow(0 3px 2px #2c251b39)
+}
+body.tish-paper.tish-cart-page #cartItems .cart-row .row-copy{
+ min-width:0!important;display:flex!important;flex-direction:column!important;
+ align-items:flex-start!important;gap:6px!important;line-height:1.4!important;
+ text-align:start!important;
+}
+body.tish-paper.tish-cart-page #cartItems .row-copy strong{
+ color:#28221e!important;font-size:clamp(.99rem,2.5vw,1.18rem)!important;
+ font-weight:900!important;line-height:1.35!important;overflow-wrap:anywhere!important
+}
+body.tish-paper.tish-cart-page #cartItems .row-copy span{line-height:1.38!important;font-size:.77rem!important}
+body.tish-paper.tish-cart-page #cartItems .row-copy .tish-cart-line-price{
+ display:inline-flex!important;align-items:center!important;justify-content:center!important;
+ align-self:flex-start!important;min-height:38px!important;
+ min-width:104px!important;margin:0!important;padding:7px 16px!important;
+ background:url('../../tish-paper/paper/price-ticket.webp') center/100% 100% no-repeat!important;
+ color:#fff2e2!important;font-weight:900!important;font-size:clamp(.87rem,2.5vw,1.04rem)!important;
+ white-space:nowrap!important
+}
+body.tish-paper.tish-cart-page #cartItems .cart-row .row-actions{
+ display:flex!important;justify-content:flex-end!important;align-items:center!important;
+ flex-wrap:nowrap!important;gap:5px!important;min-width:0
+}
+body.tish-paper.tish-cart-page #cartItems .row-actions button{
+ flex:0 0 auto!important;display:grid!important;place-items:center!important;
+ width:38px!important;min-width:38px!important;height:38px!important;
+ background:url('../../tish-paper/paper/favorite-disc.webp') center/100% 100% no-repeat!important;
+ border:0!important;border-radius:0!important;
+ color:var(--tish-paper-ink)!important;font-size:1.07rem!important;font-weight:900!important;
+ box-shadow:none!important
+}
+body.tish-paper.tish-cart-page #cartItems .row-actions button[data-remove]{
+ background:transparent!important;color:var(--tish-paper-red)!important
+}
+body.tish-paper.tish-cart-page #cartItems .row-actions b{
+ font-size:1rem!important;font-variant-numeric:tabular-nums!important;min-width:14px;text-align:center
+}
+body.tish-paper.tish-cart-page .order-summary{
+ width:100%!important;margin:12px auto 10px!important;
+ padding:29px 30px 33px!important;
+ border:0!important;border-radius:0!important;box-shadow:none!important;
+ background:url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;
+ filter:drop-shadow(0 6px 5px #52382630)!important;
+}
+body.tish-paper.tish-cart-page .order-summary .summary-row{
+ color:#302721!important;font-size:clamp(.98rem,2.55vw,1.22rem)!important;
+ border-bottom:2px dashed #b3a18c!important;
+ padding:8px 0 13px!important;gap:10px
+}
+body.tish-paper.tish-cart-page .order-summary .summary-row span:last-child{font-size:1.28rem!important}
+body.tish-paper.tish-cart-page .order-summary .cart-total{
+ display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px;
+ margin:0!important;padding:17px 0 7px!important;border:0!important;
+ color:#25211c!important;font-size:clamp(1.26rem,3.2vw,1.55rem)!important;font-weight:900!important
+}
+body.tish-paper.tish-cart-page .order-summary .cart-total strong:last-child{
+ white-space:nowrap!important;direction:ltr!important
+}
+body.tish-paper.tish-cart-page .order-summary .cart-note{
+ margin:8px 0 2px!important;max-width:100%!important;
+ color:#64584d!important;text-align:center!important;line-height:1.65!important;
+ font-size:clamp(.78rem,1.95vw,.96rem)!important
+}
+body.tish-paper.tish-cart-page #checkoutStart{
+ display:flex!important;align-items:center!important;justify-content:center!important;
+ min-height:64px!important;height:64px!important;
+ margin:4px auto 0!important;width:100%!important;
+ font-size:clamp(1.28rem,3.5vw,1.8rem)!important;line-height:1.25!important;
+ padding:10px 19px!important;color:#fff!important;font-weight:900!important;
+ background:url('../../tish-paper/paper/price-ticket.webp') center/100% 100% no-repeat!important;
+ border:0!important;border-radius:0!important;filter:drop-shadow(0 4px 3px #5d311e35)!important
+}
+body.tish-paper.tish-cart-page #checkoutStart:disabled{
+ background:url('../../tish-paper/paper/nav-charcoal.webp') center/100% 100% no-repeat!important;
+ filter:grayscale(.6) drop-shadow(0 3px 2px #44444422)!important;opacity:.58!important
+}
+body.tish-paper.tish-cart-page .tish-cart-empty-paper{
+ width:100%;min-height:350px;margin:5px auto 7px!important;
+ padding:16px 22px 28px!important;background-size:100% 100%;
+ filter:drop-shadow(0 6px 5px #53321c2c)!important
+}
+body.tish-paper.tish-cart-page .tish-cart-bag-art{height:187px;width:min(245px,70%)}
+body.tish-paper.tish-cart-page .tish-cart-empty-paper h2{font-size:clamp(1.65rem,4.7vw,2.25rem)!important}
+body.tish-paper.tish-cart-page .bottom-nav{
+ width:min(100%,680px)!important;max-width:680px!important;margin:0 auto!important;
+ min-height:calc(87px + var(--safe-bottom))!important
+}
+body.tish-paper.tish-cart-page .bottom-nav .nav-btn{font-size:clamp(.62rem,1.8vw,.81rem)!important}
+body.tish-paper.tish-cart-page .bottom-nav .nav-btn .tish-paper-nav-icon{
+ width:29px!important;height:29px!important
+}
+@media(max-width:650px){
+ body.tish-paper.tish-cart-page .shell{width:calc(100% - 20px)!important}
+ body.tish-paper.tish-cart-page .page-head{gap:5px!important;min-height:71px!important}
+ body.tish-paper.tish-cart-page .page-head .tish-paper-sublogo{
+  flex-basis:58px!important;width:58px!important;height:58px!important
+ }
+ body.tish-paper.tish-cart-page .page-head h1{font-size:1.15rem!important}
+ body.tish-paper.tish-cart-page .page-head>a:last-child{padding:7px 9px!important;font-size:.7rem!important}
+ body.tish-paper.tish-cart-page .page-head .page-back{flex-basis:38px!important;width:38px!important;height:38px!important}
+ body.tish-paper.tish-cart-page #cartItems .cart-row{
+  grid-template-columns:76px minmax(0,1fr)!important;
+  min-height:135px!important;gap:2px 10px!important;
+  padding:18px 16px 19px!important
+ }
+ body.tish-paper.tish-cart-page #cartItems .cart-thumb{
+  grid-column:1!important;grid-row:1/3!important;
+  width:75px!important;height:75px!important
+ }
+ body.tish-paper.tish-cart-page #cartItems .row-copy{
+  grid-column:2!important;grid-row:1!important;gap:2px!important
+ }
+ body.tish-paper.tish-cart-page #cartItems .cart-row .row-actions{
+  grid-column:2!important;grid-row:2!important;justify-content:flex-start!important
+ }
+ body.tish-paper.tish-cart-page #cartItems .row-copy strong{font-size:clamp(.88rem,3.4vw,1.03rem)!important}
+ body.tish-paper.tish-cart-page #cartItems .row-copy .tish-cart-line-price{
+  min-height:31px!important;padding:5px 12px!important;font-size:.84rem!important
+ }
+ body.tish-paper.tish-cart-page #cartItems .row-actions button{
+  width:32px!important;min-width:32px!important;height:32px!important
+ }
+ body.tish-paper.tish-cart-page .order-summary{padding:25px 20px 29px!important}
+ body.tish-paper.tish-cart-page .order-summary .cart-total{font-size:1.15rem!important}
+ body.tish-paper.tish-cart-page .tish-cart-empty-paper{min-height:320px}
+ body.tish-paper.tish-cart-page .tish-cart-bag-art{height:166px;width:min(235px,70%)}
+}
+@media(max-width:365px){
+ body.tish-paper.tish-cart-page .page-head .page-back{display:none!important}
+ body.tish-paper.tish-cart-page #cartItems .cart-row{grid-template-columns:65px minmax(0,1fr)!important;padding-inline:12px!important}
+ body.tish-paper.tish-cart-page #cartItems .cart-thumb{width:64px!important;height:64px!important}
+ body.tish-paper.tish-cart-page #cartItems .row-actions{gap:1px!important}
+ body.tish-paper.tish-cart-page #cartItems .row-actions button{width:29px!important;min-width:29px!important;height:29px!important}
+ body.tish-paper.tish-cart-page .bottom-nav .nav-btn{font-size:.58rem!important}
+}
+@media(prefers-reduced-motion:reduce){
+ body.tish-paper.tish-cart-page *{transition:none!important;animation:none!important}
+}
