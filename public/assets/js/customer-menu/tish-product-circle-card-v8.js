@@ -69,12 +69,12 @@
         if (!success) return false;
         const label = button.querySelector('.tish-circle-add-label');
         const icon = button.querySelector('i');
-        button.classList.add('is-added');
+        button.classList.add('is-added', 'paper-cart-confirm');
         if (label) label.textContent = 'تمت الإضافة';
         if (icon) icon.className = 'fa-solid fa-check';
         window.setTimeout(function () {
             if (!button.isConnected) return;
-            button.classList.remove('is-added');
+            button.classList.remove('is-added', 'paper-cart-confirm');
             button.disabled = false;
             if (label) label.textContent = 'إضافة للسلة';
             if (icon) icon.className = 'fa-solid fa-cart-plus';
