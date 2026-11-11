@@ -15,7 +15,7 @@
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-product-circle-card-v8.css') }}?v=9">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-product-layout-v10.css') }}?v=11">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-motion-v10.css') }}?v=11">
-<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-polish-v13.css') }}?v=13">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-polish-v13.css') }}?v=16">
 @include('customer-menu.partials.pwa-head')
 <script src="{{ asset('assets/js/customer-menu/branch-entry.js') }}?v=1"
         data-branch-code="{{ $location->code }}"
@@ -379,13 +379,10 @@ html.cm-skip-menu-intro #intro{display:none!important}
     </button>
     @foreach(($categories ?? []) as $category)
      @php
-      $categoryColor = preg_match('/^#[0-9A-Fa-f]{6}$/', (string) ($category['icon_color'] ?? ''))
-          ? $category['icon_color']
-          : '#B0003A';
       $iconClass = $categoryIconClasses[$category['icon_key'] ?? 'sparkles'] ?? 'fa-wand-magic-sparkles';
      @endphp
      <button class="cat" type="button" data-cat="{{ $category['id'] }}" data-cat-name="{{ $category['name'] }}">
-      <span class="cat-visual" style="--category-color:{{ $categoryColor }}">
+      <span class="cat-visual" style="--category-color:var(--tish-paper-red)">
        @if(($theme['category_visual'] ?? 'icons') === 'images' && !empty($category['image']))
         <img src="{{ $category['image'] }}" alt="" loading="lazy" onerror="this.outerHTML='<i class=&quot;fa-solid {{ $iconClass }}&quot;></i>'">
        @else
