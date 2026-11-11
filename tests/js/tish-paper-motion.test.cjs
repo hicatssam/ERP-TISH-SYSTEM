@@ -49,3 +49,17 @@ test('motion API exposes category and favorite synchronization',()=>{
   assert.equal(typeof win.TishPaperMotion.categories,'function');
   assert.equal(typeof win.TishPaperMotion.syncFavorites,'function');
 });
+
+test('favorite sync updates ARIA and heart without recreating catalog DOM',()=>{
+  const {win,document}=setup(true,true);
+  const flags=new Set(),attrs={};
+  const icon={className:'fa-regular fa-heart'};
+  const heart={dataset:{fav:'42'},classList:{toggle(name,on){if(on)flags.add(name);else flags.delete(name);}},setAttribute(name,val){attrs[name]=val},querySelector(sel){return sel==='i'?icon:null},closest(){return {querySelector(){return {textContent:'برجر دجاج'}}}}};
+  document.querySelectorAll=()=>[heart];
+  win.TishPaperMotion.syncFavorites('42',true);
+  assert.equal(attrs['aria-pressed'],'true');
+  assert.equal(icon.className,'fa-solid fa-heart');
+  win.TishPaperMotion.syncFavorites('42',false);
+  assert.equal(attrs['aria-pressed'],'false');
+  assert.equal(icon.className,'fa-regular fa-heart');
+});

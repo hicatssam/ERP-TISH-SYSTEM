@@ -88,8 +88,8 @@
             root.appendChild(indicator);
             // Initial position is written before enabling transitions.
             indicator.style.transition='none';
-            setPosition(indicator,target);
             root.classList.add('paper-category-motion');
+            setPosition(indicator,target);
             window.requestAnimationFrame(function () {
                 window.requestAnimationFrame(function(){indicator.style.transition='';});
             });
