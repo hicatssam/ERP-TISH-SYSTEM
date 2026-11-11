@@ -392,5 +392,7 @@ body.crisp-customer-menu > .app{position:relative;z-index:1}
 {{-- The last layer deliberately applies after the shared legacy/identity skins. --}}
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-circular-ui.css') }}?v=12">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-v2.css') }}?v=1">
+{{-- Shared paper-theme text spacing for all public TISH screens. Does not affect ERP/admin. --}}
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-typography-v7.css') }}?v=7">
 
 <script src="{{ asset('assets/js/customer-menu/tish-visuals.js') }}?v=3" defer></script>
