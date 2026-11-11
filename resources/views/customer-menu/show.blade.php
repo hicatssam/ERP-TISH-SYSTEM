@@ -30,7 +30,6 @@
     $showFeatured = (bool) $cmSetting('customer_menu_show_featured', true);
     $featuredTitle = (string) $cmSetting('customer_menu_featured_title', 'الأكثر طلباً');
     $featuredLimit = max(2, min(8, (int) $cmSetting('customer_menu_featured_limit', 4)));
-    $homeTitle = \App\Support\CustomerMenuCopy::homeTitle();
     $homeSubtitle = \App\Support\CustomerMenuCopy::homeSubtitle();
     $introMode = (string) $cmSetting('customer_menu_intro_mode', 'first_visit');
     $introTitle = (string) $cmSetting('customer_menu_intro_title', 'أهلاً بك');
@@ -93,6 +92,19 @@
 }
 .reference-home .shell{width:min({{ $contentWidth }}px,calc(100% - 30px))}
 .reference-home .menu-area{padding-bottom:112px}
+body.tish-paper.reference-home .reference-brand-copy h1{font-size:clamp(.9rem,3.5vw,1.25rem);line-height:1.35;margin:0}
+body.tish-paper.reference-home .reference-brand-copy p{font-size:.72rem;line-height:1.35;margin:2px 0 5px;color:var(--tish-paper-red)}
+body.tish-paper.reference-home .reference-header-row{gap:8px}
+body.tish-paper.reference-home .reference-masthead .tish-paper-banner-frame .banner-slide,
+body.tish-paper.reference-home .reference-masthead .tish-paper-banner-frame .tish-paper-cover-banner{
+ aspect-ratio:3 / 1;min-height:clamp(118px,29vw,230px)!important;
+}
+body.tish-paper.reference-home .tish-home-install{display:flex;justify-content:center;margin:16px 0 30px}
+body.tish-paper.reference-home .tish-home-install #pwaInstallBtn.tish-paper-pin-control:not([hidden]){
+ position:relative!important;inset:auto!important;z-index:auto!important;
+ width:auto!important;height:auto!important;min-width:112px!important;min-height:48px!important;
+ max-width:none!important;flex-direction:row!important;gap:7px!important;padding:8px 14px!important;
+}
 /* Let the shared paper canvas show through the full masthead, including search. */
 body.tish-paper.reference-home .reference-masthead.is-illustrated::after{
  display:none;
@@ -280,6 +292,8 @@ html.cm-skip-menu-intro #intro{display:none!important}
       @endif
      </span>
      <div class="reference-brand-copy">
+     <h1>{{ $branding['name'] }}</h1>
+     <p>{{ $branding['tagline'] ?: $homeSubtitle }}</p>
      <a class="reference-branch" href="{{ route('customer-menu.index', ['choose' => 1]) }}" aria-label="تغيير الفرع">{{ $location->name }} <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></a>
      </div>
     </div>
@@ -291,10 +305,56 @@ html.cm-skip-menu-intro #intro{display:none!important}
   </header>
 
 
-  {{-- Paper collage: independent art layers, existing branch logo/settings remain live. --}}
-  {{-- Campaign banners stay at the TOP of the menu, supplied by ERP settings. --}}
+  @if($showSearch)
+  <div class="tools">
+   <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input id="searchInput" type="search" placeholder="{{ \App\Support\CustomerMenuCopy::searchPlaceholder() }}" autocomplete="off"></div>
+   <button class="filter-square" type="button" id="openFullMenu" aria-label="فلترة الأصناف"><i class="fa-solid fa-sliders"></i></button>
+  </div>
+  @endif
+
+
+  @if($showCategories)
+  @php
+    $categoryPriority = ['برجر لحم', 'برجر دجاج', 'برجر نباتي', 'الفرايز'];
+    $homeCategories = collect($categories ?? [])->sortBy(static function ($category) use ($categoryPriority) {
+        $priority = array_search(trim($category['name']), $categoryPriority, true);
+        return $priority === false ? count($categoryPriority) : $priority;
+    });
+  @endphp
+  <section class="reference-section" aria-labelledby="categoriesTitle">
+   <div class="reference-section-head">
+    <div>
+     <h2 id="categoriesTitle">التصنيفات</h2>
+    </div>
+    <button class="reference-see-all" type="button" data-show-all>عرض الكل <i class="fa-solid fa-chevron-left"></i></button>
+   </div>
+   <div class="categories" id="categories">
+    <button class="cat active" type="button" data-cat="all">
+     <span class="cat-visual" style="--category-color:var(--primary)"><i class="fa-solid fa-utensils"></i></span>
+     <b>الكل</b>
+    </button>
+    @foreach($homeCategories as $category)
+     @php
+      $iconClass = $categoryIconClasses[$category['icon_key'] ?? 'sparkles'] ?? 'fa-wand-magic-sparkles';
+     @endphp
+     <button class="cat" type="button" data-cat="{{ $category['id'] }}" data-cat-name="{{ $category['name'] }}">
+      <span class="cat-visual" style="--category-color:var(--tish-paper-red)">
+       @if(($theme['category_visual'] ?? 'icons') === 'images' && !empty($category['image']))
+        <img src="{{ $category['image'] }}" alt="" loading="lazy" onerror="this.outerHTML='<i class=&quot;fa-solid {{ $iconClass }}&quot;></i>'">
+       @else
+        <i class="fa-solid {{ $iconClass }}"></i>
+       @endif
+      </span>
+      <b>{{ $category['name'] }}</b>
+     </button>
+    @endforeach
+   </div>
+  </section>
+  @endif
+
+
   @if(($theme['show_hero'] ?? true) && ($banners->isNotEmpty() || $coverImage))
-  <div class="tish-paper-banner-frame">
+  <div class="tish-paper-banner-frame" id="homePromotion">
    <section class="reference-hero tish-paper-top-ads" aria-label="إعلانات المنيو">
    @if($banners->isNotEmpty())
     <div class="banner-track" id="bannerTrack">
@@ -340,68 +400,8 @@ html.cm-skip-menu-intro #intro{display:none!important}
    @endif
   </section>
   </div>
-  @else
-  <div class="tish-paper-brand-hero" aria-label="Tish — Hear it, Feel it">
-    <img class="paper-booth" src="{{ asset('assets/tish-paper/brand/telephone.webp') }}" alt="" loading="eager">
-    <img class="paper-claim" src="{{ asset('assets/tish-paper/brand/slogan.svg') }}" alt="Hear it, Feel it!" loading="eager">
-    <img class="paper-stamp" src="{{ asset('assets/tish-paper/brand/logo-disc.webp') }}" alt="Tish" loading="eager">
-  </div>
-
   @endif
-
-  @if($showSearch)
-  <div class="tools">
-   <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input id="searchInput" type="search" placeholder="{{ \App\Support\CustomerMenuCopy::searchPlaceholder() }}" autocomplete="off"></div>
-   <button class="filter-square" type="button" id="openFullMenu" aria-label="فلترة الأصناف"><i class="fa-solid fa-sliders"></i></button>
-  </div>
-  @endif
-
   </div>{{-- /reference-masthead --}}
-
-   <div class="reference-greeting reference-welcome-strip">
-    <h1>{{ $homeTitle }} <span aria-hidden="true">👋</span></h1>
-    <p>{{ $homeSubtitle }}</p>
-    @if(!empty($branding['tagline']))
-     <p class="reference-welcome-tagline">{{ $branding['tagline'] }}</p>
-    @endif
-   </div>
-
-
-  @if($showCategories)
-  <section class="reference-section" aria-labelledby="categoriesTitle">
-   <div class="reference-section-head">
-    <div>
-     <h2 id="categoriesTitle">التصنيفات</h2>
-     <p>اختر اللي على بالك</p>
-    </div>
-    <button class="reference-see-all" type="button" data-show-all>عرض الكل <i class="fa-solid fa-chevron-left"></i></button>
-   </div>
-   <div class="categories" id="categories">
-    <button class="cat active" type="button" data-cat="all">
-     <span class="cat-visual" style="--category-color:var(--primary)"><i class="fa-solid fa-utensils"></i></span>
-     <b>الكل</b>
-    </button>
-    @foreach(($categories ?? []) as $category)
-     @php
-      $iconClass = $categoryIconClasses[$category['icon_key'] ?? 'sparkles'] ?? 'fa-wand-magic-sparkles';
-     @endphp
-     <button class="cat" type="button" data-cat="{{ $category['id'] }}" data-cat-name="{{ $category['name'] }}">
-      <span class="cat-visual" style="--category-color:var(--tish-paper-red)">
-       @if(($theme['category_visual'] ?? 'icons') === 'images' && !empty($category['image']))
-        <img src="{{ $category['image'] }}" alt="" loading="lazy" onerror="this.outerHTML='<i class=&quot;fa-solid {{ $iconClass }}&quot;></i>'">
-       @else
-        <i class="fa-solid {{ $iconClass }}"></i>
-       @endif
-      </span>
-      <b>{{ $category['name'] }}</b>
-     </button>
-    @endforeach
-   </div>
-  </section>
-  @endif
-
-
-  {{-- Static image decoration; destination uses the REAL Laravel products route. --}}
 
 
   @if($showFeatured)
@@ -436,12 +436,12 @@ html.cm-skip-menu-intro #intro{display:none!important}
    </div>
    <div class="grid" id="productGrid"></div>
   </section>
+  <div class="tish-home-install">@include('customer-menu.partials.pwa-install')</div>
  </div>
 </main>
 </div>
 
 @include('customer-menu.partials.bottom-nav', ['activeNav' => 'home'])
-@include('customer-menu.partials.pwa-install')
 @include('customer-menu.partials.cart-engine')
 <script src="{{ asset('assets/js/customer-menu/tish-product-circle-card-v8.js') }}?v=8"></script>
 <script src="{{ asset('assets/js/customer-menu/tish-paper-motion-v10.js') }}?v=11"></script>
@@ -488,6 +488,11 @@ html.cm-skip-menu-intro #intro{display:none!important}
         window.TishPaperMotion?.observe(document.getElementById('productGrid'));
     }
 
+    function prioritizeBurgers(products) {
+        const burgers = products.filter(product => /برجر|برغر|burger/i.test(product.category_name || ''));
+        return burgers.concat(products.filter(product => !burgers.includes(product)));
+    }
+
     function render() {
         const rows = filteredProducts();
         const ranked = popularProductIds
@@ -498,7 +503,7 @@ html.cm-skip-menu-intro #intro{display:none!important}
                 return String(rankedProduct.id) === String(product.id);
             });
         });
-        const featured = ranked.concat(fallback).slice(0, featuredLimit);
+        const featured = prioritizeBurgers(ranked).concat(prioritizeBurgers(fallback)).slice(0, featuredLimit);
         const featuredGrid = document.getElementById('featuredGrid');
         const featuredSection = document.getElementById('featuredSection');
         const hasFocus = activeCat !== 'all' || Boolean(document.getElementById('searchInput')?.value.trim());
@@ -512,6 +517,8 @@ html.cm-skip-menu-intro #intro{display:none!important}
                 : '<div class="cm-featured-empty">لا توجد أصناف مميزة متاحة حالياً.</div>';
         }
         if (featuredSection) featuredSection.hidden = hasFocus;
+        const promotion = document.getElementById('homePromotion');
+        if (promotion) promotion.hidden = hasFocus;
         window.CustomerMenuFeaturedCarousel?.refresh();
 
         document.getElementById('productGrid').innerHTML = rows.length
