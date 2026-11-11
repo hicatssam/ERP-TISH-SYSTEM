@@ -40,7 +40,8 @@ class MenuMotionIntegrationTest extends TestCase
         $this->assertStringContainsString('IntersectionObserver', $paperMotion);
         $this->assertStringContainsString('threshold: .15', $paperMotion);
         $this->assertStringContainsString('repeat(2,minmax(0,1fr))', $layout);
-        $this->assertStringContainsString('cm-sticky-cart:not([hidden])::before', $layout);
+        $cartStyle = file_get_contents(public_path('assets/css/customer-menu/tish-sticky-cart-paper.css'));
+        $this->assertStringContainsString('cm-sticky-cart:not([hidden])::before', $cartStyle);
         $this->assertStringContainsString('@keyframes paper-card-reveal', $motionCss);
         $this->assertStringContainsString('prefers-reduced-motion:reduce', $motionCss);
         $this->assertStringContainsString('revealMenuCards()', $catalog);

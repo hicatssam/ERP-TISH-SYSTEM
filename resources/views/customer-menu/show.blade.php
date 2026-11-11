@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-menu-circle-v5.css') }}?v=5">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-featured-showcase-v6.css') }}?v=6">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-product-circle-card-v8.css') }}?v=9">
-<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-product-layout-v10.css') }}?v=11">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-product-layout-v10.css') }}?v=12">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-motion-v10.css') }}?v=12">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-polish-v13.css') }}?v=17">
 @include('customer-menu.partials.pwa-head')
@@ -297,7 +297,7 @@ body.tish-paper #intro.tish-reel-intro{overflow:hidden;background:#f5e4cd;oversc
 #intro .intro-reel{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center bottom}
 #intro .intro-reel-tools{
  position:absolute;z-index:2;inset-inline:16px;top:calc(12px + env(safe-area-inset-top,0px));
- display:flex;justify-content:space-between;gap:8px;
+ display:flex;justify-content:flex-start;gap:8px;
 }
 #intro .intro-reel-tools button,
 #intro .intro-enter{
@@ -375,7 +375,7 @@ body.tish-paper #intro .intro-enter:focus-visible{
  <video id="introReel" class="intro-reel" data-src="{{ asset('assets/tish-paper/intro/menu-reel.mp4') }}" preload="none" playsinline aria-hidden="true" hidden></video>
  <div class="intro-reel-tools" id="introReelTools" hidden>
   <button type="button" id="introSkip">{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Skip video' : 'تخطّي الفيديو' }}</button>
-  <button type="button" id="introSound" aria-pressed="false" aria-label="{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Video sound' : 'صوت الفيديو' }}"><i class="fa-solid fa-volume-xmark" aria-hidden="true"></i></button>
+
  </div>
  <div class="intro-box">
   <button class="intro-enter" id="introEnter" type="button" hidden>{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Order now' : 'اطلب الآن' }}</button>
@@ -775,7 +775,7 @@ body.tish-paper #intro .intro-enter:focus-visible{
             const tools = document.getElementById('introReelTools');
             const enter = document.getElementById('introEnter');
             const skip = document.getElementById('introSkip');
-            const sound = document.getElementById('introSound');
+
             let timeout;
             let revealed = false;
             // The complete slogan first appears at this cue in menu-reel.mp4.
@@ -789,7 +789,7 @@ body.tish-paper #intro .intro-enter:focus-visible{
                 reel.hidden = !keepFrame;
                 intro.classList.toggle('has-reel-frame', keepFrame);
                 skip.hidden = true;
-                tools.hidden = !keepFrame || reel.paused;
+                tools.hidden = true;
                 enter.hidden = false;
                 enter.focus({preventScroll:true});
             }
@@ -818,26 +818,14 @@ body.tish-paper #intro .intro-enter:focus-visible{
                 reel.addEventListener('ended', () => {
                     revealOrderButton(true);
                     tools.hidden = true;
-                    if (document.activeElement === sound) enter.focus({preventScroll:true});
+
                 }, {once:true});
                 reel.addEventListener('error', () => revealOrderButton(), {once:true});
                 skip.addEventListener('click', () => {
                     reel.pause();
                     revealOrderButton(reel.readyState >= 2);
                 });
-                function setReelSound(enabled) {
-                    reel.muted = !enabled;
-                    sound.setAttribute('aria-pressed', String(enabled));
-                    sound.querySelector('i').className = enabled ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark';
-                }
-
-                sound.addEventListener('click', () => {
-                    setReelSound(reel.muted);
-                    if (!reel.muted && reel.paused && !reel.ended) {
-                        reel.play().catch(() => revealOrderButton());
-                    }
-                });
-                setReelSound(true);
+                reel.muted = false;
                 reel.src = reel.dataset.src;
                 reel.hidden = false;
                 tools.hidden = false;
@@ -846,7 +834,7 @@ body.tish-paper #intro .intro-enter:focus-visible{
                 reel.play().catch(() => {
                     if (revealed) return;
                     // Some browsers only allow autoplay while muted.
-                    setReelSound(false);
+                    reel.muted = true;
                     reel.play().catch(() => revealOrderButton());
                 });
             }
