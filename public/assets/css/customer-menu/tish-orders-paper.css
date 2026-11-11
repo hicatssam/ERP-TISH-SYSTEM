@@ -1,6 +1,11 @@
 /* Paper order cards and framing, scoped to the customer order history. */
 html:has(body.tish-paper.cm-my-orders) {
-  background:#f5e4cd url('../../tish-paper/paper/background.webp') center top / 540px auto repeat!important;
+  margin:0;
+  padding:0;
+  background:
+    linear-gradient(#a91f17, #a91f17) center top / 100% 5px no-repeat,
+    url('../../tish-paper/decor/red-torn-top.svg') center top / 100% 32px no-repeat,
+    #f5e4cd url('../../tish-paper/paper/background.webp') center top / 540px auto repeat!important;
   overscroll-behavior-y:none;
 }
 body.tish-paper.cm-my-orders {
@@ -9,12 +14,7 @@ body.tish-paper.cm-my-orders {
   overscroll-behavior-y:none;
 }
 body.tish-paper.cm-my-orders::before {
-  inset:0 0 auto!important;
-  width:auto!important;
-  height:32px!important;
-  background:
-    linear-gradient(var(--tish-paper-red), var(--tish-paper-red)) top / 100% 5px no-repeat,
-    url('../../tish-paper/decor/red-torn-top.svg') center top / 100% 100% no-repeat!important;
+  content:none!important;
 }
 body.tish-paper.cm-my-orders::after {
   content:"";
