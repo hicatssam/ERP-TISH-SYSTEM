@@ -92,6 +92,10 @@
 }
 .reference-home .shell{width:min({{ $contentWidth }}px,calc(100% - 30px))}
 .reference-home .menu-area{padding-bottom:112px}
+body.tish-paper.reference-home .reference-masthead .tish-paper-banner-frame{
+ background:none!important;
+ filter:none!important;
+}
 body.tish-paper.reference-home .reference-masthead .tish-paper-banner-frame:has(.banner-artwork-only){
  padding:clamp(6px,1.35vw,16px)!important;
 }
