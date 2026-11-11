@@ -412,6 +412,7 @@ body.tish-paper {
 </style>
 {{-- Shared paper-theme text spacing for all public TISH screens. Does not affect ERP/admin. --}}
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-typography-v7.css') }}?v=7">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-sticky-cart-paper.css') }}?v=1">
 {{-- Paper install, cart and bag controls; scoped to public TISH pages only. --}}
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-controls-v12.css') }}?v=14">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-polish-v13.css') }}?v=17">
