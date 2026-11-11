@@ -145,8 +145,29 @@ body.tish-paper.reference-home .reference-masthead.is-illustrated::after{
 .reference-home .search i{right:21px;font-size:1.35rem;color:var(--text)}
 .reference-home .filter-square{width:66px;height:66px;border-radius:20px;font-size:1.25rem;box-shadow:0 8px 26px rgba(20,17,18,.045)}
 .reference-hero{position:relative;overflow:hidden;margin:10px 0 0;border-radius:24px;background:#1b1214;box-shadow:0 14px 34px rgba(24,15,17,.14)}
-.banner-track{position:relative;display:flex!important;flex-wrap:nowrap!important;direction:ltr!important;width:100%;transition:transform .5s cubic-bezier(.2,.75,.25,1)}
-body.tish-paper.reference-home #bannerTrack > .banner-slide{flex:0 0 100%;width:100%;min-width:0;max-width:100%;}
+body.tish-paper.reference-home #bannerTrack{
+ display:grid!important;
+ grid-template-columns:minmax(0,1fr);
+ width:100%;
+}
+body.tish-paper.reference-home #bannerTrack > .banner-slide{
+ grid-area:1 / 1;
+ width:100%;
+ min-width:0;
+ visibility:hidden;
+ opacity:0;
+ pointer-events:none;
+}
+body.tish-paper.reference-home #bannerTrack > .banner-slide[data-banner-active]{
+ z-index:1;
+ visibility:visible;
+ opacity:1;
+ pointer-events:auto;
+}
+@media(prefers-reduced-motion:no-preference){
+ body.tish-paper.reference-home #bannerTrack > .banner-slide[data-banner-active]{animation:tish-banner-appear 260ms ease-out}
+}
+@keyframes tish-banner-appear{from{opacity:0}to{opacity:1}}
 .banner-slide{position:relative;min-width:100%;aspect-ratio:2.9/1;overflow:hidden;color:#fff;direction:rtl;display:block}
 .banner-slide img{width:100%;height:100%;object-fit:cover}
 .banner-slide::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(9,5,6,.12),rgba(9,5,6,var(--home-overlay)) 62%,rgba(9,5,6,.82))}
@@ -378,10 +399,10 @@ html.cm-skip-menu-intro #intro{display:none!important}
     <div class="banner-track" id="bannerTrack">
      @foreach($banners as $banner)
       @if($banner['link_url'])
-       <a href="{{ $banner['link_url'] }}" class="banner-slide {{ ($banner['artwork_only'] ?? false) ? 'banner-artwork-only' : '' }}"
+       <a href="{{ $banner['link_url'] }}" class="banner-slide {{ ($banner['artwork_only'] ?? false) ? 'banner-artwork-only' : '' }}" @if($loop->first) data-banner-active @else inert @endif
           @unless(str_starts_with($banner['link_url'], '#')) target="_blank" rel="noopener" @endunless>
       @else
-       <article class="banner-slide {{ ($banner['artwork_only'] ?? false) ? 'banner-artwork-only' : '' }}">
+       <article class="banner-slide {{ ($banner['artwork_only'] ?? false) ? 'banner-artwork-only' : '' }}" @if($loop->first) data-banner-active @else inert @endif>
       @endif
         <img src="{{ $banner['image'] }}" alt="{{ $banner['title'] ?: 'إعلان من ' . $branding['name'] }}" loading="eager">
         @if(!($banner['artwork_only'] ?? false) && ($banner['title'] || $banner['subtitle'] || $banner['badge_text'] || $banner['cta_text']))
@@ -610,17 +631,15 @@ html.cm-skip-menu-intro #intro{display:none!important}
     function showBanner(index) {
         if (!slides.length) return;
         bannerIndex = (index + slides.length) % slides.length;
-        const offset = slides[bannerIndex].offsetLeft - slides[0].offsetLeft;
-        track.style.transform = 'translateX(' + (-offset) + 'px)';
+        slides.forEach(function (slide, slideIndex) {
+            const active = slideIndex === bannerIndex;
+            slide.toggleAttribute('data-banner-active', active);
+            slide.inert = !active;
+        });
         dots.forEach(function (dot, dotIndex) { dot.classList.toggle('active', dotIndex === bannerIndex); });
     }
 
     if (track && slides.length > 1) {
-        if ('ResizeObserver' in window) {
-            new ResizeObserver(function () { showBanner(bannerIndex); }).observe(track);
-        } else {
-            window.addEventListener('resize', function () { showBanner(bannerIndex); });
-        }
         showBanner(0);
         const hero = track.closest('.reference-hero');
         let hovered = false;
