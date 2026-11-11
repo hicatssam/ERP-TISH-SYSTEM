@@ -1,0 +1,459 @@
+/* TISH circular paper product cards v5.
+   The source disc graphic is square; the card MUST be square too.
+   This layer supersedes older v3/v4 elongated card rules without
+   changing actual data, favorites, availability or add-to-cart events.
+   Scope: full catalog and the home catalog grid only, not featured carousel. */
+
+body.tish-paper.tish-paper-products #productGrid,
+body.tish-paper.reference-home .catalog-section .grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:20px 10px!important;
+  align-items:start!important;
+  justify-items:stretch!important;
+}
+
+/* The circular disc must never stretch into an egg shape. */
+body.tish-paper.tish-paper-products #productGrid .product,
+body.tish-paper.reference-home .catalog-section .grid .product{
+  display:block!important;
+  position:relative!important;
+  box-sizing:border-box!important;
+  aspect-ratio:1 / 1!important;
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  min-width:0!important;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:50%!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  filter:none!important;
+  isolation:isolate!important;
+  overflow:visible!important;
+  transform:none!important;
+}
+body.tish-paper.tish-paper-products #productGrid .product::before,
+body.tish-paper.reference-home .catalog-section .grid .product::before{
+  content:""!important;
+  position:absolute!important;
+  inset:0!important;
+  z-index:0!important;
+  background-image:url('../../tish-paper/paper/product-disc.webp')!important;
+  background-position:center!important;
+  background-size:100% 100%!important;
+  background-repeat:no-repeat!important;
+  border:0!important;
+  border-radius:0!important;
+  filter:drop-shadow(0 6px 4px rgba(56,34,22,.24))!important;
+  pointer-events:none!important;
+}
+body.tish-paper.tish-paper-products #productGrid .product::after,
+body.tish-paper.reference-home .catalog-section .grid .product::after{
+  content:none!important;
+}
+
+/* Floating transparent photo — the paper itself is its only backing. */
+body.tish-paper.tish-paper-products #productGrid .product-media,
+body.tish-paper.reference-home .catalog-section .grid .product-media{
+  position:absolute!important;
+  z-index:2!important;
+  top:12%!important;
+  left:13%!important;
+  right:13%!important;
+  width:74%!important;
+  height:49%!important;
+  max-width:none!important;
+  max-height:none!important;
+  min-height:0!important;
+  aspect-ratio:auto!important;
+  margin:0!important;
+  padding:0!important;
+  display:grid!important;
+  place-items:center!important;
+  overflow:visible!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  transform:none!important;
+}
+body.tish-paper.tish-paper-products #productGrid .product-media img,
+body.tish-paper.reference-home .catalog-section .grid .product-media img{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+  max-height:100%!important;
+  max-width:100%!important;
+  margin:0!important;
+  padding:0!important;
+  object-fit:contain!important;
+  object-position:center center!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  transform:none!important;
+}
+body.tish-paper.tish-paper-products #productGrid .product-media img.tish-photo-cutout,
+body.tish-paper.reference-home .catalog-section .grid .product-media img.tish-photo-cutout{
+  -webkit-mask-image:none!important;
+  mask-image:none!important;
+  mix-blend-mode:normal!important;
+  filter:drop-shadow(0 6px 3px rgba(42,25,19,.34))!important;
+}
+/* Temporary treatment for original photos still awaiting Rembg. */
+body.tish-paper.tish-paper-products #productGrid .product-media img.tish-photo-source,
+body.tish-paper.reference-home .catalog-section .grid .product-media img.tish-photo-source{
+  -webkit-mask-image:radial-gradient(ellipse 70% 70% at 50% 50%,#000 54%,transparent 100%)!important;
+  mask-image:radial-gradient(ellipse 70% 70% at 50% 50%,#000 54%,transparent 100%)!important;
+  mix-blend-mode:multiply!important;
+  filter:none!important;
+}
+
+/* Name and category occupy their own zone, away from the photo and price. */
+body.tish-paper.tish-paper-products #productGrid .product-body,
+body.tish-paper.reference-home .catalog-section .grid .product-body{
+  display:contents!important;
+}
+body.tish-paper.tish-paper-products #productGrid .product-copy,
+body.tish-paper.reference-home .catalog-section .grid .product-copy{
+  position:absolute!important;
+  z-index:3!important;
+  top:62%!important;
+  left:8%!important;
+  right:8%!important;
+  width:84%!important;
+  height:18%!important;
+  min-width:0!important;
+  min-height:0!important;
+  max-height:none!important;
+  margin:0!important;
+  padding:0 2px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  align-items:center!important;
+  gap:1px!important;
+  text-align:center!important;
+  overflow:hidden!important;
+}
+body.tish-paper.tish-paper-products #productGrid .product h3,
+body.tish-paper.reference-home .catalog-section .grid .product h3{
+  display:-webkit-box!important;
+  -webkit-box-orient:vertical!important;
+  -webkit-line-clamp:2!important;
+  width:100%!important;
+  max-height:2.5em!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  font-size:clamp(.82rem,1.48vw,1.13rem)!important;
+  line-height:1.24!important;
+  font-weight:900!important;
+  color:#211d1a!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+body.tish-paper.tish-paper-products #productGrid .product-desc,
+body.tish-paper.reference-home .catalog-section .grid .product-desc{
+  display:block!important;
+  width:100%!important;
+  min-height:0!important;
+  max-height:1.3em!important;
+  margin:0!important;
+  padding:0!important;
+  font-size:clamp(.64rem,1.05vw,.8rem)!important;
+  line-height:1.3!important;
+  color:#66594c!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  text-align:center!important;
+}
+
+/* Red paper price is centered along the lower rim of each round disc. */
+body.tish-paper.tish-paper-products #productGrid .product-foot,
+body.tish-paper.reference-home .catalog-section .grid .product-foot{
+  position:absolute!important;
+  z-index:5!important;
+  inset:auto 8% 5% 8%!important;
+  width:84%!important;
+  height:14%!important;
+  min-height:0!important;
+  padding:0!important;
+  margin:0!important;
+  display:block!important;
+  overflow:visible!important;
+  background:transparent!important;
+}
+body.tish-paper.tish-paper-products #productGrid .product-price-row,
+body.tish-paper.reference-home .catalog-section .grid .product-price-row{
+  position:absolute!important;
+  inset:0 auto auto 50%!important;
+  transform:translateX(-50%)!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:90%!important;
+  height:100%!important;
+  min-height:0!important;
+  max-height:none!important;
+  min-width:0!important;
+  padding:3px 13px!important;
+  margin:0!important;
+  background:url('../../tish-paper/paper/price-ticket.webp') center/100% 100% no-repeat!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+body.tish-paper.tish-paper-products #productGrid .price,
+body.tish-paper.reference-home .catalog-section .grid .price{
+  display:block!important;
+  width:auto!important;
+  font-size:clamp(.95rem,1.7vw,1.34rem)!important;
+  line-height:1.15!important;
+  font-weight:900!important;
+  color:#fff7eb!important;
+  text-align:center!important;
+  white-space:nowrap!important;
+  font-variant-numeric:tabular-nums!important;
+  text-shadow:0 1px 0 rgba(80,13,9,.17)!important;
+}
+
+/* Actual clickable + button, deliberately offset from ticket text. */
+body.tish-paper.tish-paper-products #productGrid .details,
+body.tish-paper.reference-home .catalog-section .grid .details{
+  position:absolute!important;
+  top:50%!important;
+  bottom:auto!important;
+  left:-5%!important;
+  right:auto!important;
+  z-index:7!important;
+  display:grid!important;
+  place-items:center!important;
+  width:clamp(34px,3vw,44px)!important;
+  min-width:34px!important;
+  height:clamp(34px,3vw,44px)!important;
+  min-height:34px!important;
+  padding:0!important;
+  margin:0!important;
+  transform:translateY(-50%)!important;
+  border:2px solid #f9e4d1!important;
+  border-radius:50%!important;
+  background:#ad2117!important;
+  color:#fff!important;
+  font-size:clamp(.88rem,1.3vw,1.1rem)!important;
+  box-shadow:0 3px 7px rgba(79,36,25,.33)!important;
+  cursor:pointer;
+}
+body.tish-paper.tish-paper-products #productGrid .details:not(:disabled):hover,
+body.tish-paper.reference-home .catalog-section .grid .details:not(:disabled):hover{
+  background:#8f1a13!important;
+  box-shadow:0 5px 11px rgba(79,36,25,.38)!important;
+}
+body.tish-paper.tish-paper-products #productGrid .details:disabled,
+body.tish-paper.reference-home .catalog-section .grid .details:disabled{
+  background:#8b827d!important;
+  opacity:.55!important;
+  cursor:not-allowed;
+}
+body.tish-paper.tish-paper-products #productGrid .details:focus-visible,
+body.tish-paper.reference-home .catalog-section .grid .details:focus-visible,
+body.tish-paper.tish-paper-products #productGrid .fav:focus-visible,
+body.tish-paper.reference-home .catalog-section .grid .fav:focus-visible{
+  outline:3px solid #33211d!important;
+  outline-offset:3px!important;
+}
+body.tish-paper.tish-paper-products #productGrid .details span,
+body.tish-paper.reference-home .catalog-section .grid .details span{
+  position:absolute!important;
+  width:1px!important;
+  height:1px!important;
+  margin:-1px!important;
+  padding:0!important;
+  overflow:hidden!important;
+  white-space:nowrap!important;
+  clip-path:inset(50%)!important;
+}
+
+/* Favourite and availability sit symmetrically along upper rim. */
+body.tish-paper.tish-paper-products #productGrid .fav,
+body.tish-paper.reference-home .catalog-section .grid .fav{
+  position:absolute!important;
+  z-index:7!important;
+  top:9%!important;
+  left:6%!important;
+  right:auto!important;
+  display:grid!important;
+  place-items:center!important;
+  width:clamp(38px,3.5vw,47px)!important;
+  min-width:38px!important;
+  height:clamp(38px,3.5vw,47px)!important;
+  min-height:38px!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:50%!important;
+  background:url('../../tish-paper/paper/favorite-disc.webp') center/100% 100% no-repeat!important;
+  color:#27221e!important;
+  font-size:clamp(.95rem,1.35vw,1.2rem)!important;
+  box-shadow:none!important;
+  transform:none!important;
+  cursor:pointer;
+}
+body.tish-paper.tish-paper-products #productGrid .fav.active,
+body.tish-paper.reference-home .catalog-section .grid .fav.active{
+  color:#b61e18!important;
+}
+body.tish-paper.tish-paper-products #productGrid .fav.active i,
+body.tish-paper.reference-home .catalog-section .grid .fav.active i{
+  color:#b61e18!important;
+}
+body.tish-paper.tish-paper-products #productGrid .product-status,
+body.tish-paper.reference-home .catalog-section .grid .product-status,
+body.tish-paper.tish-paper-products #productGrid .product-ribbon,
+body.tish-paper.reference-home .catalog-section .grid .product-ribbon{
+  position:absolute!important;
+  z-index:7!important;
+  top:11%!important;
+  right:4%!important;
+  left:auto!important;
+  display:inline-flex!important;
+  justify-content:center!important;
+  align-items:center!important;
+  width:auto!important;
+  min-width:74px!important;
+  max-width:45%!important;
+  min-height:30px!important;
+  padding:5px 10px!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:url('../../tish-paper/paper/availability-green.webp') center/100% 100% no-repeat!important;
+  color:#f6fff1!important;
+  font-size:clamp(.68rem,1vw,.86rem)!important;
+  font-weight:900!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  box-shadow:none!important;
+  transform:none!important;
+}
+body.tish-paper.tish-paper-products #productGrid .product-status::before,
+body.tish-paper.reference-home .catalog-section .grid .product-status::before{
+  content:""!important;
+  display:inline-block!important;
+  width:8px!important;
+  height:8px!important;
+  min-width:8px!important;
+  margin-inline-end:5px!important;
+  background:#39dd59!important;
+  border-radius:50%!important;
+  box-shadow:0 0 0 2px rgba(9,43,20,.14)!important;
+}
+body.tish-paper.tish-paper-products #productGrid .product-status.is-unavailable,
+body.tish-paper.reference-home .catalog-section .grid .product-status.is-unavailable,
+body.tish-paper.tish-paper-products #productGrid .product-ribbon,
+body.tish-paper.reference-home .catalog-section .grid .product-ribbon{
+  background-image:url('../../tish-paper/paper/price-ticket.webp')!important;
+}
+body.tish-paper.tish-paper-products #productGrid .product-status.is-unavailable::before,
+body.tish-paper.reference-home .catalog-section .grid .product-status.is-unavailable::before{
+  background:#fff1df!important;
+}
+
+/* Desktop cards: 3 round discs, but never squeeze them into tall ovals. */
+@media(min-width:760px){
+  body.tish-paper.tish-paper-products #productGrid,
+  body.tish-paper.reference-home .catalog-section .grid{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:26px 16px!important;
+  }
+}
+@media(max-width:759px){
+  body.tish-paper.tish-paper-products #productGrid,
+  body.tish-paper.reference-home .catalog-section .grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:15px 4px!important;
+  }
+  body.tish-paper.tish-paper-products #productGrid .product h3,
+  body.tish-paper.reference-home .catalog-section .grid .product h3{
+    font-size:clamp(.73rem,3vw,1.02rem)!important;
+  }
+  body.tish-paper.tish-paper-products #productGrid .product-desc,
+  body.tish-paper.reference-home .catalog-section .grid .product-desc{
+    font-size:clamp(.59rem,2.35vw,.75rem)!important;
+  }
+  body.tish-paper.tish-paper-products #productGrid .price,
+  body.tish-paper.reference-home .catalog-section .grid .price{
+    font-size:clamp(.83rem,3.2vw,1.08rem)!important;
+  }
+  body.tish-paper.tish-paper-products #productGrid .details,
+  body.tish-paper.reference-home .catalog-section .grid .details{
+    width:34px!important;
+    min-width:34px!important;
+    height:34px!important;
+    min-height:34px!important;
+    left:-5%!important;
+  }
+  body.tish-paper.tish-paper-products #productGrid .fav,
+  body.tish-paper.reference-home .catalog-section .grid .fav{
+    width:37px!important;
+    min-width:37px!important;
+    height:37px!important;
+    min-height:37px!important;
+    top:7%!important;
+    left:5%!important;
+  }
+  body.tish-paper.tish-paper-products #productGrid .product-status,
+  body.tish-paper.reference-home .catalog-section .grid .product-status,
+  body.tish-paper.tish-paper-products #productGrid .product-ribbon,
+  body.tish-paper.reference-home .catalog-section .grid .product-ribbon{
+    min-width:55px!important;
+    max-width:46%!important;
+    min-height:25px!important;
+    padding:4px 7px!important;
+    font-size:clamp(.56rem,2.1vw,.72rem)!important;
+    top:9%!important;
+    right:3%!important;
+  }
+  body.tish-paper.tish-paper-products #productGrid .product-copy,
+  body.tish-paper.reference-home .catalog-section .grid .product-copy{
+    top:61%!important;
+    height:20%!important;
+  }
+  body.tish-paper.tish-paper-products #productGrid .product-foot,
+  body.tish-paper.reference-home .catalog-section .grid .product-foot{
+    bottom:5%!important;
+    height:15%!important;
+  }
+}
+@media(max-width:365px){
+  body.tish-paper.tish-paper-products #productGrid .product-media,
+  body.tish-paper.reference-home .catalog-section .grid .product-media{
+    top:15%!important;
+    height:44%!important;
+  }
+  body.tish-paper.tish-paper-products #productGrid .product-copy,
+  body.tish-paper.reference-home .catalog-section .grid .product-copy{
+    top:59%!important;
+    height:23%!important;
+  }
+  body.tish-paper.tish-paper-products #productGrid .product-status,
+  body.tish-paper.reference-home .catalog-section .grid .product-status,
+  body.tish-paper.tish-paper-products #productGrid .product-ribbon,
+  body.tish-paper.reference-home .catalog-section .grid .product-ribbon{
+    max-width:48%!important;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  body.tish-paper.tish-paper-products #productGrid .product *,
+  body.tish-paper.reference-home .catalog-section .grid .product *{
+    transition:none!important;
+    animation:none!important;
+  }
+}
