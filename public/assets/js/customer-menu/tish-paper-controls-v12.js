@@ -21,19 +21,13 @@
     }
 
     document.addEventListener('pointerdown', function (event) {
-        const pin = event.target.closest('#pwaInstallBtn.tish-paper-pin-control');
-        if (pin && !pin.hidden) {
-            press(pin, 'paper-pin-fold', 800);
-            return;
-        }
         const quantity = event.target.closest('.tish-cart-page #cartItems .row-actions button');
         if (quantity) press(quantity, 'paper-cart-qty-press', 380);
     });
-    document.addEventListener('keydown', function (event) {
-        if (event.key !== 'Enter' && event.key !== ' ') return;
+    document.addEventListener('click', function (event) {
         const pin = event.target.closest('#pwaInstallBtn.tish-paper-pin-control');
         if (pin && !pin.hidden) press(pin, 'paper-pin-fold', 800);
-    });
+    }, true);
     // The cart engine dispatches this ONLY after it has persisted its cart.
     document.addEventListener('customer-menu:cart-changed', function () {
         press(document.querySelector('.bottom-nav .tish-paper-cart-nav'), 'paper-cart-icon-pop', 400);
