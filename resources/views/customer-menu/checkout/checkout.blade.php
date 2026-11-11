@@ -10,7 +10,7 @@
 <title>إتمام الطلب - {{ $branding['name'] ?? config('app.name') }}</title>
 @if(!empty($branding['favicon']))<link rel="icon" href="{{ $branding['favicon'] }}">@endif
 @include('customer-menu.partials.styles')
-<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-checkout-paper.css') }}?v=1">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-checkout-paper.css') }}?v=2">
 @include('customer-menu.partials.pwa-head')
 </head>
 <body class="crisp-customer-menu tish-paper tish-checkout-page">
@@ -23,13 +23,25 @@
    <section class="checkout-sheet checkout-details" aria-labelledby="checkoutDetailsTitle">
    <h2 id="checkoutDetailsTitle">بيانات الطلب</h2>
    <div class="checkout-grid">
-    <label class="full">نوع الطلب
+    <label class="full" id="checkoutServiceFallback">نوع الطلب
      <select name="service_type" id="serviceType" required>
       @foreach(($serviceOptions ?? []) as $option)
        <option value="{{ $option['value'] ?? $option }}">{{ $option['label'] ?? $option }}</option>
       @endforeach
      </select>
     </label>
+    <div class="full checkout-service-picker" id="checkoutServicePicker" role="group" aria-labelledby="checkoutServiceTitle" hidden>
+     <span id="checkoutServiceTitle">نوع الطلب</span>
+     <div class="checkout-service-options">
+      @foreach(($serviceOptions ?? []) as $option)
+       @php($serviceValue = $option['value'] ?? $option)
+       <button class="checkout-paper-choice" type="button" data-service-choice="{{ $serviceValue }}" aria-pressed="false">
+        <i class="fa-solid {{ match($serviceValue) { 'dine_in' => 'fa-utensils', 'delivery' => 'fa-motorcycle', default => 'fa-bag-shopping' } }}" aria-hidden="true"></i>
+        <span>{{ $option['label'] ?? $option }}</span>
+       </button>
+      @endforeach
+     </div>
+    </div>
     <label>الاسم<input name="name" autocomplete="name" required maxlength="120"></label>
     <label>رقم الجوال<input name="phone" type="tel" autocomplete="tel" required maxlength="20" inputmode="tel" dir="ltr"></label>
     <div id="tableField" class="full" role="group" aria-labelledby="checkoutTableTitle" hidden>
@@ -45,7 +57,7 @@
        @endphp
        <button type="button"
                class="table-card {{ $isAvailable ? 'available' : 'occupied' }}"
-               data-table-id="{{ $table['id'] }}"
+               data-table-id="{{ $table['id'] }}" aria-pressed="false"
                {{ $isAvailable ? '' : 'disabled' }}>
         <span class="dot {{ $isAvailable ? 'available' : 'occupied' }}"></span>
         {{ $table['name'] ?? ('طاولة '.$table['id']) }}
@@ -158,22 +170,35 @@ function preselectQrTable() {
         .find(item => String(item.dataset.tableId) === String(table.id) && !item.disabled);
     if (!card) return;
     service.value = 'dine_in';
-    card.classList.add('selected');
-    document.getElementById('tableIdInput').value = table.id;
+    selectCheckoutTable(card);
 }
 
 function serviceFields() {
     const value = document.getElementById('serviceType').value;
-    document.getElementById('tableField').hidden = value !== 'dine_in';
-    document.getElementById('addressField').hidden = value !== 'delivery';
+    const table = document.getElementById('tableField');
+    const address = document.getElementById('addressField');
+    table.hidden = value !== 'dine_in';
+    document.getElementById('tableIdInput').disabled = table.hidden;
+    address.hidden = value !== 'delivery';
+    address.querySelector('textarea').disabled = address.hidden;
+    document.querySelectorAll('[data-service-choice]').forEach(button => {
+        button.setAttribute('aria-pressed', String(button.dataset.serviceChoice === value));
+    });
+}
+
+function selectCheckoutTable(card) {
+    document.querySelectorAll('.table-card').forEach(button => {
+        const selected = button === card;
+        button.classList.toggle('selected', selected);
+        button.setAttribute('aria-pressed', String(selected));
+    });
+    document.getElementById('tableIdInput').value = card.dataset.tableId;
 }
 
 document.getElementById('tableGrid').addEventListener('click', e => {
     const card = e.target.closest('.table-card');
     if (!card || card.disabled) return;
-    document.querySelectorAll('.table-card').forEach(c => c.classList.remove('selected'));
-    card.classList.add('selected');
-    document.getElementById('tableIdInput').value = card.dataset.tableId;
+    selectCheckoutTable(card);
 });
 
 async function loadPayments() {
@@ -290,7 +315,19 @@ document.addEventListener('change', e => {
     }
 });
 
-document.getElementById('serviceType').addEventListener('change', serviceFields);
+const serviceSelect = document.getElementById('serviceType');
+const servicePicker = document.getElementById('checkoutServicePicker');
+if (servicePicker.querySelector('[data-service-choice]')) {
+    document.getElementById('checkoutServiceFallback').hidden = true;
+    servicePicker.hidden = false;
+    servicePicker.addEventListener('click', event => {
+        const option = event.target.closest('[data-service-choice]');
+        if (!option) return;
+        serviceSelect.value = option.dataset.serviceChoice;
+        serviceFields();
+    });
+}
+serviceSelect.addEventListener('change', serviceFields);
 
 document.getElementById('checkoutForm').addEventListener('submit', async e => {
     e.preventDefault();

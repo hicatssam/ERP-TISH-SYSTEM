@@ -334,7 +334,7 @@ window.CustomerMenu = (function () {
 
         stickyCartAnimation?.cancel();
         stickyCartAnimation = null;
-        const motion = !window.matchMedia('(prefers-reduced-motion: reduce)').matches && typeof bar.animate === 'function';
+        const motion = !window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches && typeof bar.animate === 'function';
         bar.inert = count === 0;
 
         if (!count && previous > 0 && motion) {

@@ -19,9 +19,17 @@ function makeClassList() {
         },
     };
 }
-function cart(blocked = false, saved = {}, table = null) {
+function cart(blocked = false, saved = {}, table = null, motion = false) {
     const values = new Map([['dahab_cart_B01', JSON.stringify(saved)]]);
     const stickyCart = {hidden: true, attributes: {}, classList: makeClassList(), setAttribute(name, value) { this.attributes[name] = value; }};
+    const animations = [];
+    if (motion) {
+        stickyCart.animate = (_, options) => {
+            animations.push(options.duration);
+            return {finished: Promise.resolve(), cancel() {}};
+        };
+        stickyCart.querySelectorAll = () => [];
+    }
     const stickyCount = {textContent: ''};
     const stickyTotal = {textContent: ''};
     const bodyClassList = makeClassList();
@@ -42,6 +50,7 @@ function cart(blocked = false, saved = {}, table = null) {
     vm.runInNewContext(source, context);
     const customerMenu = context.window.CustomerMenu;
     customerMenu.__testNodes = nodes;
+    customerMenu.__testAnimations = animations;
     customerMenu.__testBodyClassList = bodyClassList;
     customerMenu.__testMenuClassList = menuClassList;
     return customerMenu;
@@ -67,16 +76,15 @@ test('mobile cart summary mirrors quantity and total, then hides when empty', ()
     assert.equal(cmStickyCart.hidden, true);
     assert.equal(cm.__testBodyClassList.contains('cm-has-sticky-cart'), false);
 });
-test('sticky cart pulses only after a real change to count or total', () => {
-    const cm = cart();
-    const sticky = cm.__testNodes.cmStickyCart;
-    cm.addToCart(1, 2, {variantId: 2});
-    assert.equal(sticky.classList.contains('cm-cart-pulse'), false);
+test('sticky cart unfolds once and pulses only when quantity increases', () => {
+    const cm = cart(false, {}, null, true);
     cm.syncBadges();
-    assert.equal(sticky.classList.contains('cm-cart-pulse'), false);
+    cm.addToCart(1, 2, {variantId: 2});
+    cm.syncBadges();
+    cm.changeCart(cm.cartRows()[0].key, 1);
     cm.changeCart(cm.cartRows()[0].key, -1);
-    assert.equal(sticky.classList.contains('cm-cart-pulse'), true);
-    assert.equal(cm.__testNodes.cmStickyCartCount.textContent, 'قطعة واحدة');
+    assert.deepEqual(cm.__testAnimations, [420, 340]);
+    assert.equal(cm.__testNodes.cmStickyCartCount.textContent, 'قطعتان');
 });
 test('cart quantity stops at the server limit and can be removed', () => {
     const cm = cart(); cm.addToCart(1, 50, {variantId: 2});
@@ -157,11 +165,12 @@ test('QR table is carried across menu pages and cleared after checkout', () => {
 test('QR checkout preselects only a currently available table', () => {
     const source = fs.readFileSync(path.join(root, 'resources/views/customer-menu/checkout/checkout.blade.php'), 'utf8');
     const fn = source.slice(source.indexOf('function preselectQrTable()'), source.indexOf('function serviceFields()'));
+    const selectTable = source.slice(source.indexOf('function selectCheckoutTable('), source.indexOf("document.getElementById('tableGrid').addEventListener"));
     for (const disabled of [false, true]) {
         const service = {options: [{value: 'dine_in'}, {value: 'takeaway'}], value: 'takeaway'};
         const input = {value: ''};
-        const card = {dataset: {tableId: '7'}, disabled, classList: {add() {}}};
-        vm.runInNewContext(fn + '\npreselectQrTable();', {CM: {selectedTable() {return {id: 7};}},
+        const card = {dataset: {tableId: '7'}, disabled, setAttribute() {}, classList: {toggle() {}}};
+        vm.runInNewContext(fn + selectTable + '\npreselectQrTable();', {CM: {selectedTable() {return {id: 7};}},
             document: {getElementById(id) {return id === 'serviceType' ? service : input;}, querySelectorAll() {return [card];}}});
         assert.equal(service.value, disabled ? 'takeaway' : 'dine_in');
         assert.equal(String(input.value), disabled ? '' : '7');
