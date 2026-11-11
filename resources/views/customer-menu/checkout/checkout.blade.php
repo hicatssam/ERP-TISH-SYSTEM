@@ -34,7 +34,9 @@
      <span id="checkoutServiceTitle">نوع الطلب</span>
      <div class="checkout-service-options">
       @foreach(($serviceOptions ?? []) as $option)
-       @php($serviceValue = $option['value'] ?? $option)
+       @php
+           $serviceValue = $option['value'] ?? $option;
+       @endphp
        <button class="checkout-paper-choice" type="button" data-service-choice="{{ $serviceValue }}" aria-pressed="false">
         <i class="fa-solid {{ match($serviceValue) { 'dine_in' => 'fa-utensils', 'delivery' => 'fa-motorcycle', default => 'fa-bag-shopping' } }}" aria-hidden="true"></i>
         <span>{{ $option['label'] ?? $option }}</span>
