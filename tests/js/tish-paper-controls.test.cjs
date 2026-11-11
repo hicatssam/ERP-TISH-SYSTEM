@@ -35,7 +35,7 @@ function harness(reduced = false) {
 }
 test('install pin fully folds and reforms without replacing native PWA click handler', () => {
     const h = harness();
-    h.listeners.get('pointerdown')({target:{closest:s=>s.includes('pwaInstallBtn')?h.pin:null}});
+    h.listeners.get('click')({target:{closest:s=>s.includes('pwaInstallBtn')?h.pin:null}});
     assert(h.pin.state.has('paper-pin-fold'));
     h.scheduled.forEach(fn=>fn());
     assert(!h.pin.state.has('paper-pin-fold'));
@@ -50,13 +50,13 @@ test('cart icon animates only when customer-menu:cart-changed fires', () => {
 test('reduced motion avoids unnecessary visual animation', () => {
     const h = harness(true);
     h.listeners.get('customer-menu:cart-changed')();
-    h.listeners.get('pointerdown')({target:{closest:s=>s.includes('pwaInstallBtn')?h.pin:null}});
+    h.listeners.get('click')({target:{closest:s=>s.includes('pwaInstallBtn')?h.pin:null}});
     assert(!h.cart.state.has('paper-cart-icon-pop'));
     assert(!h.pin.state.has('paper-pin-fold'));
 });
 test('CSS preserves paper controls and keyboard accessibility', () => {
     assert(styles.includes('favorite-disc.webp'));
-    assert(styles.includes('tish-paper-cart-glyph'));
+    assert(styles.includes('.tish-paper-cart-icon-disc{\n  display:none!important;'));
     assert(styles.includes(':focus-visible'));
     assert(styles.includes('prefers-reduced-motion:reduce'));
     assert(styles.includes('--tish-card-primary'));
