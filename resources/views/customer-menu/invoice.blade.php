@@ -1,3 +1,5 @@
+{{-- Preserve legacy invoice rendering when the view is included without a public order. --}}
+@if(isset($order) && isset($branding))
 @php
     /** Public customer invoice: live accounting values, no mocked totals. */
     $printSettings = app(\App\Services\PrintThemeService::class)->settings();
@@ -122,3 +124,6 @@ window.addEventListener('load', function () {
 </script>
 </body>
 </html>
+@else
+@include('finance.invoices.print')
+@endif
