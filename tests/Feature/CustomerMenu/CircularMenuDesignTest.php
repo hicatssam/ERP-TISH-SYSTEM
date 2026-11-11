@@ -8,7 +8,7 @@ use Tests\TestCase;
 class CircularMenuDesignTest extends TestCase
 {
     #[Test]
-    public function all_customer_menu_pages_share_a_brand_aware_circular_stylesheet(): void
+    public function orders_use_the_shared_brand_aware_styles_and_paper_theme(): void
     {
         $shared = file_get_contents(resource_path('views/customer-menu/partials/styles.blade.php'));
         $orders = file_get_contents(resource_path('views/customer-menu/my-orders.blade.php'));
@@ -16,7 +16,9 @@ class CircularMenuDesignTest extends TestCase
 
         $this->assertStringContainsString('tish-circular-ui.css', $shared);
         $this->assertStringContainsString('tish-circular-ui.css', $orders);
-        $this->assertStringContainsString('class="cm-my-orders"', $orders);
+        $this->assertStringContainsString("@include('customer-menu.partials.styles')", $orders);
+        $this->assertMatchesRegularExpression('/<body\s+class="[^"]*\bcm-my-orders\b[^"]*"/', $orders);
+        $this->assertMatchesRegularExpression('/<body\s+class="[^"]*\btish-paper\b[^"]*"/', $orders);
         $this->assertStringContainsString('var(--primary)', $css);
         $this->assertStringContainsString('var(--on-primary)', $css);
         $this->assertStringContainsString('prefers-reduced-motion:reduce', $css);
@@ -119,17 +121,19 @@ class CircularMenuDesignTest extends TestCase
     }
 
     #[Test]
-    public function homepage_promo_banner_matches_outer_card_corner_radius(): void
+    public function homepage_promo_banner_clips_slides_inside_the_paper_frame(): void
     {
         $home = file_get_contents(resource_path('views/customer-menu/show.blade.php'));
-        $css = file_get_contents(public_path('assets/css/customer-menu/tish-circular-ui.css'));
+        $css = file_get_contents(public_path('assets/css/customer-menu/tish-paper-polish-v13.css'));
 
-        $this->assertStringContainsString('class="reference-hero"', $home);
-        $this->assertStringContainsString('.reference-hero .banner-track', $css);
-        $this->assertStringContainsString('.reference-hero .banner-slide', $css);
-        $this->assertStringContainsString('.reference-hero .banner-slide::after', $css);
-        $this->assertStringContainsString('--tish-banner-radius:30px', $css);
-        $this->assertStringContainsString('overflow:hidden', $css);
+        $this->assertMatchesRegularExpression(
+            '/class="tish-paper-banner-frame">\s*<section[^>]*class="[^"]*\breference-hero\b[^"]*"/',
+            $home
+        );
+        $this->assertMatchesRegularExpression(
+            '/\.tish-paper-banner-frame \.reference-hero\s*\{[^}]*overflow:\s*hidden\b[^}]*border-radius:/',
+            $css
+        );
     }
 
     #[Test]
