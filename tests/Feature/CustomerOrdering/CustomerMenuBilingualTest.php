@@ -119,7 +119,7 @@ class CustomerMenuBilingualTest extends TestCase
     #[Test]
     public function english_menu_prefers_real_latin_names_even_if_translations_are_inverted(): void
     {
-        $this->get(route('customer-menu.index', ['lang' => 'en']))->assertOk();
+        $this->get(route('customer-menu.index', ['choose' => 1, 'lang' => 'en']))->assertOk();
         $this->assertSame('Eastern Sweets', \App\Support\CustomerMenuLanguage::name('حلويات شرقية', 'Eastern Sweets'));
         $this->assertTrue(\App\Support\CustomerMenuLanguage::hasEnglishName('عش بلبل', 'Bird Nest'));
         $this->assertFalse(\App\Support\CustomerMenuLanguage::hasEnglishName('عش بلبل', 'حلويات شرقية'));
@@ -170,8 +170,11 @@ class CustomerMenuBilingualTest extends TestCase
             'name' => 'فرع النصر', 'code' => 'L-EN-02', 'type' => 'branch', 'is_active' => true,
         ]);
 
+        $this->get(route('customer-menu.index', ['lang' => 'en']))
+            ->assertRedirect(route('customer-menu.show', ['location' => $branch->code, 'lang' => 'en']));
+
         foreach ([
-            route('customer-menu.index'),
+            route('customer-menu.index', ['choose' => 1]),
             route('customer-menu.show', $branch->code),
             route('customer-menu.products', $branch->code),
             route('customer-menu.cart', $branch->code),
