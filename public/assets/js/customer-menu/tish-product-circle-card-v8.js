@@ -60,13 +60,13 @@
         let success = false;
         try {
             success = cm.addToCart(product.id, 1) === true;
+        } catch (error) {
+            console.error('TISH add-to-cart failed', error);
         } finally {
             delete button.dataset.busy;
+            if (!success) button.disabled = false;
         }
-        if (!success) {
-            button.disabled = false;
-            return false;
-        }
+        if (!success) return false;
         const label = button.querySelector('.tish-circle-add-label');
         const icon = button.querySelector('i');
         button.classList.add('is-added');
