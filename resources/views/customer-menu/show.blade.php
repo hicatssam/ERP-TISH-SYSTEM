@@ -810,7 +810,12 @@ body.tish-paper #intro.tish-reel-intro{overflow:hidden;background:#f5e4cd;oversc
                     sound.querySelector('i').className = enabled ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark';
                 }
 
-                sound.addEventListener('click', () => setReelSound(reel.muted));
+                sound.addEventListener('click', () => {
+                    setReelSound(reel.muted);
+                    if (!reel.muted && reel.paused && !reel.ended) {
+                        reel.play().catch(() => revealOrderButton());
+                    }
+                });
                 setReelSound(true);
                 reel.src = reel.dataset.src;
                 reel.hidden = false;
