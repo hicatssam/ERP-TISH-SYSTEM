@@ -392,6 +392,16 @@ body.crisp-customer-menu > .app{position:relative;z-index:1}
 {{-- The last layer deliberately applies after the shared legacy/identity skins. --}}
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-circular-ui.css') }}?v=12">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-v2.css') }}?v=1">
+<style id="tish-product-card-client-theme">
+/* Use the admin-configured CUSTOMER colors, not the legacy fixed TISH red. */
+body.tish-paper {
+    --tish-card-primary: {{ $theme['primary'] ?? '#A91F16' }};
+    --tish-card-on-primary: {{ $theme['on_primary'] ?? '#FFFFFF' }};
+    --tish-card-ink: {{ $theme['text'] ?? '#352014' }};
+    --tish-card-muted: {{ $theme['muted'] ?? '#9B8068' }};
+    --tish-card-accent: {{ $theme['accent'] ?? '#F5BF55' }};
+}
+</style>
 {{-- Shared paper-theme text spacing for all public TISH screens. Does not affect ERP/admin. --}}
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-typography-v7.css') }}?v=7">
 

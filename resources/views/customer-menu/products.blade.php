@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-menu-reference-v3.css') }}?v=3">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-menu-card-fix-v4.css') }}?v=4">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-menu-circle-v5.css') }}?v=5">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-product-circle-card-v8.css') }}?v=8">
 @include('customer-menu.partials.pwa-head')
 <style>
 @keyframes dahabMenuCardIn {from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
@@ -99,11 +100,13 @@
 @include('customer-menu.partials.bottom-nav', ['activeNav' => 'menu'])
 @include('customer-menu.partials.pwa-install')
 @include('customer-menu.partials.cart-engine')
+<script src="{{ asset('assets/js/customer-menu/tish-product-circle-card-v8.js') }}?v=8"></script>
 
 <script>
 const CM = window.CustomerMenu;
 const menuF = (key, values) => window.CustomerMenuI18n.format(key, values);
 const PRODUCT_URL_BASE = @json(route('customer-menu.product.show', [$location->code, '__ID__']));
+const popularSet = new Set(Array.from(@json($popularProductIds ?? [])).map(String));
 function productUrl(id) { return PRODUCT_URL_BASE.replace('__ID__', encodeURIComponent(id)); }
 
 let activeCat = @json($initialCategory ?: 'all');
@@ -111,25 +114,10 @@ let priceRange = 'all';
 let sortMode = 'default';
 
 function renderCard(p) {
-    const description = p.description || p.category_name || 'محضّر بعناية إلك';
-    const favoriteLabel = CM.isFavorite(p.id) ? 'إزالة من المفضلة' : 'إضافة للمفضلة';
-    const addLabel = !p.available ? 'غير متوفر' : (p.requiresChoices ? 'اختر الخيارات' : 'إضافة');
-
-    return `<article class="product" data-id="${CM.esc(p.id)}">
-      <a class="product-media" href="${productUrl(p.id)}" aria-label="${CM.esc(menuF('عرض {name}', {name:p.name}))}">${CM.image(p)}</a>
-      <span class="product-status${p.available ? '' : ' is-unavailable'}">${p.available ? 'متوفر' : 'غير متوفر'}</span>
-      <button class="fav ${CM.isFavorite(p.id) ? 'active' : ''}" type="button" data-fav="${CM.esc(p.id)}" aria-label="${favoriteLabel}"><i class="${CM.isFavorite(p.id) ? 'fa-solid' : 'fa-regular'} fa-heart"></i></button>
-      <div class="product-body">
-        <a class="product-copy" href="${productUrl(p.id)}">
-          <h3>${CM.esc(p.name)}</h3>
-          <p class="product-desc">${CM.esc(description)}</p>
-        </a>
-        <div class="product-foot">
-          <div class="product-price-row"><span class="price">${CM.money(p.price)}</span></div>
-          <button class="details" type="button" data-add="${CM.esc(p.id)}"${p.available ? '' : ' disabled'}><i class="fa-solid fa-plus"></i><span>${addLabel}</span></button>
-        </div>
-      </div>
-    </article>`;
+    return window.TishProductCircleCard.render(p, {
+        productUrl: productUrl,
+        isPopular: popularSet.has(String(p.id)),
+    });
 }
 
 function priceMatches(price) {
@@ -151,7 +139,7 @@ function revealMenuCards() {
             }
         }
     }, {threshold: .08, rootMargin: '0px 0px 70px 0px'});
-    document.querySelectorAll('#productGrid .product').forEach((card, i) => {
+    document.querySelectorAll('#productGrid .tish-circle-card').forEach((card, i) => {
         card.style.setProperty('--cm-delay', (i % 6) * 50 + 'ms');
         productMotionObserver.observe(card);
     });
@@ -185,9 +173,8 @@ document.addEventListener('click', e => {
     if (add) {
         e.preventDefault(); e.stopPropagation();
         const p = CM.product(add.dataset.add);
-        if (!p || !p.available) return;
-        if (p && p.requiresChoices) { window.location.href = productUrl(p.id); return; }
-        CM.addToCart(add.dataset.add, 1);
+        if (!p || !p.available || add.disabled) return;
+        window.TishProductCircleCard.addFromButton(add, p, productUrl(p.id));
         return;
     }
 });
