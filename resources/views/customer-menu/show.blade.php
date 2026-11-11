@@ -113,7 +113,17 @@ body.tish-paper.reference-home .reference-masthead .tish-paper-banner-frame .ban
 }
 body.tish-paper.reference-home .reference-brand-copy h1{font-size:clamp(.9rem,3.5vw,1.25rem);line-height:1.35;margin:0}
 body.tish-paper.reference-home .reference-brand-copy p{font-size:.72rem;line-height:1.35;margin:2px 0 5px;color:var(--tish-paper-red)}
-body.tish-paper.reference-home .reference-header-row{gap:8px}
+body.tish-paper.reference-home .reference-masthead::before{content:none!important}
+body.tish-paper.reference-home .reference-header-row{gap:10px;min-height:72px}
+body.tish-paper.reference-home .reference-brand{gap:8px;min-width:0}
+body.tish-paper.reference-home .reference-brand-copy{min-width:0;overflow-wrap:anywhere}
+body.tish-paper.reference-home .reference-actions{flex:0 0 auto}
+body.tish-paper.reference-home .reference-logo-square{
+ padding:0;background:transparent!important;
+}
+body.tish-paper.reference-home .reference-logo-square .reference-client-logo{
+ border-radius:50%!important;
+}
 body.tish-paper.reference-home .reference-masthead .tish-paper-banner-frame .banner-slide,
 body.tish-paper.reference-home .reference-masthead .tish-paper-banner-frame .tish-paper-cover-banner{
  aspect-ratio:3 / 1;min-height:clamp(118px,29vw,230px)!important;
@@ -134,8 +144,8 @@ body.tish-paper.reference-home .reference-masthead.is-illustrated::after{
 .reference-logo,.reference-logo-fallback{width:62px;height:62px;border-radius:18px;border:1px solid var(--line);background:var(--surface);box-shadow:0 8px 24px rgba(20,17,18,.07);flex:0 0 auto}
 .reference-logo{object-fit:contain;padding:5px}
 .reference-logo-fallback{display:grid;place-items:center;background:var(--primary);color:#fff;font-size:1.4rem;font-weight:900}
-.reference-branch{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:1rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.reference-branch i{color:var(--primary);font-size:.8rem}
+
+
 .reference-actions{display:flex;gap:10px;direction:ltr}
 .reference-actions .icon-btn{width:58px;height:58px;border-radius:18px;display:grid;place-items:center;font-size:1.35rem;box-shadow:0 8px 24px rgba(20,17,18,.06)}
 .reference-actions .badge{top:-4px;left:auto;right:-4px;min-width:24px;height:24px;font-size:.78rem;border:2px solid var(--bg)}
@@ -223,7 +233,7 @@ body.tish-paper.reference-home #bannerTrack > .banner-slide[data-banner-active]{
  .reference-header{padding-top:14px}
  .reference-logo,.reference-logo-fallback{width:52px;height:52px;border-radius:15px}
  .reference-actions .icon-btn{width:50px;height:50px;border-radius:15px}
- .reference-branch{font-size:.86rem}
+
  .banner-slide{aspect-ratio:2.55/1;min-height:170px}
  .banner-copy{max-width:88%;padding:20px}
  .banner-copy p{font-size:.78rem}
@@ -236,7 +246,7 @@ body.tish-paper.reference-home #bannerTrack > .banner-slide[data-banner-active]{
 }
 @media(max-width:380px){
  .reference-brand{gap:7px}
- .reference-branch{max-width:120px}
+
  .reference-actions{gap:6px}
  .reference-actions .icon-btn{width:44px;height:44px}
  .reference-home .cat{min-width:84px}
@@ -358,16 +368,11 @@ body.tish-paper #intro.tish-reel-intro{overflow:hidden;background:#f5e4cd;oversc
    <div class="reference-header-row">
     <div class="reference-brand">
      <span class="reference-logo-square">
-      @if($branding['logo'] ?? null)
-       <img class="reference-client-logo" src="{{ $branding['logo'] }}" alt="{{ $branding['name'] }}">
-      @else
-       <span aria-label="{{ $branding['name'] }}">{{ mb_substr($branding['name'] ?? '', 0, 1) }}</span>
-      @endif
+      <img class="reference-client-logo" src="{{ asset('assets/tish-paper/brand/logo-disc.webp') }}" alt="">
      </span>
      <div class="reference-brand-copy">
      <h1>{{ $branding['name'] }}</h1>
      <p>{{ $branding['tagline'] ?: $homeSubtitle }}</p>
-     <a class="reference-branch" href="{{ route('customer-menu.index', ['choose' => 1]) }}" aria-label="تغيير الفرع">{{ $location->name }} <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></a>
      </div>
     </div>
     <div class="reference-actions">

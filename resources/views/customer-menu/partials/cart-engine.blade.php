@@ -352,18 +352,23 @@ window.CustomerMenu = (function () {
         }
 
         bar.hidden = count === 0;
-        if (!motion || previous === undefined || count === 0) return;
+        if (!motion || count === 0) return;
 
-        if (previous === 0) {
+        if (previous === undefined || previous === 0) {
             stickyCartAnimation = bar.animate([
-                {scale: '.93 .18', translate: '0 12px', opacity: 0},
+                {scale: '.85 .12', translate: '0 16px', opacity: 0},
                 {scale: '1.015 1.05', translate: '0 -2px', opacity: 1, offset: .72},
                 {scale: '1', translate: '0 0', opacity: 1}
-            ], {duration: 300, easing: 'cubic-bezier(.22,1,.36,1)'});
+            ], {duration: 420, easing: 'cubic-bezier(.22,1,.36,1)'});
             stickyCartAnimation.finished.catch(() => {});
         } else if (count > previous) {
+            stickyCartAnimation = bar.animate([
+                {scale: '1'}, {scale: '1.035 .94', offset: .3},
+                {scale: '.995 1.035', offset: .62}, {scale: '1'}
+            ], {duration: 340, easing: 'ease-out'});
+            stickyCartAnimation.finished.catch(() => {});
             bar.querySelectorAll('.cm-sticky-cart-icon, #cmStickyCartCount').forEach(element => {
-                element.animate([{scale: '1'}, {scale: '1.16', offset: .34}, {scale: '1'}],
+                element.animate([{scale: '1'}, {scale: '1.24', offset: .34}, {scale: '1'}],
                     {duration: 280, easing: 'ease-out'});
             });
         }
