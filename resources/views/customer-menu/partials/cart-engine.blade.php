@@ -324,6 +324,51 @@ window.CustomerMenu = (function () {
         try { localStorage.setItem(ORDERS_KEY, JSON.stringify(orders)); } catch (e) {}
     }
 
+    let previousStickyCount;
+    let stickyCartAnimation;
+
+    function updateStickyCartVisibility(bar, count) {
+        const previous = previousStickyCount;
+        previousStickyCount = count;
+        if (previous === count) return;
+
+        stickyCartAnimation?.cancel();
+        stickyCartAnimation = null;
+        const motion = !window.matchMedia('(prefers-reduced-motion: reduce)').matches && typeof bar.animate === 'function';
+        bar.inert = count === 0;
+
+        if (!count && previous > 0 && motion) {
+            const closing = bar.animate([
+                {scale: '1', translate: '0 0', opacity: 1},
+                {scale: '.92 .16', translate: '0 12px', opacity: 0}
+            ], {duration: 210, easing: 'ease-in', fill: 'forwards'});
+            stickyCartAnimation = closing;
+            closing.finished.then(() => {
+                if (stickyCartAnimation !== closing) return;
+                bar.hidden = true;
+                closing.cancel();
+            }).catch(() => {});
+            return;
+        }
+
+        bar.hidden = count === 0;
+        if (!motion || previous === undefined || count === 0) return;
+
+        if (previous === 0) {
+            stickyCartAnimation = bar.animate([
+                {scale: '.93 .18', translate: '0 12px', opacity: 0},
+                {scale: '1.015 1.05', translate: '0 -2px', opacity: 1, offset: .72},
+                {scale: '1', translate: '0 0', opacity: 1}
+            ], {duration: 300, easing: 'cubic-bezier(.22,1,.36,1)'});
+            stickyCartAnimation.finished.catch(() => {});
+        } else if (count > previous) {
+            bar.querySelectorAll('.cm-sticky-cart-icon, #cmStickyCartCount').forEach(element => {
+                element.animate([{scale: '1'}, {scale: '1.16', offset: .34}, {scale: '1'}],
+                    {duration: 280, easing: 'ease-out'});
+            });
+        }
+    }
+
     function syncBadges() {
         const c = cartCount();
         const f = favorites.length;
@@ -334,28 +379,15 @@ window.CustomerMenu = (function () {
 
         const stickyCart = document.getElementById('cmStickyCart');
         if (stickyCart) {
-            const wasHidden = stickyCart.hidden;
             const countLabel = c === 1 ? 'قطعة واحدة' : (c === 2 ? 'قطعتان' : c + ' قطع');
             const totalLabel = money(cartTotal());
-            stickyCart.hidden = c === 0;
             stickyCart.setAttribute('aria-label', 'عرض السلة، ' + countLabel + '، الإجمالي ' + totalLabel);
             const stickyCount = document.getElementById('cmStickyCartCount');
             const stickyTotal = document.getElementById('cmStickyCartTotal');
             if (stickyCount) stickyCount.textContent = countLabel;
             if (stickyTotal) stickyTotal.textContent = totalLabel;
 
-            // Animate only on an actual quantity/total update, not on unrelated
-            // UI updates such as favoriting a product.
-            const snapshot = c + '|' + totalLabel;
-            const previousSnapshot = stickyCart._cmCartSnapshot;
-            stickyCart._cmCartSnapshot = snapshot;
-            if (c > 0 && !wasHidden && previousSnapshot !== undefined && previousSnapshot !== snapshot) {
-                stickyCart.classList.remove('cm-cart-pulse');
-                void stickyCart.offsetWidth;
-                stickyCart.classList.add('cm-cart-pulse');
-                clearTimeout(stickyCart._cmPulseTimer);
-                stickyCart._cmPulseTimer = setTimeout(() => stickyCart.classList.remove('cm-cart-pulse'), 450);
-            }
+            updateStickyCartVisibility(stickyCart, c);
 
             document.body?.classList?.toggle('cm-has-sticky-cart', c > 0);
             document.querySelector?.('main.menu-area')?.classList?.toggle('cm-has-sticky-cart', c > 0);

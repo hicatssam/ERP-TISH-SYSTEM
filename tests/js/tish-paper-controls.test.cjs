@@ -19,11 +19,10 @@ function harness(reduced = false) {
             }
         };
     };
-    const pin = make(), cart = make(), sticky = make();
+    const pin = make(), cart = make();
     const doc = {
         addEventListener(type, callback) {listeners.set(type,callback);},
-        querySelector() {return cart;},
-        getElementById() {return sticky;}
+        querySelector() {return cart;}
     };
     const win = {
         matchMedia: () => ({matches: reduced}),
@@ -31,7 +30,7 @@ function harness(reduced = false) {
         clearTimeout() {}
     };
     vm.runInNewContext(source,{window:win,document:doc});
-    return {listeners,scheduled,pin,cart,sticky};
+    return {listeners,scheduled,pin,cart};
 }
 test('install pin fully folds and reforms without replacing native PWA click handler', () => {
     const h = harness();
@@ -45,7 +44,6 @@ test('cart icon animates only when customer-menu:cart-changed fires', () => {
     assert(!h.cart.state.has('paper-cart-icon-pop'));
     h.listeners.get('customer-menu:cart-changed')();
     assert(h.cart.state.has('paper-cart-icon-pop'));
-    assert(h.sticky.state.has('paper-cart-icon-pop'));
 });
 test('reduced motion avoids unnecessary visual animation', () => {
     const h = harness(true);

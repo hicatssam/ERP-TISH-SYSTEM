@@ -31,6 +31,5 @@
     // The cart engine dispatches this ONLY after it has persisted its cart.
     document.addEventListener('customer-menu:cart-changed', function () {
         press(document.querySelector('.bottom-nav .tish-paper-cart-nav'), 'paper-cart-icon-pop', 400);
-        press(document.getElementById('cmStickyCart'), 'paper-cart-icon-pop', 400);
     });
 })(window, document);
