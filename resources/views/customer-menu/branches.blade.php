@@ -9,7 +9,7 @@
 <style>
 .branch-welcome{width:min(760px,calc(100% - 32px));margin:0 auto;padding:52px 0 90px}
 .branch-brand{display:flex;align-items:center;gap:12px;font-weight:800;margin-bottom:34px}
-.branch-brand img{width:64px;height:64px;object-fit:contain;border-radius:18px;background:var(--surface)}
+.branch-brand img{width:64px;height:64px;object-fit:contain;border-radius:50%;background:transparent}
 .branch-welcome h1{font-size:clamp(28px,5vw,42px);margin:0 0 10px;font-weight:900}
 .branch-welcome>p{color:var(--muted);line-height:1.8;margin:0 0 24px}
 .branch-search{width:100%;padding:16px 18px;border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:16px;margin-bottom:22px}
@@ -25,7 +25,7 @@
 <body>
 <main class="branch-welcome">
     <div class="branch-brand">
-        @if($branding['logo'] ?? null)<img src="{{ $branding['logo'] }}" alt="{{ $branding['name'] }}">@endif
+        <img src="{{ asset('assets/tish-paper/brand/logo-disc.webp') }}" alt="">
         <span>{{ $branding['name'] }}</span>
     </div>
     <h1>من أي فرع بدك تطلب؟</h1>

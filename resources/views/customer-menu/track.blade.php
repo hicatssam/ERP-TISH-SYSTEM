@@ -274,9 +274,7 @@
     <header class="topbar">
         <div class="wrap topin">
             <a class="brand" href="{{ route('customer-menu.show',$order->location->code) }}">
-                @if($brandLogo)
-                    <img src="{{ $brandLogo }}" alt="{{ $brandName }}">
-                @endif
+                <img src="{{ asset('assets/tish-paper/brand/logo-disc.webp') }}" alt="{{ $brandName }}">
                 <span>
                     <b>{{ $brandName }}</b>
                     <small>{{ $order->location->name }}</small>
