@@ -137,3 +137,63 @@ body.tish-paper.tish-product-page .tish-install-inline #pwaInstallBtn.tish-paper
   from {opacity:.7;scale:.98 .88;}
   to {opacity:1;scale:1;}
 }
+
+/* Suggested products use the same torn paper surfaces as the detail panel. */
+body.tish-paper.tish-product-page :is(.tish-addons-grid,.related-row) {
+  gap:12px;
+}
+body.tish-paper.tish-product-page :is(.tish-addon-card,.related-row .product) {
+  background:transparent url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  padding:8px 9px 11px;
+}
+body.tish-paper.tish-product-page .tish-addon-card::before,
+body.tish-paper.tish-product-page .related-row .product::before {
+  content:none!important;
+}
+body.tish-paper.tish-product-page .related-row .product {
+  flex-basis:clamp(140px, 40vw, 188px);
+}
+body.tish-paper.tish-product-page :is(.tish-addon-photo,.related-row .product-media) {
+  display:grid;
+  place-items:center;
+  height:clamp(90px, 25vw, 145px);
+  background:transparent!important;
+  border-radius:0!important;
+  overflow:hidden;
+}
+body.tish-paper.tish-product-page :is(.tish-addon-photo,.related-row .product-media) img {
+  width:100%;
+  height:100%;
+  padding:4px;
+  object-fit:contain!important;
+  background:transparent!important;
+}
+body.tish-paper.tish-product-page .tish-addon-info {
+  min-height:0;
+  gap:6px;
+}
+body.tish-paper.tish-product-page :is(.tish-addon-add,.tish-addon-pick) {
+  min-width:44px;
+  min-height:44px;
+  border:0!important;
+  border-radius:0!important;
+  color:#fff8ed;
+  background:transparent url('../../tish-paper/paper/nav-active.webp') center/100% 100% no-repeat!important;
+}
+@media (prefers-reduced-motion:no-preference) {
+  .tish-product-page :is(.tish-addon-card,.related-row .product):focus-within img {
+    animation:tish-suggestion-lift 340ms ease-out;
+  }
+}
+@media (prefers-reduced-motion:no-preference) and (hover:hover) {
+  .tish-product-page :is(.tish-addon-card,.related-row .product):hover img {
+    animation:tish-suggestion-lift 340ms ease-out;
+  }
+}
+@keyframes tish-suggestion-lift {
+  0%,100% {translate:0 0;}
+  50% {translate:0 -5px;rotate:-2deg;}
+}

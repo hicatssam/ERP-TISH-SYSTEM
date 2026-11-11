@@ -8,7 +8,7 @@
 <title>{{ $product['name'] }} - {{ $branding['name'] ?? config('app.name') }}</title>
 @if(!empty($branding['favicon']))<link rel="icon" href="{{ $branding['favicon'] }}">@endif
 @include('customer-menu.partials.styles')
-<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-product-paper.css') }}?v=2">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-product-paper.css') }}?v=3">
 @include('customer-menu.partials.pwa-head')
 </head>
 <body class="crisp-customer-menu tish-paper tish-product-page">
@@ -172,6 +172,7 @@ document.querySelector('.tish-addons-grid')?.addEventListener('click', event => 
     if (!item || !item.available || item.requiresChoices || item.isVariantProduct) return;
     if (!CM.addToCart(item.id, 1)) return;
     button.classList.add('added');
+    pulseProductControl(button);
     button.innerHTML = '<i class="fa-solid fa-check" aria-hidden="true"></i>';
     if (addonFeedback) addonFeedback.textContent = menuT('تمت الإضافة للسلة') + ': ' + item.name;
     window.setTimeout(() => {
@@ -375,6 +376,7 @@ document.getElementById('detailAdd').onclick = () => {
     if (!ok) return;
 
     const btn = document.getElementById('detailAdd');
+    pulseProductControl(btn);
     btn.innerHTML = `<i class="fa-solid fa-check"></i> تمت الإضافة`;
     setTimeout(() => { btn.innerHTML = '<i class="fa-solid fa-bag-shopping"></i> إضافة المزيد للسلة'; }, 900);
 };
@@ -383,13 +385,27 @@ document.getElementById('detailOpenCart').onclick = () => {
     window.location.href = @json(route('customer-menu.cart', $location->code));
 };
 
+function pulseProductControl(button) {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !button.animate) return;
+    button.paperPulse?.cancel();
+    button.paperPulse = button.animate([
+        {scale: '1'}, {scale: '1.12', offset: .25}, {scale: '.97', offset: .48},
+        {scale: '1.07', offset: .68}, {scale: '1'}
+    ], {duration: 360, easing: 'ease-out'});
+}
+
 const favBtn = document.getElementById('detailFav');
 function paintFav() {
     const active = CM.isFavorite(PRODUCT_ID);
     favBtn.classList.toggle('active', active);
+    favBtn.setAttribute('aria-pressed', String(active));
     favBtn.innerHTML = `<i class="fa-${active ? 'solid' : 'regular'} fa-heart"></i>`;
 }
-favBtn.addEventListener('click', () => { CM.toggleFavorite(PRODUCT_ID); paintFav(); });
+favBtn.addEventListener('click', () => {
+    CM.toggleFavorite(PRODUCT_ID);
+    paintFav();
+    pulseProductControl(favBtn);
+});
 paintFav();
 </script>
 </body>
