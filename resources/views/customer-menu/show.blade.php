@@ -309,9 +309,20 @@ body.tish-paper #intro.tish-reel-intro{overflow:hidden;background:#f5e4cd;oversc
  background:url('{{ asset('assets/tish-paper/paper/nav-active.webp') }}') center/100% 100% no-repeat;
 }
 #intro.tish-reel-intro.has-reel-frame .intro-box{
- position:absolute;inset-inline:12px;top:67%;max-width:none;padding:0;
+ position:absolute;inset-inline:12px;top:51%;max-width:none;padding:0;text-align:center;
 }
-#intro .intro-enter{margin:0;animation:none!important}
+#intro .intro-enter{margin:0}
+@media(prefers-reduced-motion:no-preference){
+ #intro:not(.hide) .intro-enter:not([hidden]){
+  animation:tish-order-button-nudge 1.65s ease-out 3;
+ }
+}
+@keyframes tish-order-button-nudge{
+ 0%,35%,100%{translate:0 0;rotate:0deg;scale:1}
+ 7%{translate:-3px 0;rotate:-3deg;scale:1.06}
+ 14%{translate:3px 0;rotate:3deg;scale:1.06}
+ 22%{translate:-2px 0;rotate:-2deg;scale:1.02}
+}
 @media(min-aspect-ratio: 1/1){
  #intro.tish-reel-intro.has-reel-frame .intro-box{top:24%}
 }

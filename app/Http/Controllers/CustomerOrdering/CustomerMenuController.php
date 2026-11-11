@@ -17,6 +17,7 @@ use App\Support\CustomerMenuLanguage;
 use App\Services\Restaurant\CustomerOrderingService;
 use App\Services\Restaurant\CustomerOrderStatusService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -33,10 +34,19 @@ class CustomerMenuController extends Controller
     ) {
     }
 
-    public function index(): View
+    public function index(Request $request): View|RedirectResponse
     {
         $branches = Location::query()->branches()->active()
             ->orderBy('id')->get(['id', 'code', 'name', 'address']);
+
+        if (! $request->boolean('choose') && $branches->isNotEmpty()) {
+            $branch = $branches->firstWhere('code', 'B01') ?? $branches->first();
+
+            return redirect()->route('customer-menu.show', [
+                'location' => $branch->code,
+                ...$request->only(['lang', 'table']),
+            ]);
+        }
 
         return view('customer-menu.branches', [
             'branches' => $branches,
