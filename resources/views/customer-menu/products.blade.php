@@ -12,6 +12,8 @@
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-menu-card-fix-v4.css') }}?v=4">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-menu-circle-v5.css') }}?v=5">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-product-circle-card-v8.css') }}?v=9">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-product-layout-v10.css') }}?v=10">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-motion-v10.css') }}?v=10">
 @include('customer-menu.partials.pwa-head')
 <style>
 @keyframes dahabMenuCardIn {from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
@@ -101,6 +103,7 @@
 @include('customer-menu.partials.pwa-install')
 @include('customer-menu.partials.cart-engine')
 <script src="{{ asset('assets/js/customer-menu/tish-product-circle-card-v8.js') }}?v=8"></script>
+<script src="{{ asset('assets/js/customer-menu/tish-paper-motion-v10.js') }}?v=10"></script>
 
 <script>
 const CM = window.CustomerMenu;
@@ -126,23 +129,8 @@ function priceMatches(price) {
     return price >= min && price <= max;
 }
 
-const menuMotionReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-let productMotionObserver;
 function revealMenuCards() {
-    if (productMotionObserver) productMotionObserver.disconnect();
-    if (menuMotionReduced || !('IntersectionObserver' in window)) return;
-    productMotionObserver = new IntersectionObserver(entries => {
-        for (const entry of entries) {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('cm-card-motion');
-                productMotionObserver.unobserve(entry.target);
-            }
-        }
-    }, {threshold: .08, rootMargin: '0px 0px 70px 0px'});
-    document.querySelectorAll('#productGrid .tish-circle-card').forEach((card, i) => {
-        card.style.setProperty('--cm-delay', (i % 6) * 50 + 'ms');
-        productMotionObserver.observe(card);
-    });
+    window.TishPaperMotion?.observe(document.getElementById('productGrid'));
 }
 
 function renderProducts() {
@@ -167,7 +155,12 @@ function renderProducts() {
 
 document.addEventListener('click', e => {
     const fav = e.target.closest('[data-fav]');
-    if (fav) { e.preventDefault(); e.stopPropagation(); CM.toggleFavorite(fav.dataset.fav); renderProducts(); return; }
+    if (fav) {
+        e.preventDefault(); e.stopPropagation();
+        CM.toggleFavorite(fav.dataset.fav);
+        window.TishPaperMotion?.syncFavorites(fav.dataset.fav, CM.isFavorite(fav.dataset.fav));
+        return;
+    }
 
     const add = e.target.closest('[data-add]');
     if (add) {
@@ -185,6 +178,7 @@ document.getElementById('categories').addEventListener('click', e => {
     activeCat = btn.dataset.cat;
     document.querySelectorAll('.cat').forEach(x => x.classList.toggle('active', x === btn));
     renderProducts();
+    window.TishPaperMotion?.categories(document.getElementById('categories'), btn);
 });
 
 document.getElementById('searchInput').addEventListener('input', renderProducts);
@@ -214,6 +208,7 @@ document.getElementById('resetFilters').addEventListener('click', () => {
 });
 
 renderProducts();
+window.TishPaperMotion?.categories(document.getElementById('categories'));
 document.getElementById('tishPaperPin')?.addEventListener('click', () => document.getElementById('pwaInstallBtn')?.click());
 </script>
 </body>
