@@ -8,7 +8,7 @@
 <title>المنيو - {{ $branding['name'] ?? config('app.name') }}</title>
 @if(!empty($branding['favicon']))<link rel="icon" href="{{ $branding['favicon'] }}">@endif
 @include('customer-menu.partials.styles')
-<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/dome-cards-preview.css') }}?v=5">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-menu-reference-v3.css') }}?v=3">
 @include('customer-menu.partials.pwa-head')
 <style>
 @keyframes dahabMenuCardIn {from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
@@ -30,13 +30,16 @@
    <div class="tish-paper-products-hero-row">
     <div class="tish-paper-products-brand">
      <img src="{{ asset('assets/tish-paper/brand/telephone.webp') }}" alt="" class="tish-paper-products-booth">
-     <img src="{{ asset('assets/tish-paper/brand/slogan.svg') }}" alt="Hear it, Feel it!" class="tish-paper-products-slogan">
+     <div class="tish-paper-products-brandline">
+      <img src="{{ asset('assets/tish-paper/brand/slogan.svg') }}" alt="Hear it, Feel it!" class="tish-paper-products-slogan">
+      <button type="button" class="tish-paper-products-pin" id="tishPaperPin" aria-label="ثبّت المنيو"><i class="fa-solid fa-thumbtack" aria-hidden="true"></i> ثبّت المنيو</button>
+     </div>
     </div>
-    <img src="{{ $branding['logo'] ?? asset('assets/tish-paper/brand/logo-disc.webp') }}" alt="{{ $branding['name'] ?? 'Tish' }}" class="tish-paper-products-logo">
+    <img src="{{ asset('assets/tish-paper/brand/logo-disc.webp') }}" alt="{{ $branding['name'] ?? 'Tish' }}" class="tish-paper-products-logo">
    </div>
    <div class="tish-paper-products-title">
+    <img src="{{ asset('assets/tish-paper/decor/lightning.svg') }}" alt="" aria-hidden="true">
     <h1>كل الأصناف</h1>
-    <button type="button" class="tish-paper-products-pin" id="tishPaperPin" aria-label="ثبّت المنيو"><i class="fa-solid fa-thumbtack" aria-hidden="true"></i> ثبّت المنيو</button>
    </div>
   </div>
   <div class="tools">

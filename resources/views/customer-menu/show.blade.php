@@ -8,7 +8,7 @@
 @if(!empty($branding['favicon']))<link rel="icon" href="{{ $branding['favicon'] }}">@endif
 @include('customer-menu.partials.styles')
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/floating-showcase.css') }}?v=2">
-<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/dome-cards-preview.css') }}?v=5">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-menu-reference-v3.css') }}?v=3">
 @include('customer-menu.partials.pwa-head')
 <script src="{{ asset('assets/js/customer-menu/branch-entry.js') }}?v=1"
         data-branch-code="{{ $location->code }}"
