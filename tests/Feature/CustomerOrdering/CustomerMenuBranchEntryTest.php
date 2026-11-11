@@ -10,13 +10,16 @@ class CustomerMenuBranchEntryTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_customer_app_entry_lists_active_branches_without_preselecting_a_branch(): void
+    public function test_customer_app_opens_default_branch_and_explicit_chooser_lists_active_branches(): void
     {
         $a = $this->branch('B01', 'فرع النصر');
         $b = $this->branch('B02', 'فرع الرمال');
         $this->branch('OLD', 'فرع متوقف')->update(['is_active' => false]);
         $this->branch('FACT', 'مصنع')->update(['type' => 'factory']);
-        $this->get(route('customer-menu.index'))->assertOk()
+        $this->get(route('customer-menu.index'))
+            ->assertRedirect(route('customer-menu.show', ['location' => $a->code, 'branch_selected' => 1]));
+
+        $this->get(route('customer-menu.index', ['choose' => 1]))->assertOk()
             ->assertSee('من أي فرع بدك تطلب؟')->assertSee($a->name)->assertSee($b->name)
             ->assertSee('شارع النصر')->assertDontSee('فرع متوقف')->assertDontSee('مصنع')
             ->assertSee(route('customer-menu.show', ['location' => $b->code, 'branch_selected' => 1]), false);
@@ -35,7 +38,7 @@ class CustomerMenuBranchEntryTest extends TestCase
             ->assertSee('branch-entry.js')->assertSee('data-branch-code="B01"', false);
     }
 
-    public function test_public_app_and_existing_branch_manifests_start_at_the_branch_chooser(): void
+    public function test_public_app_and_existing_branch_manifests_start_at_the_menu_entry(): void
     {
         $branch = $this->branch('B01', 'فرع النصر');
         foreach ([
