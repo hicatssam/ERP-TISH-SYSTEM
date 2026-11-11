@@ -35,9 +35,7 @@
     $introTitle = (string) $cmSetting('customer_menu_intro_title', 'أهلاً بك');
     $introSubtitle = (string) $cmSetting('customer_menu_intro_subtitle', 'تجربة ألذ تبدأ من هنا');
     $introEyebrow = (string) $cmSetting('customer_menu_intro_eyebrow', '');
-    $introCta = (string) $cmSetting('customer_menu_intro_cta', 'ابدأ الطلب');
     $introShowLogo = (bool) $cmSetting('customer_menu_intro_show_logo', true);
-    $introImage = \App\Models\SystemSetting::assetUrl('customer_menu_intro_image');
     $coverImage = \App\Models\SystemSetting::assetUrl('customer_menu_cover_image')
         ?: ($theme['cover'] ?? null);
     $overlay = max(0, min(90, (int) $cmSetting('customer_menu_cover_overlay', 48)));
@@ -279,6 +277,31 @@ body.tish-paper.reference-home #bannerTrack > .banner-slide[data-banner-active]{
 <style>
 /* Prevent an already-dismissed intro from flashing during navigation. */
 html.cm-skip-menu-intro #intro{display:none!important}
+html.cm-intro-open{overflow:hidden}
+body.tish-paper #intro.tish-reel-intro{overflow:hidden;background:#f5e4cd;overscroll-behavior:contain}
+#intro.tish-reel-intro::before{display:none}
+#intro .intro-reel{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+#intro .intro-reel-tools{
+ position:absolute;z-index:2;inset-inline:16px;top:calc(12px + env(safe-area-inset-top,0px));
+ display:flex;justify-content:space-between;gap:8px;
+}
+#intro .intro-reel-tools button,
+#intro .intro-enter{
+ min-height:44px;border:0;border-radius:0;font:inherit;font-weight:900;padding:8px 17px;
+ color:var(--tish-paper-red);background:url('{{ asset('assets/tish-paper/paper/category-ivory.webp') }}') center/100% 100% no-repeat;
+}
+#intro .intro-enter{
+ min-height:56px;min-width:160px;font-size:1.12rem;color:#fff8ed;
+ background:url('{{ asset('assets/tish-paper/paper/nav-active.webp') }}') center/100% 100% no-repeat;
+}
+#intro.tish-reel-intro.has-reel-frame .intro-box{
+ position:absolute;inset-inline:12px;bottom:calc(24px + env(safe-area-inset-bottom,0px));max-width:none;padding:0;
+}
+#intro.has-reel-frame .intro-copy{display:none}
+#intro .intro-copy{color:#352014}
+#intro .intro-copy :is(p,small){color:#594131}
+@media(prefers-reduced-motion:reduce){#intro.tish-reel-intro{transition:none}}
+
 </style>
 <script>
 (function () {
@@ -286,7 +309,7 @@ html.cm-skip-menu-intro #intro{display:none!important}
     const mode = @json($introMode);
     if (mode === 'off') return;
     try {
-        const key = 'tish_menu_intro_seen_' + branch;
+        const key = 'tish_menu_intro_seen_' + branch + '_reel_v1';
         const visited = sessionStorage.getItem(key) === '1'
             || (mode === 'first_visit' && localStorage.getItem(key) === '1');
         if (visited) document.documentElement.classList.add('cm-skip-menu-intro');
@@ -301,21 +324,28 @@ html.cm-skip-menu-intro #intro{display:none!important}
 @include('customer-menu.partials.brand-watermark')
 
 @if($introMode !== 'off')
-<div id="intro" class="intro" data-mode="{{ $introMode }}" @if($introImage) style="background-image:url('{{ $introImage }}')" @endif>
+<div id="intro" class="intro tish-reel-intro" role="dialog" aria-modal="true" aria-label="{{ $introTitle }}" data-mode="{{ $introMode }}">
+ <video id="introReel" class="intro-reel" data-src="{{ asset('assets/tish-paper/intro/menu-reel.mp4') }}" preload="none" playsinline muted aria-hidden="true" hidden></video>
+ <div class="intro-reel-tools" id="introReelTools" hidden>
+  <button type="button" id="introSkip">{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Skip video' : 'تخطّي الفيديو' }}</button>
+  <button type="button" id="introSound" aria-pressed="false" aria-label="{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Video sound' : 'صوت الفيديو' }}"><i class="fa-solid fa-volume-xmark" aria-hidden="true"></i></button>
+ </div>
  <div class="intro-box">
+  <div class="intro-copy" id="introCopy">
   @if($introShowLogo && ($branding['logo'] ?? null))
    <img class="intro-logo" src="{{ $branding['logo'] }}" alt="{{ $branding['name'] }}">
   @endif
   @if($introEyebrow !== '')<small>{{ $introEyebrow }}</small>@endif
   <h1>{{ $introTitle }}</h1>
   <p>{{ $introSubtitle }}</p>
-  <button class="intro-enter" id="introEnter" type="button">{{ $introCta }}</button>
+  </div>
+  <button class="intro-enter" id="introEnter" type="button" hidden>{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Order now' : 'اطلب الآن' }}</button>
  </div>
 </div>
 @endif
 
 <div class="app crisp-menu-app">
-<main class="menu-area">
+<main class="menu-area" tabindex="-1">
  <div class="shell">
 
   <div class="reference-masthead {{ !empty($theme['header_image']) ? 'is-illustrated' : '' }}"
@@ -685,7 +715,7 @@ html.cm-skip-menu-intro #intro{display:none!important}
     const intro = document.getElementById('intro');
     if (intro) {
         const mode = intro.dataset.mode;
-        const key = 'tish_menu_intro_seen_' + CM.LOCATION_CODE;
+        const key = 'tish_menu_intro_seen_' + CM.LOCATION_CODE + '_reel_v1';
         const hasSeenIntro = function () {
             try {
                 return sessionStorage.getItem(key) === '1'
@@ -697,14 +727,58 @@ html.cm-skip-menu-intro #intro{display:none!important}
                 sessionStorage.setItem(key, '1');
                 if (mode === 'first_visit') localStorage.setItem(key, '1');
             } catch (error) { /* Storage may be disabled. */ }
+            document.documentElement.classList.remove('cm-intro-open');
             intro.classList.add('hide');
+            document.querySelector('main.menu-area')?.focus({preventScroll:true});
             window.setTimeout(() => intro.remove(), 500);
         };
         if (hasSeenIntro() || document.documentElement.classList.contains('cm-skip-menu-intro')) {
             intro.remove();
         } else {
-            document.getElementById('introEnter')?.addEventListener('click', hideIntro);
-            if (reducedMotion.matches) intro.classList.add('cm-reduced-motion');
+            const reel = document.getElementById('introReel');
+            const tools = document.getElementById('introReelTools');
+            const enter = document.getElementById('introEnter');
+            const skip = document.getElementById('introSkip');
+            const sound = document.getElementById('introSound');
+            let timeout;
+            let revealed = false;
+
+            function revealOrderButton(keepFrame = false) {
+                if (revealed) return;
+                revealed = true;
+                window.clearTimeout(timeout);
+                reel.pause();
+                reel.hidden = !keepFrame;
+                intro.classList.toggle('has-reel-frame', keepFrame);
+                tools.hidden = true;
+                enter.hidden = false;
+                enter.focus({preventScroll:true});
+            }
+
+            document.documentElement.classList.add('cm-intro-open');
+            enter.addEventListener('click', hideIntro);
+            if (reducedMotion.matches) {
+                revealOrderButton();
+            } else {
+                reel.addEventListener('playing', function () {
+                    if (!revealed) intro.classList.add('has-reel-frame');
+                });
+                reel.addEventListener('ended', () => revealOrderButton(true), {once:true});
+                reel.addEventListener('error', () => revealOrderButton(), {once:true});
+                skip.addEventListener('click', () => revealOrderButton(reel.readyState >= 2));
+                sound.addEventListener('click', function () {
+                    reel.muted = !reel.muted;
+                    sound.setAttribute('aria-pressed', String(!reel.muted));
+                    sound.querySelector('i').className = reel.muted ? 'fa-solid fa-volume-xmark' : 'fa-solid fa-volume-high';
+                });
+                reel.muted = true;
+                reel.src = reel.dataset.src;
+                reel.hidden = false;
+                tools.hidden = false;
+                skip.focus({preventScroll:true});
+                timeout = window.setTimeout(() => revealOrderButton(), 16000);
+                reel.play().catch(() => revealOrderButton());
+            }
         }
     }
 
