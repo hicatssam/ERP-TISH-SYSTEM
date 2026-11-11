@@ -13,6 +13,8 @@
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-menu-circle-v5.css') }}?v=5">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-featured-showcase-v6.css') }}?v=6">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-product-circle-card-v8.css') }}?v=9">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-product-layout-v10.css') }}?v=10">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-motion-v10.css') }}?v=10">
 @include('customer-menu.partials.pwa-head')
 <script src="{{ asset('assets/js/customer-menu/branch-entry.js') }}?v=1"
         data-branch-code="{{ $location->code }}"
@@ -438,6 +440,7 @@ html.cm-skip-menu-intro #intro{display:none!important}
 @include('customer-menu.partials.pwa-install')
 @include('customer-menu.partials.cart-engine')
 <script src="{{ asset('assets/js/customer-menu/tish-product-circle-card-v8.js') }}?v=8"></script>
+<script src="{{ asset('assets/js/customer-menu/tish-paper-motion-v10.js') }}?v=10"></script>
 <script src="{{ asset('assets/js/customer-menu/featured-carousel.js') }}?v=1"></script>
 
 <script>
@@ -476,22 +479,9 @@ html.cm-skip-menu-intro #intro{display:none!important}
     }
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    let revealObserver = null;
     function animateVisibleCards() {
-        if (revealObserver) revealObserver.disconnect();
-        const cards = document.querySelectorAll('.reference-home .catalog-section .product');
-        if (reducedMotion.matches || !('IntersectionObserver' in window)) return;
-        revealObserver = new IntersectionObserver(function (entries) {
-            entries.forEach(function (entry) {
-                if (!entry.isIntersecting) return;
-                entry.target.classList.add('cm-reveal');
-                revealObserver.unobserve(entry.target);
-            });
-        }, { threshold: 0.08, rootMargin: '0px 0px 70px 0px' });
-        cards.forEach(function (card, index) {
-            card.style.setProperty('--cm-delay', Math.min(index % 6, 5) * 55 + 'ms');
-            revealObserver.observe(card);
-        });
+        window.TishPaperMotion?.observe(document.getElementById('featuredGrid'));
+        window.TishPaperMotion?.observe(document.getElementById('productGrid'));
     }
 
     function render() {
@@ -537,7 +527,7 @@ html.cm-skip-menu-intro #intro{display:none!important}
         if (favorite) {
             event.preventDefault();
             CM.toggleFavorite(favorite.dataset.fav);
-            render();
+            window.TishPaperMotion?.syncFavorites(favorite.dataset.fav, CM.isFavorite(favorite.dataset.fav));
             return;
         }
 
@@ -572,6 +562,7 @@ html.cm-skip-menu-intro #intro{display:none!important}
             item.classList.toggle('active', item === button);
         });
         render();
+        window.TishPaperMotion?.categories(document.getElementById('categories'), button);
         document.getElementById('menuCatalog').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
@@ -658,6 +649,7 @@ html.cm-skip-menu-intro #intro{display:none!important}
     }
 
     render();
+    window.TishPaperMotion?.categories(document.getElementById('categories'));
 })();
 </script>
 </body>
