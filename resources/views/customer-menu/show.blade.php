@@ -30,6 +30,7 @@
     $showFeatured = (bool) $cmSetting('customer_menu_show_featured', true);
     $featuredTitle = (string) $cmSetting('customer_menu_featured_title', 'الأكثر طلباً');
     $featuredLimit = max(2, min(8, (int) $cmSetting('customer_menu_featured_limit', 4)));
+    $homeTitle = \App\Support\CustomerMenuCopy::homeTitle();
     $homeSubtitle = \App\Support\CustomerMenuCopy::homeSubtitle();
     $introMode = (string) $cmSetting('customer_menu_intro_mode', 'first_visit');
     $introTitle = (string) $cmSetting('customer_menu_intro_title', 'أهلاً بك');
@@ -111,8 +112,11 @@ body.tish-paper.reference-home .reference-masthead .tish-paper-banner-frame .ban
  aspect-ratio:3 / 1;
  object-fit:contain!important;
 }
-body.tish-paper.reference-home .reference-brand-copy h1{font-size:clamp(.9rem,3.5vw,1.25rem);line-height:1.35;margin:0}
+body.tish-paper.reference-home .reference-brand-copy .reference-brand-name{display:block;font-size:clamp(.9rem,3.5vw,1.25rem);line-height:1.35;margin:0}
 body.tish-paper.reference-home .reference-brand-copy p{font-size:.72rem;line-height:1.35;margin:2px 0 5px;color:var(--tish-paper-red)}
+body.tish-paper.reference-home .reference-home-copy{margin-block:5px 9px}
+body.tish-paper.reference-home .reference-home-copy h1{margin:0;font-size:clamp(1rem,4vw,1.35rem);line-height:1.4}
+body.tish-paper.reference-home .reference-home-copy p{margin:1px 0 0;color:var(--muted);font-size:.78rem}
 body.tish-paper.reference-home .reference-masthead::before{content:none!important}
 body.tish-paper.reference-home .reference-header-row{gap:10px;min-height:72px}
 body.tish-paper.reference-home .reference-brand{gap:8px;min-width:0}
@@ -371,8 +375,8 @@ body.tish-paper #intro.tish-reel-intro{overflow:hidden;background:#f5e4cd;oversc
       <img class="reference-client-logo" src="{{ asset('assets/tish-paper/brand/logo-disc.webp') }}" alt="">
      </span>
      <div class="reference-brand-copy">
-     <h1>{{ $branding['name'] }}</h1>
-     <p>{{ $branding['tagline'] ?: $homeSubtitle }}</p>
+     <strong class="reference-brand-name">{{ $branding['name'] }}</strong>
+     @if(!empty($branding['tagline']))<p>{{ $branding['tagline'] }}</p>@endif
      </div>
     </div>
     <div class="reference-actions">
@@ -381,6 +385,7 @@ body.tish-paper #intro.tish-reel-intro{overflow:hidden;background:#f5e4cd;oversc
     </div>
    </div>
   </header>
+  <div class="reference-home-copy"><h1>{{ $homeTitle }}</h1><p>{{ $homeSubtitle }}</p></div>
 
 
   @if($showSearch)
