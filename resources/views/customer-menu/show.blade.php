@@ -92,6 +92,9 @@
 }
 .reference-home .shell{width:min({{ $contentWidth }}px,calc(100% - 30px))}
 .reference-home .menu-area{padding-bottom:112px}
+body.tish-paper.reference-home .reference-masthead .tish-paper-banner-frame .banner-artwork-only img{
+ object-fit:contain!important;
+}
 body.tish-paper.reference-home .reference-brand-copy h1{font-size:clamp(.9rem,3.5vw,1.25rem);line-height:1.35;margin:0}
 body.tish-paper.reference-home .reference-brand-copy p{font-size:.72rem;line-height:1.35;margin:2px 0 5px;color:var(--tish-paper-red)}
 body.tish-paper.reference-home .reference-header-row{gap:8px}
@@ -360,13 +363,13 @@ html.cm-skip-menu-intro #intro{display:none!important}
     <div class="banner-track" id="bannerTrack">
      @foreach($banners as $banner)
       @if($banner['link_url'])
-       <a href="{{ $banner['link_url'] }}" class="banner-slide"
+       <a href="{{ $banner['link_url'] }}" class="banner-slide {{ ($banner['artwork_only'] ?? false) ? 'banner-artwork-only' : '' }}"
           @unless(str_starts_with($banner['link_url'], '#')) target="_blank" rel="noopener" @endunless>
       @else
-       <article class="banner-slide">
+       <article class="banner-slide {{ ($banner['artwork_only'] ?? false) ? 'banner-artwork-only' : '' }}">
       @endif
         <img src="{{ $banner['image'] }}" alt="{{ $banner['title'] ?: 'إعلان من ' . $branding['name'] }}" loading="eager">
-        @if($banner['title'] || $banner['subtitle'] || $banner['badge_text'] || $banner['cta_text'])
+        @if(!($banner['artwork_only'] ?? false) && ($banner['title'] || $banner['subtitle'] || $banner['badge_text'] || $banner['cta_text']))
         <div class="banner-copy">
          @if($banner['badge_text'])<span class="tag">{{ $banner['badge_text'] }}</span>@endif
          @if($banner['title'])<h2>{{ $banner['title'] }}</h2>@endif

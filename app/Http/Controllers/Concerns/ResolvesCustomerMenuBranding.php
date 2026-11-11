@@ -575,6 +575,7 @@ trait ResolvesCustomerMenuBranding
             ->get()
             ->map(fn ($banner): array => [
                 'id' => 'general-'.$banner->id,
+                'artwork_only' => str_starts_with((string) $banner->image, 'banners/tish-paper-campaign/'),
                 'image' => $this->assetFromPath($banner->image),
                 'title' => $banner->title,
                 'subtitle' => $banner->subtitle,
