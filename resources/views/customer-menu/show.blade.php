@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-menu-reference-v3.css') }}?v=3">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-menu-card-fix-v4.css') }}?v=4">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-menu-circle-v5.css') }}?v=5">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-featured-showcase-v6.css') }}?v=6">
 @include('customer-menu.partials.pwa-head')
 <script src="{{ asset('assets/js/customer-menu/branch-entry.js') }}?v=1"
         data-branch-code="{{ $location->code }}"
@@ -478,6 +479,34 @@ html.cm-skip-menu-intro #intro{display:none!important}
         '</article>';
     }
 
+
+    // Use an isolated circular paper card within the carousel. Older grid-card
+    // selectors (.product) are intentionally not reused here.
+    function renderFeaturedCard(product) {
+        const description = showDescriptions && product.description
+            ? product.description
+            : (product.category_name || 'محضّر بعناية إلك');
+        const liked = CM.isFavorite(product.id);
+        const label = !product.available ? 'غير متوفر'
+            : (product.requiresChoices ? 'اختر الخيارات' : 'إضافة إلى السلة');
+        const url = productUrl(product.id);
+
+        return '<article class="tish-featured-card" data-id="' + CM.esc(product.id) + '">' +
+            '<span class="tish-featured-badge"><i class="fa-solid fa-fire" aria-hidden="true"></i> الأكثر طلباً</span>' +
+            '<button class="tish-featured-fav' + (liked ? ' active' : '') + '" type="button" data-fav="' + CM.esc(product.id) +
+                '" aria-label="' + (liked ? 'إزالة من المفضلة' : 'إضافة للمفضلة') + '">' +
+                '<i class="' + (liked ? 'fa-solid' : 'fa-regular') + ' fa-heart" aria-hidden="true"></i></button>' +
+            '<a class="tish-featured-media" href="' + url + '" aria-label="' + CM.esc(menuF('عرض {name}', {name:product.name})) + '">' +
+                CM.image(product, 'tish-featured-image') + '</a>' +
+            '<a class="tish-featured-copy" href="' + url + '"><h3>' + CM.esc(product.name) + '</h3>' +
+                '<p>' + CM.esc(description) + '</p></a>' +
+            '<span class="tish-featured-price" dir="ltr">' + CM.money(product.price) + '</span>' +
+            '<button class="tish-featured-add" type="button" data-add="' + CM.esc(product.id) + '"' +
+                (product.available ? '' : ' disabled') + ' aria-label="' + CM.esc(label + ': ' + product.name) + '">' +
+                '<i class="fa-solid fa-plus" aria-hidden="true"></i><span>' + CM.esc(label) + '</span></button>' +
+            '</article>';
+    }
+
     function filteredProducts() {
         const input = document.getElementById('searchInput');
         const query = input ? input.value.trim().toLowerCase() : '';
@@ -527,7 +556,7 @@ html.cm-skip-menu-intro #intro{display:none!important}
             featuredGrid.innerHTML = featured.length
                 ? featured.map(function (product) {
                     return '<div class="cm-showcase-slide" data-showcase-slide data-offset="outside">' +
-                        renderCard(product, true) + '</div>';
+                        renderFeaturedCard(product) + '</div>';
                 }).join('')
                 : '<div class="cm-featured-empty">لا توجد أصناف مميزة متاحة حالياً.</div>';
         }
