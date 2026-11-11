@@ -1,6 +1,6 @@
 {{-- Installation is native where the browser exposes a prompt, manual otherwise. --}}
-<button type="button" class="pwa-install-btn" id="pwaInstallBtn" aria-label="ثبّت المنيو" title="ثبّت المنيو" hidden>
-    <i class="fa-solid fa-arrow-down-to-bracket" aria-hidden="true"></i>
+<button type="button" class="pwa-install-btn tish-paper-pin-control" id="pwaInstallBtn" aria-label="ثبّت المنيو" title="ثبّت المنيو" hidden>
+    <i class="fa-solid fa-thumbtack" aria-hidden="true"></i>
     <span>ثبّت المنيو</span>
 </button>
 
