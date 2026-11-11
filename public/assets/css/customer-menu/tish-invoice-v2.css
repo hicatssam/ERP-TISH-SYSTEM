@@ -42,6 +42,8 @@ body.tish-customer-invoice{font-family:Tajawal,Cairo,Arial,sans-serif;-webkit-pr
 }
 .tish-invoice-bolt{position:absolute;right:auto;left:8%;width:64px;height:66px;object-fit:contain;transform:rotate(-15deg)}
 .tish-invoice-meta{display:flex;justify-content:center;align-items:center;gap:13px;color:#574b41;font-size:clamp(.93rem,2.1vw,1.45rem);direction:ltr;text-align:center;font-variant-numeric:tabular-nums}
+.tish-invoice-order-reference{margin:9px auto 0;padding:0;color:#675447;font-size:clamp(.72rem,1.6vw,.91rem);font-weight:700;line-height:1.5;text-align:center;overflow-wrap:anywhere}
+.tish-invoice-order-reference bdi{font-weight:900;color:#352014;font-variant-numeric:tabular-nums}
 .tish-invoice-items{margin:0 0 18px}
 .tish-invoice-items table{width:100%;border-collapse:collapse;table-layout:fixed}
 .tish-visually-hidden{position:absolute!important;width:1px;height:1px;padding:0;border:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
