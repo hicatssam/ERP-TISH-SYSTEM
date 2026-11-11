@@ -2,6 +2,14 @@
 body.tish-paper.cm-my-orders {
   position:relative;
 }
+body.tish-paper.cm-my-orders::before {
+  inset:0 0 auto!important;
+  width:auto!important;
+  height:32px!important;
+  background:
+    linear-gradient(var(--tish-paper-red), var(--tish-paper-red)) top / 100% 5px no-repeat,
+    url('../../tish-paper/decor/red-torn-top.svg') center top / 100% 100% no-repeat!important;
+}
 body.tish-paper.cm-my-orders::after {
   content:"";
   position:fixed;
@@ -11,7 +19,7 @@ body.tish-paper.cm-my-orders::after {
   background:
     url('../../tish-paper/decor/halftone.svg') left -24px top 18px / 106px auto no-repeat,
     url('../../tish-paper/decor/halftone.svg') right -44px bottom 150px / 112px auto no-repeat,
-    url('../../tish-paper/decor/red-torn-side.svg') left bottom 65px / 46px auto no-repeat;
+    url('../../tish-paper/decor/red-torn-side.svg') left bottom 65px / 46px 120px no-repeat;
 }
 body.tish-paper.cm-my-orders .topbar,
 body.tish-paper.cm-my-orders main.wrap {
