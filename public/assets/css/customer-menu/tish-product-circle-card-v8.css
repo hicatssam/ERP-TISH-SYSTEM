@@ -48,9 +48,18 @@ body.tish-paper .tish-circle-paper {
   inset:0;
   z-index:0;
   pointer-events:none;
-  background:url('../../tish-paper/paper/product-disc.webp') center/100% 100% no-repeat;
-  /* Softer paper edge than the original nearly-black shadow. */
-  filter:brightness(1.06) contrast(.89) drop-shadow(0 4px 3px rgba(69,42,23,.18));
+  /* Replace the nearly-black source edge with the customer's paper tone,
+     keeping its real torn transparency and underlying fibre texture. */
+  background-image:
+    linear-gradient(var(--tish-card-paper,#f5e4cd),var(--tish-card-paper,#f5e4cd)),
+    url('../../tish-paper/paper/product-disc.webp');
+  background-size:100% 100%,100% 100%;
+  background-position:center,center;
+  background-repeat:no-repeat,no-repeat;
+  background-blend-mode:lighten;
+  -webkit-mask:url('../../tish-paper/paper/product-disc.webp') center/100% 100% no-repeat;
+  mask:url('../../tish-paper/paper/product-disc.webp') center/100% 100% no-repeat;
+  filter:drop-shadow(0 4px 3px rgba(69,42,23,.18));
 }
 body.tish-paper .tish-circle-favorite {
   position:absolute;
@@ -93,7 +102,10 @@ body.tish-paper .tish-circle-badge {
   margin:0;
   padding:7px 10px;
   color:var(--tish-circle-on-red);
-  background:var(--tish-circle-red);
+  background-color:var(--tish-circle-red);
+  background-image:url('../../tish-paper/paper/background.webp');
+  background-size:350px auto;
+  background-blend-mode:multiply;
   -webkit-mask:url('../../tish-paper/paper/price-ticket.webp') center/100% 100% no-repeat;
   mask:url('../../tish-paper/paper/price-ticket.webp') center/100% 100% no-repeat;
   border:0;
@@ -221,7 +233,10 @@ body.tish-paper .tish-circle-price {
   padding:3px 7px;
   border:0;
   color:var(--tish-circle-on-red);
-  background:var(--tish-circle-red);
+  background-color:var(--tish-circle-red);
+  background-image:url('../../tish-paper/paper/background.webp');
+  background-size:350px auto;
+  background-blend-mode:multiply;
   -webkit-mask:url('../../tish-paper/paper/price-ticket.webp') center/100% 100% no-repeat;
   mask:url('../../tish-paper/paper/price-ticket.webp') center/100% 100% no-repeat;
   font-size:clamp(.95rem,4.8cqw,1.35rem);

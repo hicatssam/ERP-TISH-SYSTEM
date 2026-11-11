@@ -400,6 +400,7 @@ body.tish-paper {
     --tish-card-ink: {{ $theme['text'] ?? '#352014' }};
     --tish-card-muted: {{ $theme['muted'] ?? '#9B8068' }};
     --tish-card-accent: {{ $theme['accent'] ?? '#F5BF55' }};
+    --tish-card-paper: {{ $theme['surface'] ?? '#F5E4CD' }};
 }
 </style>
 {{-- Shared paper-theme text spacing for all public TISH screens. Does not affect ERP/admin. --}}
