@@ -420,8 +420,7 @@ body.tish-paper .bottom-nav::before{
   inset:0;
   z-index:-1;
   pointer-events:none;
-  background:#711910 url('../../tish-paper/paper/nav-charcoal.webp') center/100% 100% no-repeat;
-  background-blend-mode:screen;
+  background:#252322 url('../../tish-paper/paper/nav-charcoal.webp') center/100% 100% no-repeat;
   clip-path:polygon(0 8%,3% 4%,7% 6%,11% 2%,15% 5%,19% 1%,24% 4%,29% 0,35% 4%,40% 2%,46% 6%,51% 3%,57% 5%,63% 1%,69% 4%,75% 0,81% 3%,87% 1%,92% 5%,96% 2%,100% 7%,100% 100%,0 100%);
 }
 

@@ -109,7 +109,3 @@ body.tish-paper.cm-my-orders .emptyIcon {
   font-size:1.45rem;
   background:url('../../tish-paper/paper/favorite-disc.webp') center/100% 100% no-repeat;
 }
-body.tish-paper.cm-my-orders .bottom-nav::before {
-  background-color:#252322;
-  background-blend-mode:normal;
-}
