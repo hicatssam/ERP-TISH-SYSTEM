@@ -128,19 +128,20 @@ body.tish-paper.tish-cart-page #cartItems .tish-cart-empty-paper>.tish-cart-brow
    Native beforeinstallprompt must remain attached to the real click gesture.
    The button keeps its real paper silhouette during the entire transform. */
 @keyframes tish-paper-complete-fold{
-  0%{opacity:1;transform:scale(1,1) rotate(0deg);filter:drop-shadow(0 6px 4px #4529183b)}
-  14%{opacity:1;transform:scale(.90,.89) rotate(-3deg);filter:drop-shadow(0 4px 2px #45291830)}
-  32%{opacity:.90;transform:scale(.49,.60) rotate(-6deg);filter:drop-shadow(0 1px 1px #45291825)}
-  48%{opacity:.30;transform:scale(.04,.08) rotate(-11deg);filter:drop-shadow(0 0 0 transparent)}
-  56%{opacity:.32;transform:scale(.03,.05) rotate(-11deg);filter:drop-shadow(0 0 0 transparent)}
-  74%{opacity:1;transform:scale(1.05,1.02) rotate(2deg);filter:drop-shadow(0 6px 4px #45291837)}
-  90%{opacity:1;transform:scale(.975,.985) rotate(-1deg);filter:drop-shadow(0 5px 4px #45291836)}
-  100%{opacity:1;transform:scale(1) rotate(0);filter:drop-shadow(0 6px 4px #4529183b)}
+  0%{opacity:1;scale:1 1;rotate:0deg;filter:drop-shadow(0 6px 4px #4529183b)}
+  14%{opacity:1;scale:.90 .89;rotate:-3deg;filter:drop-shadow(0 4px 2px #45291830)}
+  32%{opacity:.90;scale:.49 .60;rotate:-6deg;filter:drop-shadow(0 1px 1px #45291825)}
+  48%{opacity:.30;scale:.04 .08;rotate:-11deg;filter:drop-shadow(0 0 0 transparent)}
+  56%{opacity:.32;scale:.03 .05;rotate:-11deg;filter:drop-shadow(0 0 0 transparent)}
+  74%{opacity:1;scale:1.05 1.02;rotate:2deg;filter:drop-shadow(0 6px 4px #45291837)}
+  90%{opacity:1;scale:.975 .985;rotate:-1deg;filter:drop-shadow(0 5px 4px #45291836)}
+  100%{opacity:1;scale:1;rotate:0;filter:drop-shadow(0 6px 4px #4529183b)}
 }
 body.tish-paper #pwaInstallBtn.tish-paper-pin-control.paper-pin-fold:not([hidden]){
   animation:tish-paper-complete-fold 760ms var(--tish-p13-ease) both!important;
   transform-origin:50% 50%!important;
-  will-change:transform,opacity!important;
+  transition:none!important;
+  will-change:scale,rotate,opacity;
 }
 body.tish-paper #pwaInstallBtn.tish-paper-pin-control.paper-pin-fold:not([hidden]) :is(i,span){
   animation:tish-paper-pin-ink-fold 760ms var(--tish-p13-ease) both!important;
@@ -396,11 +397,11 @@ body.tish-paper.reference-home .tish-paper-banner-frame .reference-hero{
   width:100%!important;
   margin:0!important;
   padding:0!important;
-  clip-path:none!important;
+  clip-path:polygon(0 3%,4% 1%,8% 2%,13% 0,19% 2%,25% 1%,31% 2%,38% 0,45% 1%,53% 0,60% 2%,68% 1%,75% 2%,82% 0,89% 2%,95% 1%,100% 3%,99% 17%,100% 31%,99% 49%,100% 65%,99% 82%,100% 97%,94% 99%,88% 98%,82% 100%,76% 98%,69% 99%,61% 98%,54% 100%,47% 99%,40% 100%,32% 98%,25% 99%,18% 98%,11% 100%,5% 98%,0 97%,1% 81%,0 65%,1% 50%,0 34%,1% 16%)!important;
   overflow:hidden!important;
-  border-radius:clamp(8px,1.35vw,18px)!important;
+  border-radius:0!important;
   box-shadow:none!important;
-  background:var(--tish-p13-red)!important;
+  background:transparent!important;
 }
 body.tish-paper.reference-home .tish-paper-banner-frame .banner-slide{
   border:0!important;
@@ -428,6 +429,24 @@ body.tish-paper.reference-home .tish-paper-banner-frame .banner-dots button.acti
   background:var(--tish-p13-red)!important;
 }
 
+/* The charcoal paper is a separate surface, leaving the links and focus rings unclipped. */
+body.tish-paper .bottom-nav{
+  isolation:isolate;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+  filter:drop-shadow(0 -3px 5px #21181245);
+}
+body.tish-paper .bottom-nav::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
+  background:#252322 url('../../tish-paper/paper/nav-charcoal.webp') center/100% 100% no-repeat;
+  clip-path:polygon(0 8%,3% 4%,7% 6%,11% 2%,15% 5%,19% 1%,24% 4%,29% 0,35% 4%,40% 2%,46% 6%,51% 3%,57% 5%,63% 1%,69% 4%,75% 0,81% 3%,87% 1%,92% 5%,96% 2%,100% 7%,100% 100%,0 100%);
+}
+
 /* Mobile touch targets and safe paper margins. */
 @media(max-width:600px){
  body.tish-paper.tish-cart-page #cartItems>.tish-cart-empty-paper{min-height:330px!important;padding:20px 15px 25px!important;gap:6px!important}
@@ -451,7 +470,6 @@ body.tish-paper.reference-home .tish-paper-banner-frame .banner-dots button.acti
  body.tish-paper.cm-my-orders .orderInfo .orderStatus{min-height:33px!important;padding:6px 11px!important;font-size:.82rem!important}
  body.tish-paper.cm-my-orders .orderInfo small{font-size:.7rem!important}
  body.tish-paper.reference-home .tish-paper-banner-frame{padding:12px!important}
- body.tish-paper.reference-home .tish-paper-banner-frame .reference-hero{border-radius:9px!important}
 }
 @media(max-width:380px){
  body.tish-paper.tish-cart-page #cartItems .tish-cart-bag-art{width:162px!important;height:139px!important;flex-basis:139px!important}
