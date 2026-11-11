@@ -219,7 +219,7 @@ body.tish-paper .cm-sticky-cart:not([hidden])::before{
   z-index:-1!important;
   inset:0!important;
   pointer-events:none!important;
-  background-color:var(--primary)!important;
+  background-color:var(--tish-card-primary,var(--primary))!important;
   background-image:url('../../tish-paper/paper/background.webp')!important;
   background-size:390px auto!important;
   background-blend-mode:multiply!important;
@@ -246,7 +246,7 @@ body.tish-paper .cm-sticky-cart .cm-sticky-cart-cta {
   padding:8px 12px!important;
   border-radius:0!important;
   background:url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;
-  color:var(--primary)!important;
+  color:var(--tish-card-primary,var(--primary))!important;
   font-weight:900!important;
   font-size:clamp(.7rem,2.4vw,.86rem)!important;
   white-space:nowrap!important;

@@ -141,7 +141,7 @@ body.tish-paper.paper-motion-enabled #categories .paper-category-indicator {
   width:80px;
   z-index:1;
   pointer-events:none;
-  background-color:var(--primary);
+  background-color:var(--tish-card-primary,var(--primary));
   background-image:url('../../tish-paper/paper/background.webp');
   background-size:320px auto;
   background-blend-mode:multiply;
