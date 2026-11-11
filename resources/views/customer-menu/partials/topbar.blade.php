@@ -6,7 +6,7 @@
   <a class="tish-paper-sublogo" href="{{ route('customer-menu.show', $location->code) }}" aria-label="الرئيسية">
    <img src="{{ $branding['logo'] ?? asset('assets/tish-paper/brand/tish-logo.svg') }}" alt="{{ $branding['name'] ?? 'Tish' }}">
   </a>
-  <a class="page-back" href="{{ $backUrl }}" aria-label="رجوع"><i class="fa-solid fa-arrow-right"></i></a>
+  <a class="page-back tish-paper-page-arrow" href="{{ $backUrl }}" aria-label="رجوع"><i class="fa-solid fa-arrow-right"></i></a>
   @if(!empty($pageTitle))
    <div><h1>{{ $pageTitle }}</h1>@if(!empty($pageSubtitle))<p>{{ $pageSubtitle }}</p>@endif</div>
   @endif

@@ -23,7 +23,7 @@
     document.addEventListener('pointerdown', function (event) {
         const pin = event.target.closest('#pwaInstallBtn.tish-paper-pin-control');
         if (pin && !pin.hidden) {
-            press(pin, 'paper-pin-pressed', 360);
+            press(pin, 'paper-pin-fold', 800);
             return;
         }
         const quantity = event.target.closest('.tish-cart-page #cartItems .row-actions button');
@@ -32,7 +32,7 @@
     document.addEventListener('keydown', function (event) {
         if (event.key !== 'Enter' && event.key !== ' ') return;
         const pin = event.target.closest('#pwaInstallBtn.tish-paper-pin-control');
-        if (pin && !pin.hidden) press(pin, 'paper-pin-pressed', 360);
+        if (pin && !pin.hidden) press(pin, 'paper-pin-fold', 800);
     });
     // The cart engine dispatches this ONLY after it has persisted its cart.
     document.addEventListener('customer-menu:cart-changed', function () {

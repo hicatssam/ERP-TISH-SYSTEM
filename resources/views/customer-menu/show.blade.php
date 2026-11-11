@@ -15,6 +15,7 @@
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-product-circle-card-v8.css') }}?v=9">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-product-layout-v10.css') }}?v=11">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-motion-v10.css') }}?v=11">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-polish-v13.css') }}?v=13">
 @include('customer-menu.partials.pwa-head')
 <script src="{{ asset('assets/js/customer-menu/branch-entry.js') }}?v=1"
         data-branch-code="{{ $location->code }}"
@@ -289,7 +290,8 @@ html.cm-skip-menu-intro #intro{display:none!important}
   {{-- Paper collage: independent art layers, existing branch logo/settings remain live. --}}
   {{-- Campaign banners stay at the TOP of the menu, supplied by ERP settings. --}}
   @if(($theme['show_hero'] ?? true) && ($banners->isNotEmpty() || $coverImage))
-  <section class="reference-hero tish-paper-top-ads" aria-label="إعلانات المنيو">
+  <div class="tish-paper-banner-frame">
+   <section class="reference-hero tish-paper-top-ads" aria-label="إعلانات المنيو">
    @if($banners->isNotEmpty())
     <div class="banner-track" id="bannerTrack">
      @foreach($banners as $banner)
@@ -333,6 +335,7 @@ html.cm-skip-menu-intro #intro{display:none!important}
     </article>
    @endif
   </section>
+  </div>
   @else
   <div class="tish-paper-brand-hero" aria-label="Tish — Hear it, Feel it">
     <img class="paper-booth" src="{{ asset('assets/tish-paper/brand/telephone.webp') }}" alt="" loading="eager">

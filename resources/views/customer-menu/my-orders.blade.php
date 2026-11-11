@@ -29,17 +29,18 @@ main{padding:22px 0}.titleRow{margin-bottom:18px}.titleRow h1{margin:0 0 4px;fon
 </style>
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-circular-ui.css') }}?v=12">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-v2.css') }}?v=1">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-polish-v13.css') }}?v=13">
 </head>
 <body class="cm-my-orders tish-paper">
 <header class="topbar"><div class="wrap topin">
 <a class="brand" href="{{ route('customer-menu.show',$location->code) }}">
-@if($brandLogo)<img src="{{ $brandLogo }}" alt="{{ $brandName }}">@endif
+<img src="{{ asset('assets/tish-paper/brand/logo-disc.webp') }}" alt="{{ $brandName }}">
 <span><b>{{ $brandName }}</b><small>{{ $location->name }}</small></span>
 </a>
-<a class="back" href="{{ route('customer-menu.show',$location->code) }}" aria-label="العودة">←</a>
+<a class="back tish-paper-page-arrow" href="{{ route('customer-menu.show',$location->code) }}" aria-label="العودة"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i></a>
 </div></header>
 <main class="wrap">
-<div class="titleRow"><h1>طلباتي</h1><p>الطلبات التي أنشأتها من هذا الجهاز.</p></div>
+<div class="titleRow"><h1><span class="tish-orders-spark" aria-hidden="true"></span>طلباتي</h1><p>الطلبات التي أنشأتها من هذا الجهاز.</p></div>
 <section id="orders" class="orders" aria-live="polite"></section>
 </main>
 @include('customer-menu.partials.bottom-nav', ['activeNav' => 'orders'])
@@ -82,13 +83,13 @@ root.innerHTML=rows.length?rows.map((item,index)=>{
     const state=String(item.state||'received').toLowerCase();
     const status=menuT(item.status_label||fallbackLabels[state]||'جاري تحديث الحالة');
     return `<a class="order" href="${esc(localUrl(item.url))}" data-order-index="${index}">
-        <span class="orderIcon">✓</span>
+        <span class="orderIcon" aria-hidden="true">${state === 'ready' || state === 'completed' ? '✓' : '↗'}</span>
         <span class="orderInfo">
             <strong>${esc(menuF('طلب #{number}',{number:item.order_number||item.number||'—'}))}</strong>
             <small class="orderStatus" data-state="${esc(state)}">${esc(status)}</small>
             <small>اضغط لعرض التفاصيل وتتبع الحالة</small>
         </span>
-        <span class="arrow">←</span>
+        <span class="arrow tish-paper-order-arrow" aria-hidden="true"><i class="fa-solid fa-arrow-left"></i></span>
     </a>`;
 }).join(''):`<div class="empty"><div class="emptyIcon">🛍️</div><h2>لا توجد طلبات بعد</h2><p>بعد إرسال أول طلب سيظهر هنا تلقائيًا.</p><a class="primary" href="${menuUrl}">ابدأ طلبًا جديدًا</a></div>`;
 
