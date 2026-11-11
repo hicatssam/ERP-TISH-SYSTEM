@@ -34,9 +34,9 @@
     $homeSubtitle = \App\Support\CustomerMenuCopy::homeSubtitle();
     $introMode = (string) $cmSetting('customer_menu_intro_mode', 'first_visit');
     $introTitle = (string) $cmSetting('customer_menu_intro_title', 'أهلاً بك');
-    $introSubtitle = (string) $cmSetting('customer_menu_intro_subtitle', 'تجربة ألذ تبدأ من هنا');
-    $introEyebrow = (string) $cmSetting('customer_menu_intro_eyebrow', '');
-    $introShowLogo = (bool) $cmSetting('customer_menu_intro_show_logo', true);
+
+
+
     $coverImage = \App\Models\SystemSetting::assetUrl('customer_menu_cover_image')
         ?: ($theme['cover'] ?? null);
     $overlay = max(0, min(90, (int) $cmSetting('customer_menu_cover_overlay', 48)));
@@ -294,7 +294,7 @@ html.cm-skip-menu-intro #intro{display:none!important}
 html.cm-intro-open{overflow:hidden}
 body.tish-paper #intro.tish-reel-intro{overflow:hidden;background:#f5e4cd;overscroll-behavior:contain}
 #intro.tish-reel-intro::before{display:none}
-#intro .intro-reel{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+#intro .intro-reel{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center bottom}
 #intro .intro-reel-tools{
  position:absolute;z-index:2;inset-inline:16px;top:calc(12px + env(safe-area-inset-top,0px));
  display:flex;justify-content:space-between;gap:8px;
@@ -309,11 +309,12 @@ body.tish-paper #intro.tish-reel-intro{overflow:hidden;background:#f5e4cd;oversc
  background:url('{{ asset('assets/tish-paper/paper/nav-active.webp') }}') center/100% 100% no-repeat;
 }
 #intro.tish-reel-intro.has-reel-frame .intro-box{
- position:absolute;inset-inline:12px;bottom:calc(24px + env(safe-area-inset-bottom,0px));max-width:none;padding:0;
+ position:absolute;inset-inline:12px;top:67%;max-width:none;padding:0;
 }
-#intro.has-reel-frame .intro-copy{display:none}
-#intro .intro-copy{color:#352014}
-#intro .intro-copy :is(p,small){color:#594131}
+#intro .intro-enter{margin:0;animation:none!important}
+@media(min-aspect-ratio: 1/1){
+ #intro.tish-reel-intro.has-reel-frame .intro-box{top:24%}
+}
 @media(prefers-reduced-motion:reduce){#intro.tish-reel-intro{transition:none}}
 
 </style>
@@ -323,7 +324,7 @@ body.tish-paper #intro.tish-reel-intro{overflow:hidden;background:#f5e4cd;oversc
     const mode = @json($introMode);
     if (mode === 'off') return;
     try {
-        const key = 'tish_menu_intro_seen_' + branch + '_reel_v1';
+        const key = 'tish_menu_intro_seen_' + branch + '_reel_v2';
         const visited = sessionStorage.getItem(key) === '1'
             || (mode === 'first_visit' && localStorage.getItem(key) === '1');
         if (visited) document.documentElement.classList.add('cm-skip-menu-intro');
@@ -345,14 +346,6 @@ body.tish-paper #intro.tish-reel-intro{overflow:hidden;background:#f5e4cd;oversc
   <button type="button" id="introSound" aria-pressed="false" aria-label="{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Video sound' : 'صوت الفيديو' }}"><i class="fa-solid fa-volume-xmark" aria-hidden="true"></i></button>
  </div>
  <div class="intro-box">
-  <div class="intro-copy" id="introCopy">
-  @if($introShowLogo && ($branding['logo'] ?? null))
-   <img class="intro-logo" src="{{ $branding['logo'] }}" alt="{{ $branding['name'] }}">
-  @endif
-  @if($introEyebrow !== '')<small>{{ $introEyebrow }}</small>@endif
-  <h1>{{ $introTitle }}</h1>
-  <p>{{ $introSubtitle }}</p>
-  </div>
   <button class="intro-enter" id="introEnter" type="button" hidden>{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Order now' : 'اطلب الآن' }}</button>
  </div>
 </div>
@@ -725,7 +718,7 @@ body.tish-paper #intro.tish-reel-intro{overflow:hidden;background:#f5e4cd;oversc
     const intro = document.getElementById('intro');
     if (intro) {
         const mode = intro.dataset.mode;
-        const key = 'tish_menu_intro_seen_' + CM.LOCATION_CODE + '_reel_v1';
+        const key = 'tish_menu_intro_seen_' + CM.LOCATION_CODE + '_reel_v2';
         const hasSeenIntro = function () {
             try {
                 return sessionStorage.getItem(key) === '1'
@@ -752,6 +745,8 @@ body.tish-paper #intro.tish-reel-intro{overflow:hidden;background:#f5e4cd;oversc
             const sound = document.getElementById('introSound');
             let timeout;
             let revealed = false;
+            // The complete slogan first appears at this cue in menu-reel.mp4.
+            const orderButtonCue = 6.2;
 
             function revealOrderButton(keepFrame = false) {
                 if (revealed) return;
@@ -773,6 +768,19 @@ body.tish-paper #intro.tish-reel-intro{overflow:hidden;background:#f5e4cd;oversc
                 reel.addEventListener('playing', function () {
                     if (!revealed) intro.classList.add('has-reel-frame');
                 });
+                function checkOrderButtonCue(time) {
+                    if (time >= orderButtonCue) revealOrderButton(true);
+                }
+
+                if (typeof reel.requestVideoFrameCallback === 'function') {
+                    const watchFrame = (_, frame) => {
+                        checkOrderButtonCue(frame.mediaTime);
+                        if (!revealed) reel.requestVideoFrameCallback(watchFrame);
+                    };
+                    reel.requestVideoFrameCallback(watchFrame);
+                } else {
+                    reel.addEventListener('timeupdate', () => checkOrderButtonCue(reel.currentTime));
+                }
                 reel.addEventListener('ended', () => revealOrderButton(true), {once:true});
                 reel.addEventListener('error', () => revealOrderButton(), {once:true});
                 skip.addEventListener('click', () => revealOrderButton(reel.readyState >= 2));

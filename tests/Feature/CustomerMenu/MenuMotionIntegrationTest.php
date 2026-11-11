@@ -8,13 +8,13 @@ use Tests\TestCase;
 class MenuMotionIntegrationTest extends TestCase
 {
     #[Test]
-    public function intro_uses_existing_admin_settings_and_uploaded_brand_logo(): void
+    public function intro_uses_admin_mode_and_reveals_the_order_button_at_the_video_cue(): void
     {
         $view = file_get_contents(resource_path('views/customer-menu/show.blade.php'));
         $this->assertStringContainsString("customer_menu_intro_mode", $view);
-        $this->assertStringContainsString("customer_menu_intro_show_logo", $view);
-        $this->assertStringContainsString("\$branding['logo']", $view);
-        $this->assertStringContainsString('cmIntroReveal', $view);
+        $this->assertStringContainsString('assets/tish-paper/intro/menu-reel.mp4', $view);
+        $this->assertStringContainsString('object-fit:cover', $view);
+        $this->assertStringContainsString('checkOrderButtonCue(frame.mediaTime)', $view);
         $this->assertStringContainsString('prefers-reduced-motion:reduce', $view);
     }
 
