@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-cart-v2.css') }}?v=2">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-cart-v3.css') }}?v=3">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-cart-v4.css') }}?v=4">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-cart-summary-v5.css') }}?v=5">
 @include('customer-menu.partials.pwa-head')
 </head>
 <body class="crisp-customer-menu tish-paper tish-cart-page">
@@ -25,7 +26,7 @@
   <div class="order-summary" aria-label="ملخص سلة الطلب">
    <div class="summary-row"><span>عدد الأصناف</span><span id="itemCount">0</span></div>
    <div class="cart-total"><strong>الإجمالي</strong><strong id="cartTotal" dir="ltr">0.00 {{ $menuCurrencySymbol }}</strong></div>
-   <div class="cart-note">قد تُضاف رسوم توصيل حسب نوع الطلب — تظهر بعد اختيار طريقة الاستلام بالخطوة التالية.</div>
+   <p class="cart-note">قد تُضاف رسوم توصيل حسب نوع الطلب.<span class="tish-note-next-step">تظهر بعد اختيار طريقة الاستلام في الخطوة التالية.</span></p>
   </div>
   <button class="checkout-start" id="checkoutStart" type="button" disabled>إتمام الطلب</button>
  </div>
