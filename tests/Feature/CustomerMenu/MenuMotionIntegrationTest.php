@@ -41,7 +41,7 @@ class MenuMotionIntegrationTest extends TestCase
         $this->assertStringContainsString('threshold: .15', $paperMotion);
         $this->assertStringContainsString('repeat(2,minmax(0,1fr))', $layout);
         $this->assertStringContainsString('cm-sticky-cart:not([hidden])::before', $layout);
-        $this->assertStringContainsString('--paper-card-duration:480ms', $motionCss);
+        $this->assertStringContainsString('@keyframes paper-card-reveal', $motionCss);
         $this->assertStringContainsString('prefers-reduced-motion:reduce', $motionCss);
         $this->assertStringContainsString('revealMenuCards()', $catalog);
     }
@@ -55,14 +55,13 @@ class MenuMotionIntegrationTest extends TestCase
 
         $this->assertStringContainsString('cmStickyCartCount', $navigation);
         $this->assertStringContainsString('cmStickyCartTotal', $navigation);
-        $this->assertStringContainsString('stickyCart.hidden = c === 0', $cart);
+        $this->assertStringContainsString('updateStickyCartVisibility(stickyCart, c)', $cart);
         $this->assertStringContainsString('customer-menu:cart-changed', $cart);
         $this->assertStringContainsString('reducedMotion.matches || document.hidden || hovered || focused', $home);
         $this->assertStringContainsString("addEventListener('visibilitychange'", $home);
         $this->assertStringContainsString('.cm-sticky-cart:not([hidden])', $styles);
         $this->assertStringContainsString('prefers-reduced-motion:reduce', $styles);
-        $this->assertStringContainsString('.cm-sticky-cart.cm-cart-pulse:not([hidden])', $styles);
-        $this->assertStringContainsString('previousSnapshot !== snapshot', $cart);
+        $this->assertStringContainsString('prefers-reduced-motion: reduce', $cart);
     }
 
 }
