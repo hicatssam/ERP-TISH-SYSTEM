@@ -362,6 +362,12 @@ body.crisp-customer-menu > .app{position:relative;z-index:1}
  .cm-sticky-cart:not([hidden]),.cm-cart-pulse{animation:none!important;transition:none!important}
 }
 
+body.tish-paper .page-head .tish-paper-sublogo{
+ background:none!important;padding:0;
+}
+body.tish-paper .page-head .tish-paper-sublogo img{
+ width:100%;height:100%;border-radius:50%;
+}
 </style>
 
 <style>
