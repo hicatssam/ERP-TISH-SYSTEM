@@ -1,0 +1,154 @@
+/* Paper checkout surfaces and responsive order review. */
+body.tish-paper.tish-checkout-page .menu-area .shell {
+  width:min(100% - 28px, 980px);
+  max-width:none;
+}
+.tish-checkout-page #checkoutForm {
+  display:grid;
+  gap:16px;
+  align-items:start;
+}
+.tish-checkout-page .checkout-sheet {
+  position:relative;
+  isolation:isolate;
+  min-width:0;
+  padding:clamp(16px, 4vw, 24px);
+  filter:drop-shadow(0 4px 3px #4b2c1d26);
+}
+.tish-checkout-page .checkout-sheet::before {
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
+  background:#f8ead7 url('../../tish-paper/paper/background.webp') center/400px auto;
+  clip-path:polygon(0 4px, 8% 1px, 18% 5px, 30% 0, 43% 4px, 57% 1px, 70% 5px, 83% 0, 94% 3px, 100% 1px, 100% calc(100% - 4px), 89% 100%, 76% calc(100% - 4px), 63% 100%, 50% calc(100% - 3px), 37% 100%, 22% calc(100% - 3px), 11% 100%, 0 calc(100% - 3px));
+}
+.tish-checkout-page .checkout-sheet h2 {
+  margin:0 0 13px;
+  font-size:clamp(1.05rem, 4vw, 1.35rem);
+  line-height:1.4;
+}
+.tish-checkout-page .checkout-grid {
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+body.tish-paper.tish-checkout-page #checkoutForm :is(input:not([type=hidden]):not([type=file]),select,textarea) {
+  width:100%;
+  min-width:0;
+  min-height:46px;
+  margin-top:5px;
+  padding:8px 10px;
+  color:var(--tish-p13-ink);
+  background:#fff8eb!important;
+  border:1px solid #aa8868!important;
+  border-radius:5px!important;
+  box-shadow:none!important;
+  font-size:16px;
+}
+body.tish-paper.tish-checkout-page #checkoutForm label {
+  color:var(--tish-p13-ink);
+  font-weight:800;
+}
+.tish-checkout-page #checkoutForm textarea {
+  min-height:76px;
+}
+body.tish-paper.tish-checkout-page .payment-card,
+body.tish-paper.tish-checkout-page .table-card {
+  min-height:48px;
+  border-radius:4px!important;
+  box-shadow:none!important;
+  background:#fff7e9!important;
+}
+body.tish-paper.tish-checkout-page :is(.payment-card.active,.table-card.selected) {
+  border-color:var(--tish-paper-red)!important;
+  box-shadow:inset 0 0 0 1px var(--tish-paper-red)!important;
+  background:#fae3d3!important;
+}
+.tish-checkout-page :is(#paymentReferenceField,#paymentProofField,#paymentAccountDetails:not(:empty)) {
+  margin-top:12px;
+}
+.tish-checkout-page #selectedPaymentAccount:not(:empty),
+.tish-checkout-page .upload-preview:not([hidden]) {
+  padding:10px;
+  margin-top:8px;
+  background:#fff7e9;
+  overflow-wrap:anywhere;
+}
+.tish-checkout-page .upload-field {
+  position:relative;
+  border-radius:4px;
+  background:#fff7e9;
+}
+.tish-checkout-page .upload-field:focus-within {
+  outline:3px solid var(--tish-paper-red);
+  outline-offset:2px;
+}
+.tish-checkout-page .upload-field input[type=file] {
+  display:block;
+  position:absolute;
+  width:1px;
+  height:1px;
+  padding:0;
+  opacity:0;
+}
+body.tish-paper.tish-checkout-page .checkout-receipt .order-summary {
+  position:relative;
+  margin:0;
+  padding:0;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.tish-checkout-page .checkout-edit-cart {
+  display:inline-block;
+  color:var(--tish-paper-red);
+  font-weight:800;
+  text-decoration:underline;
+}
+.tish-checkout-page .checkout-receipt .cart-row {
+  grid-template-columns:44px minmax(0,1fr) auto;
+  gap:8px;
+}
+.tish-checkout-page .checkout-receipt .cart-thumb {
+  width:44px;
+  height:44px;
+}
+.tish-checkout-page .checkout-receipt .cart-total {
+  color:var(--tish-paper-red);
+  border-top:1px dashed #a78a70;
+}
+.tish-checkout-page #checkoutError:empty {
+  display:none;
+}
+body.tish-paper.tish-checkout-page #checkoutSubmit:not(:disabled) {
+  min-height:56px;
+  border-radius:0!important;
+  background:transparent url('../../tish-paper/paper/nav-active.webp') center/100% 100% no-repeat!important;
+}
+.tish-checkout-page .checkout-install {
+  display:flex;
+  justify-content:center;
+  margin-block:14px 24px;
+}
+body.tish-paper.tish-checkout-page .checkout-install #pwaInstallBtn.tish-paper-pin-control:not([hidden]) {
+  position:relative!important;
+  inset:auto!important;
+  width:auto!important;
+  height:auto!important;
+  min-width:112px!important;
+  min-height:48px!important;
+  max-width:none!important;
+  flex-direction:row!important;
+  gap:7px!important;
+  padding:8px 14px!important;
+}
+@media (min-width:800px) {
+  .tish-checkout-page #checkoutForm {
+    grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);
+  }
+  .tish-checkout-page .checkout-details {grid-area:1 / 1;}
+  .tish-checkout-page .checkout-payment {grid-area:2 / 1;}
+  .tish-checkout-page .checkout-receipt {grid-area:1 / 2 / 3;}
+  .tish-checkout-page .checkout-confirm {grid-column:1 / -1;}
+}

@@ -10,37 +10,30 @@
 <title>إتمام الطلب - {{ $branding['name'] ?? config('app.name') }}</title>
 @if(!empty($branding['favicon']))<link rel="icon" href="{{ $branding['favicon'] }}">@endif
 @include('customer-menu.partials.styles')
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-checkout-paper.css') }}?v=1">
 @include('customer-menu.partials.pwa-head')
 </head>
-<body class="crisp-customer-menu tish-paper">
+<body class="crisp-customer-menu tish-paper tish-checkout-page">
 <div class="app crisp-menu-app">
 @include('customer-menu.partials.topbar', ['pageTitle' => 'إتمام الطلب', 'pageSubtitle' => $location->name, 'backUrl' => route('customer-menu.cart', $location->code)])
 
 <main class="menu-area">
  <div class="shell">
-  <div class="eta-banner" id="etaBanner" hidden>
-   <i class="fa-solid fa-clock"></i>
-   <span id="etaText"></span>
-  </div>
-
-  <div class="order-summary">
-   <div id="summaryItems"></div>
-   <div class="cart-total"><span>الإجمالي</span><span id="summaryTotal">0.00 {{ $menuCurrencySymbol }}</span></div>
-  </div>
-
   <form id="checkoutForm" enctype="multipart/form-data">
+   <section class="checkout-sheet checkout-details" aria-labelledby="checkoutDetailsTitle">
+   <h2 id="checkoutDetailsTitle">بيانات الطلب</h2>
    <div class="checkout-grid">
-    <label>الاسم<input name="name" required maxlength="120"></label>
-    <label>رقم الجوال<input name="phone" required maxlength="20" inputmode="tel"></label>
-    <label>نوع الطلب
+    <label class="full">نوع الطلب
      <select name="service_type" id="serviceType" required>
       @foreach(($serviceOptions ?? []) as $option)
        <option value="{{ $option['value'] ?? $option }}">{{ $option['label'] ?? $option }}</option>
       @endforeach
      </select>
     </label>
-    <label id="tableField" class="full" hidden>
-     <span>الطاولة</span>
+    <label>الاسم<input name="name" autocomplete="name" required maxlength="120"></label>
+    <label>رقم الجوال<input name="phone" type="tel" autocomplete="tel" required maxlength="20" inputmode="tel" dir="ltr"></label>
+    <div id="tableField" class="full" role="group" aria-labelledby="checkoutTableTitle" hidden>
+     <span id="checkoutTableTitle">الطاولة</span>
      <div class="table-legend">
       <span><span class="dot" style="background:#22a35c"></span> متاحة</span>
       <span><span class="dot" style="background:#d64545"></span> مشغولة</span>
@@ -63,18 +56,21 @@
       @endforelse
      </div>
      <input type="hidden" name="restaurant_table_id" id="tableIdInput">
-    </label>
-    <label class="full" id="addressField" hidden>عنوان التوصيل<textarea name="address" maxlength="500"></textarea></label>
+    </div>
+    <label class="full" id="addressField" hidden>عنوان التوصيل<textarea name="address" autocomplete="street-address" maxlength="500"></textarea></label>
     <label class="full">ملاحظات الطلب<textarea name="notes" maxlength="700"></textarea></label>
    </div>
 
-   <h3>طريقة الدفع</h3>
+   </section>
+
+   <section class="checkout-sheet checkout-payment" aria-labelledby="checkoutPaymentTitle">
+   <h2 id="checkoutPaymentTitle">طريقة الدفع</h2>
    <div class="payment-methods" id="paymentMethods">جاري تحميل طرق الدفع...</div>
    <div id="paymentAccountDetails"></div>
    <input type="hidden" name="payment_method_id" id="paymentMethodId">
    <input type="hidden" name="payment_account_id" id="paymentAccountId">
 
-   <div id="paymentReferenceField" hidden style="margin-top:12px">
+   <div id="paymentReferenceField" hidden>
     <label>رقم مرجع العملية (اختياري)
      <input type="text" name="payment_reference" id="paymentReferenceInput" maxlength="150" placeholder="مثال: TX123456">
     </label>
@@ -89,15 +85,31 @@
     <div class="upload-preview" id="uploadPreview" hidden></div>
    </div>
 
+   </section>
+   <section class="checkout-sheet checkout-receipt" aria-labelledby="checkoutSummaryTitle">
+  <div class="eta-banner" id="etaBanner" hidden>
+   <i class="fa-solid fa-clock"></i>
+   <span id="etaText"></span>
+  </div>
+
+  <div class="order-summary">
+   <h2 id="checkoutSummaryTitle">ملخص الطلب</h2>
+   <a class="checkout-edit-cart" href="{{ route('customer-menu.cart', $location->code) }}">تعديل السلة</a>
+   <div id="summaryItems"></div>
+   <div class="cart-total"><span>الإجمالي</span><span id="summaryTotal">0.00 {{ $menuCurrencySymbol }}</span></div>
+  </div>
+   </section>
+   <div class="checkout-confirm">
    <div class="error" id="checkoutError" role="alert" tabindex="-1"></div>
    <button class="submit-order" id="checkoutSubmit" type="submit" disabled>تأكيد وإرسال الطلب</button>
+   </div>
   </form>
+  <div class="checkout-install">@include('customer-menu.partials.pwa-install')</div>
  </div>
 </main>
 </div>
 
 @include('customer-menu.partials.bottom-nav', ['activeNav' => 'cart'])
-@include('customer-menu.partials.pwa-install')
 @include('customer-menu.partials.cart-engine')
 
 <script>
@@ -195,7 +207,7 @@ function paymentIcon(type) {
 function renderPayments() {
     document.getElementById('paymentMethods').innerHTML = methods.length
         ? methods.map(m => `
-          <button class="payment-card" type="button" data-pay="${m.id}">
+          <button class="payment-card" type="button" aria-pressed="false" data-pay="${m.id}">
             <span class="radio"></span>
             <span class="p-icon">${m.logo ? `<img src="${CM.esc(m.logo)}" alt="${CM.esc(m.name)}">` : `<i class="${paymentIcon(m.type)}"></i>`}</span>
             <span class="p-copy"><strong>${CM.esc(m.name)}</strong><small>${CM.esc(menuT(({cash:'نقد',card_pos:'بطاقة',bank_transfer:'تحويل بنكي',electronic_wallet:'محفظة إلكترونية'})[m.type] || m.type || ''))}</small></span>
@@ -209,7 +221,11 @@ function choosePayment(id) {
     document.getElementById('paymentMethodId').value = method.id;
     document.getElementById('paymentAccountId').value = '';
     document.getElementById('paymentReferenceInput').required = !!method.requires_reference;
-    document.querySelectorAll('[data-pay]').forEach(b => b.classList.toggle('active', String(b.dataset.pay) === String(id)));
+    document.querySelectorAll('[data-pay]').forEach(button => {
+        const selected = String(button.dataset.pay) === String(id);
+        button.classList.toggle('active', selected);
+        button.setAttribute('aria-pressed', String(selected));
+    });
     const accounts = method.accounts || [];
     document.getElementById('paymentAccountDetails').innerHTML = accounts.length
         ? `<label>الحساب<select id="paymentAccountSelect" aria-required="true"><option value="">اختر الحساب</option>${accounts.map(a => `<option value="${a.id}">${CM.esc(a.name || a.provider_name || a.account_number || 'حساب')}</option>`).join('')}</select></label>`
