@@ -1,18 +1,124 @@
-@push('print_styles')
-<style>
-@media screen {
- html,body {background:#f3eee6 url("{{ asset('assets/tish-paper/paper/background.webp') }}") center/540px auto repeat!important}
- .print-paper {background:#f3eee6 url("{{ asset('assets/tish-paper/paper/background.webp') }}") center/540px auto repeat!important;box-shadow:0 12px 28px #33211530!important;border:0!important}
- .print-document-title {color:#a91f17!important;font-weight:900!important}
- .print-document-subtitle {color:#62584f!important}
- .invoice-party-box {background:#faf0e3!important}
- .print-screen-toolbar {background:#252525!important}
- .print-screen-btn {border-radius:0!important}
- .invoice-status-paid {background:#277936!important;color:white!important}
- .invoice-items th {color:#a91f17!important}
-}
-</style>
-@endpush
+@php
+    /** Public customer invoice: live accounting values, no mocked totals. */
+    $printSettings = app(\App\Services\PrintThemeService::class)->settings();
+    $currency = $invoice->currency?->symbol ?? $printSettings['currency_symbol'] ?? '₪';
+    $number = $invoice->invoice_number ?? $invoice->number ?? ('INV-' . $invoice->id);
+    $issuedAt = $invoice->issued_at ?? now();
+    $businessName = $branding['name'] ?? $printSettings['business_name'] ?? 'Tish Restaurant';
+    $logo = $branding['logo'] ?? asset('assets/tish-paper/brand/logo-disc.webp');
+    $branchName = $invoice->location?->name ?? $order->location?->name ?? '—';
 
-{{-- Legacy view name retained for integrations; the document has one design. --}}
-@include('finance.invoices.print')
+    $lines = $invoice->items->map(fn ($row) => [
+        'description' => $row->description ?: ($row->product?->name_ar ?: $row->product?->name ?: 'صنف'),
+        'quantity' => (float) $row->quantity,
+        'unit_price' => (float) $row->unit_price,
+        'line_total' => (float) $row->line_total,
+    ]);
+
+    if ($lines->isEmpty()) {
+        $lines = $order->items->map(fn ($row) => [
+            'description' => $row->product_name ?: 'صنف',
+            'quantity' => (float) $row->quantity,
+            'unit_price' => (float) $row->unit_price,
+            'line_total' => (float) $row->line_total,
+        ]);
+    }
+
+    $subtotal = (float) $invoice->subtotal;
+    $discount = (float) ($invoice->discount_amount ?? 0);
+    $tax = (float) ($invoice->tax_amount ?? 0);
+    $total = (float) $invoice->total_amount;
+@endphp
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>فاتورة رقم {{ $number }} — {{ $businessName }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Tajawal:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-invoice-v2.css') }}?v=2">
+</head>
+<body class="tish-customer-invoice">
+<div class="tish-invoice-toolbar" aria-label="إجراءات الفاتورة">
+ <a href="{{ route('customer-menu.track', ['token' => $order->public_token]) }}">تتبع الطلب</a>
+ <a href="{{ route('customer-menu.show', $order->location->code) }}">المنيو</a>
+ <button type="button" onclick="window.print()">طباعة الفاتورة</button>
+</div>
+<main class="tish-invoice-paper" aria-label="فاتورة طلب TISH">
+ <header class="tish-invoice-header">
+  <div class="tish-invoice-brand">
+   <img class="tish-invoice-logo" src="{{ $logo }}" alt="{{ $businessName }}">
+   <div class="tish-invoice-brand-copy">
+    <strong>{{ $businessName }}</strong>
+    <span>{{ $branchName }}</span>
+   </div>
+  </div>
+  <div class="tish-invoice-heading">
+   <img class="tish-invoice-bolt" src="{{ asset('assets/tish-paper/decor/lightning.svg') }}" alt="" aria-hidden="true">
+   <h1>فاتورة رقم <bdi dir="ltr">{{ $number }}</bdi></h1>
+  </div>
+  <div class="tish-invoice-meta">
+   <span dir="ltr">{{ $number }}</span>
+   <span aria-hidden="true">|</span>
+   <time dir="ltr" datetime="{{ $issuedAt->format('Y-m-d\TH:i:s') }}">{{ $issuedAt->format('Y-m-d H:i') }}</time>
+  </div>
+ </header>
+
+ <section class="tish-invoice-items" aria-label="الأصناف">
+  <table>
+   <thead class="tish-visually-hidden">
+    <tr><th>الصنف</th><th>الإجمالي والكمية</th></tr>
+   </thead>
+   <tbody>
+   @forelse($lines as $line)
+    <tr>
+     <td class="tish-invoice-item-title">{{ $line['description'] }}</td>
+     <td class="tish-invoice-item-money">
+      <span dir="ltr">{{ $currency }} {{ number_format($line['line_total'], 2) }} <span class="tish-invoice-multiply">× {{ number_format($line['quantity'], 3) }}</span></span>
+     </td>
+    </tr>
+   @empty
+    <tr><td class="tish-invoice-no-items" colspan="2">لا توجد أصناف في الفاتورة.</td></tr>
+   @endforelse
+   </tbody>
+  </table>
+ </section>
+
+ <section class="tish-invoice-totals" aria-label="ملخص الفاتورة">
+  <div class="tish-invoice-total-row">
+   <strong>المجموع الفرعي:</strong>
+   <span dir="ltr">{{ $currency }} {{ number_format($subtotal, 2) }}</span>
+  </div>
+  <div class="tish-invoice-total-row">
+   <strong>الخصم:</strong>
+   <span dir="ltr">{{ $currency }} {{ number_format($discount, 2) }}</span>
+  </div>
+  <div class="tish-invoice-total-row">
+   <strong>الضريبة:</strong>
+   <span dir="ltr">{{ $currency }} {{ number_format($tax, 2) }}</span>
+  </div>
+  <div class="tish-invoice-grand">
+   <strong>الإجمالي:</strong>
+   <span dir="ltr">{{ $currency }} {{ number_format($total, 2) }}</span>
+  </div>
+ </section>
+ @if($invoice->notes)
+  <p class="tish-invoice-notes">{{ $invoice->notes }}</p>
+ @endif
+</main>
+<script>
+window.addEventListener('load', function () {
+  // Preserve the legacy public invoice auto-print behavior.
+  const ready = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+  ready.then(function () {
+    Promise.all(Array.from(document.images).map(function (image) {
+      return image.decode ? image.decode().catch(function () {}) : Promise.resolve();
+    })).then(function () { window.print(); });
+  });
+});
+</script>
+</body>
+</html>

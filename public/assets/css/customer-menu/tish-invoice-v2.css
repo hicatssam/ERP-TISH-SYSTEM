@@ -1,0 +1,95 @@
+/* Standalone public TISH invoice. Finance and accounting print layouts are not modified. */
+:root{--ink:#292522;--red:#af2117;--paper:#f5dfc6;--paper-shadow:#573a2730;--grain:url('../../tish-paper/paper/background.webp');--sheet:url('../../tish-paper/paper/category-ivory.webp');--strip:url('../../tish-paper/paper/price-ticket.webp')}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#d7bfa8 var(--grain) center/540px auto repeat;color:var(--ink)}
+body.tish-customer-invoice{font-family:Tajawal,Cairo,Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.tish-invoice-toolbar{display:flex;gap:10px;justify-content:center;padding:16px 14px;flex-wrap:wrap;position:relative;z-index:2}
+.tish-invoice-toolbar a,.tish-invoice-toolbar button{border:0;background:#26211e;color:#fff;text-decoration:none;padding:9px 19px;font:800 .92rem Tajawal,Cairo,sans-serif;cursor:pointer;min-height:41px}
+.tish-invoice-toolbar button{background:var(--red)}
+.tish-invoice-paper{
+ position:relative;width:min(1110px,calc(100% - 34px));
+ min-height:730px;margin:0 auto 30px;padding:37px clamp(28px,5.5vw,74px) 65px;
+ background:var(--paper) var(--grain) center/540px auto repeat;
+ border:9px solid transparent;
+ border-image:url('../../tish-paper/paper/category-ivory.webp') 30 fill / 16px / 0 round;
+ box-shadow:0 13px 29px var(--paper-shadow);
+ isolation:isolate;
+ overflow:hidden;
+}
+.tish-invoice-paper::before{
+ content:'';position:absolute;inset:0;pointer-events:none;z-index:-1;
+ background:radial-gradient(ellipse at 90% 0%,#fff5dd77,transparent 47%),
+ linear-gradient(90deg,transparent 80%,#ac151310 100%);
+}
+.tish-invoice-paper::after{
+ content:'';position:absolute;inset:auto -24px -25px auto;
+ width:115px;height:180px;
+ background:url('../../tish-paper/decor/halftone.svg') center/contain no-repeat;
+ pointer-events:none;opacity:.8;transform:rotate(24deg)
+}
+.tish-invoice-header{display:flex;flex-direction:column;align-items:center;padding:0 2px 21px;border-bottom:1px solid #b9a18c}
+.tish-invoice-brand{width:100%;display:flex;align-items:center;gap:18px;justify-content:flex-start;margin-bottom:8px}
+.tish-invoice-logo{width:124px;height:124px;object-fit:contain;flex:0 0 auto;filter:drop-shadow(0 5px 2px #49312455)}
+.tish-invoice-brand-copy{display:flex;flex-direction:column;gap:5px;text-align:right}
+.tish-invoice-brand-copy strong{color:var(--red);font-size:clamp(1.4rem,3.3vw,2.25rem);font-weight:900}
+.tish-invoice-brand-copy span{color:var(--ink);font-size:clamp(1.08rem,2.5vw,1.62rem);font-weight:800}
+.tish-invoice-heading{position:relative;width:100%;display:flex;align-items:center;justify-content:center;margin:-15px auto 8px}
+.tish-invoice-heading h1{
+ margin:0;padding:12px 32px;max-width:calc(100% - 60px);
+ font-size:clamp(1.35rem,3.6vw,2.8rem);line-height:1.55;font-weight:900;text-align:center;
+ overflow-wrap:anywhere;background:var(--sheet) center/100% 100% no-repeat;
+ filter:drop-shadow(0 5px 3px #48311b3b);
+}
+.tish-invoice-bolt{position:absolute;right:auto;left:8%;width:64px;height:66px;object-fit:contain;transform:rotate(-15deg)}
+.tish-invoice-meta{display:flex;justify-content:center;align-items:center;gap:13px;color:#574b41;font-size:clamp(.93rem,2.1vw,1.45rem);direction:ltr;text-align:center;font-variant-numeric:tabular-nums}
+.tish-invoice-items{margin:0 0 18px}
+.tish-invoice-items table{width:100%;border-collapse:collapse;table-layout:fixed}
+.tish-visually-hidden{position:absolute!important;width:1px;height:1px;padding:0;border:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.tish-invoice-items tr{border-bottom:1px solid #a8927c}
+.tish-invoice-items td{padding:19px 9px 17px;line-height:1.5;vertical-align:middle}
+.tish-invoice-item-title{text-align:right;font-size:clamp(1.07rem,2.7vw,1.8rem);font-weight:900}
+.tish-invoice-items td.tish-invoice-item-money{text-align:left;width:43%;font-weight:700;font-size:clamp(.98rem,2.5vw,1.65rem);white-space:nowrap;font-variant-numeric:tabular-nums}
+.tish-invoice-multiply{margin-inline-start:5px;font-weight:700}
+.tish-invoice-no-items{text-align:center!important;color:#655549}
+.tish-invoice-totals{display:flex;flex-direction:column;align-items:flex-start;gap:9px;max-width:fit-content;margin:22px 0 0 auto;text-align:right}
+.tish-invoice-total-row{display:flex;align-items:center;justify-content:flex-start;flex-wrap:wrap;gap:9px;font-size:clamp(1.09rem,2.7vw,1.83rem);line-height:1.45}
+.tish-invoice-total-row strong{font-weight:900}
+.tish-invoice-total-row span{font-weight:800;font-variant-numeric:tabular-nums}
+.tish-invoice-grand{
+ display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:10px;
+ background:var(--strip) center/100% 100% no-repeat;
+ color:#fff4e6;font-size:clamp(1.5rem,3.7vw,2.8rem);font-weight:900;
+ min-width:300px;min-height:83px;padding:14px 35px;
+ margin:10px -4px 0 0;white-space:nowrap;filter:drop-shadow(0 5px 3px #4a221b25)
+}
+.tish-invoice-notes{max-width:800px;margin:30px 0 0;color:#67574b;font-weight:600;font-size:.9rem}
+@media(max-width:720px){
+ .tish-invoice-paper{padding:21px 20px 40px;min-height:560px;border-width:5px}
+ .tish-invoice-logo{width:84px;height:84px}
+ .tish-invoice-brand{gap:9px;margin-bottom:15px}
+ .tish-invoice-heading{margin:0 auto 10px}
+ .tish-invoice-heading h1{padding:12px 17px;max-width:100%}
+ .tish-invoice-bolt{display:none}
+ .tish-invoice-items td{padding:13px 4px}
+ .tish-invoice-items td.tish-invoice-item-money{width:47%;white-space:normal}
+ .tish-invoice-grand{min-width:0;min-height:64px;padding:9px 18px;white-space:normal}
+}
+@media print{
+ @page{size:A4 landscape;margin:9mm}
+ html,body{margin:0!important;background:#fff!important}
+ .tish-invoice-toolbar{display:none!important}
+ .tish-invoice-paper{
+  width:100%!important;max-width:none!important;min-height:174mm!important;
+  margin:0!important;padding:9mm 13mm!important;
+  box-shadow:none!important;border-width:6px!important;break-inside:avoid;
+ }
+ .tish-invoice-paper::after{display:none}
+ .tish-invoice-brand{margin-bottom:0}
+ .tish-invoice-logo{width:90px;height:90px}
+ .tish-invoice-heading h1{font-size:24pt!important}
+ .tish-invoice-item-title,.tish-invoice-item-money{font-size:15pt!important}
+ .tish-invoice-items td{padding:10px 8px!important}
+ .tish-invoice-total-row{font-size:16pt!important}
+ .tish-invoice-grand{font-size:23pt!important}
+ .tish-invoice-totals{break-inside:avoid}
+}

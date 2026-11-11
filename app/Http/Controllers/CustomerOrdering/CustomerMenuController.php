@@ -363,9 +363,12 @@ class CustomerMenuController extends Controller
             'logo_src' => $brandLogo,
         ], fn ($value) => filled($value));
 
-        return view('finance.invoices.print', [
+        // The public QR-menu invoice has its own TISH paper-collage view.
+        // Finance/admin invoices continue using finance.invoices.print.
+        return view('customer-menu.invoice', [
             'order' => $order,
             'invoice' => $invoice,
+            'branding' => $branding,
             'printThemeOverrides' => $printThemeOverrides,
         ]);
     }
