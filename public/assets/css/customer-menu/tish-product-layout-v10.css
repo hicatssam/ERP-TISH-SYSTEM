@@ -26,10 +26,10 @@ body.tish-paper.tish-paper-products #productGrid > .tish-circle-card {
 /* The image is enlarged within the existing unmodified paper-disc artwork.
    Separate zones prevent captions being printed over the food photo. */
 body.tish-paper .tish-circle-card .tish-circle-image {
-  top:15%!important;
-  left:10%!important;
-  width:80%!important;
-  height:43%!important;
+  top:14%!important;
+  left:8%!important;
+  width:84%!important;
+  height:46%!important;
   overflow:hidden!important;
 }
 body.tish-paper .tish-circle-card .tish-circle-image img.tish-circle-photo {
@@ -41,13 +41,13 @@ body.tish-paper .tish-circle-card .tish-circle-image img.tish-circle-photo {
   min-width:0!important;
   min-height:0!important;
   object-fit:contain!important;
-  transform:none!important;
+  transform:scale(1.08)!important;
   transform-origin:center center!important;
   max-height:100%!important;
   max-width:100%!important;
 }
 body.tish-paper .tish-circle-card .tish-circle-info {
-  top:56%!important;
+  top:60.5%!important;
   left:11%!important;
   width:78%!important;
   height:15%!important;
@@ -76,10 +76,10 @@ body.tish-paper .tish-circle-card .tish-circle-category {
   margin-top:2px!important;
 }
 body.tish-paper .tish-circle-card .tish-circle-price {
-  top:70.5%!important;
+  top:76%!important;
   left:22%!important;
   width:56%!important;
-  height:10.8%!important;
+  height:9.5%!important;
   min-height:0!important;
   padding:2px 5px!important;
   font-size:clamp(12px,5.25cqw,21px)!important;
@@ -88,10 +88,10 @@ body.tish-paper .tish-circle-card .tish-circle-price {
   z-index:5!important;
 }
 body.tish-paper .tish-circle-card .tish-circle-add {
-  top:81.2%!important;
+  top:86%!important;
   left:24%!important;
   width:52%!important;
-  height:12.5%!important;
+  height:11%!important;
   min-height:0!important;
   max-height:none!important;
   padding:2px 5px!important;
@@ -159,33 +159,33 @@ body.tish-paper .tish-circle-card .tish-circle-favorite::before {
     max-width:none!important;
   }
   body.tish-paper .tish-circle-card .tish-circle-image {
-    top:16%!important;
-    left:10%!important;
-    width:80%!important;
-    height:40%!important;
+    top:15%!important;
+    left:8%!important;
+    width:84%!important;
+    height:46%!important;
   }
   body.tish-paper .tish-circle-card .tish-circle-info {
-    top:54.5%!important;
-    height:16.5%!important;
+    top:60.8%!important;
+    height:15.2%!important;
   }
   body.tish-paper .tish-circle-card .tish-circle-price {
-    top:70.5%!important;
-    height:11%!important;
+    top:76%!important;
+    height:9.5%!important;
     min-height:0!important;
   }
   body.tish-paper .tish-circle-card .tish-circle-add {
-    top:81.5%!important;
-    height:13%!important;
+    top:86%!important;
+    height:11%!important;
     min-height:0!important;
   }
 }
 @media (max-width:375px) {
-  body.tish-paper .tish-circle-card .tish-circle-image {top:17%!important;height:38%!important;}
-  body.tish-paper .tish-circle-card .tish-circle-info {top:53%!important;height:17%!important;}
+  body.tish-paper .tish-circle-card .tish-circle-image {top:16%!important;height:43%!important;}
+  body.tish-paper .tish-circle-card .tish-circle-info {top:60%!important;height:15%!important;}
   body.tish-paper .tish-circle-card .tish-circle-name {font-size:clamp(10.6px,5.2cqw,12.5px)!important;}
   body.tish-paper .tish-circle-card .tish-circle-category {font-size:9px!important;}
-  body.tish-paper .tish-circle-card .tish-circle-price {top:70%!important;height:11%!important;}
-  body.tish-paper .tish-circle-card .tish-circle-add {top:81%!important;height:13%!important;font-size:10px!important;}
+  body.tish-paper .tish-circle-card .tish-circle-price {top:76%!important;height:9.5%!important;}
+  body.tish-paper .tish-circle-card .tish-circle-add {top:86%!important;height:11%!important;font-size:10px!important;}
   body.tish-paper .tish-circle-card .tish-circle-badge {font-size:10px!important;padding:4px 6px!important;max-width:45%!important;}
 }
 /* Floating cart becomes a red torn-paper strip; accessible content sits in
@@ -206,20 +206,28 @@ body.tish-paper .cm-sticky-cart:not([hidden]) {
   border:0!important;
   border-radius:0!important;
   box-shadow:none!important;
+  isolation:isolate!important;
+  background:transparent!important;
+  color:var(--on-primary,#fff)!important;
+  -webkit-mask:none!important;
+  mask:none!important;
+}
+/* Clip only the decorative paper, never the text or touch targets. */
+body.tish-paper .cm-sticky-cart:not([hidden])::before{
+  content:""!important;
+  position:absolute!important;
+  z-index:-1!important;
+  inset:0!important;
+  pointer-events:none!important;
   background-color:var(--primary)!important;
   background-image:url('../../tish-paper/paper/background.webp')!important;
   background-size:390px auto!important;
   background-blend-mode:multiply!important;
-  color:var(--on-primary,#fff)!important;
-  -webkit-mask-image:url('../../tish-paper/paper/price-ticket.webp')!important;
-  mask-image:url('../../tish-paper/paper/price-ticket.webp')!important;
-  -webkit-mask-position:center!important;
-  mask-position:center!important;
-  -webkit-mask-size:100% 100%!important;
-  mask-size:100% 100%!important;
-  -webkit-mask-repeat:no-repeat!important;
-  mask-repeat:no-repeat!important;
+  -webkit-mask:url('../../tish-paper/paper/price-ticket.webp') center/100% 100% no-repeat!important;
+  mask:url('../../tish-paper/paper/price-ticket.webp') center/100% 100% no-repeat!important;
+  filter:drop-shadow(0 5px 5px rgba(62,34,25,.23));
 }
+body.tish-paper .cm-sticky-cart:not([hidden]) > *{position:relative;z-index:1;}
 body.tish-paper .cm-sticky-cart .cm-sticky-cart-icon {
   display:grid!important;
   place-items:center!important;
