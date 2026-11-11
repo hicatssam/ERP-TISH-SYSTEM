@@ -1,0 +1,108 @@
+/* Paper finish for the public product detail screen. */
+body.tish-paper.tish-product-page .menu-area .shell {
+  width:min(100% - 28px, 980px);
+}
+.tish-product-page .tish-detail-sheet {
+  display:grid;
+  gap:clamp(12px, 3vw, 30px);
+  align-items:start;
+  margin-block:14px 26px;
+}
+body.tish-paper.tish-product-page .detail-media {
+  width:min(100%, 420px);
+  height:auto;
+  aspect-ratio:1;
+  margin:0 auto;
+  display:grid;
+  place-items:center;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent url('../../tish-paper/paper/product-disc.webp') center/100% 100% no-repeat!important;
+  box-shadow:none!important;
+}
+body.tish-paper.tish-product-page .detail-media > img {
+  width:78%;
+  height:78%;
+  min-height:0;
+  padding:0;
+  object-fit:contain;
+  border-radius:0;
+}
+body.tish-paper.tish-product-page .detail-media .fav {
+  inset:10% auto auto 12%;
+}
+body.tish-paper.tish-product-page :is(.detail-body,.tish-complete-meal,.option-row,.tish-addon-card) {
+  position:relative;
+  isolation:isolate;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+body.tish-paper.tish-product-page :is(.detail-body,.tish-complete-meal,.option-row,.tish-addon-card)::before {
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
+  background:#f8ead7 url('../../tish-paper/paper/background.webp') center/380px auto;
+  clip-path:polygon(0 4px,9% 1px,19% 5px,31% 0,43% 4px,57% 1px,68% 5px,81% 0,94% 3px,100% 1px,100% calc(100% - 4px),90% 100%,78% calc(100% - 4px),66% 100%,52% calc(100% - 3px),38% 100%,23% calc(100% - 3px),12% 100%,0 calc(100% - 3px));
+}
+body.tish-paper.tish-product-page :is(.detail-body,.tish-complete-meal) {
+  padding:clamp(16px, 3vw, 28px);
+  margin:0;
+}
+body.tish-paper.tish-product-page .detail-body h1 {
+  font-size:clamp(1.4rem, 4vw, 2.1rem);
+  line-height:1.35;
+}
+body.tish-paper.tish-product-page .option-row.selected::before {
+  background-color:var(--tish-paper-red);
+  background-blend-mode:screen;
+  box-shadow:inset 0 0 0 2px var(--tish-paper-red);
+}
+body.tish-paper.tish-product-page .option-row.selected :is(.mark,.opt-price) {
+  color:var(--tish-paper-red);
+}
+body.tish-paper.tish-product-page .detail-price {
+  display:inline-grid;
+  place-items:center;
+  padding:8px 20px;
+  min-height:44px;
+  color:#fff8ed;
+  background:url('../../tish-paper/paper/nav-active.webp') center/100% 100% no-repeat;
+  font-variant-numeric:tabular-nums;
+}
+body.tish-paper.tish-product-page :is(.qty button,.tish-addon-discover,.tish-addon-category-icon) {
+  min-height:44px;
+  border:0;
+  border-radius:0;
+  color:var(--tish-paper-red);
+  background:transparent url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat;
+}
+body.tish-paper.tish-product-page .qty button {
+  min-width:44px;
+}
+body.tish-paper.tish-product-page .add-detail:not(:disabled) {
+  min-height:52px;
+  border-radius:0!important;
+  background:transparent url('../../tish-paper/paper/nav-active.webp') center/100% 100% no-repeat!important;
+}
+body.tish-paper.tish-product-page .add-detail:not(:disabled):active {
+  scale:.97;
+}
+@media (min-width:760px) {
+  .tish-product-page .tish-detail-sheet {
+    grid-template-columns:minmax(0, .95fr) minmax(0, 1.05fr);
+  }
+}
+@media (prefers-reduced-motion:no-preference) {
+  .tish-product-page :is(.detail-media,.detail-body,.tish-addon-card[data-addon-extra]:not([hidden])) {
+    transform-origin:top center;
+    animation:tish-detail-unfold 240ms cubic-bezier(.22,1,.36,1) both;
+  }
+}
+@keyframes tish-detail-unfold {
+  from {opacity:.7;scale:.98 .88;}
+  to {opacity:1;scale:1;}
+}

@@ -8,6 +8,7 @@
 <title>{{ $product['name'] }} - {{ $branding['name'] ?? config('app.name') }}</title>
 @if(!empty($branding['favicon']))<link rel="icon" href="{{ $branding['favicon'] }}">@endif
 @include('customer-menu.partials.styles')
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-product-paper.css') }}?v=1">
 @include('customer-menu.partials.pwa-head')
 </head>
 <body class="crisp-customer-menu tish-paper tish-product-page">
@@ -16,6 +17,7 @@
 
 <main class="menu-area">
  <div class="shell">
+  <div class="tish-detail-sheet">
   <div class="detail-media" id="detailMedia">
    @if(!empty($product['image']))
     <img src="{{ $product['cutout_image'] ?: $product['image'] }}" data-fallback="{{ $product['cutout_image'] ? $product['image'] : '' }}" alt="{{ $product['name'] }}" onerror="if(this.dataset.fallback){const original=this.dataset.fallback;this.dataset.fallback='';this.src=original;}else{this.remove();this.parentElement.insertAdjacentHTML('afterbegin', '<div class=&quot;product-placeholder&quot;>{{ mb_substr($product['name'], 0, 1) }}</div>');}">
@@ -35,9 +37,9 @@
    <div class="detail-meta">
     <div class="detail-price" id="detailPrice">{{ number_format($product['price'], 2) }} {{ $menuCurrencySymbol }}</div>
     <div class="qty">
-     <button type="button" id="detailMinus">−</button>
+     <button type="button" id="detailMinus" aria-label="{{ __('تقليل الكمية') }}">−</button>
      <strong id="detailQty">1</strong>
-     <button type="button" id="detailPlus">+</button>
+     <button type="button" id="detailPlus" aria-label="{{ __('زيادة الكمية') }}">+</button>
     </div>
    </div>
 
@@ -50,6 +52,8 @@
     <i class="fa-solid fa-basket-shopping"></i> عرض السلة <span id="detailCartCount">0</span>
    </button>
    <div class="tish-install-inline">@include('customer-menu.partials.pwa-install')</div>
+  </div>
+
   </div>
 
   @if($addOnGroups->isNotEmpty())
