@@ -378,7 +378,7 @@
     @include('customer-menu.partials.nav-badge-sync')
     @include('customer-menu.partials.pwa-install')
     @if($order->invoice)
-        <script src="{{ asset('assets/js/customer-menu/tish-invoice-image-v2.js') }}?v=2"></script>
+        <script src="{{ asset('assets/js/customer-menu/tish-invoice-image-v2.js') }}?v=3"></script>
     @endif
 
     <script>
@@ -626,6 +626,7 @@
                 'halftone' => asset('assets/tish-paper/decor/halftone.svg'),
                 'logo' => $brandLogo,
                 'logoFallback' => asset('assets/tish-paper/brand/logo-disc.webp'),
+                'logoDisc' => asset('assets/tish-paper/brand/logo-disc.webp'),
             ];
         @endphp
         const receipt = {{ \Illuminate\Support\Js::from($receiptData) }};

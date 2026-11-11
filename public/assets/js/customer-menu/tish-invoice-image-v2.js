@@ -139,6 +139,7 @@
             fetchArt(assets.halftone),
             fetchArt(assets.logo),
             fetchArt(assets.logoFallback),
+            fetchArt(assets.logoDisc),
         ]);
         const paperTexture = texturePattern(ctx, art[0]);
 
@@ -176,14 +177,22 @@
         if (art[2]) ctx.drawImage(art[2], 0, 0, WIDTH, 61);
         if (art[5]) ctx.drawImage(art[5], 21, 80, 150, 180);
 
-        // The round Tish logo and configurable branch name.
-        const logo = art[6] || art[7];
+        // Use the original branded torn-paper emblem. It already contains
+        // the TISH artwork and irregular paper edge, so no white square or
+        // synthetic circle should ever appear in the exported invoice.
+        // The previously configured logo remains a fallback if this asset
+        // cannot be loaded.
+        const logoDisc = art[8];
+        const logo = logoDisc || art[7] || art[6];
         if (logo) {
+            const badgeX = WIDTH - 221;
+            const badgeY = 72;
+            const badgeSize = 166;
             ctx.save();
             ctx.shadowColor = '#34241b55';
             ctx.shadowBlur = 10;
             ctx.shadowOffsetY = 6;
-            ctx.drawImage(logo, WIDTH - 221, 72, 166, 166);
+            ctx.drawImage(logo, badgeX, badgeY, badgeSize, badgeSize);
             ctx.restore();
         }
         drawText(ctx, receipt.brand || 'Tish', WIDTH - 244, 129, 42, 900, RED, 'right', 'rtl');

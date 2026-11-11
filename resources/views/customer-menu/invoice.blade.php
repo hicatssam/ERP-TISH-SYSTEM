@@ -7,7 +7,8 @@
     $number = $invoice->invoice_number ?? $invoice->number ?? ('INV-' . $invoice->id);
     $issuedAt = $invoice->issued_at ?? now();
     $businessName = $branding['name'] ?? $printSettings['business_name'] ?? 'Tish Restaurant';
-    $logo = $branding['logo'] ?? asset('assets/tish-paper/brand/logo-disc.webp');
+    // Match the real torn-paper TISH emblem used in the menu and PNG export.
+    $logo = asset('assets/tish-paper/brand/logo-disc.webp');
     $branchName = $invoice->location?->name ?? $order->location?->name ?? '—';
 
     $lines = $invoice->items->map(fn ($row) => [
@@ -41,7 +42,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Tajawal:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-invoice-v2.css') }}?v=2">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-invoice-v2.css') }}?v=3">
 </head>
 <body class="tish-customer-invoice">
 <div class="tish-invoice-toolbar" aria-label="إجراءات الفاتورة">
