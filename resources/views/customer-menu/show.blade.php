@@ -95,7 +95,7 @@
 body.tish-paper.reference-home .reference-masthead .tish-paper-banner-frame:has(.banner-artwork-only){
  padding:clamp(6px,1.35vw,16px)!important;
 }
-body.tish-paper.reference-home .reference-masthead .tish-paper-banner-frame .banner-artwork-only{
+body.tish-paper.reference-home .reference-masthead .tish-paper-banner-frame .banner-slide.banner-artwork-only{
  aspect-ratio:3 / 1;
  min-height:0!important;
  display:grid;
@@ -104,7 +104,7 @@ body.tish-paper.reference-home .reference-masthead .tish-paper-banner-frame .ban
 body.tish-paper.reference-home .reference-masthead .tish-paper-banner-frame .banner-artwork-only img{
  display:block;
  width:100%;
- height:auto;
+ height:auto!important;
  max-height:100%;
  aspect-ratio:3 / 1;
  object-fit:contain!important;
