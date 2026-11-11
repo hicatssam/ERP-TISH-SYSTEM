@@ -12,24 +12,80 @@
 
 ## تثبيت الخدمة على السيرفر المحلي
 
-المطلوب Python 3.11 أو 3.12 أو 3.13، مع موارد كافية لـ Rembg. متطلبات الحزمة المرجعية: https://github.com/danielgatis/rembg
+استخدم Python **3.11 أو 3.12** (نسخة 64-bit)، مع موارد كافية لـ Rembg. راجع المتطلبات الرسمية: https://github.com/danielgatis/rembg
 
-نفّذ من جذر مشروع Laravel:
+### على Windows 11 / WAMP / PowerShell
 
-    python3.11 -m venv .venv-menu-cutouts
-    .venv-menu-cutouts/bin/python -m pip install --upgrade pip
-    .venv-menu-cutouts/bin/python -m pip install -r scripts/requirements-menu-cutouts.txt
-    .venv-menu-cutouts/bin/python -c "from rembg import new_session; new_session('u2net'); print('Model ready')"
+افتح PowerShell داخل مجلد المشروع (مثلاً C:\\wamp64\\www\\ERP-TISH-SYSTEM)، ثم افحص إصدارات Python المتاحة:
 
-ملاحظة: أول تهيئة للنموذج قد تتطلب اتصالاً بالإنترنت لتنزيل ملف النموذج، وقد تستغرق وقتاً. لا تضع مجلد البيئة الافتراضية في Git.
+```powershell
+py -0p
+```
 
-في .env أضف:
+إذا لم تجد Python 3.11 يمكنك تثبيته من الموقع الرسمي أو عبر:
 
-    TISH_CUTOUTS_ENABLED=true
-    TISH_CUTOUTS_PYTHON=/absolute/path/to/ERP-TISH-SYSTEM/.venv-menu-cutouts/bin/python
-    TISH_CUTOUTS_MODEL=u2net
-    TISH_CUTOUTS_TIMEOUT=360
-    TISH_CUTOUTS_QUEUE_CONNECTION=menu_cutouts
+```powershell
+winget install --id Python.Python.3.11 --exact
+```
+
+أغلق PowerShell وافتحه مجددًا بعد تثبيت Python، ثم نفّذ:
+
+```powershell
+py -3.11 -m venv .venv-menu-cutouts
+& .\\.venv-menu-cutouts\\Scripts\\python.exe -m pip install --upgrade pip
+& .\\.venv-menu-cutouts\\Scripts\\python.exe -m pip install -r scripts\\requirements-menu-cutouts.txt
+& .\\.venv-menu-cutouts\\Scripts\\python.exe -c "from rembg import new_session; new_session('u2net'); print('Model ready')"
+```
+
+**مهم:** على Windows التنفيذ هو `.venv-menu-cutouts\\Scripts\\python.exe` وليس `.venv-menu-cutouts/bin/python`. الإعداد الافتراضي الجديد في `config/menu_cutouts.php` يكتشف Windows تلقائيًا، لذلك لا تحتاج إلى ضبط `TISH_CUTOUTS_PYTHON` عند استخدام نفس مسار المشروع.
+
+أضف هذه القيم فقط إلى ملف `.env` (أو عدلها إن كانت موجودة):
+
+```dotenv
+TISH_CUTOUTS_ENABLED=true
+TISH_CUTOUTS_MODEL=u2net
+TISH_CUTOUTS_QUEUE_CONNECTION=menu_cutouts
+```
+
+ثم:
+
+```powershell
+php artisan config:clear
+php artisan menu:cutouts --sync --limit=2
+```
+
+بعد نجاح القص التجريبي، لمعالجة بقية الصور في الخلفية:
+
+```powershell
+php artisan menu:cutouts
+php artisan queue:work menu_cutouts --queue=menu-cutouts --sleep=3 --tries=2 --timeout=420 --memory=512
+```
+
+يُفضّل تشغيل عامل الطابور في نافذة PowerShell منفصلة؛ لا تستخدم تشغيل الطابور قبل نجاح التثبيت وظهور "Model ready".
+
+### على Linux
+
+نفّذ من جذر Laravel:
+
+```bash
+python3.11 -m venv .venv-menu-cutouts
+.venv-menu-cutouts/bin/python -m pip install --upgrade pip
+.venv-menu-cutouts/bin/python -m pip install -r scripts/requirements-menu-cutouts.txt
+.venv-menu-cutouts/bin/python -c "from rembg import new_session; new_session('u2net'); print('Model ready')"
+```
+
+في `.env`:
+
+```dotenv
+TISH_CUTOUTS_ENABLED=true
+TISH_CUTOUTS_MODEL=u2net
+TISH_CUTOUTS_TIMEOUT=360
+TISH_CUTOUTS_QUEUE_CONNECTION=menu_cutouts
+```
+
+لا تحتاج إلى تحديد `TISH_CUTOUTS_PYTHON` ما دام مجلد البيئة الافتراضية تحت جذر المشروع. في حالة وضعها بمسار آخر حدّد المسار المطلق للملف التنفيذي.
+
+ملاحظة: أول تهيئة لنموذج AI قد تتطلب اتصالًا بالإنترنت لتنزيل ملف النموذج. لا تضع ملفات البيئة الافتراضية في Git.
 
 ثم:
 
