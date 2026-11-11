@@ -377,6 +377,9 @@
     @include('customer-menu.partials.bottom-nav', ['activeNav' => 'orders'])
     @include('customer-menu.partials.nav-badge-sync')
     @include('customer-menu.partials.pwa-install')
+    @if($order->invoice)
+        <script src="{{ asset('assets/js/customer-menu/tish-invoice-image-v2.js') }}?v=2"></script>
+    @endif
 
     <script>
         const menuT = text => window.CustomerMenuI18n.t(text);
@@ -590,11 +593,13 @@
                 ? $receiptInvoice->items->map(fn ($item) => [
                     'name' => $item->description ?: ($item->product?->name_ar ?? $item->product?->name ?? 'صنف'),
                     'quantity' => (string) $item->quantity,
+                    'unit_price' => number_format((float) $item->unit_price, 2),
                     'total' => number_format((float) $item->line_total, 2),
                 ])->values()->all()
                 : $order->items->map(fn ($item) => [
                     'name' => $item->product_name ?: 'صنف',
                     'quantity' => (string) $item->quantity,
+                    'unit_price' => number_format((float) $item->unit_price, 2),
                     'total' => number_format((float) $item->line_total, 2),
                 ])->values()->all();
             $receiptData = [
@@ -611,64 +616,29 @@
                 'currency' => $menuCurrencySymbol,
             ];
         @endphp
+        @php
+            $receiptArtAssets = [
+                'background' => asset('assets/tish-paper/paper/background.webp'),
+                'paper' => asset('assets/tish-paper/paper/category-ivory.webp'),
+                'redTop' => asset('assets/tish-paper/decor/red-torn-top.svg'),
+                'redPrice' => asset('assets/tish-paper/paper/price-ticket.webp'),
+                'lightning' => asset('assets/tish-paper/decor/lightning.svg'),
+                'halftone' => asset('assets/tish-paper/decor/halftone.svg'),
+                'logo' => $brandLogo,
+                'logoFallback' => asset('assets/tish-paper/brand/logo-disc.webp'),
+            ];
+        @endphp
         const receipt = {{ \Illuminate\Support\Js::from($receiptData) }};
+        const receiptArtAssets = {{ \Illuminate\Support\Js::from($receiptArtAssets) }};
         saveInvoiceButton?.addEventListener('click', async () => {
             saveInvoiceButton.disabled = true;
             const oldLabel = saveInvoiceButton.innerHTML;
             saveInvoiceButton.textContent = 'جارٍ تجهيز صورة الفاتورة...';
             try {
-                const width = 900, pad = 62;
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                if (!ctx) throw new Error('Canvas unsupported');
-                await document.fonts?.ready;
-                const rows = [];
-                for (const item of receipt.items) {
-                    const name = String(item.name || '');
-                    // Break long product names into visual lines.
-                    const pieces = name.match(/.{1,34}(?:\s|$)|.{1,34}/gu) || [name];
-                    rows.push({ item, lines: pieces.map(x => x.trim()) });
+                if (!window.TishPaperInvoiceImage?.create) {
+                    throw new Error('TISH invoice image exporter is unavailable');
                 }
-                const height = 515 + rows.reduce((sum, row) => sum + Math.max(62, row.lines.length * 38 + 18), 0);
-                canvas.width = width * 2;
-                canvas.height = height * 2;
-                ctx.scale(2, 2);
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, width, height);
-                ctx.direction = 'rtl';
-                ctx.textAlign = 'right';
-                const draw = (text, x, y, font, color = '#222') => {
-                    ctx.font = font;
-                    ctx.fillStyle = color;
-                    ctx.fillText(String(text), x, y);
-                };
-                draw(receipt.brand, width - pad, 86, 'bold 39px Cairo, Arial, sans-serif', '#851535');
-                draw(receipt.branch, width - pad, 130, '25px Cairo, Arial, sans-serif');
-                draw('فاتورة رقم ' + receipt.number, width - pad, 199, 'bold 31px Cairo, Arial, sans-serif');
-                draw('الطلب: ' + receipt.order_number + '  |  ' + (receipt.date || ''), width - pad, 240, '22px Cairo, Arial, sans-serif', '#666');
-                ctx.fillStyle = '#dedede'; ctx.fillRect(pad, 267, width - pad * 2, 2);
-                let y = 313;
-                for (const row of rows) {
-                    for (const [index, line] of row.lines.entries()) {
-                        draw(line, width - pad, y + index * 38, '23px Cairo, Arial, sans-serif');
-                    }
-                    ctx.textAlign = 'left';
-                    draw(row.item.quantity + ' ×  ' + row.item.total + ' ' + receipt.currency, pad, y, '23px Cairo, Arial, sans-serif');
-                    ctx.textAlign = 'right';
-                    y += Math.max(62, row.lines.length * 38 + 18);
-                    ctx.fillStyle = '#eeeeee';
-                    ctx.fillRect(pad, y - 22, width - pad * 2, 1);
-                }
-                y += 22;
-                draw('المجموع الفرعي: ' + receipt.subtotal + ' ' + receipt.currency, width - pad, y, '24px Cairo, Arial, sans-serif');
-                y += 42;
-                draw('الخصم: ' + receipt.discount + ' ' + receipt.currency, width - pad, y, '24px Cairo, Arial, sans-serif');
-                y += 42;
-                draw('الضريبة: ' + receipt.tax + ' ' + receipt.currency, width - pad, y, '24px Cairo, Arial, sans-serif');
-                y += 55;
-                draw('الإجمالي: ' + receipt.total + ' ' + receipt.currency, width - pad, y, 'bold 31px Cairo, Arial, sans-serif', '#851535');
-                draw('احتفظ بهذه الصورة للرجوع إلى تفاصيل طلبك', width - pad, height - 42, '21px Cairo, Arial, sans-serif', '#666');
-                const blob = await new Promise((resolve, reject) => canvas.toBlob(b => b ? resolve(b) : reject(new Error('PNG export failed')), 'image/png'));
+                const blob = await window.TishPaperInvoiceImage.create(receipt, receiptArtAssets);
                 const filename = 'Tish-Invoice-' + receipt.number.replace(/[^a-zA-Z0-9_-]/g, '_') + '.png';
                 const file = new File([blob], filename, {type:'image/png'});
                 // Mobile Share can save to Photos/Files; fallback downloads PNG.
