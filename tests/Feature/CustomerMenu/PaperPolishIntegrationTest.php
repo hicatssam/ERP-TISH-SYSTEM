@@ -34,7 +34,7 @@ class PaperPolishIntegrationTest extends TestCase
         $this->assertStringContainsString('await prompt.prompt()', $pwa);
         $this->assertStringContainsString("press(pin, 'paper-pin-fold', 800)", $js);
         $this->assertStringContainsString('@keyframes tish-paper-complete-fold', $css);
-        $this->assertStringContainsString('scale(.04,.08)', $css);
+        $this->assertStringContainsString('scale:.04 .08', $css);
         $this->assertStringContainsString('prefers-reduced-motion:reduce', $css);
     }
 
@@ -68,5 +68,7 @@ class PaperPolishIntegrationTest extends TestCase
         $this->assertStringContainsString('tish-paper-top-ads', $home);
         $this->assertStringContainsString('category-ivory.webp', $css);
         $this->assertStringContainsString('banner-dots', $css);
+        $this->assertStringContainsString('clip-path:polygon(', $css);
+        $this->assertStringContainsString('nav-charcoal.webp', $css);
     }
 }
