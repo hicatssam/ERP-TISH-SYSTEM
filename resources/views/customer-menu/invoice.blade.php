@@ -72,14 +72,14 @@
  <section class="tish-invoice-items" aria-label="الأصناف">
   <table>
    <thead class="tish-visually-hidden">
-    <tr><th>الصنف</th><th>الإجمالي والكمية</th></tr>
+    <tr><th>الصنف</th><th>سعر الوحدة والكمية</th></tr>
    </thead>
    <tbody>
    @forelse($lines as $line)
     <tr>
      <td class="tish-invoice-item-title">{{ $line['description'] }}</td>
      <td class="tish-invoice-item-money">
-      <span dir="ltr">{{ $currency }} {{ number_format($line['line_total'], 2) }} <span class="tish-invoice-multiply">× {{ number_format($line['quantity'], 3) }}</span></span>
+      <span dir="ltr">{{ $currency }} {{ number_format($line['unit_price'], 2) }} <span class="tish-invoice-multiply">× {{ number_format($line['quantity'], 3) }}</span></span>
      </td>
     </tr>
    @empty
