@@ -29,14 +29,19 @@ body.tish-paper .tish-circle-card .tish-circle-image {
   top:15%!important;
   left:10%!important;
   width:80%!important;
-  height:42%!important;
-  overflow:visible!important;
+  height:43%!important;
+  overflow:hidden!important;
 }
 body.tish-paper .tish-circle-card .tish-circle-image img.tish-circle-photo {
+  display:block!important;
+  position:absolute!important;
+  inset:0!important;
   width:100%!important;
   height:100%!important;
+  min-width:0!important;
+  min-height:0!important;
   object-fit:contain!important;
-  transform:scale(1.12);
+  transform:none!important;
   transform-origin:center center!important;
   max-height:100%!important;
   max-width:100%!important;
