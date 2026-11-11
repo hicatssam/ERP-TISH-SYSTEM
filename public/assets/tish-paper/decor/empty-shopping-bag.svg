@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 302" role="img" aria-label="حقيبة ورقية للمطعم">
+<defs>
+ <filter id="shadow" x="-30%" y="-25%" width="160%" height="160%"><feGaussianBlur in="SourceAlpha" stdDeviation="5"/><feOffset dy="6" dx="2"/><feComponentTransfer><feFuncA type="linear" slope=".28"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+ <linearGradient id="kraft" x1="0" x2="1" y1="0" y2=".4"><stop stop-color="#f1d3a0"/><stop offset=".47" stop-color="#e4ba80"/><stop offset="1" stop-color="#bd8b58"/></linearGradient>
+ <pattern id="grain" width="14" height="14" patternUnits="userSpaceOnUse"><path d="M1 2l3 1m4 5l-3 2m5 2l2-1" stroke="#6d432b" stroke-width=".4" opacity=".25"/></pattern>
+</defs>
+<g filter="url(#shadow)" stroke="#28201b" stroke-width="5.5" stroke-linejoin="round" stroke-linecap="round">
+ <path d="M108 101 C109 42 129 22 159 22 C195 23 207 59 207 102" stroke="#332a23" fill="none" stroke-width="10"/>
+ <path d="M120 104 C122 63 133 47 158 47 C184 47 194 68 196 103" fill="none" stroke="#f4d5a7" stroke-width="7"/>
+ <path d="M55 91L263 91L276 256L47 267Z" fill="url(#kraft)"/>
+ <path d="M55 91L262 90L275 254L244 247L237 108L76 109L67 256L47 267Z" fill="#b57d49" opacity=".25" stroke="none"/>
+ <path d="M76 108L237 108L245 246L69 255Z" fill="#eac18a" opacity=".9" stroke="none"/>
+ <path d="M55 91L263 91L276 256L47 267Z" fill="url(#grain)" stroke="none"/>
+ <path d="M77 105L69 256M238 106L245 246" fill="none" stroke="#966841" stroke-width="2.5" opacity=".7"/>
+ <path d="M55 91L263 91" fill="none" stroke="#f9dcb6" stroke-width="4"/>
+</g>
+</svg>
