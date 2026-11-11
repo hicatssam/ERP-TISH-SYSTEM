@@ -68,6 +68,7 @@
    <span aria-hidden="true">|</span>
    <time dir="ltr" datetime="{{ $issuedAt->format('Y-m-d\TH:i:s') }}">{{ $issuedAt->format('Y-m-d H:i') }}</time>
   </div>
+  <p class="tish-invoice-order-reference">رقم الطلب: <bdi dir="ltr">{{ $order->order_number }}</bdi></p>
  </header>
 
  <section class="tish-invoice-items" aria-label="الأصناف">
