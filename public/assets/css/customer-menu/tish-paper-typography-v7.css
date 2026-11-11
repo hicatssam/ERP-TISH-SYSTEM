@@ -1,0 +1,249 @@
+/* TISH PAPER — shared text rhythm and safe text zones v7.
+   Scoped to public customer-menu surfaces; never applied to ERP admin/POS.
+   This file fixes typography on textured paper tickets without changing
+   pricing, checkout, language, accessibility or dynamic menu data. */
+
+body.tish-paper {
+  --paper-type-ink:#28221d;
+  --paper-type-secondary:#67594c;
+  --paper-type-light:#fff4e7;
+  --paper-type-leading:1.45;
+  font-family:Cairo,Tajawal,Arial,sans-serif;
+  font-kerning:normal;
+  text-rendering:optimizeLegibility;
+  -webkit-font-smoothing:antialiased;
+}
+body.tish-paper :is(h1,h2,h3,h4,strong,b) {
+  font-family:inherit;
+  line-height:1.38;
+  font-weight:900;
+  letter-spacing:0;
+  overflow-wrap:break-word;
+}
+body.tish-paper :is(p,small,label,.cart-note,.product-desc,.tish-featured-copy p) {
+  font-family:inherit;
+  line-height:1.58;
+  letter-spacing:0;
+  overflow-wrap:break-word;
+}
+body.tish-paper :is(button,a,input,select,textarea) {
+  font-family:inherit;
+}
+body.tish-paper :is(.page-head,.reference-section-head,.section-title,.tish-addons-heading,.reference-welcome-strip) {
+  min-width:0;
+  box-sizing:border-box;
+}
+body.tish-paper :is(.page-head,.reference-section-head,.section-title) :is(h1,h2,p) {
+  max-width:100%;
+  min-width:0;
+  text-overflow:clip;
+}
+body.tish-paper .reference-section-head {
+  align-items:center;
+  gap:12px;
+  padding-block:5px;
+}
+body.tish-paper .reference-section-head :is(h2,p) {
+  margin-block-start:0;
+  margin-block-end:0;
+}
+body.tish-paper .reference-section-head p,
+body.tish-paper .reference-welcome-strip p {
+  color:var(--paper-type-secondary);
+}
+body.tish-paper .reference-see-all {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  min-height:40px;
+  text-align:center;
+  white-space:nowrap;
+  flex-shrink:0;
+  padding-inline:15px;
+  line-height:1.25;
+}
+body.tish-paper .page-head h1,
+body.tish-paper .page-head p {
+  margin:0;
+  line-height:1.4;
+  overflow-wrap:break-word;
+}
+body.tish-paper .page-head p {margin-block-start:3px;}
+body.tish-paper .page-head > div:not(.tish-paper-sublogo) {min-width:0;}
+body.tish-paper .tish-paper-products-title h1 {line-height:1.27;}
+body.tish-paper :is(.cat,.tish-paper-products-pin,.cm-language-switch,.filter-square) {
+  line-height:1.35;
+}
+body.tish-paper :is(.product-status,.product-ribbon,.tish-featured-badge) {
+  box-sizing:border-box;
+  text-align:center;
+  line-height:1.25;
+  font-weight:900;
+}
+body.tish-paper .product-copy {
+  min-width:0;
+  text-align:center;
+  overflow-wrap:break-word;
+}
+body.tish-paper .product-copy :is(h3,p),
+body.tish-paper .tish-featured-copy :is(h3,p) {
+  margin-inline:0;
+  overflow-wrap:break-word;
+  text-align:center;
+}
+body.tish-paper :is(.product-price-row,.tish-featured-price,.tish-cart-line-price,.tish-addon-price) {
+  box-sizing:border-box;
+  text-align:center;
+  line-height:1.25;
+  font-weight:900;
+  font-variant-numeric:tabular-nums;
+}
+body.tish-paper .product-price-row .price {
+  line-height:1.2;
+  font-variant-numeric:tabular-nums;
+}
+body.tish-paper .product-foot {min-width:0;}
+body.tish-paper :is(.details,.tish-featured-add,.tish-addon-add) {
+  flex-shrink:0;
+  line-height:1.2;
+}
+body.tish-paper :is(.tish-addon-card,.tish-addon-info,.tish-addon-actions,.tish-addon-group-title) {
+  min-width:0;
+}
+body.tish-paper .tish-addon-info > strong {
+  display:block;
+  line-height:1.4;
+  overflow-wrap:break-word;
+}
+body.tish-paper .tish-addon-price {white-space:nowrap;}
+body.tish-paper :is(.fav-row,.cart-row) .row-copy {
+  min-width:0;
+  line-height:1.48;
+}
+body.tish-paper :is(.fav-row,.cart-row) .row-copy strong {
+  display:block;
+  min-width:0;
+  line-height:1.42;
+  overflow-wrap:break-word;
+}
+body.tish-paper :is(.fav-row,.cart-row) .row-copy small {
+  line-height:1.28;
+  font-variant-numeric:tabular-nums;
+}
+body.tish-paper .order-summary {
+  box-sizing:border-box;
+  min-width:0;
+}
+body.tish-paper .order-summary .summary-row {
+  min-width:0;
+  gap:12px;
+  line-height:1.5;
+}
+body.tish-paper .order-summary .summary-row > * {
+  min-width:0;
+  line-height:1.4;
+}
+body.tish-paper .order-summary :is(.cart-total,#summaryTotal,#cartTotal) {
+  font-variant-numeric:tabular-nums;
+  line-height:1.4;
+}
+body.tish-paper .order-summary .cart-note {
+  max-width:100%;
+  margin-inline:auto;
+  text-align:center;
+  color:var(--paper-type-secondary);
+  line-height:1.75;
+  overflow-wrap:break-word;
+}
+body.tish-paper :is(.checkout-start,.submit-order,.add-detail,.detail-cart-link) {
+  line-height:1.35;
+  font-weight:900;
+  text-align:center;
+  min-width:0;
+}
+body.tish-paper .checkout-grid {
+  min-width:0;
+  align-items:start;
+}
+body.tish-paper .checkout-grid label {
+  display:block;
+  min-width:0;
+  line-height:1.5;
+  font-weight:800;
+  overflow-wrap:break-word;
+}
+body.tish-paper .checkout-grid :is(input,select,textarea) {
+  display:block;
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  line-height:1.55;
+}
+body.tish-paper :is(.payment-card,.payment-card .p-copy,.picker-group,.option-row,.upload-field,.upload-preview) {
+  min-width:0;
+}
+body.tish-paper .payment-card .p-copy :is(strong,small) {
+  line-height:1.45;
+  overflow-wrap:break-word;
+}
+body.tish-paper .detail-body :is(h1,h2,h3,.detail-description) {
+  line-height:1.5;
+}
+body.tish-paper .detail-price,
+body.tish-paper .opt-price {
+  font-variant-numeric:tabular-nums;
+  line-height:1.35;
+  white-space:nowrap;
+}
+body.tish-paper .bottom-nav .nav-btn {
+  min-width:0;
+  line-height:1.3;
+}
+body.tish-paper .bottom-nav .nav-btn > span {
+  display:block;
+  max-width:100%;
+  text-align:center;
+  line-height:1.4;
+  font-weight:900;
+  letter-spacing:0;
+  overflow-wrap:normal;
+}
+body.tish-paper .cm-sticky-cart :is(.cm-sticky-cart-copy,.cm-sticky-cart-cta) {
+  min-width:0;
+  line-height:1.4;
+}
+body.tish-paper.cm-my-orders :is(.orderInfo,.orderInfo strong,.orderInfo small,.titleRow h1,.titleRow p),
+body.tish-paper.tish-paper-track :is(.sectionTitle,.paymentSummary,.orderHead,.notice,.orderInfo,.item) {
+  min-width:0;
+  line-height:1.5;
+  overflow-wrap:break-word;
+}
+/* Avoid a long branch/order name running through torn-paper borders. */
+body.tish-paper.cm-my-orders .orderInfo strong,
+body.tish-paper.tish-paper-track .orderHead h1 {
+  max-width:100%;
+  overflow-wrap:anywhere;
+}
+@media (max-width:600px) {
+  body.tish-paper .reference-section-head {gap:7px;}
+  body.tish-paper .reference-section-head :is(h2,p) {line-height:1.45;}
+  body.tish-paper .bottom-nav .nav-btn > span {
+    font-size:clamp(.58rem,2.35vw,.8rem);
+    line-height:1.38;
+  }
+  body.tish-paper .reference-see-all {padding-inline:10px;}
+  body.tish-paper .checkout-grid {gap:12px;}
+}
+@media(max-width:375px) {
+  body.tish-paper .bottom-nav .nav-btn > span {
+    font-size:.58rem;
+  }
+  body.tish-paper .reference-section-head h2 {
+    font-size:clamp(1.05rem,5vw,1.35rem);
+  }
+}
+/* Keep CSS inherited properly in LTR mode instead of hard-coding RTL. */
+[dir="ltr"] body.tish-paper .order-summary .cart-note {
+  direction:ltr;
+}
