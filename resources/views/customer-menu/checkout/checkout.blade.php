@@ -12,7 +12,7 @@
 @include('customer-menu.partials.styles')
 @include('customer-menu.partials.pwa-head')
 </head>
-<body class="crisp-customer-menu">
+<body class="crisp-customer-menu tish-paper">
 <div class="app crisp-menu-app">
 @include('customer-menu.partials.topbar', ['pageTitle' => 'إتمام الطلب', 'pageSubtitle' => $location->name, 'backUrl' => route('customer-menu.cart', $location->code)])
 

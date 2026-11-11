@@ -1,0 +1,324 @@
+/* ProductCircleCard v8 — one reusable paper component for full menu,
+ * homepage catalog and the popular carousel. The selectors are unique:
+ * legacy .product / .tish-featured-card styling cannot override this card.
+ */
+body.tish-paper {
+  --tish-circle-red:var(--tish-card-primary,var(--primary,#a91f16));
+  --tish-circle-on-red:var(--tish-card-on-primary,#ffffff);
+  --tish-circle-ink:var(--tish-card-ink,var(--text,#352014));
+  --tish-circle-muted:var(--tish-card-muted,var(--muted,#9b8068));
+  --tish-circle-gold:var(--tish-card-accent,var(--accent,#f5bf55));
+}
+/* Catalog grid: favor legibility and 44px touch controls over tiny circles. */
+body.tish-paper.tish-paper-products #productGrid,
+body.tish-paper.reference-home .catalog-section #productGrid {
+  display:grid!important;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr))!important;
+  align-items:start!important;
+  justify-items:center!important;
+  gap:18px 13px!important;
+  padding:8px 2px 26px!important;
+}
+body.tish-paper .tish-circle-card {
+  position:relative;
+  display:block;
+  box-sizing:border-box;
+  container-type:inline-size;
+  aspect-ratio:1 / 1;
+  width:100%;
+  min-width:0;
+  max-width:380px;
+  max-height:none;
+  margin:0 auto;
+  padding:0;
+  background:transparent;
+  border:0;
+  isolation:isolate;
+  overflow:visible;
+  border-radius:50%;
+  color:var(--tish-circle-ink);
+  font-family:Cairo,Tajawal,Arial,sans-serif;
+  -webkit-tap-highlight-color:transparent;
+}
+body.tish-paper .tish-circle-card *,
+body.tish-paper .tish-circle-card *::before,
+body.tish-paper .tish-circle-card *::after {box-sizing:border-box;}
+body.tish-paper .tish-circle-paper {
+  position:absolute;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  /* Render original warm textured paper. The old lighten blend was turning
+     the entire badge white and erasing the paper fibres. */
+  background:url('../../tish-paper/paper/product-disc.webp') center/100% 100% no-repeat;
+  -webkit-mask:none;
+  mask:none;
+  filter:brightness(1.035) contrast(.94) drop-shadow(0 4px 3px rgba(69,42,23,.18));
+}
+body.tish-paper .tish-circle-favorite {
+  position:absolute;
+  z-index:8;
+  top:16%;
+  left:16%;
+  width:15%;
+  height:15%;
+  min-width:42px;
+  min-height:42px;
+  max-width:56px;
+  max-height:56px;
+  display:grid;
+  place-items:center;
+  padding:0;
+  border:0;
+  border-radius:50%;
+  background:url('../../tish-paper/paper/favorite-disc.webp') center/100% 100% no-repeat;
+  color:var(--tish-circle-red);
+  box-shadow:none;
+  font-size:clamp(1.15rem,5.3cqw,1.6rem);
+  line-height:1;
+  cursor:pointer;
+  transition:transform .16s ease;
+}
+body.tish-paper .tish-circle-favorite.active {color:var(--tish-circle-red);}
+body.tish-paper .tish-circle-favorite:active {transform:scale(.91);}
+body.tish-paper .tish-circle-badge {
+  position:absolute;
+  z-index:7;
+  top:16%;
+  right:16%;
+  width:auto;
+  min-height:34px;
+  max-width:40%;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  margin:0;
+  padding:7px 10px;
+  color:var(--tish-circle-on-red);
+  background-color:var(--tish-circle-red);
+  background-image:url('../../tish-paper/paper/background.webp');
+  background-size:350px auto;
+  background-blend-mode:multiply;
+  -webkit-mask:url('../../tish-paper/paper/price-ticket.webp') center/100% 100% no-repeat;
+  mask:url('../../tish-paper/paper/price-ticket.webp') center/100% 100% no-repeat;
+  border:0;
+  font-size:clamp(.66rem,3.8cqw,.9rem);
+  font-weight:900;
+  line-height:1.2;
+  white-space:nowrap;
+  overflow:hidden;
+}
+body.tish-paper .tish-circle-badge--popular {
+  transform:rotate(7deg);
+  transform-origin:center;
+}
+body.tish-paper .tish-circle-badge--popular i {color:var(--tish-circle-gold);font-size:1.09em;}
+body.tish-paper .tish-circle-badge--available {background:color-mix(in srgb, var(--tish-circle-ink) 45%, #19472a);}
+body.tish-paper .tish-circle-availability-dot {
+  width:7px;
+  height:7px;
+  flex:0 0 7px;
+  background:#45e06d;
+  border-radius:50%;
+}
+body.tish-paper .tish-circle-badge--soldout {background:color-mix(in srgb,var(--tish-circle-red) 65%,#545454);}
+body.tish-paper .tish-circle-image {
+  position:absolute;
+  z-index:2;
+  top:19%;
+  left:15%;
+  width:70%;
+  height:35%;
+  overflow:hidden;
+  display:grid;
+  place-items:center;
+  background:transparent;
+  border:0;
+  padding:0;
+  text-decoration:none;
+}
+body.tish-paper .tish-circle-image img,
+body.tish-paper .tish-circle-image .product-placeholder {
+  display:block;
+  width:100%;
+  height:100%;
+  max-width:100%;
+  max-height:100%;
+  min-height:0;
+  object-fit:contain;
+  object-position:center;
+  padding:0;
+  border:0;
+  background:transparent;
+  border-radius:0;
+  box-shadow:none;
+}
+body.tish-paper .tish-circle-image img.tish-photo-cutout {
+  filter:drop-shadow(0 5px 4px rgba(51,34,21,.30));
+  -webkit-mask-image:none;
+  mask-image:none;
+  mix-blend-mode:normal;
+}
+body.tish-paper .tish-circle-image img.tish-photo-source {
+  -webkit-mask-image:radial-gradient(ellipse 68% 71% at 50% 50%,#000 55%,transparent 100%);
+  mask-image:radial-gradient(ellipse 68% 71% at 50% 50%,#000 55%,transparent 100%);
+  mix-blend-mode:multiply;
+}
+body.tish-paper .tish-circle-info {
+  position:absolute;
+  z-index:3;
+  top:56.5%;
+  left:10%;
+  width:80%;
+  height:18%;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:1px;
+  margin:0;
+  padding:0;
+  overflow:hidden;
+  text-align:center;
+  text-decoration:none;
+}
+body.tish-paper .tish-circle-name {
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  width:100%;
+  max-height:2.4em;
+  min-height:0;
+  margin:0;
+  padding:0 2px;
+  overflow:hidden;
+  color:var(--tish-circle-ink);
+  font-size:clamp(.77rem,4.2cqw,1.18rem);
+  font-weight:900;
+  line-height:1.19;
+  text-align:center;
+  overflow-wrap:break-word;
+}
+body.tish-paper .tish-circle-category {
+  width:90%;
+  margin:0;
+  padding:0;
+  flex:0 0 auto;
+  color:var(--tish-circle-muted);
+  font-size:clamp(.65rem,3.15cqw,.87rem);
+  font-weight:700;
+  line-height:1.24;
+  text-align:center;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+body.tish-paper .tish-circle-price {
+  position:absolute;
+  z-index:4;
+  top:76%;
+  left:25%;
+  width:50%;
+  height:10%;
+  min-height:30px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:3px 7px;
+  border:0;
+  color:var(--tish-circle-on-red);
+  background-color:var(--tish-circle-red);
+  background-image:url('../../tish-paper/paper/background.webp');
+  background-size:350px auto;
+  background-blend-mode:multiply;
+  -webkit-mask:url('../../tish-paper/paper/price-ticket.webp') center/100% 100% no-repeat;
+  mask:url('../../tish-paper/paper/price-ticket.webp') center/100% 100% no-repeat;
+  font-size:clamp(.95rem,4.8cqw,1.35rem);
+  font-weight:900;
+  font-variant-numeric:tabular-nums;
+  line-height:1.12;
+  white-space:nowrap;
+  text-align:center;
+}
+body.tish-paper .tish-circle-add {
+  position:absolute;
+  z-index:9;
+  top:86%;
+  left:30%;
+  width:40%;
+  height:11.5%;
+  min-width:0;
+  min-height:35px;
+  max-height:55px;
+  display:inline-flex;
+  flex-direction:row;
+  justify-content:center;
+  align-items:center;
+  gap:5px;
+  margin:0;
+  padding:7px 7px;
+  border:0;
+  border-radius:0;
+  color:var(--tish-circle-red);
+  background:url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat;
+  font-family:inherit;
+  font-size:clamp(.72rem,4cqw,1.06rem);
+  font-weight:900;
+  line-height:1.18;
+  text-align:center;
+  white-space:nowrap;
+  cursor:pointer;
+  filter:drop-shadow(0 3px 2px rgba(63,42,28,.23));
+  transition:transform .15s ease;
+}
+body.tish-paper .tish-circle-add i {flex:0 0 auto;font-size:1.17em;}
+body.tish-paper .tish-circle-add:active {transform:scale(.96);}
+body.tish-paper .tish-circle-add.is-added {color:color-mix(in srgb,var(--tish-circle-red) 45%,#1c782d);}
+body.tish-paper .tish-circle-add:disabled:not(.is-added) {opacity:.62;cursor:not-allowed;filter:grayscale(.25);}
+body.tish-paper .tish-circle-card :is(button,a):focus-visible {
+  outline:3px solid var(--tish-circle-red);
+  outline-offset:2px;
+}
+/* The carousel keeps its existing slide movement, but uses our one component. */
+body.tish-paper.reference-home #featuredSection .cm-showcase-slide > .tish-circle-card {
+  max-width:none;
+  width:100%;
+  height:100%;
+}
+/* Large catalog: retain circular cards with readable inner actions. */
+/* Auto-fit prevents a theme-defined narrow container from making cards too small. */
+@media(max-width:599px){
+  body.tish-paper.reference-home .catalog-section #productGrid,
+  body.tish-paper.tish-paper-products #productGrid{
+    grid-template-columns:minmax(0,1fr)!important;
+    justify-items:center!important;
+    gap:18px!important;
+  }
+  body.tish-paper .catalog-section .tish-circle-card,
+  body.tish-paper.tish-paper-products #productGrid .tish-circle-card{
+    width:min(100%,350px);
+  }
+}
+@media(max-width:340px){
+  body.tish-paper .tish-circle-favorite{min-width:37px;min-height:37px;}
+  body.tish-paper .tish-circle-badge{min-height:30px;padding:5px 7px;font-size:.68rem;}
+  body.tish-paper .tish-circle-name{font-size:clamp(.75rem,4cqw,.98rem);}
+  body.tish-paper .tish-circle-add{font-size:.8rem;}
+}
+@media(prefers-reduced-motion:reduce){
+  body.tish-paper .tish-circle-card :is(.tish-circle-favorite,.tish-circle-add){transition:none;}
+}
+
+/* Protect the featured circle on a narrow phone: do not let the old 232px
+   showcase size compress a 44px Add button outside the paper. */
+@media(max-width:899px){
+  body.tish-paper.reference-home #featuredSection .cm-featured-showcase{
+    --tish-showcase-size:min(320px,calc(100vw - 40px))!important;
+    padding-inline:0!important;
+  }
+  body.tish-paper.reference-home #featuredSection .cm-showcase-stage{
+    width:100%!important;
+  }
+}

@@ -23,10 +23,26 @@ class MenuMotionIntegrationTest extends TestCase
     {
         $home = file_get_contents(resource_path('views/customer-menu/show.blade.php'));
         $catalog = file_get_contents(resource_path('views/customer-menu/products.blade.php'));
-        $this->assertStringContainsString('IntersectionObserver', $home);
-        $this->assertStringContainsString('IntersectionObserver', $catalog);
-        $this->assertStringContainsString('CM.addToCart', $home);
-        $this->assertStringContainsString('CM.addToCart', $catalog);
+        $sharedCard = file_get_contents(public_path('assets/js/customer-menu/tish-product-circle-card-v8.js'));
+        $paperMotion = file_get_contents(public_path('assets/js/customer-menu/tish-paper-motion-v10.js'));
+        $layout = file_get_contents(public_path('assets/css/customer-menu/tish-product-layout-v10.css'));
+        $motionCss = file_get_contents(public_path('assets/css/customer-menu/tish-paper-motion-v10.css'));
+
+        // Actual shared card supplies all product actions in both views.
+        $this->assertStringContainsString('TishProductCircleCard.render', $home);
+        $this->assertStringContainsString('TishProductCircleCard.render', $catalog);
+        $this->assertStringContainsString('TishProductCircleCard.addFromButton', $home);
+        $this->assertStringContainsString('TishProductCircleCard.addFromButton', $catalog);
+        $this->assertStringContainsString('cm.addToCart(product.id, 1)', $sharedCard);
+        $this->assertStringContainsString('data-fav=', $sharedCard);
+        $this->assertStringContainsString('TishPaperMotion?.observe', $home);
+        $this->assertStringContainsString('TishPaperMotion?.observe', $catalog);
+        $this->assertStringContainsString('IntersectionObserver', $paperMotion);
+        $this->assertStringContainsString('threshold: .15', $paperMotion);
+        $this->assertStringContainsString('repeat(2,minmax(0,1fr))', $layout);
+        $this->assertStringContainsString('cm-sticky-cart:not([hidden])::before', $layout);
+        $this->assertStringContainsString('--paper-card-duration:480ms', $motionCss);
+        $this->assertStringContainsString('prefers-reduced-motion:reduce', $motionCss);
         $this->assertStringContainsString('revealMenuCards()', $catalog);
     }
     #[Test]

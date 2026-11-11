@@ -1,0 +1,474 @@
+/* TISH Paper Polish v13. Customer menu presentation only.
+ * 1) Large EMPTY-CART BAG (not the bottom navigation icon)
+ * 2) Install PIN collapses fully as torn paper and reforms
+ * 3) Orders uses a continuous paper canvas and horizontal paper cards
+ * 4) Shared paper return arrows
+ * 5) Admin banner images always sit within an ivory torn-paper frame
+ * Original ERP datasets, cart handling, links and PWA installation unchanged.
+ */
+body.tish-paper{
+  --tish-p13-red:var(--tish-card-primary,var(--primary,#a91f16));
+  --tish-p13-ink:var(--tish-card-ink,var(--text,#352014));
+  --tish-p13-paper:var(--tish-card-paper,#f5e4cd);
+  --tish-p13-muted:var(--tish-card-muted,var(--muted,#806755));
+  --tish-p13-ease:cubic-bezier(.22,1,.36,1);
+}
+
+/* UNIVERSAL TORN-PAPER BACK ARROW — all menu subpages. */
+body.tish-paper :is(a.page-back.tish-paper-page-arrow,a.back.tish-paper-page-arrow) {
+  width:clamp(46px,5.3vw,60px)!important;
+  height:clamp(46px,5.3vw,60px)!important;
+  min-width:46px!important;
+  min-height:46px!important;
+  flex:0 0 auto!important;
+  display:grid!important;
+  place-items:center!important;
+  padding:12px!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;
+  color:var(--tish-p13-red)!important;
+  font-size:1.04rem!important;
+  box-shadow:none!important;
+  filter:drop-shadow(0 4px 3px #4d2f202a)!important;
+  transform-origin:center!important;
+  transition:transform .22s ease-out,filter .22s ease-out!important;
+  text-decoration:none!important;
+}
+body.tish-paper :is(a.page-back.tish-paper-page-arrow,a.back.tish-paper-page-arrow):active {
+  transform:scale(.93) translateY(1px)!important;
+  filter:drop-shadow(0 2px 2px #4d2f201b)!important;
+}
+body.tish-paper :is(a.page-back.tish-paper-page-arrow,a.back.tish-paper-page-arrow):focus-visible{
+  outline:3px solid var(--tish-p13-red)!important;
+  outline-offset:3px!important;
+}
+
+/* EMPTY CART — the big paper SHOPPING BAG above "السلة فارغة".
+   Never touch .bottom-nav and never make the decorative illustration clickable. */
+body.tish-paper.tish-cart-page #cartItems>.tish-cart-empty-paper {
+  justify-content:center!important;
+  gap:10px!important;
+  min-height:380px!important;
+  padding:29px 28px 38px!important;
+  background-image:url('../../tish-paper/paper/category-ivory.webp')!important;
+  background-position:center!important;
+  background-size:100% 100%!important;
+}
+body.tish-paper.tish-cart-page #cartItems .tish-cart-bag-art{
+  position:relative!important;
+  isolation:isolate!important;
+  flex:0 0 218px!important;
+  display:block!important;
+  width:240px!important;
+  max-width:67%!important;
+  height:218px!important;
+  min-width:0!important;
+  min-height:0!important;
+  margin:0 auto 3px!important;
+  padding:0!important;
+  inset:auto!important;
+  background:transparent!important;
+  overflow:visible!important;
+  filter:drop-shadow(0 7px 6px #46301f30)!important;
+  transform-origin:50% 87%!important;
+  animation:tish-paper-bigbag-settle 680ms var(--tish-p13-ease) both!important;
+}
+body.tish-paper.tish-cart-page #cartItems .tish-cart-bag-art::before{
+  content:""!important;
+  display:block!important;
+  position:absolute!important;
+  z-index:-1!important;
+  width:79%!important;
+  height:84%!important;
+  top:10%!important;
+  left:10%!important;
+  background:url('../../tish-paper/paper/favorite-disc.webp') center/100% 100% no-repeat!important;
+  filter:drop-shadow(0 2px 2px #563b2526)!important;
+  transform:rotate(-6deg)!important;
+  pointer-events:none!important;
+}
+body.tish-paper.tish-cart-page #cartItems .tish-cart-bag-art .tish-cart-bag-illustration{
+  width:100%!important;height:100%!important;
+  inset:0!important;
+  object-fit:contain!important;
+  filter:drop-shadow(0 4px 2px #46301f2c)!important;
+}
+body.tish-paper.tish-cart-page #cartItems .tish-cart-bag-art .tish-cart-bag-logo {
+  top:55%!important;left:50%!important;
+  width:33%!important;max-width:85px!important;
+  max-height:45%!important;
+  object-fit:contain!important;
+  transform:translate(-50%,-50%) rotate(-5deg)!important;
+  background:transparent!important;
+  filter:drop-shadow(0 3px 3px #50302330)!important;
+}
+body.tish-paper.tish-cart-page #cartItems .tish-cart-empty-paper>h2 {
+  position:relative!important;
+  font-size:clamp(1.62rem,3.8vw,2.18rem)!important;
+  line-height:1.45!important;
+  color:var(--tish-p13-ink)!important;
+  font-weight:900!important;
+  margin:0 auto 2px!important;
+  text-align:center!important;
+}
+body.tish-paper.tish-cart-page #cartItems .tish-cart-empty-paper>.tish-cart-browse {
+  margin:2px auto 0!important;
+  min-height:53px!important;
+  font-size:clamp(1rem,2.6vw,1.24rem)!important;
+  filter:drop-shadow(0 3px 3px #4c291c28)!important;
+}
+@keyframes tish-paper-bigbag-settle{
+  0%{opacity:0;transform:translateY(16px) scale(.90,.82) rotate(-5deg)}
+  58%{opacity:1;transform:translateY(-3px) scale(1.025,1.01) rotate(1deg)}
+  100%{opacity:1;transform:translateY(0) scale(1) rotate(0)}
+}
+
+/* INSTALL PIN — full paper folding / vanishing / re-forming animation.
+   Native beforeinstallprompt must remain attached to the real click gesture.
+   The button keeps its real paper silhouette during the entire transform. */
+@keyframes tish-paper-complete-fold{
+  0%{opacity:1;transform:scale(1,1) rotate(0deg);filter:drop-shadow(0 6px 4px #4529183b)}
+  14%{opacity:1;transform:scale(.90,.89) rotate(-3deg);filter:drop-shadow(0 4px 2px #45291830)}
+  32%{opacity:.90;transform:scale(.49,.60) rotate(-6deg);filter:drop-shadow(0 1px 1px #45291825)}
+  48%{opacity:.30;transform:scale(.04,.08) rotate(-11deg);filter:drop-shadow(0 0 0 transparent)}
+  56%{opacity:.32;transform:scale(.03,.05) rotate(-11deg);filter:drop-shadow(0 0 0 transparent)}
+  74%{opacity:1;transform:scale(1.05,1.02) rotate(2deg);filter:drop-shadow(0 6px 4px #45291837)}
+  90%{opacity:1;transform:scale(.975,.985) rotate(-1deg);filter:drop-shadow(0 5px 4px #45291836)}
+  100%{opacity:1;transform:scale(1) rotate(0);filter:drop-shadow(0 6px 4px #4529183b)}
+}
+body.tish-paper #pwaInstallBtn.tish-paper-pin-control.paper-pin-fold:not([hidden]){
+  animation:tish-paper-complete-fold 760ms var(--tish-p13-ease) both!important;
+  transform-origin:50% 50%!important;
+  will-change:transform,opacity!important;
+}
+body.tish-paper #pwaInstallBtn.tish-paper-pin-control.paper-pin-fold:not([hidden]) :is(i,span){
+  animation:tish-paper-pin-ink-fold 760ms var(--tish-p13-ease) both!important;
+}
+@keyframes tish-paper-pin-ink-fold{
+  0%,100%{opacity:1}
+  45%,56%{opacity:0}
+  78%{opacity:1}
+}
+
+/* ORDERS — consistent brand paper from top to bottom, no blank white lower half. */
+html:has(body.tish-paper.cm-my-orders){
+  min-height:100%!important;
+  background:var(--tish-p13-paper,#f5e4cd)!important;
+}
+body.tish-paper.cm-my-orders{
+  min-height:100vh!important;
+  min-height:100dvh!important;
+  padding-bottom:calc(110px + env(safe-area-inset-bottom,0px))!important;
+  background:var(--tish-p13-paper) url('../../tish-paper/paper/background.webp') center top/540px auto repeat!important;
+  font-family:Cairo,Tajawal,Arial,sans-serif!important;
+  color:var(--tish-p13-ink)!important;
+}
+body.tish-paper.cm-my-orders .topbar{
+  position:relative!important;
+  inset:auto!important;
+  z-index:2!important;
+  background:transparent!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+body.tish-paper.cm-my-orders .topbar>.topin,
+body.tish-paper.cm-my-orders .topbar .topin{
+  min-height:106px!important;
+  height:auto!important;
+  padding:23px 1% 12px!important;
+  align-items:center!important;
+  display:flex!important;
+  flex-direction:row!important;
+  gap:14px!important;
+}
+body.tish-paper.cm-my-orders .topin>.brand{
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  gap:14px!important;
+  min-width:0!important;
+  margin:0!important;
+  font-weight:900!important;
+}
+body.tish-paper.cm-my-orders .brand img{
+  width:90px!important;height:90px!important;
+  max-height:90px!important;
+  flex:0 0 90px!important;
+  padding:0!important;
+  background:transparent!important;
+  border:0!important;
+  object-fit:contain!important;
+  border-radius:0!important;
+  filter:drop-shadow(0 6px 3px #53352340)!important;
+}
+body.tish-paper.cm-my-orders .brand b{
+  color:var(--tish-p13-ink)!important;
+  font-size:clamp(1.25rem,3.4vw,1.9rem)!important;
+  line-height:1.4!important;
+  font-weight:900!important;
+}
+body.tish-paper.cm-my-orders .brand small{
+  color:var(--tish-p13-muted)!important;
+  font-size:clamp(.86rem,2vw,1.12rem)!important;
+  line-height:1.4!important;
+}
+body.tish-paper.cm-my-orders main.wrap{
+  position:relative!important;
+  width:min(100% - 28px,850px)!important;
+  min-height:calc(100dvh - 240px)!important;
+  margin:0 auto!important;
+  padding:25px 0 58px!important;
+  background:transparent!important;
+}
+body.tish-paper.cm-my-orders main .titleRow{
+  display:block!important;
+  width:100%!important;
+  margin:8px 0 29px!important;
+  padding:0 6px!important;
+  text-align:start!important;
+}
+body.tish-paper.cm-my-orders main .titleRow h1{
+  display:flex!important;
+  align-items:center!important;
+  gap:14px!important;
+  justify-content:flex-start!important;
+  margin:0!important;
+  color:var(--tish-p13-ink)!important;
+  font-size:clamp(2rem,5.8vw,3.25rem)!important;
+  line-height:1.3!important;
+  font-weight:900!important;
+}
+body.tish-paper.cm-my-orders .tish-orders-spark{
+  width:70px;height:55px;flex:0 0 70px;
+  background:url('../../tish-paper/decor/lightning.svg') center/contain no-repeat;
+  transform:scaleX(-1) rotate(-13deg);
+}
+body.tish-paper.cm-my-orders main .titleRow p{
+  margin:2px 0 0!important;
+  color:var(--tish-p13-muted)!important;
+  font-size:clamp(.95rem,2.45vw,1.27rem)!important;
+  line-height:1.55!important;
+}
+body.tish-paper.cm-my-orders .orders{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  justify-items:stretch!important;
+  gap:15px!important;
+  width:min(100%,780px)!important;
+  margin:0 auto!important;
+}
+body.tish-paper.cm-my-orders .orders>.order{
+  position:relative!important;
+  display:grid!important;
+  direction:rtl!important;
+  grid-template-columns:clamp(50px,9vw,74px) minmax(0,1fr) clamp(50px,9vw,74px)!important;
+  align-items:center!important;
+  min-height:174px!important;
+  gap:9px!important;
+  padding:25px clamp(18px,4vw,43px)!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;
+  box-shadow:none!important;
+  filter:drop-shadow(0 8px 5px #4b35222b)!important;
+  color:var(--tish-p13-ink)!important;
+  text-align:center!important;
+  text-decoration:none!important;
+  transform-origin:center center;
+  transition:transform 220ms ease-out,filter 220ms ease-out!important;
+  overflow:visible!important;
+}
+body.tish-paper.cm-my-orders .order .orderIcon,
+body.tish-paper.cm-my-orders .order .arrow{
+  width:clamp(49px,8vw,72px)!important;
+  height:clamp(49px,8vw,72px)!important;
+  min-width:49px!important;
+  min-height:49px!important;
+  display:grid!important;
+  place-items:center!important;
+  padding:10px!important;
+  margin:auto!important;
+  color:var(--tish-p13-red)!important;
+  background:url('../../tish-paper/paper/favorite-disc.webp') center/100% 100% no-repeat!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  font-size:clamp(1.3rem,3vw,2rem)!important;
+  line-height:1!important;
+  flex:0 0 auto!important;
+}
+body.tish-paper.cm-my-orders .order .orderIcon{grid-column:1!important;grid-row:1!important}
+body.tish-paper.cm-my-orders .order .arrow{grid-column:3!important;grid-row:1!important}
+body.tish-paper.cm-my-orders .orderInfo{
+  grid-column:2!important;
+  grid-row:1!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  align-items:center!important;
+  gap:8px!important;
+  width:100%!important;
+  min-width:0!important;
+  margin:0!important;
+  text-align:center!important;
+  color:var(--tish-p13-ink)!important;
+}
+body.tish-paper.cm-my-orders .orderInfo strong{
+  display:block!important;
+  margin:0!important;
+  color:var(--tish-p13-ink)!important;
+  font-size:clamp(1.09rem,2.5vw,1.53rem)!important;
+  line-height:1.42!important;
+  font-weight:900!important;
+  overflow-wrap:anywhere!important;
+}
+body.tish-paper.cm-my-orders .orderInfo small{
+  margin:0!important;
+  color:var(--tish-p13-muted)!important;
+  line-height:1.5!important;
+  font-size:clamp(.77rem,1.7vw,.98rem)!important;
+}
+body.tish-paper.cm-my-orders .orderInfo .orderStatus{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:7px!important;
+  min-height:38px!important;
+  padding:9px 22px!important;
+  background:url('../../tish-paper/paper/availability-green.webp') center/100% 100% no-repeat!important;
+  border:0!important;
+  color:#fff6e8!important;
+  font-size:clamp(.89rem,2vw,1.15rem)!important;
+  font-weight:900!important;
+  white-space:normal!important;
+  text-align:center!important;
+}
+body.tish-paper.cm-my-orders .orderInfo .orderStatus[data-state="cancelled"]{
+  background-image:url('../../tish-paper/paper/price-ticket.webp')!important;
+}
+body.tish-paper.cm-my-orders .orderInfo .orderStatus[data-state="received"],
+body.tish-paper.cm-my-orders .orderInfo .orderStatus[data-state="accepted"],
+body.tish-paper.cm-my-orders .orderInfo .orderStatus[data-state="preparing"]{
+  background-image:url('../../tish-paper/paper/price-ticket.webp')!important;
+}
+body.tish-paper.cm-my-orders .orders .empty{
+  padding:46px 24px!important;
+  min-height:240px!important;
+  background:url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;
+  color:var(--tish-p13-ink)!important;
+}
+body.tish-paper.cm-my-orders .orders .empty .primary{
+  border-radius:0!important;
+  padding:12px 25px!important;
+  background:url('../../tish-paper/paper/price-ticket.webp') center/100% 100% no-repeat!important;
+  color:#fff!important;
+}
+@media(hover:hover) and (pointer:fine){
+ body.tish-paper.cm-my-orders .orders>.order:hover{transform:translateY(-4px)!important;filter:drop-shadow(0 12px 7px #4b352238)!important}
+}
+body.tish-paper.cm-my-orders .orders>.order:active{transform:scale(.985)!important}
+body.tish-paper.cm-my-orders .bottom-nav{
+  left:50%!important;
+  right:auto!important;
+  transform:translateX(-50%)!important;
+  width:min(100%,920px)!important;
+  max-width:920px!important;
+}
+
+/* ADS — consistent torn-paper wrapper for ANY admin-uploaded banner.
+   The img stays unmodified. Works for the entire carousel or cover fallback. */
+body.tish-paper.reference-home .tish-paper-banner-frame{
+  position:relative!important;
+  isolation:isolate!important;
+  width:100%!important;
+  margin:11px 0 20px!important;
+  padding:clamp(11px,2.1vw,22px)!important;
+  background:url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;
+  filter:drop-shadow(0 8px 6px #4b2c1d34)!important;
+}
+body.tish-paper.reference-home .tish-paper-banner-frame .reference-hero{
+  position:relative!important;
+  display:block!important;
+  width:100%!important;
+  margin:0!important;
+  padding:0!important;
+  clip-path:none!important;
+  overflow:hidden!important;
+  border-radius:clamp(8px,1.35vw,18px)!important;
+  box-shadow:none!important;
+  background:var(--tish-p13-red)!important;
+}
+body.tish-paper.reference-home .tish-paper-banner-frame .banner-slide{
+  border:0!important;
+  border-radius:0!important;
+  overflow:hidden!important;
+}
+body.tish-paper.reference-home .tish-paper-banner-frame .banner-slide img{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+}
+body.tish-paper.reference-home .tish-paper-banner-frame :is(.banner-copy .tag,.banner-copy .banner-cta){
+  background:var(--tish-p13-red)!important;
+  color:var(--tish-card-on-primary,var(--on-primary,#fff))!important;
+  border:0!important;
+  border-radius:0!important;
+}
+body.tish-paper.reference-home .tish-paper-banner-frame .banner-dots{
+  margin:0!important;
+  padding:9px 10px 6px!important;
+  background:transparent!important;
+}
+body.tish-paper.reference-home .tish-paper-banner-frame .banner-dots button.active{
+  background:var(--tish-p13-red)!important;
+}
+
+/* Mobile touch targets and safe paper margins. */
+@media(max-width:600px){
+ body.tish-paper.tish-cart-page #cartItems>.tish-cart-empty-paper{min-height:330px!important;padding:20px 15px 25px!important;gap:6px!important}
+ body.tish-paper.tish-cart-page #cartItems .tish-cart-bag-art{width:185px!important;height:162px!important;flex-basis:162px!important;max-width:58%!important}
+ body.tish-paper.tish-cart-page #cartItems .tish-cart-bag-art .tish-cart-bag-logo{max-width:70px!important}
+ body.tish-paper.cm-my-orders .topbar .topin{min-height:88px!important;padding:17px 1% 7px!important}
+ body.tish-paper.cm-my-orders .brand img{width:70px!important;height:70px!important;flex-basis:70px!important}
+ body.tish-paper.cm-my-orders main.wrap{min-height:calc(100dvh - 205px)!important;padding:17px 0 44px!important}
+ body.tish-paper.cm-my-orders .titleRow{margin:10px 0 20px!important}
+ body.tish-paper.cm-my-orders .tish-orders-spark{width:50px;height:42px;flex-basis:50px}
+ body.tish-paper.cm-my-orders .orders>.order{
+   min-height:152px!important;
+   grid-template-columns:50px minmax(0,1fr) 50px!important;
+   padding:18px 12px!important;
+   gap:6px!important;
+ }
+ body.tish-paper.cm-my-orders .order .orderIcon,
+ body.tish-paper.cm-my-orders .order .arrow{width:50px!important;height:50px!important;min-width:50px!important;min-height:50px!important}
+ body.tish-paper.cm-my-orders .orderInfo{gap:5px!important}
+ body.tish-paper.cm-my-orders .orderInfo strong{font-size:clamp(.96rem,3.3vw,1.26rem)!important}
+ body.tish-paper.cm-my-orders .orderInfo .orderStatus{min-height:33px!important;padding:6px 11px!important;font-size:.82rem!important}
+ body.tish-paper.cm-my-orders .orderInfo small{font-size:.7rem!important}
+ body.tish-paper.reference-home .tish-paper-banner-frame{padding:12px!important}
+ body.tish-paper.reference-home .tish-paper-banner-frame .reference-hero{border-radius:9px!important}
+}
+@media(max-width:380px){
+ body.tish-paper.tish-cart-page #cartItems .tish-cart-bag-art{width:162px!important;height:139px!important;flex-basis:139px!important}
+ body.tish-paper.cm-my-orders .orders>.order{grid-template-columns:43px minmax(0,1fr) 43px!important;padding:17px 9px!important}
+ body.tish-paper.cm-my-orders .order .orderIcon,
+ body.tish-paper.cm-my-orders .order .arrow{width:43px!important;height:43px!important;min-width:43px!important;min-height:43px!important;padding:8px!important}
+ body.tish-paper.cm-my-orders .orderInfo strong{font-size:.93rem!important}
+ body.tish-paper.cm-my-orders .orderInfo .orderStatus{font-size:.72rem!important;padding:5px 7px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ body.tish-paper.tish-cart-page #cartItems .tish-cart-bag-art,
+ body.tish-paper #pwaInstallBtn.tish-paper-pin-control.paper-pin-fold:not([hidden]),
+ body.tish-paper #pwaInstallBtn.tish-paper-pin-control.paper-pin-fold:not([hidden]) :is(i,span),
+ body.tish-paper.cm-my-orders .orders>.order,
+ body.tish-paper :is(a.page-back.tish-paper-page-arrow,a.back.tish-paper-page-arrow){
+   animation:none!important;
+   transition:none!important;
+   transform:none!important;
+ }
+}

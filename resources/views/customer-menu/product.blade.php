@@ -10,7 +10,7 @@
 @include('customer-menu.partials.styles')
 @include('customer-menu.partials.pwa-head')
 </head>
-<body class="crisp-customer-menu tish-product-page">
+<body class="crisp-customer-menu tish-paper tish-product-page">
 <div class="app crisp-menu-app">
 @include('customer-menu.partials.topbar', ['backUrl' => route('customer-menu.products', $location->code)])
 
@@ -18,7 +18,7 @@
  <div class="shell">
   <div class="detail-media" id="detailMedia">
    @if(!empty($product['image']))
-    <img src="{{ $product['image'] }}" alt="{{ $product['name'] }}" onerror="this.remove(); this.parentElement.insertAdjacentHTML('afterbegin', '<div class=&quot;product-placeholder&quot;>{{ mb_substr($product['name'], 0, 1) }}</div>')">
+    <img src="{{ $product['cutout_image'] ?: $product['image'] }}" data-fallback="{{ $product['cutout_image'] ? $product['image'] : '' }}" alt="{{ $product['name'] }}" onerror="if(this.dataset.fallback){const original=this.dataset.fallback;this.dataset.fallback='';this.src=original;}else{this.remove();this.parentElement.insertAdjacentHTML('afterbegin', '<div class=&quot;product-placeholder&quot;>{{ mb_substr($product['name'], 0, 1) }}</div>');}">
    @else
     <div class="product-placeholder">{{ mb_substr($product['name'], 0, 1) }}</div>
    @endif
@@ -87,7 +87,7 @@
        <article class="tish-addon-card" <?php if ($addOnIndex >= 2): ?> data-addon-extra hidden <?php endif; ?>>
         <a class="tish-addon-photo" href="{{ route('customer-menu.product.show', [$location->code, $addOn['product_id']]) }}" aria-label="{{ $addOn['name'] }}">
          @if(!empty($addOn['image']))
-          <img src="{{ $addOn['image'] }}" alt="{{ $addOn['name'] }}" loading="lazy" onerror="this.style.display='none'">
+          <img src="{{ $addOn['cutout_image'] ?: $addOn['image'] }}" data-fallback="{{ $addOn['cutout_image'] ? $addOn['image'] : '' }}" alt="{{ $addOn['name'] }}" loading="lazy" onerror="if(this.dataset.fallback){const f=this.dataset.fallback;this.dataset.fallback='';this.src=f;}else{this.style.display='none';}">
          @else
           <span class="tish-addon-placeholder"><i class="fa-solid fa-utensils" aria-hidden="true"></i></span>
          @endif
@@ -123,7 +123,7 @@
     @foreach($relatedItems as $related)
      <a class="product" href="{{ route('customer-menu.product.show', [$location->code, $related['product_id']]) }}">
       <div class="product-media">
-       @if(!empty($related['image']))<img src="{{ $related['image'] }}" alt="{{ $related['name'] }}" onerror="this.outerHTML='<div class=&quot;product-placeholder&quot;>{{ mb_substr($related['name'], 0, 1) }}</div>'">@else<div class="product-placeholder">{{ mb_substr($related['name'], 0, 1) }}</div>@endif
+       @if(!empty($related['image']))<img src="{{ $related['cutout_image'] ?: $related['image'] }}" data-fallback="{{ $related['cutout_image'] ? $related['image'] : '' }}" alt="{{ $related['name'] }}" onerror="if(this.dataset.fallback){const f=this.dataset.fallback;this.dataset.fallback='';this.src=f;}else{this.outerHTML='<div class=&quot;product-placeholder&quot;>{{ mb_substr($related['name'], 0, 1) }}</div>';}">@else<div class="product-placeholder">{{ mb_substr($related['name'], 0, 1) }}</div>@endif
       </div>
       <div class="product-body">
        <h3>{{ $related['name'] }}</h3>
@@ -205,6 +205,7 @@ function updateMedia() {
     if (!PRODUCT.isVariantProduct) return;
     const v = variants.find(v => String(v.id) === String(selectedVariantId));
     if (!v || !v.image) return;
+    const picture = v.cutout_image || v.image;
     const media = document.getElementById('detailMedia');
     let img = media.querySelector('img');
     if (!img) {
@@ -212,8 +213,19 @@ function updateMedia() {
         media.querySelector('.product-placeholder')?.remove();
         media.prepend(img);
     }
-    if (img.getAttribute('src') === v.image) return;
-    img.src = v.image;
+    if (img.getAttribute('src') === picture) return;
+    img.dataset.fallback = v.cutout_image ? v.image : '';
+    img.onerror = function () {
+        if (this.dataset.fallback) {
+            const original = this.dataset.fallback;
+            this.dataset.fallback = '';
+            this.src = original;
+        } else {
+            this.style.display = 'none';
+        }
+    };
+    img.style.display = '';
+    img.src = picture;
     img.alt = PRODUCT.name;
     document.dispatchEvent(new CustomEvent('tish:product-image-changed', { detail: { image: img } }));
 }

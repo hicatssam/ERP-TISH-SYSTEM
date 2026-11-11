@@ -8,22 +8,28 @@
 <title>سلة الطلب - {{ $branding['name'] ?? config('app.name') }}</title>
 @if(!empty($branding['favicon']))<link rel="icon" href="{{ $branding['favicon'] }}">@endif
 @include('customer-menu.partials.styles')
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-cart-v2.css') }}?v=2">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-cart-v3.css') }}?v=3">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-cart-v4.css') }}?v=4">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-cart-summary-v5.css') }}?v=5">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-polish-v13.css') }}?v=13">
 @include('customer-menu.partials.pwa-head')
 </head>
-<body class="crisp-customer-menu">
+<body class="crisp-customer-menu tish-paper tish-cart-page">
 <div class="app crisp-menu-app">
 @include('customer-menu.partials.topbar', ['pageTitle' => 'سلة الطلب', 'pageSubtitle' => $location->name])
 
 <main class="menu-area">
  <div class="shell">
-  <div id="cartItems"></div>
+  <div class="tish-cart-items-heading" id="cartItemsHeading" hidden><i class="fa-solid fa-bag-shopping" aria-hidden="true"></i><h2>منتجات السلة</h2></div>
+  <div id="cartItems" aria-live="polite"></div>
 
-  <div class="order-summary">
+  <div class="order-summary" aria-label="ملخص سلة الطلب">
    <div class="summary-row"><span>عدد الأصناف</span><span id="itemCount">0</span></div>
-   <div class="cart-total"><span>الإجمالي</span><span id="cartTotal">0.00 {{ $menuCurrencySymbol }}</span></div>
-   <div class="cart-note">قد تُضاف رسوم توصيل حسب نوع الطلب — تظهر بعد اختيار طريقة الاستلام بالخطوة التالية.</div>
+   <div class="cart-total"><strong>الإجمالي</strong><strong id="cartTotal" dir="ltr">0.00 {{ $menuCurrencySymbol }}</strong></div>
+   <p class="cart-note">قد تُضاف رسوم توصيل حسب نوع الطلب.<span class="tish-note-next-step">تظهر بعد اختيار طريقة الاستلام في الخطوة التالية.</span></p>
   </div>
-  <button class="checkout-start" id="checkoutStart" type="button">إتمام الطلب</button>
+  <button class="checkout-start" id="checkoutStart" type="button" disabled>إتمام الطلب</button>
  </div>
 </main>
 </div>
@@ -44,23 +50,33 @@ function renderCart() {
                 : '';
             const subtitle = [x.variant_name, modifierLine].filter(Boolean).join(' — ');
             return `
-          <div class="cart-row">
-            <div class="cart-thumb">${x.image ? `<img src="${CM.esc(x.image)}" alt="">` : ''}</div>
+          <article class="cart-row" aria-label="صنف في سلة الطلب">
+            <span class="tish-cart-row-index" aria-hidden="true"></span>
+            <div class="cart-thumb">${x.image ? `<img src="${CM.esc(x.image)}" data-fallback="${CM.esc(x.original_image && x.original_image !== x.image ? x.original_image : '')}" alt="" onerror="if(this.dataset.fallback){const f=this.dataset.fallback;this.dataset.fallback='';this.src=f;}else{this.style.display='none';}">` : ''}</div>
             <div class="row-copy">
               <strong>${CM.esc(x.name.split(' - ')[0])}</strong>
               ${subtitle ? `<span style="display:block;font-size:.74rem;color:var(--muted)">${CM.esc(subtitle)}</span>` : ''}
-              <small>${CM.money(x.price * x.quantity)}</small>
+              <small class="tish-cart-line-price">${CM.money(x.price * x.quantity)}</small>
             </div>
             <div class="row-actions">
-              <button type="button" data-dec="${CM.esc(x.key)}">−</button>
+              <button type="button" data-dec="${CM.esc(x.key)}" aria-label="تقليل كمية ${CM.esc(x.name)}">−</button>
               <b>${x.quantity}</b>
-              <button type="button" data-inc="${CM.esc(x.key)}">+</button>
-              <button type="button" data-remove="${CM.esc(x.key)}" aria-label="حذف"><i class="fa-solid fa-trash"></i></button>
+              <button type="button" data-inc="${CM.esc(x.key)}" aria-label="زيادة كمية ${CM.esc(x.name)}">+</button>
+              <button type="button" data-remove="${CM.esc(x.key)}" aria-label="حذف ${CM.esc(x.name)}"><i class="fa-solid fa-trash"></i></button>
             </div>
-          </div>`;
+          </article>`;
         }).join('')
-        : `<div class="empty">السلة فارغة. <br><a href="${@json(route('customer-menu.products', $location->code))}">تصفّح المنيو</a></div>`;
+        : `<section class="tish-cart-empty-paper" aria-label="السلة فارغة">
+          <div class="tish-cart-bag-art" aria-hidden="true">
+            <img class="tish-cart-bag-illustration" src="{{ asset('assets/tish-paper/decor/empty-shopping-bag.svg') }}" alt="" loading="eager">
+            <img class="tish-cart-bag-logo" src="{{ asset('assets/tish-paper/brand/logo-disc.webp') }}" alt="" loading="eager">
+            <span class="tish-cart-spark spark-one"></span><span class="tish-cart-spark spark-two"></span>
+          </div>
+          <h2 class="tish-cart-empty-title">السلة فارغة</h2>
+          <a class="tish-cart-browse" href="${@json(route('customer-menu.products', $location->code))}">تصفح المنيو</a>
+        </section>`;
 
+    document.getElementById('cartItemsHeading').hidden = !rows.length;
     document.getElementById('itemCount').textContent = rows.reduce((s, r) => s + Number(r.quantity), 0);
     document.getElementById('cartTotal').textContent = CM.money(CM.cartTotal());
     document.getElementById('checkoutStart').disabled = !rows.length;

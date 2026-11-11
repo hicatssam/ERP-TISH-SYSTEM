@@ -1,0 +1,162 @@
+/* Paper Motion v10 — animation ONLY. Does not change layout, colors or prices. */
+:root {
+  --paper-ease:cubic-bezier(.22,1,.36,1);
+  --paper-card-duration:480ms;
+  --paper-image-duration:420ms;
+  --paper-text-duration:300ms;
+  --paper-button-duration:320ms;
+  --paper-stagger:50ms;
+  --paper-hover-duration:220ms;
+  --paper-hover-lift:-4px;
+  --paper-reveal-offset:14px;
+}
+/* No JS or IntersectionObserver => never hide any product. */
+body.tish-paper.paper-motion-enabled .tish-circle-card.paper-motion-pending:not(.paper-motion-visible) {
+  opacity:0;
+}
+body.tish-paper.paper-motion-enabled .tish-circle-card.paper-motion-visible:not(.paper-motion-done) {
+  animation:paper-card-reveal var(--paper-card-duration) var(--paper-ease) both;
+  animation-delay:var(--paper-delay,0ms);
+}
+@keyframes paper-card-reveal {
+  from {opacity:0;transform:translateY(var(--paper-reveal-offset)) scale(.97);}
+  to {opacity:1;transform:translateY(0) scale(1);}
+}
+body.tish-paper.paper-motion-enabled .paper-motion-pending:not(.paper-motion-visible) .tish-circle-image,
+body.tish-paper.paper-motion-enabled .paper-motion-pending:not(.paper-motion-visible) .tish-circle-name,
+body.tish-paper.paper-motion-enabled .paper-motion-pending:not(.paper-motion-visible) .tish-circle-category,
+body.tish-paper.paper-motion-enabled .paper-motion-pending:not(.paper-motion-visible) .tish-circle-price,
+body.tish-paper.paper-motion-enabled .paper-motion-pending:not(.paper-motion-visible) .tish-circle-add,
+body.tish-paper.paper-motion-enabled .paper-motion-pending:not(.paper-motion-visible) .tish-circle-badge{
+  opacity:0;
+}
+body.tish-paper.paper-motion-enabled .paper-motion-visible:not(.paper-motion-done) .tish-circle-image {
+  animation:paper-image-in var(--paper-image-duration) var(--paper-ease) both;
+  animation-delay:calc(var(--paper-delay,0ms) + 80ms);
+}
+@keyframes paper-image-in {
+  from {opacity:0;transform:translateY(8px) scale(.94);}
+  to {opacity:1;transform:translateY(0) scale(1);}
+}
+body.tish-paper.paper-motion-enabled .paper-motion-visible:not(.paper-motion-done) .tish-circle-name {
+  animation:paper-text-in var(--paper-text-duration) ease-out both;
+  animation-delay:calc(var(--paper-delay,0ms) + 150ms);
+}
+body.tish-paper.paper-motion-enabled .paper-motion-visible:not(.paper-motion-done) .tish-circle-category {
+  animation:paper-text-in var(--paper-text-duration) ease-out both;
+  animation-delay:calc(var(--paper-delay,0ms) + 190ms);
+}
+body.tish-paper.paper-motion-enabled .paper-motion-visible:not(.paper-motion-done) .tish-circle-price {
+  animation:paper-text-in var(--paper-text-duration) ease-out both;
+  animation-delay:calc(var(--paper-delay,0ms) + 230ms);
+}
+@keyframes paper-text-in {
+  from {opacity:0;transform:translateY(6px);}
+  to {opacity:1;transform:translateY(0);}
+}
+body.tish-paper.paper-motion-enabled .paper-motion-visible:not(.paper-motion-done) .tish-circle-add {
+  animation:paper-button-in var(--paper-button-duration) var(--paper-ease) both;
+  animation-delay:calc(var(--paper-delay,0ms) + 280ms);
+}
+@keyframes paper-button-in {
+  from {opacity:0;transform:translateY(8px) scale(.96);}
+  to {opacity:1;transform:translateY(0) scale(1);}
+}
+body.tish-paper.paper-motion-enabled .paper-motion-visible:not(.paper-motion-done) .tish-circle-badge--popular {
+  animation:paper-badge-in 380ms var(--paper-ease) both;
+  animation-delay:calc(var(--paper-delay,0ms) + 100ms);
+}
+@keyframes paper-badge-in {
+  from {opacity:0;transform:translateY(-8px) rotate(7deg);}
+  to {opacity:1;transform:translateY(0) rotate(7deg);}
+}
+/* Press feedback is applied only AFTER actual CM.addToCart returns success. */
+body.tish-paper .tish-circle-add.paper-cart-confirm {
+  background-color:var(--tish-circle-red)!important;
+  background-image:url('../../tish-paper/paper/background.webp')!important;
+  background-position:center!important;
+  background-size:300px auto!important;
+  background-blend-mode:multiply!important;
+  -webkit-mask:url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;
+  mask:url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;
+  color:var(--tish-circle-on-red)!important;
+  animation:paper-cart-press 320ms var(--paper-ease) both!important;
+}
+body.tish-paper .tish-circle-add.paper-cart-confirm i,
+body.tish-paper .tish-circle-add.paper-cart-confirm .tish-circle-add-label {
+  color:var(--tish-circle-on-red)!important;
+}
+@keyframes paper-cart-press {
+  0% {transform:scale(.96);filter:drop-shadow(0 1px 1px rgba(0,0,0,.15));}
+  32% {transform:scale(.96);filter:drop-shadow(0 1px 1px rgba(0,0,0,.15));}
+  69% {transform:scale(1);filter:drop-shadow(0 3px 2px rgba(0,0,0,.17));}
+  100% {transform:scale(1);filter:drop-shadow(0 3px 2px rgba(0,0,0,.17));}
+}
+body.tish-paper .tish-circle-add.paper-cart-confirm::before,
+body.tish-paper .tish-circle-add.paper-cart-confirm::after {
+  content:"";
+  position:absolute;
+  top:39%;
+  width:10px;
+  height:3px;
+  background:var(--tish-circle-on-red);
+  border-radius:2px;
+  opacity:0;
+  pointer-events:none;
+  animation:paper-confirm-rays 320ms ease-out both;
+}
+body.tish-paper .tish-circle-add.paper-cart-confirm::before {left:1%;transform:rotate(-18deg);}
+body.tish-paper .tish-circle-add.paper-cart-confirm::after {right:1%;transform:rotate(18deg);}
+@keyframes paper-confirm-rays {0%,30%,100%{opacity:0;}45%,70%{opacity:1;}}
+body.tish-paper .tish-circle-favorite.paper-heart-pop {animation:paper-heart-pop 280ms ease-out both;}
+body.tish-paper .tish-circle-favorite.paper-heart-out {animation:paper-heart-out 280ms ease-out both;}
+@keyframes paper-heart-pop {
+  0%{transform:scale(1);}30%{transform:scale(.9);}64%{transform:scale(1.12);}100%{transform:scale(1);}
+}
+@keyframes paper-heart-out {0%{transform:scale(1);}45%{transform:scale(.91);}100%{transform:scale(1);}}
+@media(hover:hover) and (pointer:fine){
+  body.tish-paper .tish-circle-card.paper-motion-done {
+    transition:transform var(--paper-hover-duration) ease-out,filter var(--paper-hover-duration) ease-out;
+  }
+  body.tish-paper .tish-circle-card.paper-motion-done:hover {
+    transform:translateY(var(--paper-hover-lift));
+    filter:drop-shadow(0 8px 7px rgba(44,28,21,.13));
+  }
+}
+/* Sliding red paper selection, positioned by JS only when category chosen. */
+body.tish-paper.paper-motion-enabled #categories.paper-category-motion {position:relative!important;isolation:isolate;}
+body.tish-paper.paper-motion-enabled #categories.paper-category-motion .cat {position:relative;z-index:2;}
+body.tish-paper.paper-motion-enabled #categories.paper-category-motion .cat.active {
+  background-image:none!important;
+  background-color:transparent!important;
+  border-color:transparent!important;
+}
+body.tish-paper.paper-motion-enabled #categories.paper-category-motion .cat.active b,
+body.tish-paper.paper-motion-enabled #categories.paper-category-motion .cat.active {color:var(--on-primary,#fff)!important;}
+body.tish-paper.paper-motion-enabled #categories .paper-category-indicator {
+  position:absolute;
+  top:0;
+  left:0;
+  height:50px;
+  width:80px;
+  z-index:1;
+  pointer-events:none;
+  background-color:var(--tish-card-primary,var(--primary));
+  background-image:url('../../tish-paper/paper/background.webp');
+  background-size:320px auto;
+  background-blend-mode:multiply;
+  -webkit-mask:url('../../tish-paper/paper/category-red.webp') center/100% 100% no-repeat;
+  mask:url('../../tish-paper/paper/category-red.webp') center/100% 100% no-repeat;
+  transform:translateX(var(--paper-category-left,0px));
+  transition:transform 250ms ease,width 250ms ease,height 250ms ease,top 250ms ease;
+}
+@media(prefers-reduced-motion:reduce){
+  body.tish-paper .tish-circle-card.paper-motion-pending {opacity:1!important;}
+  body.tish-paper .tish-circle-card,
+  body.tish-paper .tish-circle-card *,
+  body.tish-paper .paper-category-indicator {
+    animation:none!important;
+    transition:none!important;
+  }
+  body.tish-paper .tish-circle-card.paper-motion-done:hover {transform:none!important;filter:none!important;}
+}

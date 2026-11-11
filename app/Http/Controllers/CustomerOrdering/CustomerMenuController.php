@@ -46,6 +46,29 @@ class CustomerMenuController extends Controller
     }
 
     /**
+     * Popular products in THIS branch only. Excludes draft/cancelled orders.
+     * Returned ids control the red badge, not price or availability.
+     *
+     * @return Collection<int,int>
+     */
+    private function popularProductIdsFor(Location $location, int $limit): Collection
+    {
+        return OrderItem::query()
+            ->whereNotNull('product_id')
+            ->whereHas('order', fn ($query) => $query
+                ->where('location_id', (int) $location->id)
+                ->whereNotIn('status', ['draft', 'cancelled']))
+            ->select('product_id')
+            ->selectRaw('SUM(quantity) as units_sold')
+            ->groupBy('product_id')
+            ->orderByDesc('units_sold')
+            ->limit(max(1, min(12, $limit)))
+            ->pluck('product_id')
+            ->map(fn ($id): int => (int) $id)
+            ->values();
+    }
+
+    /**
      * The main scroll-story menu page: hero, categories, popular combos,
      * promo strip. Cart / checkout / product details / favorites now link
      * out to their own dedicated pages below instead of living only inside
@@ -59,21 +82,7 @@ class CustomerMenuController extends Controller
         $menuItems = $this->menuItemsFor($location);
         $theme = $this->theme();
 
-        // Rank the reference design's "most ordered" cards from real sales
-        // at this branch. New catalogs gracefully fall back to menu sort order.
-        $popularProductIds = OrderItem::query()
-            ->whereNotNull('product_id')
-            ->whereHas('order', fn ($query) => $query
-                ->where('location_id', (int) $location->id)
-                ->whereNotIn('status', ['draft', 'cancelled']))
-            ->select('product_id')
-            ->selectRaw('SUM(quantity) as units_sold')
-            ->groupBy('product_id')
-            ->orderByDesc('units_sold')
-            ->limit((int) ($theme['featured_limit'] ?? 4))
-            ->pluck('product_id')
-            ->map(fn ($id): int => (int) $id)
-            ->values();
+        $popularProductIds = $this->popularProductIdsFor($location, (int) ($theme['featured_limit'] ?? 4));
 
         return view('customer-menu.show', [
             'location' => $location,
@@ -98,12 +107,15 @@ class CustomerMenuController extends Controller
     {
         $this->assertMenuAvailable($location);
 
+        $theme = $this->theme();
+
         return view('customer-menu.products', [
             'location' => $location,
             'menuItems' => $this->menuItemsFor($location),
+            'popularProductIds' => $this->popularProductIdsFor($location, (int) ($theme['featured_limit'] ?? 4)),
             'categories' => $this->categoriesFor($location),
             'branding' => $this->branding($location),
-            'theme' => $this->theme(),
+            'theme' => $theme,
             'initialCategory' => (string) $request->query('category', 'all'),
             'initialSearch' => (string) $request->query('q', ''),
         ]);
@@ -363,9 +375,12 @@ class CustomerMenuController extends Controller
             'logo_src' => $brandLogo,
         ], fn ($value) => filled($value));
 
-        return view('finance.invoices.print', [
+        // The public QR-menu invoice has its own TISH paper-collage view.
+        // Finance/admin invoices continue using finance.invoices.print.
+        return view('customer-menu.invoice', [
             'order' => $order,
             'invoice' => $invoice,
+            'branding' => $branding,
             'printThemeOverrides' => $printThemeOverrides,
         ]);
     }

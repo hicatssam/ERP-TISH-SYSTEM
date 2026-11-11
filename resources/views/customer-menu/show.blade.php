@@ -8,7 +8,14 @@
 @if(!empty($branding['favicon']))<link rel="icon" href="{{ $branding['favicon'] }}">@endif
 @include('customer-menu.partials.styles')
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/floating-showcase.css') }}?v=2">
-<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/dome-cards-preview.css') }}?v=5">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-menu-reference-v3.css') }}?v=3">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-menu-card-fix-v4.css') }}?v=4">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-menu-circle-v5.css') }}?v=5">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-featured-showcase-v6.css') }}?v=6">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-product-circle-card-v8.css') }}?v=9">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-product-layout-v10.css') }}?v=11">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-motion-v10.css') }}?v=11">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-polish-v13.css') }}?v=13">
 @include('customer-menu.partials.pwa-head')
 <script src="{{ asset('assets/js/customer-menu/branch-entry.js') }}?v=1"
         data-branch-code="{{ $location->code }}"
@@ -228,7 +235,7 @@ html.cm-skip-menu-intro #intro{display:none!important}
 })();
 </script>
 </head>
-<body class="crisp-customer-menu reference-home">
+<body class="crisp-customer-menu reference-home tish-paper">
 @php
  $floatingBrandingEnabled = true;
 @endphp
@@ -278,6 +285,65 @@ html.cm-skip-menu-intro #intro{display:none!important}
     </div>
    </div>
   </header>
+
+
+  {{-- Paper collage: independent art layers, existing branch logo/settings remain live. --}}
+  {{-- Campaign banners stay at the TOP of the menu, supplied by ERP settings. --}}
+  @if(($theme['show_hero'] ?? true) && ($banners->isNotEmpty() || $coverImage))
+  <div class="tish-paper-banner-frame">
+   <section class="reference-hero tish-paper-top-ads" aria-label="إعلانات المنيو">
+   @if($banners->isNotEmpty())
+    <div class="banner-track" id="bannerTrack">
+     @foreach($banners as $banner)
+      @if($banner['link_url'])
+       <a href="{{ $banner['link_url'] }}" class="banner-slide"
+          @unless(str_starts_with($banner['link_url'], '#')) target="_blank" rel="noopener" @endunless>
+      @else
+       <article class="banner-slide">
+      @endif
+        <img src="{{ $banner['image'] }}" alt="{{ $banner['title'] ?: 'إعلان من ' . $branding['name'] }}" loading="eager">
+        @if($banner['title'] || $banner['subtitle'] || $banner['badge_text'] || $banner['cta_text'])
+        <div class="banner-copy">
+         @if($banner['badge_text'])<span class="tag">{{ $banner['badge_text'] }}</span>@endif
+         @if($banner['title'])<h2>{{ $banner['title'] }}</h2>@endif
+         @if($banner['subtitle'])<p>{{ $banner['subtitle'] }}</p>@endif
+         @if($banner['cta_text'])<span class="banner-cta">{{ $banner['cta_text'] }} <i class="fa-solid fa-arrow-left"></i></span>@endif
+        </div>
+        @endif
+      @if($banner['link_url'])
+       </a>
+      @else
+       </article>
+      @endif
+     @endforeach
+    </div>
+    @if($banners->count() > 1)
+     <div class="banner-dots" id="bannerDots">
+      @foreach($banners as $index => $banner)
+       <button type="button" class="{{ $index === 0 ? 'active' : '' }}" data-banner-dot="{{ $index }}" aria-label="{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Slide ' . ($index + 1) : 'العرض ' . ($index + 1) }}"></button>
+      @endforeach
+     </div>
+    @endif
+   @else
+    <article class="reference-hero-fallback tish-paper-cover-banner" @if($coverImage) style="background-image:linear-gradient(90deg,rgba(8,4,5,.12),rgba(8,4,5,.78)),url('{{ $coverImage }}')" @endif>
+     <div class="banner-copy">
+      <span class="tag">اختيارات اليوم</span>
+      <h2>{{ $branding['tagline'] ?: 'مذاق استثنائي' }}</h2>
+      <p>اختار صنفك المفضل واطلبه مباشرة من المنيو.</p>
+      <span class="banner-cta" data-scroll-menu>اطلب الآن <i class="fa-solid fa-arrow-left"></i></span>
+     </div>
+    </article>
+   @endif
+  </section>
+  </div>
+  @else
+  <div class="tish-paper-brand-hero" aria-label="Tish — Hear it, Feel it">
+    <img class="paper-booth" src="{{ asset('assets/tish-paper/brand/telephone.webp') }}" alt="" loading="eager">
+    <img class="paper-claim" src="{{ asset('assets/tish-paper/brand/slogan.svg') }}" alt="Hear it, Feel it!" loading="eager">
+    <img class="paper-stamp" src="{{ asset('assets/tish-paper/brand/logo-disc.webp') }}" alt="Tish" loading="eager">
+  </div>
+
+  @endif
 
   @if($showSearch)
   <div class="tools">
@@ -333,50 +399,8 @@ html.cm-skip-menu-intro #intro{display:none!important}
   </section>
   @endif
 
-  @if(($theme['show_hero'] ?? true) && ($banners->isNotEmpty() || $coverImage))
-  <section class="reference-hero" aria-label="العروض الحالية">
-   @if($banners->isNotEmpty())
-    <div class="banner-track" id="bannerTrack">
-     @foreach($banners as $banner)
-      @if($banner['link_url'])
-       <a href="{{ $banner['link_url'] }}" class="banner-slide"
-          @unless(str_starts_with($banner['link_url'], '#')) target="_blank" rel="noopener" @endunless>
-      @else
-       <article class="banner-slide">
-      @endif
-        <img src="{{ $banner['image'] }}" alt="{{ $banner['title'] ?: ((\App\Support\CustomerMenuLanguage::isEnglish() ? 'Offer from ' : 'عرض من ') . $branding['name']) }}">
-        <div class="banner-copy">
-         @if($banner['badge_text'])<span class="tag">{{ $banner['badge_text'] }}</span>@endif
-         <h2>{{ $banner['title'] ?: 'مذاق يستحق أن تعود إليه' }}</h2>
-         @if($banner['subtitle'])<p>{{ $banner['subtitle'] }}</p>@endif
-         <span class="banner-cta">{{ $banner['cta_text'] ?? (\App\Support\CustomerMenuLanguage::isEnglish() ? 'Order now' : 'اطلب الآن') }} <i class="fa-solid fa-arrow-left"></i></span>
-        </div>
-      @if($banner['link_url'])
-       </a>
-      @else
-       </article>
-      @endif
-     @endforeach
-    </div>
-    @if($banners->count() > 1)
-     <div class="banner-dots" id="bannerDots">
-      @foreach($banners as $index => $banner)
-       <button type="button" class="{{ $index === 0 ? 'active' : '' }}" data-banner-dot="{{ $index }}" aria-label="{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Slide ' . ($index + 1) : 'العرض ' . ($index + 1) }}"></button>
-      @endforeach
-     </div>
-    @endif
-   @else
-    <article class="reference-hero-fallback" @if($coverImage) style="background-image:linear-gradient(90deg,rgba(8,4,5,.12),rgba(8,4,5,.78)),url('{{ $coverImage }}')" @endif>
-     <div class="banner-copy">
-      <span class="tag">اختيارات اليوم</span>
-      <h2>{{ $branding['tagline'] ?: 'مذاق استثنائي' }}</h2>
-      <p>اختار صنفك المفضل واطلبه مباشرة من المنيو.</p>
-      <span class="banner-cta" data-scroll-menu>اطلب الآن <i class="fa-solid fa-arrow-left"></i></span>
-     </div>
-    </article>
-   @endif
-  </section>
-  @endif
+
+  {{-- Static image decoration; destination uses the REAL Laravel products route. --}}
 
 
   @if($showFeatured)
@@ -418,6 +442,8 @@ html.cm-skip-menu-intro #intro{display:none!important}
 @include('customer-menu.partials.bottom-nav', ['activeNav' => 'home'])
 @include('customer-menu.partials.pwa-install')
 @include('customer-menu.partials.cart-engine')
+<script src="{{ asset('assets/js/customer-menu/tish-product-circle-card-v8.js') }}?v=8"></script>
+<script src="{{ asset('assets/js/customer-menu/tish-paper-motion-v10.js') }}?v=10"></script>
 <script src="{{ asset('assets/js/customer-menu/featured-carousel.js') }}?v=1"></script>
 
 <script>
@@ -428,6 +454,7 @@ html.cm-skip-menu-intro #intro{display:none!important}
     const productsUrl = @json(route('customer-menu.products', $location->code));
     const featuredLimit = @json($featuredLimit);
     const popularProductIds = @json($popularProductIds ?? []);
+    const popularSet = new Set(Array.from(popularProductIds).map(String));
     const showDescriptions = @json($showDescriptions);
     let activeCat = 'all';
 
@@ -435,30 +462,12 @@ html.cm-skip-menu-intro #intro{display:none!important}
         return productUrlBase.replace('__ID__', encodeURIComponent(id));
     }
 
-    function renderCard(product, featured) {
-        const description = showDescriptions && product.description
-            ? '<p class="product-desc">' + CM.esc(product.description) + '</p>'
-            : '<p class="product-desc">' + CM.esc(product.category_name || 'محضّر بعناية إلك') + '</p>';
-        const status = featured
-            ? '<span class="product-ribbon">الأكثر طلباً 🔥</span>'
-            : '<span class="product-status' + (product.available ? '' : ' is-unavailable') + '">' +
-                (product.available ? 'متوفر' : 'غير متوفر') +
-              '</span>';
-        const addLabel = product.available
-            ? (product.requiresChoices ? 'اختر الخيارات' : 'إضافة')
-            : 'غير متوفر';
-        const favoriteLabel = CM.isFavorite(product.id) ? 'إزالة من المفضلة' : 'إضافة للمفضلة';
-
-        return '<article class="product" data-id="' + CM.esc(product.id) + '">' +
-            '<a class="product-media" href="' + productUrl(product.id) + '" aria-label="' + CM.esc(menuF('عرض {name}', {name:product.name})) + '">' + CM.image(product) + '</a>' +
-            status +
-            '<button class="fav ' + (CM.isFavorite(product.id) ? 'active' : '') + '" type="button" data-fav="' + CM.esc(product.id) + '" aria-label="' + favoriteLabel + '"><i class="' + (CM.isFavorite(product.id) ? 'fa-solid' : 'fa-regular') + ' fa-heart"></i></button>' +
-            '<div class="product-body">' +
-                '<a class="product-copy" href="' + productUrl(product.id) + '"><h3>' + CM.esc(product.name) + '</h3>' + description + '</a>' +
-                '<div class="product-foot"><div class="product-price-row"><span class="price">' + CM.money(product.price) + '</span></div>' +
-                '<button class="details" type="button" data-add="' + CM.esc(product.id) + '"' + (product.available ? '' : ' disabled') + '><i class="fa-solid fa-plus"></i><span>' + addLabel + '</span></button></div>' +
-            '</div>' +
-        '</article>';
+    // Shared ProductCircleCard for homepage catalog and popular carousel.
+    function renderCard(product) {
+        return window.TishProductCircleCard.render(product, {
+            productUrl: productUrl,
+            isPopular: popularSet.has(String(product.id)),
+        });
     }
 
     function filteredProducts() {
@@ -473,22 +482,9 @@ html.cm-skip-menu-intro #intro{display:none!important}
     }
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    let revealObserver = null;
     function animateVisibleCards() {
-        if (revealObserver) revealObserver.disconnect();
-        const cards = document.querySelectorAll('.reference-home .catalog-section .product');
-        if (reducedMotion.matches || !('IntersectionObserver' in window)) return;
-        revealObserver = new IntersectionObserver(function (entries) {
-            entries.forEach(function (entry) {
-                if (!entry.isIntersecting) return;
-                entry.target.classList.add('cm-reveal');
-                revealObserver.unobserve(entry.target);
-            });
-        }, { threshold: 0.08, rootMargin: '0px 0px 70px 0px' });
-        cards.forEach(function (card, index) {
-            card.style.setProperty('--cm-delay', Math.min(index % 6, 5) * 55 + 'ms');
-            revealObserver.observe(card);
-        });
+        window.TishPaperMotion?.observe(document.getElementById('featuredGrid'));
+        window.TishPaperMotion?.observe(document.getElementById('productGrid'));
     }
 
     function render() {
@@ -510,7 +506,7 @@ html.cm-skip-menu-intro #intro{display:none!important}
             featuredGrid.innerHTML = featured.length
                 ? featured.map(function (product) {
                     return '<div class="cm-showcase-slide" data-showcase-slide data-offset="outside">' +
-                        renderCard(product, true) + '</div>';
+                        renderCard(product) + '</div>';
                 }).join('')
                 : '<div class="cm-featured-empty">لا توجد أصناف مميزة متاحة حالياً.</div>';
         }
@@ -534,7 +530,7 @@ html.cm-skip-menu-intro #intro{display:none!important}
         if (favorite) {
             event.preventDefault();
             CM.toggleFavorite(favorite.dataset.fav);
-            render();
+            window.TishPaperMotion?.syncFavorites(favorite.dataset.fav, CM.isFavorite(favorite.dataset.fav));
             return;
         }
 
@@ -542,12 +538,8 @@ html.cm-skip-menu-intro #intro{display:none!important}
         if (add) {
             event.preventDefault();
             const product = CM.product(add.dataset.add);
-            if (!product || !product.available) return;
-            if (product.requiresChoices) {
-                window.location.href = productUrl(product.id);
-                return;
-            }
-            CM.addToCart(product.id, 1);
+            if (!product || !product.available || add.disabled) return;
+            window.TishProductCircleCard.addFromButton(add, product, productUrl(product.id));
             return;
         }
 
@@ -573,6 +565,7 @@ html.cm-skip-menu-intro #intro{display:none!important}
             item.classList.toggle('active', item === button);
         });
         render();
+        window.TishPaperMotion?.categories(document.getElementById('categories'), button);
         document.getElementById('menuCatalog').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
@@ -659,6 +652,7 @@ html.cm-skip-menu-intro #intro{display:none!important}
     }
 
     render();
+    window.TishPaperMotion?.categories(document.getElementById('categories'));
 })();
 </script>
 </body>

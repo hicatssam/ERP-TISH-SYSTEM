@@ -21,6 +21,7 @@ window.CustomerMenu = (function () {
         name: x.name ?? '',
         description: x.description ?? '',
         image: x.image ?? '',
+        cutoutImage: x.cutout_image ?? '',
         category: String(x.category_id ?? x.category?.id ?? 'uncategorized'),
         category_name: x.category ?? '',
         price: Number(x.price ?? 0),
@@ -133,7 +134,8 @@ window.CustomerMenu = (function () {
                     name: [p.name, variant?.name].filter(Boolean).join(' - '),
                     price,
                     quantity: 0,
-                    image: p.image || '',
+                    image: p.cutoutImage || p.image || '',
+                    original_image: p.image || '',
                     prep_time_minutes: p.prepTimeMinutes ?? null,
                 };
             }
@@ -167,8 +169,12 @@ window.CustomerMenu = (function () {
 
     function image(p, cls = '') {
         const initial = esc((p.name || 'د').slice(0, 1));
-        return p.image
-            ? `<img class="${cls}" src="${esc(p.image)}" alt="${esc(p.name)}" onerror="this.outerHTML='<div class=&quot;product-placeholder&quot;>${initial}</div>'">`
+        const picture = p.cutoutImage || p.image;
+        const isCutout = !!p.cutoutImage;
+        const photoClass = isCutout ? 'tish-photo-cutout' : 'tish-photo-source';
+        const fallback = isCutout && p.image ? esc(p.image) : '';
+        return picture
+            ? `<img class="${esc(cls)} ${photoClass}" src="${esc(picture)}" data-fallback="${fallback}" alt="${esc(p.name)}" loading="lazy" decoding="async" onerror="if(this.dataset.fallback){const old=this.dataset.fallback;this.dataset.fallback='';this.classList.remove('tish-photo-cutout');this.classList.add('tish-photo-source');this.src=old;}else{this.outerHTML='<div class=&quot;product-placeholder&quot;>${initial}</div>';}">`
             : `<div class="product-placeholder">${initial}</div>`;
     }
 
@@ -257,7 +263,8 @@ window.CustomerMenu = (function () {
                 name: displayName,
                 price: unitPrice,
                 quantity: 0,
-                image: p.image || '',
+                image: p.cutoutImage || p.image || '',
+                original_image: p.image || '',
                 prep_time_minutes: p.prepTimeMinutes ?? null,
             };
         }

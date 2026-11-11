@@ -8,7 +8,12 @@
 <title>المنيو - {{ $branding['name'] ?? config('app.name') }}</title>
 @if(!empty($branding['favicon']))<link rel="icon" href="{{ $branding['favicon'] }}">@endif
 @include('customer-menu.partials.styles')
-<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/dome-cards-preview.css') }}?v=5">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-menu-reference-v3.css') }}?v=3">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-menu-card-fix-v4.css') }}?v=4">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-menu-circle-v5.css') }}?v=5">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-product-circle-card-v8.css') }}?v=9">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-product-layout-v10.css') }}?v=11">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-motion-v10.css') }}?v=11">
 @include('customer-menu.partials.pwa-head')
 <style>
 @keyframes dahabMenuCardIn {from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
@@ -19,13 +24,29 @@
 @media(prefers-reduced-motion:reduce){.crisp-customer-menu .product.cm-card-motion{animation:none!important}.crisp-customer-menu .cat{transition:none!important}}
 </style>
 </head>
-<body class="crisp-customer-menu">
+<body class="crisp-customer-menu tish-paper tish-paper-products">
 @include('customer-menu.partials.brand-watermark')
 <div class="app crisp-menu-app">
 @include('customer-menu.partials.topbar', ['pageTitle' => 'المنيو الكامل', 'pageSubtitle' => $location->name])
 
 <main class="menu-area" id="menu">
  <div class="shell">
+  <div class="tish-paper-products-header">
+   <div class="tish-paper-products-hero-row">
+    <div class="tish-paper-products-brand">
+     <img src="{{ asset('assets/tish-paper/brand/telephone.webp') }}" alt="" class="tish-paper-products-booth">
+     <div class="tish-paper-products-brandline">
+      <img src="{{ asset('assets/tish-paper/brand/slogan.svg') }}" alt="Hear it, Feel it!" class="tish-paper-products-slogan">
+      <button type="button" class="tish-paper-products-pin" id="tishPaperPin" aria-label="ثبّت المنيو"><i class="fa-solid fa-thumbtack" aria-hidden="true"></i> ثبّت المنيو</button>
+     </div>
+    </div>
+    <img src="{{ asset('assets/tish-paper/brand/logo-disc.webp') }}" alt="{{ $branding['name'] ?? 'Tish' }}" class="tish-paper-products-logo">
+   </div>
+   <div class="tish-paper-products-title">
+    <img src="{{ asset('assets/tish-paper/decor/lightning.svg') }}" alt="" aria-hidden="true">
+    <h1>كل الأصناف</h1>
+   </div>
+  </div>
   <div class="tools">
    <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input id="searchInput" type="search" placeholder="{{ \App\Support\CustomerMenuCopy::searchPlaceholder() }}" autocomplete="off" value="{{ $initialSearch }}"></div>
    <button class="filter-square" type="button" id="openFilters" aria-label="تصفية الأصناف"><i class="fa-solid fa-sliders"></i></button>
@@ -41,7 +62,7 @@
    @endforeach
   </div>
 
-  <div class="section-title"><div><h2>كل الأصناف</h2></div><small id="resultCount" style="color:var(--muted);font-size:.8rem"></small></div>
+  <div class="section-title"><div><h2>اختر صنفك المفضل</h2></div><small id="resultCount" style="color:var(--muted);font-size:.8rem"></small></div>
   <div class="grid" id="productGrid"></div>
  </div>
 </main>
@@ -81,11 +102,14 @@
 @include('customer-menu.partials.bottom-nav', ['activeNav' => 'menu'])
 @include('customer-menu.partials.pwa-install')
 @include('customer-menu.partials.cart-engine')
+<script src="{{ asset('assets/js/customer-menu/tish-product-circle-card-v8.js') }}?v=8"></script>
+<script src="{{ asset('assets/js/customer-menu/tish-paper-motion-v10.js') }}?v=10"></script>
 
 <script>
 const CM = window.CustomerMenu;
 const menuF = (key, values) => window.CustomerMenuI18n.format(key, values);
 const PRODUCT_URL_BASE = @json(route('customer-menu.product.show', [$location->code, '__ID__']));
+const popularSet = new Set(Array.from(@json($popularProductIds ?? [])).map(String));
 function productUrl(id) { return PRODUCT_URL_BASE.replace('__ID__', encodeURIComponent(id)); }
 
 let activeCat = @json($initialCategory ?: 'all');
@@ -93,25 +117,10 @@ let priceRange = 'all';
 let sortMode = 'default';
 
 function renderCard(p) {
-    const description = p.description || p.category_name || 'محضّر بعناية إلك';
-    const favoriteLabel = CM.isFavorite(p.id) ? 'إزالة من المفضلة' : 'إضافة للمفضلة';
-    const addLabel = !p.available ? 'غير متوفر' : (p.requiresChoices ? 'اختر الخيارات' : 'إضافة');
-
-    return `<article class="product" data-id="${CM.esc(p.id)}">
-      <a class="product-media" href="${productUrl(p.id)}" aria-label="${CM.esc(menuF('عرض {name}', {name:p.name}))}">${CM.image(p)}</a>
-      <span class="product-status${p.available ? '' : ' is-unavailable'}">${p.available ? 'متوفر' : 'غير متوفر'}</span>
-      <button class="fav ${CM.isFavorite(p.id) ? 'active' : ''}" type="button" data-fav="${CM.esc(p.id)}" aria-label="${favoriteLabel}"><i class="${CM.isFavorite(p.id) ? 'fa-solid' : 'fa-regular'} fa-heart"></i></button>
-      <div class="product-body">
-        <a class="product-copy" href="${productUrl(p.id)}">
-          <h3>${CM.esc(p.name)}</h3>
-          <p class="product-desc">${CM.esc(description)}</p>
-        </a>
-        <div class="product-foot">
-          <div class="product-price-row"><span class="price">${CM.money(p.price)}</span></div>
-          <button class="details" type="button" data-add="${CM.esc(p.id)}"${p.available ? '' : ' disabled'}><i class="fa-solid fa-plus"></i><span>${addLabel}</span></button>
-        </div>
-      </div>
-    </article>`;
+    return window.TishProductCircleCard.render(p, {
+        productUrl: productUrl,
+        isPopular: popularSet.has(String(p.id)),
+    });
 }
 
 function priceMatches(price) {
@@ -120,23 +129,8 @@ function priceMatches(price) {
     return price >= min && price <= max;
 }
 
-const menuMotionReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-let productMotionObserver;
 function revealMenuCards() {
-    if (productMotionObserver) productMotionObserver.disconnect();
-    if (menuMotionReduced || !('IntersectionObserver' in window)) return;
-    productMotionObserver = new IntersectionObserver(entries => {
-        for (const entry of entries) {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('cm-card-motion');
-                productMotionObserver.unobserve(entry.target);
-            }
-        }
-    }, {threshold: .08, rootMargin: '0px 0px 70px 0px'});
-    document.querySelectorAll('#productGrid .product').forEach((card, i) => {
-        card.style.setProperty('--cm-delay', (i % 6) * 50 + 'ms');
-        productMotionObserver.observe(card);
-    });
+    window.TishPaperMotion?.observe(document.getElementById('productGrid'));
 }
 
 function renderProducts() {
@@ -150,7 +144,7 @@ function renderProducts() {
     if (sortMode === 'price_asc') rows = rows.slice().sort((a, b) => a.price - b.price);
     if (sortMode === 'price_desc') rows = rows.slice().sort((a, b) => b.price - a.price);
 
-    document.getElementById('resultCount').textContent = rows.length + ' صنف';
+    document.getElementById('resultCount').textContent = menuF('عدد {count} أصناف', {count: rows.length});
     document.getElementById('productGrid').innerHTML = rows.length
         ? rows.map(renderCard).join('')
         : `<div class="empty">لا توجد أصناف مطابقة.</div>`;
@@ -161,15 +155,19 @@ function renderProducts() {
 
 document.addEventListener('click', e => {
     const fav = e.target.closest('[data-fav]');
-    if (fav) { e.preventDefault(); e.stopPropagation(); CM.toggleFavorite(fav.dataset.fav); renderProducts(); return; }
+    if (fav) {
+        e.preventDefault(); e.stopPropagation();
+        CM.toggleFavorite(fav.dataset.fav);
+        window.TishPaperMotion?.syncFavorites(fav.dataset.fav, CM.isFavorite(fav.dataset.fav));
+        return;
+    }
 
     const add = e.target.closest('[data-add]');
     if (add) {
         e.preventDefault(); e.stopPropagation();
         const p = CM.product(add.dataset.add);
-        if (!p || !p.available) return;
-        if (p && p.requiresChoices) { window.location.href = productUrl(p.id); return; }
-        CM.addToCart(add.dataset.add, 1);
+        if (!p || !p.available || add.disabled) return;
+        window.TishProductCircleCard.addFromButton(add, p, productUrl(p.id));
         return;
     }
 });
@@ -180,6 +178,7 @@ document.getElementById('categories').addEventListener('click', e => {
     activeCat = btn.dataset.cat;
     document.querySelectorAll('.cat').forEach(x => x.classList.toggle('active', x === btn));
     renderProducts();
+    window.TishPaperMotion?.categories(document.getElementById('categories'), btn);
 });
 
 document.getElementById('searchInput').addEventListener('input', renderProducts);
@@ -209,6 +208,8 @@ document.getElementById('resetFilters').addEventListener('click', () => {
 });
 
 renderProducts();
+window.TishPaperMotion?.categories(document.getElementById('categories'));
+document.getElementById('tishPaperPin')?.addEventListener('click', () => document.getElementById('pwaInstallBtn')?.click());
 </script>
 </body>
 </html>

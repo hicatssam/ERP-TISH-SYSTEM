@@ -10,9 +10,9 @@
 </a>
 @endif
 <nav class="bottom-nav" aria-label="التنقل">
- <a class="nav-btn {{ $activeNav === 'home' ? 'active' : '' }}" href="{{ route('customer-menu.show', $location->code) }}"><i class="fa-solid fa-house"></i><span>الرئيسية</span></a>
- <a class="nav-btn {{ $activeNav === 'menu' ? 'active' : '' }}" href="{{ route('customer-menu.products', $location->code) }}"><i class="fa-solid fa-utensils"></i><span>المنيو</span></a>
- <a class="nav-btn {{ $activeNav === 'cart' ? 'active' : '' }}" href="{{ route('customer-menu.cart', $location->code) }}"><i class="fa-solid fa-bag-shopping"></i><span>السلة</span><b class="nav-badge" id="cartBadgeNav">0</b></a>
- <a class="nav-btn {{ $activeNav === 'favorites' ? 'active' : '' }}" href="{{ route('customer-menu.favorites', $location->code) }}"><i class="fa-regular fa-heart"></i><span>المفضلة</span><b class="nav-badge" id="favBadgeNav">0</b></a>
- <a class="nav-btn {{ $activeNav === 'orders' ? 'active' : '' }}" href="{{ route('customer-menu.my-orders', $location->code) }}"><i class="fa-solid fa-receipt"></i><span>طلباتي</span></a>
+ <a class="nav-btn {{ $activeNav === 'home' ? 'active' : '' }}" href="{{ route('customer-menu.show', $location->code) }}"><i class="fa-solid fa-house"></i><img class="tish-paper-nav-icon" src="{{ asset('assets/tish-paper/icons/home.svg') }}" alt="" aria-hidden="true"><span>الرئيسية</span></a>
+ <a class="nav-btn {{ $activeNav === 'menu' ? 'active' : '' }}" href="{{ route('customer-menu.products', $location->code) }}"><i class="fa-solid fa-utensils"></i><img class="tish-paper-nav-icon" src="{{ asset('assets/tish-paper/icons/menu.svg') }}" alt="" aria-hidden="true"><span>المنيو</span></a>
+ <a class="nav-btn tish-paper-cart-nav {{ $activeNav === 'cart' ? 'active' : '' }}" href="{{ route('customer-menu.cart', $location->code) }}" aria-label="السلة"><i class="fa-solid fa-bag-shopping" aria-hidden="true"></i><span class="tish-paper-cart-icon-disc" aria-hidden="true"><span class="tish-paper-cart-glyph"></span></span><img class="tish-paper-nav-icon" src="{{ asset('assets/tish-paper/icons/cart.svg') }}" alt="" aria-hidden="true"><span>السلة</span><b class="nav-badge" id="cartBadgeNav">0</b></a>
+ <a class="nav-btn {{ $activeNav === 'favorites' ? 'active' : '' }}" href="{{ route('customer-menu.favorites', $location->code) }}"><i class="fa-regular fa-heart"></i><img class="tish-paper-nav-icon" src="{{ asset('assets/tish-paper/icons/favorites.svg') }}" alt="" aria-hidden="true"><span>المفضلة</span><b class="nav-badge" id="favBadgeNav">0</b></a>
+ <a class="nav-btn {{ $activeNav === 'orders' ? 'active' : '' }}" href="{{ route('customer-menu.my-orders', $location->code) }}"><i class="fa-solid fa-receipt"></i><img class="tish-paper-nav-icon" src="{{ asset('assets/tish-paper/icons/orders.svg') }}" alt="" aria-hidden="true"><span>طلباتي</span></a>
 </nav>

@@ -89,7 +89,6 @@ class PwaController extends Controller
 
         $themeColor = $this->validColor(SystemSetting::get('customer_menu_primary'), '#C40035');
         $backgroundColor = $this->validColor(SystemSetting::get('customer_menu_background'), '#F7F2E8');
-        $version = $this->brandVersion();
         $scope = '/menu';
 
         return response()->json([
@@ -105,18 +104,27 @@ class PwaController extends Controller
             'orientation' => 'portrait',
             'theme_color' => $themeColor,
             'background_color' => $backgroundColor,
+            // Keep the public TISH menu icon independent from the ERP staff logo.
+            // Use the complete original round paper badge. Separate "any" and
+            // "maskable" files avoid Android cropping the torn paper edge.
             'icons' => [
                 [
-                    'src' => route('pwa.icon', ['size' => 192, 'v' => $version], false),
+                    'src' => '/assets/tish-paper/pwa/icon-192.png?v=paper-20261111-2',
                     'sizes' => '192x192',
                     'type' => 'image/png',
                     'purpose' => 'any',
                 ],
                 [
-                    'src' => route('pwa.icon', ['size' => 512, 'v' => $version], false),
+                    'src' => '/assets/tish-paper/pwa/icon-512.png?v=paper-20261111-2',
                     'sizes' => '512x512',
                     'type' => 'image/png',
-                    'purpose' => 'any maskable',
+                    'purpose' => 'any',
+                ],
+                [
+                    'src' => '/assets/tish-paper/pwa/icon-maskable-512.png?v=paper-20261111-2',
+                    'sizes' => '512x512',
+                    'type' => 'image/png',
+                    'purpose' => 'maskable',
                 ],
             ],
         ], 200, [

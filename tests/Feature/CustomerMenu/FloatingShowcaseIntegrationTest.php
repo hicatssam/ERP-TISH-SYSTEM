@@ -35,8 +35,8 @@ class FloatingShowcaseIntegrationTest extends TestCase
         $this->assertStringContainsString('data-showcase-next', $home);
         $this->assertStringContainsString('id="featuredDots"', $home);
         $this->assertStringContainsString('data-showcase-slide', $home);
-        $this->assertStringContainsString('renderCard(product, true)', $home);
-        $this->assertStringContainsString('CM.addToCart', $home);
+        $this->assertStringContainsString("renderCard(product) + '</div>'", $home);
+        $this->assertStringContainsString('TishProductCircleCard.addFromButton', $home);
         $this->assertStringContainsString('CustomerMenuFeaturedCarousel?.refresh()', $home);
 
         $this->assertStringContainsString('touchstart', $script);

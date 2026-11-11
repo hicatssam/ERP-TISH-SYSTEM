@@ -24,6 +24,24 @@ class AppServiceProvider extends ServiceProvider
 {
        public function register(): void
 {
+    // Dedicated queue connection: the AI inference job can legitimately run
+    // longer than a normal notification without being picked twice.
+    if (config('menu_cutouts.enabled', false)) {
+        $databaseQueue = (array) config('queue.connections.database', []);
+        config([
+            'queue.connections.menu_cutouts' => array_replace([
+                'driver' => 'database',
+                'connection' => null,
+                'table' => 'jobs',
+            ], $databaseQueue, [
+                'driver' => 'database',
+                'queue' => 'menu-cutouts',
+                'retry_after' => max(600, (int) config('menu_cutouts.timeout', 360) + 120),
+                'after_commit' => true,
+            ]),
+        ]);
+    }
+
     $this->app->singleton(RestaurantContextService::class, function ($app) {
         return new RestaurantContextService();
     });
@@ -71,6 +89,28 @@ class AppServiceProvider extends ServiceProvider
         CarbonImmutable::setLocale('ar');
 
         Schema::defaultStringLength(191);
+
+        // Process only new/replaced product images. A dedicated worker keeps
+        // rembg CPU work outside the HTTP request and preserves originals.
+        if (config('menu_cutouts.enabled', false)) {
+            foreach ([
+                \App\Models\Product::class,
+                \App\Models\RestaurantMenuItem::class,
+                \App\Models\ProductVariant::class,
+            ] as $imageModel) {
+                $imageModel::saved(static function ($model): void {
+                    if (! $model->wasChanged('image') || ! filled($model->image)) {
+                        return;
+                    }
+
+                    \App\Jobs\GenerateMenuCutout::dispatch((string) $model->image)
+                        ->onConnection((string) config('menu_cutouts.queue_connection', 'database'))
+                        ->onQueue('menu-cutouts')
+                        ->afterCommit();
+                });
+            }
+        }
+
         Gate::policy(ReportSchedule::class, ReportSchedulePolicy::class);
         Paginator::defaultView('pagination.custom');
 
