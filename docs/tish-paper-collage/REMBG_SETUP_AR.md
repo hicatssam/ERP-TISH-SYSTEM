@@ -16,7 +16,7 @@
 
 ### على Windows 11 / WAMP / PowerShell
 
-افتح PowerShell داخل مجلد المشروع (مثلاً C:\\wamp64\\www\\ERP-TISH-SYSTEM)، ثم افحص إصدارات Python المتاحة:
+افتح PowerShell داخل مجلد المشروع (مثلاً C:\wamp64\www\ERP-TISH-SYSTEM)، ثم افحص إصدارات Python المتاحة:
 
 ```powershell
 py -0p
@@ -32,12 +32,12 @@ winget install --id Python.Python.3.11 --exact
 
 ```powershell
 py -3.11 -m venv .venv-menu-cutouts
-& .\\.venv-menu-cutouts\\Scripts\\python.exe -m pip install --upgrade pip
-& .\\.venv-menu-cutouts\\Scripts\\python.exe -m pip install -r scripts\\requirements-menu-cutouts.txt
-& .\\.venv-menu-cutouts\\Scripts\\python.exe -c "from rembg import new_session; new_session('u2net'); print('Model ready')"
+& .\.venv-menu-cutouts\Scripts\python.exe -m pip install --upgrade pip
+& .\.venv-menu-cutouts\Scripts\python.exe -m pip install -r scripts\requirements-menu-cutouts.txt
+& .\.venv-menu-cutouts\Scripts\python.exe -c "from rembg import new_session; new_session('u2net'); print('Model ready')"
 ```
 
-**مهم:** على Windows التنفيذ هو `.venv-menu-cutouts\\Scripts\\python.exe` وليس `.venv-menu-cutouts/bin/python`. الإعداد الافتراضي الجديد في `config/menu_cutouts.php` يكتشف Windows تلقائيًا، لذلك لا تحتاج إلى ضبط `TISH_CUTOUTS_PYTHON` عند استخدام نفس مسار المشروع.
+**مهم:** على Windows التنفيذ هو `.venv-menu-cutouts\Scripts\python.exe` وليس `.venv-menu-cutouts/bin/python`. الإعداد الافتراضي الجديد في `config/menu_cutouts.php` يكتشف Windows تلقائيًا، لذلك لا تحتاج إلى ضبط `TISH_CUTOUTS_PYTHON` عند استخدام نفس مسار المشروع.
 
 أضف هذه القيم فقط إلى ملف `.env` (أو عدلها إن كانت موجودة):
 
