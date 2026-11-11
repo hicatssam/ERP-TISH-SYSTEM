@@ -92,7 +92,21 @@
 }
 .reference-home .shell{width:min({{ $contentWidth }}px,calc(100% - 30px))}
 .reference-home .menu-area{padding-bottom:112px}
+body.tish-paper.reference-home .reference-masthead .tish-paper-banner-frame:has(.banner-artwork-only){
+ padding:clamp(6px,1.35vw,16px)!important;
+}
+body.tish-paper.reference-home .reference-masthead .tish-paper-banner-frame .banner-artwork-only{
+ aspect-ratio:3 / 1;
+ min-height:0!important;
+ display:grid;
+ place-items:center;
+}
 body.tish-paper.reference-home .reference-masthead .tish-paper-banner-frame .banner-artwork-only img{
+ display:block;
+ width:100%;
+ height:auto;
+ max-height:100%;
+ aspect-ratio:3 / 1;
  object-fit:contain!important;
 }
 body.tish-paper.reference-home .reference-brand-copy h1{font-size:clamp(.9rem,3.5vw,1.25rem);line-height:1.35;margin:0}
