@@ -351,7 +351,7 @@ body.tish-paper #intro.tish-reel-intro{overflow:hidden;background:#f5e4cd;oversc
 
 @if($introMode !== 'off')
 <div id="intro" class="intro tish-reel-intro" role="dialog" aria-modal="true" aria-label="{{ $introTitle }}" data-mode="{{ $introMode }}">
- <video id="introReel" class="intro-reel" data-src="{{ asset('assets/tish-paper/intro/menu-reel.mp4') }}" preload="none" playsinline muted aria-hidden="true" hidden></video>
+ <video id="introReel" class="intro-reel" data-src="{{ asset('assets/tish-paper/intro/menu-reel.mp4') }}" preload="none" playsinline aria-hidden="true" hidden></video>
  <div class="intro-reel-tools" id="introReelTools" hidden>
   <button type="button" id="introSkip">{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Skip video' : 'تخطّي الفيديو' }}</button>
   <button type="button" id="introSound" aria-pressed="false" aria-label="{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Video sound' : 'صوت الفيديو' }}"><i class="fa-solid fa-volume-xmark" aria-hidden="true"></i></button>
@@ -742,6 +742,7 @@ body.tish-paper #intro.tish-reel-intro{overflow:hidden;background:#f5e4cd;oversc
                 if (mode === 'first_visit') localStorage.setItem(key, '1');
             } catch (error) { /* Storage may be disabled. */ }
             document.documentElement.classList.remove('cm-intro-open');
+            intro.querySelector('video')?.pause();
             intro.classList.add('hide');
             document.querySelector('main.menu-area')?.focus({preventScroll:true});
             window.setTimeout(() => intro.remove(), 500);
@@ -763,10 +764,11 @@ body.tish-paper #intro.tish-reel-intro{overflow:hidden;background:#f5e4cd;oversc
                 if (revealed) return;
                 revealed = true;
                 window.clearTimeout(timeout);
-                reel.pause();
+                if (!keepFrame) reel.pause();
                 reel.hidden = !keepFrame;
                 intro.classList.toggle('has-reel-frame', keepFrame);
-                tools.hidden = true;
+                skip.hidden = true;
+                tools.hidden = !keepFrame || reel.paused;
                 enter.hidden = false;
                 enter.focus({preventScroll:true});
             }
@@ -792,21 +794,35 @@ body.tish-paper #intro.tish-reel-intro{overflow:hidden;background:#f5e4cd;oversc
                 } else {
                     reel.addEventListener('timeupdate', () => checkOrderButtonCue(reel.currentTime));
                 }
-                reel.addEventListener('ended', () => revealOrderButton(true), {once:true});
+                reel.addEventListener('ended', () => {
+                    revealOrderButton(true);
+                    tools.hidden = true;
+                    if (document.activeElement === sound) enter.focus({preventScroll:true});
+                }, {once:true});
                 reel.addEventListener('error', () => revealOrderButton(), {once:true});
-                skip.addEventListener('click', () => revealOrderButton(reel.readyState >= 2));
-                sound.addEventListener('click', function () {
-                    reel.muted = !reel.muted;
-                    sound.setAttribute('aria-pressed', String(!reel.muted));
-                    sound.querySelector('i').className = reel.muted ? 'fa-solid fa-volume-xmark' : 'fa-solid fa-volume-high';
+                skip.addEventListener('click', () => {
+                    reel.pause();
+                    revealOrderButton(reel.readyState >= 2);
                 });
-                reel.muted = true;
+                function setReelSound(enabled) {
+                    reel.muted = !enabled;
+                    sound.setAttribute('aria-pressed', String(enabled));
+                    sound.querySelector('i').className = enabled ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark';
+                }
+
+                sound.addEventListener('click', () => setReelSound(reel.muted));
+                setReelSound(true);
                 reel.src = reel.dataset.src;
                 reel.hidden = false;
                 tools.hidden = false;
                 skip.focus({preventScroll:true});
                 timeout = window.setTimeout(() => revealOrderButton(), 16000);
-                reel.play().catch(() => revealOrderButton());
+                reel.play().catch(() => {
+                    if (revealed) return;
+                    // Some browsers only allow autoplay while muted.
+                    setReelSound(false);
+                    reel.play().catch(() => revealOrderButton());
+                });
             }
         }
     }
