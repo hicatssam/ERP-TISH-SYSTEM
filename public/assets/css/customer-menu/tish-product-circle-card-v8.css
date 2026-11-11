@@ -48,18 +48,12 @@ body.tish-paper .tish-circle-paper {
   inset:0;
   z-index:0;
   pointer-events:none;
-  /* Replace the nearly-black source edge with the customer's paper tone,
-     keeping its real torn transparency and underlying fibre texture. */
-  background-image:
-    linear-gradient(var(--tish-card-paper,#f5e4cd),var(--tish-card-paper,#f5e4cd)),
-    url('../../tish-paper/paper/product-disc.webp');
-  background-size:100% 100%,100% 100%;
-  background-position:center,center;
-  background-repeat:no-repeat,no-repeat;
-  background-blend-mode:lighten;
-  -webkit-mask:url('../../tish-paper/paper/product-disc.webp') center/100% 100% no-repeat;
-  mask:url('../../tish-paper/paper/product-disc.webp') center/100% 100% no-repeat;
-  filter:drop-shadow(0 4px 3px rgba(69,42,23,.18));
+  /* Render original warm textured paper. The old lighten blend was turning
+     the entire badge white and erasing the paper fibres. */
+  background:url('../../tish-paper/paper/product-disc.webp') center/100% 100% no-repeat;
+  -webkit-mask:none;
+  mask:none;
+  filter:brightness(1.035) contrast(.94) drop-shadow(0 4px 3px rgba(69,42,23,.18));
 }
 body.tish-paper .tish-circle-favorite {
   position:absolute;
@@ -132,10 +126,11 @@ body.tish-paper .tish-circle-badge--soldout {background:color-mix(in srgb,var(--
 body.tish-paper .tish-circle-image {
   position:absolute;
   z-index:2;
-  top:20%;
-  left:17%;
-  width:66%;
-  height:31%;
+  top:19%;
+  left:15%;
+  width:70%;
+  height:35%;
+  overflow:hidden;
   display:grid;
   place-items:center;
   background:transparent;
@@ -150,6 +145,7 @@ body.tish-paper .tish-circle-image .product-placeholder {
   height:100%;
   max-width:100%;
   max-height:100%;
+  min-height:0;
   object-fit:contain;
   object-position:center;
   padding:0;
@@ -172,15 +168,15 @@ body.tish-paper .tish-circle-image img.tish-photo-source {
 body.tish-paper .tish-circle-info {
   position:absolute;
   z-index:3;
-  top:52%;
+  top:56.5%;
   left:10%;
   width:80%;
-  height:17%;
+  height:18%;
   min-width:0;
   display:flex;
   flex-direction:column;
   align-items:center;
-  justify-content:flex-start;
+  justify-content:center;
   gap:1px;
   margin:0;
   padding:0;
@@ -222,7 +218,7 @@ body.tish-paper .tish-circle-category {
 body.tish-paper .tish-circle-price {
   position:absolute;
   z-index:4;
-  top:70%;
+  top:76%;
   left:25%;
   width:50%;
   height:10%;
@@ -249,12 +245,12 @@ body.tish-paper .tish-circle-price {
 body.tish-paper .tish-circle-add {
   position:absolute;
   z-index:9;
-  top:80%;
+  top:86%;
   left:30%;
   width:40%;
-  height:14%;
+  height:11.5%;
   min-width:0;
-  min-height:44px;
+  min-height:35px;
   max-height:55px;
   display:inline-flex;
   flex-direction:row;
