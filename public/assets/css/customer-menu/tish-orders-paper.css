@@ -1,0 +1,101 @@
+/* Paper order cards and framing, scoped to the customer order history. */
+body.tish-paper.cm-my-orders {
+  position:relative;
+}
+body.tish-paper.cm-my-orders::after {
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  background:
+    url('../../tish-paper/decor/halftone.svg') left -24px top 18px / 106px auto no-repeat,
+    url('../../tish-paper/decor/halftone.svg') right -44px bottom 150px / 112px auto no-repeat,
+    url('../../tish-paper/decor/red-torn-side.svg') left bottom 65px / 46px auto no-repeat;
+}
+body.tish-paper.cm-my-orders .topbar,
+body.tish-paper.cm-my-orders main.wrap {
+  z-index:1;
+}
+body.tish-paper.cm-my-orders .topbar .topin {
+  min-height:clamp(92px, 21vw, 120px)!important;
+  padding-block:18px 8px!important;
+}
+body.tish-paper.cm-my-orders .brand img {
+  width:clamp(62px, 16vw, 96px)!important;
+  height:clamp(62px, 16vw, 96px)!important;
+  max-height:none!important;
+  flex:none!important;
+}
+body.tish-paper.cm-my-orders .topbar .back {
+  align-self:flex-end;
+}
+body.tish-paper.cm-my-orders main.wrap {
+  padding-top:16px!important;
+}
+body.tish-paper.cm-my-orders main .titleRow {
+  margin:0 0 23px!important;
+}
+body.tish-paper.cm-my-orders main .titleRow h1 {
+  font-size:clamp(2.15rem, 8vw, 3.4rem)!important;
+}
+body.tish-paper.cm-my-orders .tish-orders-spark {
+  transform:rotate(-10deg);
+}
+body.tish-paper.cm-my-orders .orders>.order {
+  direction:inherit!important;
+  grid-template-columns:clamp(36px, 11vw, 60px) minmax(0, 1fr) clamp(36px, 11vw, 60px)!important;
+  min-height:clamp(126px, 31vw, 170px)!important;
+  padding:20px clamp(10px, 3vw, 24px)!important;
+  gap:clamp(6px, 2.5vw, 15px)!important;
+  filter:drop-shadow(0 9px 5px #4b35224d)!important;
+}
+body.tish-paper.cm-my-orders .orderInfo {
+  align-items:flex-start!important;
+  text-align:start!important;
+}
+body.tish-paper.cm-my-orders .orderInfo strong {
+  font-size:clamp(.96rem, 4.25vw, 1.6rem)!important;
+}
+body.tish-paper.cm-my-orders .orderInfo .orderStatus {
+  justify-content:flex-start!important;
+}
+body.tish-paper.cm-my-orders .order .orderIcon,
+body.tish-paper.cm-my-orders .order .arrow {
+  width:100%!important;
+  height:auto!important;
+  min-width:0!important;
+  min-height:0!important;
+  aspect-ratio:1;
+  filter:drop-shadow(0 4px 2px #4b35224d);
+}
+html[dir="ltr"] body.cm-my-orders .tish-paper-order-arrow i {
+  transform:scaleX(-1);
+}
+.cm-my-orders .orderIcon .fa-check,
+.cm-my-orders .orderStatus .fa-check,
+.cm-my-orders .order:is([data-state="ready"],[data-state="completed"]) .orderIcon .fa-receipt {
+  display:none;
+}
+.cm-my-orders .order:is([data-state="ready"],[data-state="completed"]) :is(.orderIcon,.orderStatus) .fa-check {
+  display:inline-block;
+}
+body.tish-paper.cm-my-orders .orders .empty {
+  width:min(100%, 420px);
+  justify-self:center;
+  filter:drop-shadow(0 7px 4px #4b35222b);
+}
+body.tish-paper.cm-my-orders .emptyIcon {
+  display:grid;
+  place-items:center;
+  width:58px;
+  height:58px;
+  margin:auto;
+  color:var(--tish-paper-red);
+  font-size:1.45rem;
+  background:url('../../tish-paper/paper/favorite-disc.webp') center/100% 100% no-repeat;
+}
+body.tish-paper.cm-my-orders .bottom-nav::before {
+  background-color:#252322;
+  background-blend-mode:normal;
+}

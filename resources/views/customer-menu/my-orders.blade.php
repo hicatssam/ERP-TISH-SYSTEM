@@ -30,6 +30,7 @@ main{padding:22px 0}.titleRow{margin-bottom:18px}.titleRow h1{margin:0 0 4px;fon
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-circular-ui.css') }}?v=12">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-v2.css') }}?v=1">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-polish-v13.css') }}?v=16">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-orders-paper.css') }}?v=1">
 </head>
 <body class="cm-my-orders tish-paper">
 <header class="topbar"><div class="wrap topin">
@@ -40,7 +41,7 @@ main{padding:22px 0}.titleRow{margin-bottom:18px}.titleRow h1{margin:0 0 4px;fon
 <a class="back tish-paper-page-arrow" href="{{ route('customer-menu.show',$location->code) }}" aria-label="العودة"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i></a>
 </div></header>
 <main class="wrap">
-<div class="titleRow"><h1><span class="tish-orders-spark" aria-hidden="true"></span>طلباتي</h1><p>الطلبات التي أنشأتها من هذا الجهاز.</p></div>
+<div class="titleRow"><h1>طلباتي<span class="tish-orders-spark" aria-hidden="true"></span></h1><p>الطلبات التي أنشأتها من هذا الجهاز.</p></div>
 <section id="orders" class="orders" aria-live="polite"></section>
 </main>
 @include('customer-menu.partials.bottom-nav', ['activeNav' => 'orders'])
@@ -82,16 +83,16 @@ rows=rows
 root.innerHTML=rows.length?rows.map((item,index)=>{
     const state=String(item.state||'received').toLowerCase();
     const status=menuT(item.status_label||fallbackLabels[state]||'جاري تحديث الحالة');
-    return `<a class="order" href="${esc(localUrl(item.url))}" data-order-index="${index}">
-        <span class="orderIcon" aria-hidden="true">${state === 'ready' || state === 'completed' ? '✓' : '↗'}</span>
+    return `<a class="order" href="${esc(localUrl(item.url))}" data-order-index="${index}" data-state="${esc(state)}">
+        <span class="orderIcon" aria-hidden="true"><i class="fa-solid fa-receipt" aria-hidden="true"></i><i class="fa-solid fa-check" aria-hidden="true"></i></span>
         <span class="orderInfo">
             <strong>${esc(menuF('طلب #{number}',{number:item.order_number||item.number||'—'}))}</strong>
-            <small class="orderStatus" data-state="${esc(state)}">${esc(status)}</small>
+            <small class="orderStatus" data-state="${esc(state)}"><i class="fa-solid fa-check" aria-hidden="true"></i><span>${esc(status)}</span></small>
             <small>اضغط لعرض التفاصيل وتتبع الحالة</small>
         </span>
         <span class="arrow tish-paper-order-arrow" aria-hidden="true"><i class="fa-solid fa-arrow-left"></i></span>
     </a>`;
-}).join(''):`<div class="empty"><div class="emptyIcon">🛍️</div><h2>لا توجد طلبات بعد</h2><p>بعد إرسال أول طلب سيظهر هنا تلقائيًا.</p><a class="primary" href="${menuUrl}">ابدأ طلبًا جديدًا</a></div>`;
+}).join(''):`<div class="empty"><div class="emptyIcon" aria-hidden="true"><i class="fa-solid fa-receipt"></i></div><h2>لا توجد طلبات بعد</h2><p>بعد إرسال أول طلب سيظهر هنا تلقائيًا.</p><a class="primary" href="${menuUrl}">ابدأ طلبًا جديدًا</a></div>`;
 
 let refreshingStatuses = false;
 async function refreshStatuses(){
@@ -115,7 +116,8 @@ async function refreshStatuses(){
                     if(!element)continue;
                     const state=String(data.state||'received').toLowerCase();
                     element.dataset.state=state;
-                    element.textContent=menuT(data.label||fallbackLabels[state]||'تم تحديث الطلب');
+                    element.closest('.order').dataset.state=state;
+                    element.querySelector('span').textContent=menuT(data.label||fallbackLabels[state]||'تم تحديث الطلب');
                 } catch(error) { /* Keep the last known state while offline. */ }
             }
         };
