@@ -354,7 +354,7 @@ html.cm-skip-menu-intro #intro{display:none!important}
 
 
   @if(($theme['show_hero'] ?? true) && ($banners->isNotEmpty() || $coverImage))
-  <div class="tish-paper-banner-frame" id="homePromotion">
+  <div id="homePromotion" class="tish-paper-banner-frame">
    <section class="reference-hero tish-paper-top-ads" aria-label="إعلانات المنيو">
    @if($banners->isNotEmpty())
     <div class="banner-track" id="bannerTrack">
