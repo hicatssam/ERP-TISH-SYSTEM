@@ -144,7 +144,7 @@ function renderProducts() {
     if (sortMode === 'price_asc') rows = rows.slice().sort((a, b) => a.price - b.price);
     if (sortMode === 'price_desc') rows = rows.slice().sort((a, b) => b.price - a.price);
 
-    document.getElementById('resultCount').textContent = rows.length + ' صنف';
+    document.getElementById('resultCount').textContent = menuF('عدد {count} أصناف', {count: rows.length});
     document.getElementById('productGrid').innerHTML = rows.length
         ? rows.map(renderCard).join('')
         : `<div class="empty">لا توجد أصناف مطابقة.</div>`;
