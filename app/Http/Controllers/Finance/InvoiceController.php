@@ -140,27 +140,35 @@ class InvoiceController extends Controller
             'cancellation_reason' => ['required', 'string', 'min:5'],
         ]);
 
-        if (! $invoice->isActive()) {
-            return back()->with('error', 'الفاتورة ملغاة بالفعل.');
-        }
+        // Lock and re-check inside the same transaction that cancels the
+        // invoice. A payment or another cancellation may have been recorded
+        // since the invoice was originally loaded by route model binding.
+        $error = DB::transaction(function () use ($invoice, $validated): ?string {
+            $invoice = Invoice::query()
+                ->lockForUpdate()
+                ->findOrFail($invoice->id);
 
-        $this->invoiceService->syncPaymentAmounts($invoice);
-        $invoice->refresh();
+            if (! $invoice->isActive()) {
+                return 'الفاتورة ملغاة بالفعل.';
+            }
 
-        if ((float) $invoice->paid_amount > 0.004) {
-            return back()->with('error', 'لا يمكن إلغاء فاتورة عليها تحصيل. استرد المبلغ أولًا.');
-        }
+            $this->invoiceService->syncPaymentAmounts($invoice);
+            $invoice->refresh();
 
-        $source = $invoice->order()->first();
-        $sourceStatus = $source?->status instanceof BackedEnum
-            ? $source->status->value
-            : (string) ($source?->status ?? '');
-        if ($source && ! in_array($sourceStatus, ['cancelled', 'rejected'], true)) {
-            return back()->with('error', 'ألغِ الطلب الأصلي أولًا حتى يبقى المخزون والفاتورة متطابقين.');
-        }
+            if ((float) $invoice->paid_amount > 0.004) {
+                return 'لا يمكن إلغاء فاتورة عليها تحصيل. استرد المبلغ أولًا.';
+            }
 
-        DB::transaction(function () use ($invoice, $validated): void {
-            // Any customer-account allocations become available credit again.
+            $source = $invoice->order()->first();
+            $sourceStatus = $source?->status instanceof BackedEnum
+                ? $source->status->value
+                : (string) ($source?->status ?? '');
+
+            if ($source && ! in_array($sourceStatus, ['cancelled', 'rejected'], true)) {
+                return 'ألغِ الطلب الأصلي أولًا حتى يبقى المخزون والفاتورة متطابقين.';
+            }
+
+            // Release customer credit and reverse the sale atomically.
             $invoice->customerPaymentAllocations()->delete();
 
             $invoice->update([
@@ -170,7 +178,13 @@ class InvoiceController extends Controller
                 'cancellation_reason' => $validated['cancellation_reason'],
             ]);
             $this->financialPosting->saleCancellation($invoice, Auth::user());
+
+            return null;
         });
+
+        if ($error !== null) {
+            return back()->with('error', $error);
+        }
 
         NotificationDispatcher::notifyByPermissions(
             new InvoiceCancelledNotification($invoice->fresh(), $validated['cancellation_reason']),
