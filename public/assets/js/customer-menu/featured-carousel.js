@@ -13,6 +13,8 @@
     const autoplayMs = Number(root.dataset.autoplayMs) || 6000;
     let manuallyPaused = false;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const isFeatured = root.id === 'featuredShowcase';
+    let suppressTapUntil = 0;
     let slides = [];
     let index = 0;
     let timer = null;
@@ -47,11 +49,35 @@
         folds.set(card, card.animate(keyframes, {duration: 320, easing: 'cubic-bezier(.22,1,.36,1)'}));
     }
 
+    function featureArrival(slide, direction) {
+        const layers = [
+            [slide.querySelector('.tish-circle-image'), [
+                { translate: (direction * 16) + 'px 0', scale: '.94' },
+                { translate: '0 -7px', scale: '1.08', offset: .66 },
+                { translate: '0', scale: '1' }
+            ], 490, 0],
+            [slide.querySelector('.tish-circle-paper'), [
+                { scale: '.86 .96' }, { scale: '1.025 1', offset: .78 }, { scale: '1' }
+            ], 420, 70],
+            [slide.querySelector('.tish-circle-badge--popular'), [
+                { scale: '.8', opacity: 0 }, { scale: '1.13', opacity: 1, offset: .58 }, { scale: '1', opacity: 1 }
+            ], 280, 320]
+        ];
+
+        for (const [layer, frames, duration, delay] of layers) {
+            if (!layer?.animate) continue;
+            folds.get(layer)?.cancel();
+            folds.set(layer, layer.animate(frames, { duration, delay, fill: 'backwards', easing: 'cubic-bezier(.22,1,.36,1)' }));
+        }
+    }
+
     function show(position, animate = true) {
         if (!slides.length) return;
         const previous = index;
         index = (position % slides.length + slides.length) % slides.length;
-        if (animate && !reduced.matches && previous !== index) {
+        if (animate && !reduced.matches && previous !== index && isFeatured) {
+            featureArrival(slides[index], Math.sign(position - previous));
+        } else if (animate && !reduced.matches && previous !== index) {
             fold(slides[previous], [{scale: '1'}, {scale: '.76 .94', offset: .32}, {scale: '1'}]);
             fold(slides[index], [{scale: '.74 .93'}, {scale: '1.025 1', offset: .72}, {scale: '1'}]);
         }
@@ -63,9 +89,11 @@
             const offset = Math.abs(distance) > 2 ? 'outside' : String(distance);
             slide.dataset.offset = offset;
             const active = i === index;
-            slide.setAttribute('aria-hidden', active ? 'false' : 'true');
+            const interactive = active || (isFeatured && Math.abs(distance) === 1);
+            slide.setAttribute('aria-hidden', String(!interactive));
+            if (isFeatured) slide.inert = !interactive;
             slide.querySelectorAll('a, button, input, [tabindex]').forEach(function (el) {
-                if (active) el.removeAttribute('tabindex');
+                if (interactive) el.removeAttribute('tabindex');
                 else el.setAttribute('tabindex', '-1');
             });
         });
@@ -129,6 +157,19 @@
             schedule();
         }, 0);
     });
+    if (isFeatured) {
+        stage.addEventListener('click', function (event) {
+            if (event.detail > 0 && Date.now() < suppressTapUntil) {
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+            }
+            if (event.target.closest('a, button, input')) return;
+            const card = event.target.closest('.tish-circle-card');
+            card?.querySelector('.tish-circle-image')?.click();
+        }, true);
+    }
+
     stage.addEventListener('touchstart', function (event) {
         touchStartX = event.touches.length === 1 ? event.touches[0].clientX : null;
         schedule();
@@ -136,7 +177,10 @@
     stage.addEventListener('touchend', function (event) {
         if (touchStartX !== null && event.changedTouches.length === 1) {
             const delta = event.changedTouches[0].clientX - touchStartX;
-            if (Math.abs(delta) >= 42) show(index + (delta < 0 ? 1 : -1));
+            if (Math.abs(delta) >= 42) {
+                suppressTapUntil = Date.now() + 400;
+                show(index + (delta < 0 ? 1 : -1));
+            }
         }
         touchStartX = null;
         schedule();
