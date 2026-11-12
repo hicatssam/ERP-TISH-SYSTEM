@@ -160,7 +160,7 @@
 
 @include('customer-menu.partials.bottom-nav', ['activeNav' => 'menu', 'showStickyCart' => false])
 @include('customer-menu.partials.cart-engine')
-<script src="{{ asset('assets/js/customer-menu/tish-menu-cinematic.js') }}"></script>
+<script src="{{ asset('assets/js/customer-menu/tish-menu-cinematic.js') }}?v=2"></script>
 @if($relatedItems->isNotEmpty())
 <script src="{{ asset('assets/js/customer-menu/featured-carousel.js') }}?v=3" defer></script>
 @endif
