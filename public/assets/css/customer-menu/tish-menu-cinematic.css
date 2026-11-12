@@ -1,0 +1,97 @@
+.tish-booth-panel {
+    display: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    @view-transition {
+        navigation: auto;
+    }
+
+    ::view-transition-group(tish-product-photo) {
+        animation-duration: 420ms;
+        animation-timing-function: cubic-bezier(.22, 1, .36, 1);
+        z-index: 2;
+    }
+
+    ::view-transition-group(root) {
+        animation-duration: 280ms;
+    }
+
+    ::view-transition {
+        pointer-events: none;
+    }
+
+    body.tish-paper #intro.tish-reel-intro.tish-booth-opening {
+        background: transparent;
+        perspective: 1100px;
+        pointer-events: none;
+    }
+
+    #intro.tish-booth-opening :is(.intro-reel, .intro-box, .intro-reel-tools) {
+        visibility: hidden;
+    }
+
+    #intro.tish-booth-opening .tish-booth-panel {
+        position: absolute;
+        display: block;
+        inset-block: 0;
+        width: 50%;
+        overflow: hidden;
+        background: #871912 url('../../tish-paper/paper/nav-active.webp') center / 100% 100% no-repeat;
+    }
+
+    #intro.tish-booth-opening.tish-booth-has-frame .tish-booth-panel {
+        background: #871912;
+    }
+
+    .tish-booth-panel--left {
+        left: 0;
+        transform-origin: left center;
+    }
+
+    .tish-booth-panel--right {
+        right: 0;
+        transform-origin: right center;
+    }
+
+    .tish-booth-panel canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 200%;
+        height: 100%;
+    }
+
+    .tish-booth-panel--right canvas {
+        left: -100%;
+    }
+
+    .tish-booth-logo {
+        position: fixed;
+        z-index: 1001;
+        object-fit: contain;
+        pointer-events: none;
+    }
+
+    .tish-cart-flight {
+        position: fixed;
+        z-index: 1200;
+        display: grid;
+        place-items: center;
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: #f5e4cd;
+        box-shadow: 0 5px 14px #381a1940;
+        color: #a91f16;
+        font-size: 1.6rem;
+        font-weight: 800;
+        pointer-events: none;
+    }
+
+    .tish-cart-flight img {
+        width: 90%;
+        height: 90%;
+        object-fit: contain;
+    }
+}
