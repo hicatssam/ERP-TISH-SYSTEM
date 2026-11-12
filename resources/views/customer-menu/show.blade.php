@@ -295,14 +295,8 @@ html.cm-intro-open{overflow:hidden}
 body.tish-paper #intro.tish-reel-intro{overflow:hidden;background:#f5e4cd;overscroll-behavior:contain}
 #intro.tish-reel-intro::before{display:none}
 #intro .intro-reel{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center bottom}
-#intro .intro-reel-tools{
- position:absolute;z-index:2;inset-inline:16px;top:calc(12px + env(safe-area-inset-top,0px));
- display:flex;justify-content:flex-start;gap:8px;
-}
-#intro .intro-reel-tools button,
 #intro .intro-enter{
- min-height:44px;border:0;border-radius:0;font:inherit;font-weight:900;padding:8px 17px;
- color:var(--tish-paper-red);background:url('{{ asset('assets/tish-paper/paper/category-ivory.webp') }}') center/100% 100% no-repeat;
+ min-height:44px;border:0;font:inherit;font-weight:900;
 }
 #intro .intro-enter{
  width:var(--intro-order-size);height:var(--intro-order-size);padding:12px;
@@ -311,16 +305,11 @@ body.tish-paper #intro.tish-reel-intro{overflow:hidden;background:#f5e4cd;oversc
 }
 #intro.tish-reel-intro{
  --intro-order-size:clamp(76px,22vw,104px);
- --intro-order-bottom:calc(10px + env(safe-area-inset-bottom,0px));
-}
-#intro.tish-reel-intro.has-reel-frame:has(.intro-enter:not([hidden])) .intro-reel{
- translate:0 calc(0px - var(--intro-order-size) - var(--intro-order-bottom));
 }
 #intro.tish-reel-intro.has-reel-frame .intro-box{
- position:absolute;inset-inline:12px;bottom:var(--intro-order-bottom);max-width:none;padding:0;text-align:center;
-}
-@media(prefers-reduced-motion:no-preference){
- #intro.tish-reel-intro .intro-reel{transition:translate 350ms cubic-bezier(.22,1,.36,1)}
+ position:absolute;left:var(--intro-order-x,58%);top:var(--intro-order-y,82%);
+ width:var(--intro-order-size);max-width:none;padding:0;text-align:center;
+ transform:translate(-50%,calc(-100% - 6px));
 }
 #intro .intro-enter{
  margin:0;
@@ -370,6 +359,7 @@ body.tish-paper #intro .intro-enter:focus-visible{
     } catch (error) { /* Private browsing: normal intro remains available. */ }
 })();
 </script>
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-menu-cinematic.css') }}">
 </head>
 <body class="crisp-customer-menu reference-home tish-paper">
 @php
@@ -379,11 +369,16 @@ body.tish-paper #intro .intro-enter:focus-visible{
 
 @if($introMode !== 'off')
 <div id="intro" class="intro tish-reel-intro" role="dialog" aria-modal="true" aria-label="{{ $introTitle }}" data-mode="{{ $introMode }}">
- <video id="introReel" class="intro-reel" data-src="{{ asset('assets/tish-paper/intro/menu-reel.mp4') }}" preload="none" playsinline aria-hidden="true" hidden></video>
- <div class="intro-reel-tools" id="introReelTools" hidden>
-  <button type="button" id="introSkip">{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Skip video' : 'تخطّي الفيديو' }}</button>
-
- </div>
+ <div class="tish-booth-panel tish-booth-panel--left" aria-hidden="true"></div>
+ <div class="tish-booth-panel tish-booth-panel--right" aria-hidden="true"></div>
+ <video id="introReel" class="intro-reel" data-src="{{ asset('assets/tish-paper/intro/menu-reel.mp4') }}" preload="auto" playsinline aria-hidden="true" hidden></video>
+ <script>
+  if (!document.documentElement.classList.contains('cm-skip-menu-intro')
+      && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      const reel = document.getElementById('introReel');
+      reel.src = reel.dataset.src;
+  }
+ </script>
  <div class="intro-box">
   <button class="intro-enter" id="introEnter" type="button" hidden>{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Order now' : 'اطلب الآن' }}</button>
  </div>
@@ -558,6 +553,7 @@ body.tish-paper #intro .intro-enter:focus-visible{
 
 @include('customer-menu.partials.bottom-nav', ['activeNav' => 'home'])
 @include('customer-menu.partials.cart-engine')
+<script src="{{ asset('assets/js/customer-menu/tish-menu-cinematic.js') }}"></script>
 <script src="{{ asset('assets/js/customer-menu/tish-product-circle-card-v8.js') }}?v=8"></script>
 <script src="{{ asset('assets/js/customer-menu/tish-paper-motion-v10.js') }}?v=11"></script>
 <script src="{{ asset('assets/js/customer-menu/featured-carousel.js') }}?v=3"></script>
@@ -662,7 +658,10 @@ body.tish-paper #intro .intro-enter:focus-visible{
             event.preventDefault();
             const product = CM.product(add.dataset.add);
             if (!product || !product.available || add.disabled) return;
-            window.TishProductCircleCard.addFromButton(add, product, productUrl(product.id));
+            const image = add.closest('.tish-circle-card')?.querySelector('.tish-circle-photo');
+            if (window.TishProductCircleCard.addFromButton(add, product, productUrl(product.id))) {
+                window.TishMenuCinematic?.flyToCart(image, add);
+            }
             return;
         }
 
@@ -754,6 +753,12 @@ body.tish-paper #intro .intro-enter:focus-visible{
         syncBannerTimer();
     }
 
+    function revealFirstProduct() {
+        const section = document.querySelector('#featuredSection:not([hidden]):has(.tish-circle-card)')
+            || document.getElementById('menuCatalog');
+        window.TishMenuCinematic?.revealFirstCard(section);
+    }
+
     const intro = document.getElementById('intro');
     if (intro) {
         const mode = intro.dataset.mode;
@@ -771,84 +776,124 @@ body.tish-paper #intro .intro-enter:focus-visible{
             } catch (error) { /* Storage may be disabled. */ }
             document.documentElement.classList.remove('cm-intro-open');
             intro.querySelector('video')?.pause();
-            intro.classList.add('hide');
+            const opening = window.TishMenuCinematic?.openBooth(intro);
+            if (opening) {
+                opening.then(() => {
+                    intro.remove();
+                    revealFirstProduct();
+                });
+            } else {
+                intro.classList.add('hide');
+                window.setTimeout(() => intro.remove(), 500);
+                revealFirstProduct();
+            }
             document.querySelector('main.menu-area')?.focus({preventScroll:true});
-            window.setTimeout(() => intro.remove(), 500);
         };
         if (hasSeenIntro() || document.documentElement.classList.contains('cm-skip-menu-intro')) {
             intro.remove();
         } else {
             const reel = document.getElementById('introReel');
-            const tools = document.getElementById('introReelTools');
             const enter = document.getElementById('introEnter');
-            const skip = document.getElementById('introSkip');
-
-            let timeout;
+            let startupTimeout;
+            let revealDeadline;
             let revealed = false;
+            let dismissed = false;
+            let frameObserver;
             // The complete slogan first appears at this cue in menu-reel.mp4.
             const orderButtonCue = 6.2;
 
-            function revealOrderButton(keepFrame = false) {
-                if (revealed) return;
+            function alignOrderButton() {
+                if (!reel.videoWidth || !reel.clientWidth || !reel.clientHeight) return;
+
+                // Anchor to the upper edge of “Feel it” in the source video.
+                // The video uses object-fit:cover and object-position:center bottom.
+                const scale = Math.max(reel.clientWidth / reel.videoWidth, reel.clientHeight / reel.videoHeight);
+                const width = reel.videoWidth * scale;
+                const height = reel.videoHeight * scale;
+                const halfButton = enter.offsetWidth / 2;
+                const x = (reel.clientWidth - width) / 2 + width * .58;
+                const y = reel.clientHeight - height * .18;
+                const inset = halfButton + 8;
+
+                intro.style.setProperty('--intro-order-x', Math.max(inset, Math.min(reel.clientWidth - inset, x)) + 'px');
+                intro.style.setProperty('--intro-order-y', Math.max(2 * halfButton + 14, Math.min(reel.clientHeight - 8, y)) + 'px');
+            }
+
+            function revealOrderButton() {
+                if (revealed || dismissed) return;
                 revealed = true;
-                window.clearTimeout(timeout);
-                if (!keepFrame) reel.pause();
-                reel.hidden = !keepFrame;
-                intro.classList.toggle('has-reel-frame', keepFrame);
-                skip.hidden = true;
-                tools.hidden = true;
+                window.clearTimeout(startupTimeout);
+                window.clearTimeout(revealDeadline);
                 enter.hidden = false;
+                alignOrderButton();
                 enter.focus({preventScroll:true});
             }
 
             document.documentElement.classList.add('cm-intro-open');
-            enter.addEventListener('click', hideIntro);
+            enter.addEventListener('click', () => {
+                dismissed = true;
+                frameObserver?.disconnect();
+                hideIntro();
+            }, {once:true});
+
             if (reducedMotion.matches) {
                 revealOrderButton();
             } else {
-                reel.addEventListener('playing', function () {
-                    if (!revealed) intro.classList.add('has-reel-frame');
+                reel.addEventListener('playing', () => {
+                    window.clearTimeout(startupTimeout);
+                    intro.classList.add('has-reel-frame');
+                    alignOrderButton();
                 });
+                reel.addEventListener('loadedmetadata', alignOrderButton, {once:true});
+                if ('ResizeObserver' in window) {
+                    frameObserver = new ResizeObserver(alignOrderButton);
+                    frameObserver.observe(reel);
+                }
+
                 function checkOrderButtonCue(time) {
-                    if (time >= orderButtonCue) revealOrderButton(true);
+                    if (time >= orderButtonCue) revealOrderButton();
                 }
 
                 if (typeof reel.requestVideoFrameCallback === 'function') {
                     const watchFrame = (_, frame) => {
                         checkOrderButtonCue(frame.mediaTime);
-                        if (!revealed) reel.requestVideoFrameCallback(watchFrame);
+                        if (!revealed && !dismissed) reel.requestVideoFrameCallback(watchFrame);
                     };
                     reel.requestVideoFrameCallback(watchFrame);
                 } else {
                     reel.addEventListener('timeupdate', () => checkOrderButtonCue(reel.currentTime));
                 }
-                reel.addEventListener('ended', () => {
-                    revealOrderButton(true);
-                    tools.hidden = true;
-
+                reel.addEventListener('ended', revealOrderButton, {once:true});
+                reel.addEventListener('error', () => {
+                    reel.hidden = true;
+                    intro.classList.remove('has-reel-frame');
+                    revealOrderButton();
                 }, {once:true});
-                reel.addEventListener('error', () => revealOrderButton(), {once:true});
-                skip.addEventListener('click', () => {
-                    reel.pause();
-                    revealOrderButton(reel.readyState >= 2);
-                });
-                reel.muted = false;
-                reel.src = reel.dataset.src;
                 reel.hidden = false;
-                tools.hidden = false;
-                skip.focus({preventScroll:true});
-                timeout = window.setTimeout(() => revealOrderButton(), 16000);
+                if (!reel.src) reel.src = reel.dataset.src;
+                startupTimeout = window.setTimeout(revealOrderButton, 3000);
+                revealDeadline = window.setTimeout(revealOrderButton, 8500);
                 reel.play().catch(() => {
-                    if (revealed) return;
-                    // Some browsers only allow autoplay while muted.
+                    if (dismissed) return;
+                    if (reel.error) {
+                        revealOrderButton();
+                        return;
+                    }
+                    // Keep audio when autoplay allows it.
                     reel.muted = true;
-                    reel.play().catch(() => revealOrderButton());
+                    reel.play().catch(revealOrderButton);
                 });
             }
         }
     }
 
     render();
+    if (intro?.isConnected) {
+        const firstPhoto = document.querySelector('#featuredGrid [data-offset="0"] img.tish-circle-photo, #productGrid .tish-circle-card:first-child img.tish-circle-photo');
+        if (firstPhoto) firstPhoto.loading = 'eager';
+    } else {
+        revealFirstProduct();
+    }
     window.TishPaperMotion?.categories(document.getElementById('categories'));
 })();
 </script>
