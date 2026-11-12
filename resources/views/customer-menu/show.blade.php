@@ -370,6 +370,7 @@ body.tish-paper #intro .intro-enter:focus-visible{
     } catch (error) { /* Private browsing: normal intro remains available. */ }
 })();
 </script>
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-menu-cinematic.css') }}">
 </head>
 <body class="crisp-customer-menu reference-home tish-paper">
 @php
@@ -379,6 +380,8 @@ body.tish-paper #intro .intro-enter:focus-visible{
 
 @if($introMode !== 'off')
 <div id="intro" class="intro tish-reel-intro" role="dialog" aria-modal="true" aria-label="{{ $introTitle }}" data-mode="{{ $introMode }}">
+ <div class="tish-booth-panel tish-booth-panel--left" aria-hidden="true"></div>
+ <div class="tish-booth-panel tish-booth-panel--right" aria-hidden="true"></div>
  <video id="introReel" class="intro-reel" data-src="{{ asset('assets/tish-paper/intro/menu-reel.mp4') }}" preload="none" playsinline aria-hidden="true" hidden></video>
  <div class="intro-reel-tools" id="introReelTools" hidden>
   <button type="button" id="introSkip">{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Skip video' : 'تخطّي الفيديو' }}</button>
@@ -558,6 +561,7 @@ body.tish-paper #intro .intro-enter:focus-visible{
 
 @include('customer-menu.partials.bottom-nav', ['activeNav' => 'home'])
 @include('customer-menu.partials.cart-engine')
+<script src="{{ asset('assets/js/customer-menu/tish-menu-cinematic.js') }}"></script>
 <script src="{{ asset('assets/js/customer-menu/tish-product-circle-card-v8.js') }}?v=8"></script>
 <script src="{{ asset('assets/js/customer-menu/tish-paper-motion-v10.js') }}?v=11"></script>
 <script src="{{ asset('assets/js/customer-menu/featured-carousel.js') }}?v=3"></script>
@@ -662,7 +666,10 @@ body.tish-paper #intro .intro-enter:focus-visible{
             event.preventDefault();
             const product = CM.product(add.dataset.add);
             if (!product || !product.available || add.disabled) return;
-            window.TishProductCircleCard.addFromButton(add, product, productUrl(product.id));
+            const image = add.closest('.tish-circle-card')?.querySelector('.tish-circle-photo');
+            if (window.TishProductCircleCard.addFromButton(add, product, productUrl(product.id))) {
+                window.TishMenuCinematic?.flyToCart(image, add);
+            }
             return;
         }
 
@@ -754,6 +761,12 @@ body.tish-paper #intro .intro-enter:focus-visible{
         syncBannerTimer();
     }
 
+    function revealFirstProduct() {
+        const section = document.querySelector('#featuredSection:not([hidden]):has(.tish-circle-card)')
+            || document.getElementById('menuCatalog');
+        window.TishMenuCinematic?.revealFirstCard(section);
+    }
+
     const intro = document.getElementById('intro');
     if (intro) {
         const mode = intro.dataset.mode;
@@ -771,9 +784,18 @@ body.tish-paper #intro .intro-enter:focus-visible{
             } catch (error) { /* Storage may be disabled. */ }
             document.documentElement.classList.remove('cm-intro-open');
             intro.querySelector('video')?.pause();
-            intro.classList.add('hide');
+            const opening = window.TishMenuCinematic?.openBooth(intro);
+            if (opening) {
+                opening.then(() => {
+                    intro.remove();
+                    revealFirstProduct();
+                });
+            } else {
+                intro.classList.add('hide');
+                window.setTimeout(() => intro.remove(), 500);
+                revealFirstProduct();
+            }
             document.querySelector('main.menu-area')?.focus({preventScroll:true});
-            window.setTimeout(() => intro.remove(), 500);
         };
         if (hasSeenIntro() || document.documentElement.classList.contains('cm-skip-menu-intro')) {
             intro.remove();
@@ -802,7 +824,7 @@ body.tish-paper #intro .intro-enter:focus-visible{
             }
 
             document.documentElement.classList.add('cm-intro-open');
-            enter.addEventListener('click', hideIntro);
+            enter.addEventListener('click', hideIntro, {once:true});
             if (reducedMotion.matches) {
                 revealOrderButton();
             } else {
@@ -849,6 +871,12 @@ body.tish-paper #intro .intro-enter:focus-visible{
     }
 
     render();
+    if (intro?.isConnected) {
+        const firstPhoto = document.querySelector('#featuredGrid [data-offset="0"] img.tish-circle-photo, #productGrid .tish-circle-card:first-child img.tish-circle-photo');
+        if (firstPhoto) firstPhoto.loading = 'eager';
+    } else {
+        revealFirstProduct();
+    }
     window.TishPaperMotion?.categories(document.getElementById('categories'));
 })();
 </script>
