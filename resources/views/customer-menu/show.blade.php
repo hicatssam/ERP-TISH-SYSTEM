@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-menu-reference-v3.css') }}?v=3">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-menu-card-fix-v4.css') }}?v=4">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-menu-circle-v5.css') }}?v=5">
-<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-featured-showcase-v6.css') }}?v=6">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-featured-showcase-v6.css') }}?v=7">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-product-circle-card-v8.css') }}?v=9">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-product-layout-v10.css') }}?v=12">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-motion-v10.css') }}?v=12">
@@ -556,7 +556,7 @@ body.tish-paper #intro .intro-enter:focus-visible{
 <script src="{{ asset('assets/js/customer-menu/tish-menu-cinematic.js') }}?v=2"></script>
 <script src="{{ asset('assets/js/customer-menu/tish-product-circle-card-v8.js') }}?v=8"></script>
 <script src="{{ asset('assets/js/customer-menu/tish-paper-motion-v10.js') }}?v=11"></script>
-<script src="{{ asset('assets/js/customer-menu/featured-carousel.js') }}?v=3"></script>
+<script src="{{ asset('assets/js/customer-menu/featured-carousel.js') }}?v=4"></script>
 
 <script>
 (function () {

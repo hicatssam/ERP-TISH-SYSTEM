@@ -117,18 +117,20 @@ body.tish-paper.reference-home #featuredSection .cm-showcase-slide[data-offset="
   pointer-events:auto!important;
 }
 body.tish-paper.reference-home #featuredSection .cm-showcase-slide[data-offset="-1"]{
-  transform:translate(-50%,-50%) translateX(calc(var(--tish-showcase-size) * -0.92)) scale(.66)!important;
-  opacity:.83!important;
+  transform:translate(-50%,-50%) translateX(calc(var(--tish-showcase-size) * -0.92)) scale(.62)!important;
+  opacity:1!important;
   visibility:visible!important;
   z-index:3!important;
+  pointer-events:auto!important;
 }
 body.tish-paper.reference-home #featuredSection .cm-showcase-slide[data-offset="1"]{
-  transform:translate(-50%,-50%) translateX(calc(var(--tish-showcase-size) * 0.92)) scale(.66)!important;
-  opacity:.83!important;
+  transform:translate(-50%,-50%) translateX(calc(var(--tish-showcase-size) * 0.92)) scale(.62)!important;
+  opacity:1!important;
   visibility:visible!important;
   z-index:3!important;
+  pointer-events:auto!important;
 }
-/* Only the 2 adjacent slides are decorative previews. The rest must never
+/* Only the center and two adjacent slides are visible. The rest must never
    leak into the neighboring menu section or trap keyboard focus. */
 body.tish-paper.reference-home #featuredSection .cm-showcase-slide[data-offset="-2"],
 body.tish-paper.reference-home #featuredSection .cm-showcase-slide[data-offset="2"],
@@ -414,11 +416,6 @@ body.tish-paper.reference-home #featuredSection .cm-featured-empty{
   body.tish-paper.reference-home #featuredSection .cm-showcase-stage{
     height:calc(var(--tish-showcase-size) + 24px)!important;
   }
-  body.tish-paper.reference-home #featuredSection .cm-showcase-slide[data-offset="-1"],
-  body.tish-paper.reference-home #featuredSection .cm-showcase-slide[data-offset="1"]{
-    visibility:hidden!important;
-    opacity:0!important;
-  }
   body.tish-paper.reference-home #featuredSection .cm-showcase-nav{
     top:calc((var(--tish-showcase-size) + 24px) / 2)!important;
     width:39px!important;
@@ -472,5 +469,27 @@ body.tish-paper.reference-home #featuredSection .cm-featured-empty{
   body.tish-paper.reference-home #featuredSection .cm-showcase-slide,
   body.tish-paper.reference-home #featuredSection .cm-showcase-nav{
     transition:none!important;
+  }
+}
+
+/* Keep side-card details in frame, including on narrow menu screens. */
+body.tish-paper.reference-home #featuredSection #featuredShowcase .tish-circle-card {
+  cursor:pointer;
+}
+@media(max-width:899px){
+  body.tish-paper.reference-home #featuredSection #featuredShowcase:has([data-offset="-1"], [data-offset="1"]){
+    --tish-showcase-size:min(315px,54vw)!important;
+    padding-inline:0!important;
+  }
+  body.tish-paper.reference-home #featuredSection #featuredShowcase [data-offset="-1"]{
+    transform:translate(-50%,-50%) translateX(calc(var(--tish-showcase-size) * -.66)) translateY(8px) scale(.59)!important;
+  }
+  body.tish-paper.reference-home #featuredSection #featuredShowcase [data-offset="1"]{
+    transform:translate(-50%,-50%) translateX(calc(var(--tish-showcase-size) * .66)) translateY(8px) scale(.59)!important;
+  }
+  body.tish-paper.reference-home #featuredSection #featuredShowcase .cm-showcase-nav{
+    top:auto!important;
+    bottom:0!important;
+    transform:none!important;
   }
 }
