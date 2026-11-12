@@ -185,7 +185,7 @@ document.querySelectorAll('[data-addon-expand]').forEach(button => {
     });
 });
 const addonFeedback = document.getElementById('tishAddonsFeedback');
-document.querySelector('.tish-addons-grid')?.addEventListener('click', event => {
+document.querySelector('.tish-complete-meal')?.addEventListener('click', event => {
     const button = event.target.closest('button[data-addon-id]');
     if (!button) return;
     const item = CM.product(button.dataset.addonId);
