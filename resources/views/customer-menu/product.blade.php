@@ -10,6 +10,7 @@
 @include('customer-menu.partials.styles')
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-product-paper.css') }}?v=4">
 @include('customer-menu.partials.pwa-head')
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-menu-cinematic.css') }}">
 </head>
 <body class="crisp-customer-menu tish-paper tish-product-page">
 <div class="app crisp-menu-app">
@@ -159,6 +160,7 @@
 
 @include('customer-menu.partials.bottom-nav', ['activeNav' => 'menu', 'showStickyCart' => false])
 @include('customer-menu.partials.cart-engine')
+<script src="{{ asset('assets/js/customer-menu/tish-menu-cinematic.js') }}"></script>
 @if($relatedItems->isNotEmpty())
 <script src="{{ asset('assets/js/customer-menu/featured-carousel.js') }}?v=3" defer></script>
 @endif
@@ -190,6 +192,8 @@ document.querySelector('.tish-addons-grid')?.addEventListener('click', event => 
     // Complex items must go through their dedicated choice picker.
     if (!item || !item.available || item.requiresChoices || item.isVariantProduct) return;
     if (!CM.addToCart(item.id, 1)) return;
+    const photo = button.closest('.tish-addon-card')?.querySelector('.tish-addon-photo img');
+    window.TishMenuCinematic?.flyToCart(photo, button);
     button.classList.add('added');
     pulseProductControl(button);
     button.innerHTML = '<i class="fa-solid fa-check" aria-hidden="true"></i>';
@@ -395,6 +399,7 @@ document.getElementById('detailAdd').onclick = () => {
     if (!ok) return;
 
     const btn = document.getElementById('detailAdd');
+    window.TishMenuCinematic?.flyToCart(document.querySelector('#detailMedia img'), btn);
     pulseProductControl(btn);
     btn.innerHTML = `<i class="fa-solid fa-check"></i> تمت الإضافة`;
     setTimeout(() => { btn.innerHTML = '<i class="fa-solid fa-bag-shopping"></i> إضافة المزيد للسلة'; }, 900);
