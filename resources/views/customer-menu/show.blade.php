@@ -304,12 +304,12 @@ body.tish-paper #intro.tish-reel-intro{overflow:hidden;background:#f5e4cd;oversc
  background:url('{{ asset('assets/tish-paper/paper/logo-disc.webp') }}') center/100% 100% no-repeat;
 }
 #intro.tish-reel-intro{
- --intro-order-size:clamp(76px,22vw,104px);
+ --intro-order-size:clamp(64px,19vw,90px);
 }
 #intro.tish-reel-intro.has-reel-frame .intro-box{
- position:absolute;left:var(--intro-order-x,58%);top:var(--intro-order-y,82%);
+ position:absolute;left:var(--intro-order-x,52%);top:var(--intro-order-y,62%);
  width:var(--intro-order-size);max-width:none;padding:0;text-align:center;
- transform:translate(-50%,calc(-100% - 6px));
+ transform:translate(-50%,-50%);
 }
 #intro .intro-enter{
  margin:0;
@@ -324,8 +324,8 @@ body.tish-paper #intro .intro-enter:focus-visible{
 }
 @media(prefers-reduced-motion:no-preference){
  #intro:not(.hide) .intro-enter:not([hidden]){
-  animation:tish-order-button-unfold 390ms cubic-bezier(.22,1,.36,1) both,
-            tish-order-button-nudge 1.65s ease-in-out 440ms 3;
+  animation:tish-order-button-unfold 560ms cubic-bezier(.22,1,.36,1) both,
+            tish-order-button-nudge 1.65s ease-in-out 610ms 3;
  }
  #intro:not(.hide) .intro-enter:not([hidden]):active{
   animation:none;
@@ -333,8 +333,8 @@ body.tish-paper #intro .intro-enter:focus-visible{
  }
 }
 @keyframes tish-order-button-unfold{
- 0%{opacity:0;transform:perspective(520px) translateY(18px) rotateX(42deg) scale(.68,.45)}
- 72%{opacity:1;transform:perspective(520px) translateY(-3px) rotateX(-5deg) scale(1.035,1.04)}
+ 0%{opacity:0;transform:perspective(520px) translateZ(-100px) translateY(10px) rotateX(26deg) scale(.36)}
+ 74%{opacity:1;transform:perspective(520px) translateZ(12px) translateY(-2px) rotateX(-4deg) scale(1.04)}
  100%{opacity:1;transform:none}
 }
 @keyframes tish-order-button-nudge{
@@ -805,18 +805,18 @@ body.tish-paper #intro .intro-enter:focus-visible{
             function alignOrderButton() {
                 if (!reel.videoWidth || !reel.clientWidth || !reel.clientHeight) return;
 
-                // Anchor to the upper edge of “Feel it” in the source video.
+                // Anchor to the center of the lower window pane in the source video.
                 // The video uses object-fit:cover and object-position:center bottom.
                 const scale = Math.max(reel.clientWidth / reel.videoWidth, reel.clientHeight / reel.videoHeight);
                 const width = reel.videoWidth * scale;
                 const height = reel.videoHeight * scale;
                 const halfButton = enter.offsetWidth / 2;
-                const x = (reel.clientWidth - width) / 2 + width * .58;
-                const y = reel.clientHeight - height * .18;
+                const x = (reel.clientWidth - width) / 2 + width * .52;
+                const y = reel.clientHeight - height * .38;
                 const inset = halfButton + 8;
 
                 intro.style.setProperty('--intro-order-x', Math.max(inset, Math.min(reel.clientWidth - inset, x)) + 'px');
-                intro.style.setProperty('--intro-order-y', Math.max(2 * halfButton + 14, Math.min(reel.clientHeight - 8, y)) + 'px');
+                intro.style.setProperty('--intro-order-y', Math.max(inset, Math.min(reel.clientHeight - inset, y)) + 'px');
             }
 
             function revealOrderButton() {
