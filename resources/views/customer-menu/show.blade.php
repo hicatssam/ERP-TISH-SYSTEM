@@ -305,12 +305,22 @@ body.tish-paper #intro.tish-reel-intro{overflow:hidden;background:#f5e4cd;oversc
  color:var(--tish-paper-red);background:url('{{ asset('assets/tish-paper/paper/category-ivory.webp') }}') center/100% 100% no-repeat;
 }
 #intro .intro-enter{
- width:clamp(188px,58vw,290px);max-width:100%;min-height:clamp(64px,17vw,82px);
- font-size:clamp(1.35rem,5.8vw,1.85rem);color:#fff8ed;
- background:url('{{ asset('assets/tish-paper/paper/nav-active.webp') }}') center/100% 100% no-repeat;
+ width:var(--intro-order-size);height:var(--intro-order-size);padding:12px;
+ border-radius:50%;font-size:clamp(.9rem,3.8vw,1.2rem);line-height:1.2;color:#8a1914;
+ background:url('{{ asset('assets/tish-paper/paper/logo-disc.webp') }}') center/100% 100% no-repeat;
+}
+#intro.tish-reel-intro{
+ --intro-order-size:clamp(76px,22vw,104px);
+ --intro-order-bottom:calc(10px + env(safe-area-inset-bottom,0px));
+}
+#intro.tish-reel-intro.has-reel-frame:has(.intro-enter:not([hidden])) .intro-reel{
+ translate:0 calc(0px - var(--intro-order-size) - var(--intro-order-bottom));
 }
 #intro.tish-reel-intro.has-reel-frame .intro-box{
- position:absolute;inset-inline:12px;top:51%;max-width:none;padding:0;text-align:center;
+ position:absolute;inset-inline:12px;bottom:var(--intro-order-bottom);max-width:none;padding:0;text-align:center;
+}
+@media(prefers-reduced-motion:no-preference){
+ #intro.tish-reel-intro .intro-reel{transition:translate 350ms cubic-bezier(.22,1,.36,1)}
 }
 #intro .intro-enter{
  margin:0;
@@ -334,7 +344,7 @@ body.tish-paper #intro .intro-enter:focus-visible{
  }
 }
 @keyframes tish-order-button-unfold{
- 0%{opacity:0;transform:perspective(520px) translateY(22px) rotateX(52deg) scale(.72,.28)}
+ 0%{opacity:0;transform:perspective(520px) translateY(18px) rotateX(42deg) scale(.68,.45)}
  72%{opacity:1;transform:perspective(520px) translateY(-3px) rotateX(-5deg) scale(1.035,1.04)}
  100%{opacity:1;transform:none}
 }
@@ -343,9 +353,6 @@ body.tish-paper #intro .intro-enter:focus-visible{
  7%{transform:translateX(-4px) rotate(-3deg) scale(1.035)}
  14%{transform:translateX(4px) rotate(3deg) scale(1.035)}
  22%{transform:translateX(-2px) rotate(-2deg) scale(1.02)}
-}
-@media(min-aspect-ratio: 1/1){
- #intro.tish-reel-intro.has-reel-frame .intro-box{top:24%}
 }
 @media(prefers-reduced-motion:reduce){#intro.tish-reel-intro{transition:none}}
 
