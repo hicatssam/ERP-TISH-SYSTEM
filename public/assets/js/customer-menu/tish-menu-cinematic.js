@@ -98,10 +98,10 @@
                 { transform: 'none', opacity: 1 }
             ], { duration: 660, easing: ease });
             card.querySelector('.tish-circle-photo')?.animate([
-                { translate: '0 18px', scale: '.83', opacity: .55 },
-                { translate: '0 -9px', scale: '1.08', offset: .73 },
+                { translate: '0 5px', scale: '.92', opacity: .8 },
+                { translate: '0 -14px', scale: '1.14', opacity: 1, offset: .52 },
                 { translate: '0', scale: '1', opacity: 1 }
-            ], { duration: 780, easing: ease });
+            ], { duration: 850, easing: ease });
         }, { rootMargin: '0px 0px -20% 0px' });
         observer.observe(section);
     }
@@ -115,7 +115,9 @@
         const buttonBounds = button.getBoundingClientRect();
         const source = sourceBounds?.width && sourceBounds.bottom > 0 && sourceBounds.top < window.innerHeight
             ? sourceBounds : buttonBounds;
-        const destination = target.getBoundingClientRect();
+        const icon = target.querySelector('.tish-paper-cart-icon-disc');
+        const iconBounds = icon?.getBoundingClientRect();
+        const destination = iconBounds?.width ? iconBounds : target.getBoundingClientRect();
         if (!destination.width || !source.width) return;
 
         cartFlight?.cancel();
@@ -139,16 +141,23 @@
         token.style.top = y + 'px';
         document.body.append(token);
 
+        const position = (horizontal, vertical) => `calc(-50% + ${horizontal}px) calc(-50% + ${vertical}px)`;
+        const arc = Math.min(56, window.innerWidth * .15) * (x < window.innerWidth / 2 ? 1 : -1);
         const flight = token.animate([
-            { translate: '-50% -50%', rotate: '-8deg', scale: '1' },
-            { translate: 'calc(-50% + ' + dx * .5 + 'px) calc(-50% + ' + (dy * .42 - 44) + 'px)', rotate: '12deg', scale: '.83', offset: .56 },
-            { translate: 'calc(-50% + ' + dx + 'px) calc(-50% + ' + dy + 'px)', rotate: '0deg', scale: '.24', opacity: 0 }
-        ], { duration: 610, easing: ease });
+            { translate: position(0, 0), rotate: '-8deg', scale: '1' },
+            { translate: position(dx * .12 + arc * .62, dy * .08 - 16), rotate: '4deg', scale: '1.08', offset: .22 },
+            { translate: position(dx * .56 + arc, dy * .46), rotate: '12deg', scale: '.72', offset: .6 },
+            { translate: position(dx, dy), rotate: '0deg', scale: '.24', opacity: 0 }
+        ], { duration: 720, easing: 'cubic-bezier(.3,.12,.4,1)' });
         cartFlight = flight;
         flight.finished.then(() => {
-            target.querySelector('.tish-paper-cart-icon-disc')?.animate([
-                { scale: '1' }, { scale: '1.27' }, { scale: '1' }
-            ], { duration: 270, easing: ease });
+            if (reducedMotion.matches) return;
+            icon?.animate([
+                { scale: '1' }, { scale: '1.28', offset: .38 }, { scale: '1' }
+            ], { duration: 320, easing: ease });
+            target.querySelector('.nav-badge')?.animate([
+                { scale: '1' }, { scale: '1.4', offset: .35 }, { scale: '1' }
+            ], { duration: 320, easing: ease });
         }).catch(() => {}).finally(() => token.remove());
     }
 
