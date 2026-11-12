@@ -759,6 +759,33 @@ body.tish-paper #intro .intro-enter:focus-visible{
         window.TishMenuCinematic?.revealFirstCard(section);
     }
 
+    function warmProductPhotos() {
+        const firstPhotos = Array.from(document.querySelectorAll(
+            '#featuredGrid img.tish-circle-photo, #productGrid .tish-circle-card:first-child img.tish-circle-photo'
+        )).map(image => image.src);
+        const urls = new Set(firstPhotos);
+        for (const product of CM.PRODUCTS) {
+            const picture = product.cutoutImage || product.image;
+            if (picture) urls.add(new URL(picture, document.baseURI).href);
+        }
+
+        const queue = urls.values();
+        const connection = navigator.connection;
+        const limit = connection?.saveData || /2g/.test(connection?.effectiveType || '') ? 1 : 3;
+
+        function nextPhoto() {
+            const photo = queue.next();
+            if (photo.done) return;
+            const image = new Image();
+            image.fetchPriority = 'low';
+            image.onload = nextPhoto;
+            image.onerror = nextPhoto;
+            image.src = photo.value;
+        }
+
+        for (let index = 0; index < limit; index++) nextPhoto();
+    }
+
     const intro = document.getElementById('intro');
     if (intro) {
         const mode = intro.dataset.mode;
@@ -891,6 +918,16 @@ body.tish-paper #intro .intro-enter:focus-visible{
     if (intro?.isConnected) {
         const firstPhoto = document.querySelector('#featuredGrid [data-offset="0"] img.tish-circle-photo, #productGrid .tish-circle-card:first-child img.tish-circle-photo');
         if (firstPhoto) firstPhoto.loading = 'eager';
+        const reel = intro.querySelector('video');
+        // Give the reel first use of the connection, then warm photos in parallel.
+        const fallback = window.setTimeout(startPhotoWarmup, 2000);
+        function startPhotoWarmup() {
+            window.clearTimeout(fallback);
+            reel?.removeEventListener('playing', startPhotoWarmup);
+            warmProductPhotos();
+        }
+        if (reel?.readyState >= 2 || reducedMotion.matches) startPhotoWarmup();
+        else reel?.addEventListener('playing', startPhotoWarmup, {once:true});
     } else {
         revealFirstProduct();
     }
