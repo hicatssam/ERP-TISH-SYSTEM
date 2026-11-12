@@ -553,7 +553,7 @@ body.tish-paper #intro .intro-enter:focus-visible{
 
 @include('customer-menu.partials.bottom-nav', ['activeNav' => 'home'])
 @include('customer-menu.partials.cart-engine')
-<script src="{{ asset('assets/js/customer-menu/tish-menu-cinematic.js') }}"></script>
+<script src="{{ asset('assets/js/customer-menu/tish-menu-cinematic.js') }}?v=2"></script>
 <script src="{{ asset('assets/js/customer-menu/tish-product-circle-card-v8.js') }}?v=8"></script>
 <script src="{{ asset('assets/js/customer-menu/tish-paper-motion-v10.js') }}?v=11"></script>
 <script src="{{ asset('assets/js/customer-menu/featured-carousel.js') }}?v=3"></script>
