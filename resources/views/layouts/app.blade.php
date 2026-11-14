@@ -110,7 +110,7 @@ $brandName =
         content="{{ \App\Support\ArabicDate::timezone() }}"
     >
 
-    <link rel="manifest" href="{{ route('pwa.manifest') }}">
+    <link rel="manifest" href="{{ request()->routeIs('restaurant.pos.*') ? route('pwa.cashier-manifest') : route('pwa.manifest') }}">
 
     {{-- Capture installability as early as possible; the header button is mounted later. --}}
     <script>
@@ -2609,8 +2609,8 @@ a.app-page-btn:hover {
                     type="button"
                     class="install-app-btn"
                     id="installAppButton"
-                    title="تحميل التطبيق"
-                    aria-label="تحميل التطبيق"
+                    title="{{ request()->routeIs('restaurant.pos.*') ? 'تثبيت تطبيق كاشير TISH' : 'تحميل التطبيق' }}"
+                    aria-label="{{ request()->routeIs('restaurant.pos.*') ? 'تثبيت تطبيق كاشير TISH' : 'تحميل التطبيق' }}"
                     hidden
                 >
                     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -2619,7 +2619,7 @@ a.app-page-btn:hover {
                         <path d="M5 21h14" />
                     </svg>
 
-                    <span>تحميل التطبيق</span>
+                    <span>{{ request()->routeIs('restaurant.pos.*') ? 'تثبيت تطبيق الكاشير' : 'تحميل التطبيق' }}</span>
                 </button>
 
                 <dialog class="pwa-install-dialog" id="pwaInstallHelp">

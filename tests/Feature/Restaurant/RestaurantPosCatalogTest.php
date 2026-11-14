@@ -88,6 +88,8 @@ class RestaurantPosCatalogTest extends TestCase
         $this->atBranch($branch, $product, true);
 
         $this->actingAs($cashier)->get(route('restaurant.pos.index'))->assertOk()
+            ->assertSee(route('pwa.cashier-manifest'), false)
+            ->assertSee('تثبيت تطبيق الكاشير')
             ->assertSee('نقد عام')->assertDontSee('نقد فرع آخر')
             ->assertSee('rbChannelDiscount')->assertSee('"discount_value":10', false);
 
