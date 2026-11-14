@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\Recipe;
 use App\Models\RestaurantMenuItem;
+use App\Models\SalesChannel;
 use App\Models\User;
 use App\Services\Orders\OrderService;
 use Database\Seeders\DatabaseSeeder;
@@ -87,6 +88,7 @@ class TishRecipeStockFlowTest extends TestCase
 
         $order = app(OrderService::class)->createOrder([
             'location_id' => $branch->id,
+            'sales_channel_id' => SalesChannel::query()->where('slug', 'tish-direct')->value('id'),
             'restaurant_service_type' => 'takeaway',
             'order_source' => 'restaurant_pos',
             'payment_arrangement' => 'pay_on_pickup',
@@ -158,6 +160,7 @@ class TishRecipeStockFlowTest extends TestCase
 
         $order = app(OrderService::class)->createOrder([
             'location_id' => $branch->id,
+            'sales_channel_id' => SalesChannel::query()->where('slug', 'tish-direct')->value('id'),
             'restaurant_service_type' => 'takeaway',
             'order_source' => 'restaurant_pos',
             'payment_arrangement' => 'pay_on_pickup',
