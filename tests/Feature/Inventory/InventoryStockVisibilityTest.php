@@ -50,6 +50,10 @@ class InventoryStockVisibilityTest extends TestCase
         OrderItem::create(['order_id' => $draft->id, 'product_id' => $fromDraft->id,
             'product_name' => 'Draft Burger', 'quantity' => 1, 'unit_price' => 10, 'line_total' => 10]);
 
+        // The same measurement unit stored on a product must be visible in stock rows.
+        $this->actingAs($user)->get(route('inventory.index'))
+            ->assertOk()->assertSee('الوحدة')->assertSee('قطعة');
+
         $this->actingAs($user)->get(route('inventory.index', ['stock' => 'out']))
             ->assertOk()->assertSee('منتجات نافدة')->assertSee('Empty')
             ->assertSee('Missing')->assertSee('Draft Burger')->assertDontSee('Foreign')

@@ -19,6 +19,7 @@
     .expiry-summary-value{margin-top:.35rem;font-size:1.5rem;font-weight:900;line-height:1}
     .expiry-summary-note{margin-top:.35rem;color:var(--text-muted);font-size:.68rem}
     .inventory-section{border:1px solid var(--border);border-radius:16px;background:var(--surface);overflow:hidden}
+    .inventory-unit{display:inline-flex;align-items:center;justify-content:center;padding:.25rem .55rem;border-radius:8px;background:color-mix(in srgb,var(--theme-primary) 8%,var(--surface));color:var(--text);font-weight:750;font-size:.75rem;white-space:nowrap}
     .inventory-section-header{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1rem 1.1rem;border-bottom:1px solid var(--border)}
     .inventory-section-header h2{margin:0;font-size:.95rem;font-weight:850}
     .inventory-section-header p{margin:.2rem 0 0;color:var(--text-muted);font-size:.7rem}
@@ -278,6 +279,7 @@
                         @if($showAllLocations)<th>الموقع</th>@endif
                         <th>الفئة</th>
                         <th>المتاح / الرصيد</th>
+                        <th>الوحدة</th>
                         <th>الحد الأدنى</th>
                         <th>الحالة</th>
                     </tr>
@@ -293,6 +295,18 @@
                                 ->where('location_id', $rowLocationId)
                                 ->first();
 
+                            $unitCode = strtolower(trim((string) ($inv->product?->unit ?? '')));
+                            $unitLabel = match ($unitCode) {
+                                'kg', 'kilogram', 'kilograms' => 'كغ',
+                                'g', 'gram', 'grams' => 'غرام',
+                                'liter', 'litre', 'l', 'liters', 'litres' => 'لتر',
+                                'ml', 'milliliter', 'millilitre' => 'مل',
+                                'piece', 'pieces', 'pcs', 'pc' => 'قطعة',
+                                'cup', 'cups' => 'كوب',
+                                'box', 'boxes' => 'علبة',
+                                'pack', 'packet', 'packs' => 'عبوة',
+                                default => $inv->product?->unit ?: '—',
+                            };
                             $minStock = $lp?->minimum_stock_level ?? 0;
                             $available = max(0, (float) $inv->quantity - (float) $inv->reserved_quantity);
                             $isOut = $available <= 0;
@@ -323,6 +337,8 @@
                                 </strong>
                             </td>
 
+                            <td><span class="inventory-unit" title="{{ $inv->product?->unit ?? '' }}">{{ $unitLabel }}</span></td>
+
                             <td>{{ number_format((float) $minStock, 2) }}</td>
 
                             <td>
@@ -337,7 +353,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ $showAllLocations ? 6 : 5 }}">
+                            <td colspan="{{ $showAllLocations ? 7 : 6 }}">
                                 <div class="empty-state-sm">لا توجد بيانات مخزون.</div>
                             </td>
                         </tr>
