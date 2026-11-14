@@ -112,7 +112,7 @@ class AccountingOverviewTest extends TestCase
                 && $report['missing_total'] === 1
                 && count($report['missing']) === 1
                 && (int) $report['missing'][0]['location_id'] === $branch->id)
-            ->assertSee('B01', false);
+            ->assertSee('مركز الرقابة المالية');
 
         $this->actingAs($reader)->get(route('financial.audit.index', ['location_id' => $other->id]))
             ->assertForbidden();
