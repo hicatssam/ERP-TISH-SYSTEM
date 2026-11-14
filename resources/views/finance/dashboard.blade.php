@@ -6,18 +6,23 @@
 <div class="page-header">
     <div class="page-header-text">
         <h1 class="page-heading">لوحة المالية</h1>
-        <p class="page-subheading">{{ now()->format('F Y') }} — المبيعات والتحصيلات لهذا الشهر، والمستحقات الحالية</p>
+        <p class="page-subheading">{{ now()->format('F Y') }} — المبيعات والتحصيلات لهذا الشهر، والمستحقات الحالية — {{ ($historicalScope ?? false) ? 'تشمل المواقع المعطلة والتاريخية' : 'المواقع النشطة أو الموقع المحدد' }}</p>
     </div>
     <div class="page-header-actions">
         @if(isset($locations) && $locations->count() > 0)
         <form method="GET" action="{{ route('financial.dashboard') }}" style="display:flex;gap:.5rem;align-items:center">
             <select name="location_id" class="form-input" style="max-width:180px;padding:.45rem .75rem;font-size:.83rem" onchange="this.form.submit()">
-                <option value="">جميع الفروع</option>
+                <option value="" @selected(!($historicalScope ?? false) && !$locationId)>الفروع النشطة فقط</option>
                 @foreach($locations as $loc)
                 <option value="{{ $loc->id }}" {{ $locationId == $loc->id ? 'selected' : '' }}>{{ $loc->name }}</option>
                 @endforeach
             </select>
         </form>
+        @if($historicalScope ?? false)
+            <a class="btn btn-outline btn-sm" href="{{ route('financial.dashboard') }}">العودة للفروع النشطة</a>
+        @else
+            <a class="btn btn-outline btn-sm" href="{{ route('financial.dashboard', ['scope' => 'history']) }}">عرض الأرقام التاريخية</a>
+        @endif
         @endif
         @can('reports.view')
         <a href="{{ route('reports.show', 'monthly-sales') }}" class="btn btn-outline btn-sm">
@@ -140,6 +145,7 @@
     <div class="card">
         <div class="card-header"><span class="card-title">الأقسام المالية</span></div>
         <div class="card-body" style="display:grid;gap:.625rem">
+            @can('costing.view')<a href="{{ route('costing.profitability.index') }}" class="btn btn-outline btn-full">الربحية وجودة التكلفة</a>@endcan
             @can('financial.cash.view')<a href="{{ route('daily-cash.index') }}" class="btn btn-outline btn-full">مطابقة خزينة الفرع</a>@endcan
             @can('payments.view')<a href="{{ route('payments.index') }}" class="btn btn-outline btn-full">المدفوعات والتحقق</a>@endcan
             @can('expenses.view')<a href="{{ route('costing.expenses.index') }}" class="btn btn-outline btn-full">المصروفات</a>@endcan
