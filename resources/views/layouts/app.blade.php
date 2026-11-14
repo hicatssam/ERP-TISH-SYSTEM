@@ -110,7 +110,7 @@ $brandName =
         content="{{ \App\Support\ArabicDate::timezone() }}"
     >
 
-    <link rel="manifest" href="{{ route('pwa.manifest') }}">
+    <link rel="manifest" href="{{ request()->routeIs('restaurant.pos.*') ? route('pwa.cashier-manifest') : route('pwa.manifest') }}">
 
     {{-- Capture installability as early as possible; the header button is mounted later. --}}
     <script>
