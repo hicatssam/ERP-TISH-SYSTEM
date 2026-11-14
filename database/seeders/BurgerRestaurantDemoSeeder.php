@@ -79,6 +79,9 @@ class BurgerRestaurantDemoSeeder extends Seeder
             $raw = $this->seedIngredients();
             $this->seedRecipes($raw, $admin);
             $this->requireRecipesForDemoMenu();
+            // Only dine-in and takeaway are supported in this Tish demo.
+            RestaurantMenuItem::query()->whereHas('product', fn ($q) => $q->where('sku', 'like', 'BRG-%'))
+                ->update(['show_in_delivery' => false]);
             $this->openingStock($raw, $admin);
             $this->seedRestaurantOperations($admin);
             $this->seedOrders($admin);
