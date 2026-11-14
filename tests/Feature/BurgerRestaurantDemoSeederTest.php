@@ -74,7 +74,7 @@ class BurgerRestaurantDemoSeederTest extends TestCase
 
         $quantities = DB::table('inventories')->orderBy('id')->pluck('quantity', 'id')->all();
         $this->seed(DatabaseSeeder::class);
-        $this->assertSame(24, Order::count());
+        $this->assertSame(12, Order::count());
         $this->assertSame($quantities, DB::table('inventories')->orderBy('id')->pluck('quantity', 'id')->all());
         $this->assertSame(76, Recipe::count());
     }
