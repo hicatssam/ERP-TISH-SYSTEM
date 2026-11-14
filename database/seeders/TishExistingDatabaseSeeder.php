@@ -64,7 +64,7 @@ class TishExistingDatabaseSeeder extends Seeder
                 // Redirect future tickets only. Existing tickets retain their station IDs.
                 DB::table('kitchen_category_routes')->updateOrInsert(
                     ['location_id' => $branch->id, 'category_id' => $category->id],
-                    ['kitchen_station_id' => $station->id, 'updated_at' => now()]
+                    ['kitchen_station_id' => $station->id, 'created_at' => now(), 'updated_at' => now()]
                 );
 
                 foreach ($definition['items'] as [$code]) {
