@@ -20,3 +20,6 @@ Route::get('/menu/{location:code}/manifest.webmanifest', [PwaController::class, 
 
 Route::get('/orders-app.webmanifest', [OrdersAppController::class, 'manifest'])
     ->name('orders-app.manifest');
+
+Route::get('/cashier.webmanifest', [PwaController::class, 'cashierManifest'])
+    ->name('pwa.cashier-manifest');
