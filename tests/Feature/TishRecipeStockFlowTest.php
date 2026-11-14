@@ -194,8 +194,8 @@ class TishRecipeStockFlowTest extends TestCase
         $invoicesBefore = DB::table('invoices')->count();
         $recipeItemsBefore = DB::table('recipe_items')->count();
 
-        $this->seed(\\Database\\Seeders\\TishExistingDatabaseSeeder::class);
-        $this->seed(\\Database\\Seeders\\TishExistingDatabaseSeeder::class);
+        $this->seed(\Database\Seeders\TishExistingDatabaseSeeder::class);
+        $this->seed(\Database\Seeders\TishExistingDatabaseSeeder::class);
 
         $this->assertSame($movementsBefore, DB::table('stock_movements')->count());
         $this->assertSame($ordersBefore, DB::table('orders')->count());
