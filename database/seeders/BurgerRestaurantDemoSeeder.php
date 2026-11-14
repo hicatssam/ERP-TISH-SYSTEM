@@ -22,8 +22,6 @@ use App\Models\RestaurantArea;
 use App\Models\RestaurantMenuItem;
 use App\Models\RestaurantTable;
 use App\Models\SalesChannel;
-use App\Models\StockRequest;
-use App\Models\StockRequestItem;
 use App\Models\SystemSetting;
 use App\Models\User;
 use App\Services\BusinessProfileService;
@@ -54,20 +52,16 @@ class BurgerRestaurantDemoSeeder extends Seeder
             throw new RuntimeException('تهيئة مطعم البرجر تجريبية وممنوعة في production.');
         }
         if (Product::withTrashed()->where('sku', 'not like', 'BRG-%')->exists()
-            || Location::withTrashed()->whereNotIn('code', ['B01', 'B02', 'FAC'])->exists()
+            || Location::withTrashed()->whereNotIn('code', ['B01'])->exists()
             || Location::query()->where('name', 'like', '%دهب%')->exists()
             || DB::table('special_cake_orders')->exists()) {
             throw new RuntimeException('توجد بيانات قديمة. استخدم migrate:fresh --seed على قاعدة البيانات التجريبية فقط.');
         }
 
         DB::transaction(function (): void {
-            foreach ([
-                ['B01', 'Tish — الفرع الرئيسي', 'branch'],
-                ['B02', 'Tish — الفرع الثاني', 'branch'],
-                ['FAC', 'مطبخ Tish المركزي', 'factory'],
-            ] as [$code, $name, $type]) {
-                Location::firstOrCreate(['code' => $code], compact('name', 'type') + ['is_active' => true]);
-            }
+            Location::firstOrCreate(['code' => 'B01'], [
+                'name' => 'Tish — الفرع الرئيسي', 'type' => 'branch', 'is_active' => true,
+            ]);
 
             app(DatabaseSeeder::class)->seedRestaurantFoundationOnly();
             $admin = $this->seedStaff();
@@ -88,7 +82,6 @@ class BurgerRestaurantDemoSeeder extends Seeder
             $this->openingStock($raw, $admin);
             $this->seedRestaurantOperations($admin);
             $this->seedOrders($admin);
-            $this->seedStockRequests($raw, $admin);
             $this->assertDemoInventoryAndRecipes();
         });
 
@@ -99,8 +92,6 @@ class BurgerRestaurantDemoSeeder extends Seeder
     private function seedStaff(): User
     {
         $branch = Location::where('code', 'B01')->firstOrFail();
-        $second = Location::where('code', 'B02')->firstOrFail();
-        $factory = Location::where('code', 'FAC')->firstOrFail();
         $roles = [
             'Branch Manager' => ['restaurant.', 'restaurant_', 'orders.', 'customers.', 'reports.', 'inventory.', 'stock_', 'employees.view', 'payments.', 'invoices.'],
             'Cashier' => ['restaurant.pos.', 'restaurant_pos.', 'restaurant.view', 'restaurant_menu.view', 'orders.view', 'orders.create', 'customers.', 'payments.record', 'invoices.', 'cash_sessions.'],
@@ -117,12 +108,9 @@ class BurgerRestaurantDemoSeeder extends Seeder
         foreach ([
             ['admin', 'مدير نظام Tish', 'Admin', $branch],
             ['branch_b01', 'مدير الفرع الرئيسي', 'Branch Manager', $branch],
-            ['branch_b02', 'مدير الفرع الثاني', 'Branch Manager', $second],
             ['cashier_b01', 'كاشير الفرع الرئيسي', 'Cashier', $branch],
-            ['cashier_b02', 'كاشير الفرع الثاني', 'Cashier', $second],
             ['chef_b01', 'شيف البرجر', 'Chef', $branch],
-            ['chef_b02', 'شيف الفرع الثاني', 'Chef', $second],
-            ['inventory', 'مسؤول مخزن Tish', 'Inventory Manager', $factory],
+            ['inventory', 'مسؤول مخزن Tish', 'Inventory Manager', $branch],
             ['accountant', 'محاسب Tish', 'Accountant', $branch],
         ] as [$username, $name, $role, $location]) {
             $employee = Employee::firstOrCreate(['employee_number' => 'BRG-EMP-'.$username], [
@@ -161,7 +149,7 @@ class BurgerRestaurantDemoSeeder extends Seeder
             'customer_menu_show_categories' => '1', 'customer_menu_show_featured' => '1',
             'customer_menu_show_descriptions' => '1', 'customer_menu_show_search' => '1',
             'customer_menu_allow_dine_in' => '1', 'customer_menu_allow_takeaway' => '1',
-            'customer_menu_allow_delivery' => '1', 'kitchen_require_served_before_complete' => '1',
+            'customer_menu_allow_delivery' => '0', 'kitchen_require_served_before_complete' => '1',
         ];
         foreach ($settings as $key => $value) {
             SystemSetting::set($key, $value);
@@ -427,12 +415,15 @@ class BurgerRestaurantDemoSeeder extends Seeder
                     'is_active' => true, 'sort_order' => $number,
                 ]);
             }
-            foreach (['GRILL' => 'محطة البرجر', 'FRYER' => 'محطة الفرايز والمقبلات', 'BAR' => 'محطة المشروبات'] as $code => $name) {
+            // Single kitchen production station and one preparation/assembly station.
+            foreach (['KITCHEN' => 'محطة المطبخ', 'PREP' => 'محطة التجهيز'] as $code => $name) {
                 $station = KitchenStation::firstOrCreate(['location_id' => $branch->id, 'code' => $code], [
-                    'name' => $name, 'is_active' => true, 'is_default' => $code === 'GRILL',
-                    'target_minutes' => $code === 'BAR' ? 5 : 15, 'created_by' => $admin->id,
+                    'name' => $name, 'is_active' => true, 'is_default' => $code === 'KITCHEN',
+                    'target_minutes' => $code === 'PREP' ? 5 : 15, 'created_by' => $admin->id,
                 ]);
-                $groups = match ($code) { 'BAR' => ['drinks', 'shakes'], 'FRYER' => ['fries', 'appetizers'], default => ['beef', 'chicken', 'vegetarian', 'sauces'] };
+                $groups = $code === 'KITCHEN'
+                    ? ['beef', 'chicken', 'vegetarian', 'fries', 'appetizers']
+                    : ['sauces', 'drinks', 'shakes'];
                 foreach ($groups as $group) {
                     $category = Category::where('slug', 'burger-'.$group)->firstOrFail();
                     DB::table('kitchen_category_routes')->updateOrInsert([
@@ -480,7 +471,11 @@ class BurgerRestaurantDemoSeeder extends Seeder
                 ];
                 $payload = [
                     'location_id' => $branch->id, 'customer_id' => $customer->id,
-                    'sales_channel_id' => $channel->id, 'service_type' => 'takeaway',
+                    'sales_channel_id' => $channel->id,
+                    'service_type' => $number % 2 === 0 ? 'dine_in' : 'takeaway',
+                    'restaurant_table_id' => $number % 2 === 0
+                        ? RestaurantTable::where('location_id', $branch->id)->where('code', 'T'.(($number % 8) + 1))->value('id')
+                        : null,
                     'payment_arrangement' => 'pay_now', 'payment_method_id' => $payment->id,
                     'discount_type' => 'fixed', 'discount_value' => 0,
                     'items' => $rows, 'notes' => $marker, 'order_source' => 'restaurant_pos',
@@ -503,18 +498,4 @@ class BurgerRestaurantDemoSeeder extends Seeder
         }
     }
 
-    private function seedStockRequests($raw, User $admin): void
-    {
-        foreach (Location::branches()->active()->get() as $branch) {
-            $request = StockRequest::firstOrCreate(['request_number' => 'TSR-DEMO-'.$branch->code], [
-                'branch_location_id' => $branch->id, 'factory_location_id' => Location::where('code', 'FAC')->value('id'),
-                'status' => 'pending_factory_review', 'notes' => 'طلب مواد خام لتشغيل مطعم البرجر', 'created_by' => $admin->id,
-            ]);
-            foreach (['BEEF', 'CHICKEN', 'POTATO', 'BUN'] as $code) {
-                StockRequestItem::firstOrCreate(['stock_request_id' => $request->id, 'product_id' => $raw[$code]->id], [
-                    'requested_quantity' => 10,
-                ]);
-            }
-        }
-    }
 }
