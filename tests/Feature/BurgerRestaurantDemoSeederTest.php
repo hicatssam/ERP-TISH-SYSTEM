@@ -26,10 +26,19 @@ class BurgerRestaurantDemoSeederTest extends TestCase
         $this->seed(DatabaseSeeder::class);
         $this->assertSame(76, Product::where('is_raw_material', false)->count());
         $this->assertSame(76, Recipe::where('status', 'approved')->count());
-        $this->assertSame(152, RestaurantMenuItem::count());
-        $this->assertSame(24, Order::count());
-        $this->assertSame(24, Invoice::count());
+        $this->assertSame(76, RestaurantMenuItem::count());
+        $this->assertSame(12, Order::count());
+        $this->assertSame(12, Invoice::count());
         $this->assertSame(8, Product::where('sku', 'like', 'BRG-SAUCES-%')->count());
+        $this->assertSame(['B01'], Location::query()->orderBy('code')->pluck('code')->all());
+        $branchId = Location::query()->where('code', 'B01')->value('id');
+        $this->assertSame(1, \App\Models\RestaurantArea::query()->where('location_id', $branchId)->count());
+        $this->assertSame('HALL', \App\Models\RestaurantArea::query()->where('location_id', $branchId)->value('code'));
+        $this->assertSame(['KITCHEN', 'PREP'], \App\Models\KitchenStation::query()
+            ->where('location_id', $branchId)->orderBy('code')->pluck('code')->all());
+        $this->assertSame(6, Order::where('restaurant_service_type', 'dine_in')->count());
+        $this->assertSame(6, Order::where('restaurant_service_type', 'takeaway')->count());
+        $this->assertFalse((bool) SystemSetting::get('customer_menu_allow_delivery'));
         $this->assertDatabaseHas('recipe_items', [
             'recipe_id' => Recipe::where('code', 'RCP-BRG-SAUCES-RANCH')->value('id'),
             'ingredient_product_id' => Product::where('sku', 'BRG-ING-RANCH')->value('id'),
@@ -44,7 +53,7 @@ class BurgerRestaurantDemoSeederTest extends TestCase
         $this->assertFalse(app(ModuleService::class)->isEnabled('bakery'));
         $this->assertFalse(app(ModuleService::class)->isEnabled('cake_orders'));
         $this->assertTrue(app(ModuleService::class)->isEnabled('restaurant_pos'));
-        $this->assertSame(16, Order::where('status', 'completed')->count());
+        $this->assertSame(8, Order::where('status', 'completed')->count());
         $this->assertGreaterThan(0, DB::table('order_inventory_consumptions')->count());
         $this->assertGreaterThan(0, DB::table('stock_movements')->where('reason', 'order_sale')->count());
         $this->assertGreaterThan(0, DB::table('kitchen_tickets')->count());
@@ -53,7 +62,7 @@ class BurgerRestaurantDemoSeederTest extends TestCase
         $this->assertTrue(\Illuminate\Support\Facades\Hash::check('TishDemo@2026!', User::where('username', 'admin')->firstOrFail()->password));
         $this->assertFalse(Location::where('name', 'like', '%دهب%')->exists());
 
-        foreach (['B01', 'B02'] as $branchCode) {
+        foreach (['B01'] as $branchCode) {
             $menu = $this->get('/menu/'.$branchCode.'?branch_selected=1')->assertOk();
             $menu->assertViewHas('menuItems', fn ($items) => $items->count() === 76
                 && $items->every(fn ($item) => str_starts_with($item['sku'], 'BRG-')
@@ -65,7 +74,7 @@ class BurgerRestaurantDemoSeederTest extends TestCase
 
         $quantities = DB::table('inventories')->orderBy('id')->pluck('quantity', 'id')->all();
         $this->seed(DatabaseSeeder::class);
-        $this->assertSame(24, Order::count());
+        $this->assertSame(12, Order::count());
         $this->assertSame($quantities, DB::table('inventories')->orderBy('id')->pluck('quantity', 'id')->all());
         $this->assertSame(76, Recipe::count());
     }
