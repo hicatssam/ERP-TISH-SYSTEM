@@ -118,7 +118,7 @@ class AccountingOverviewTest extends TestCase
         $first = $this->branch();
         $other = $this->branch();
         $user = $this->userAt($first, [
-            'financial.dashboard.view', 'payments.record',
+            'dashboard.view', 'financial.dashboard.view', 'payments.record',
         ]);
         $method = $this->method();
 
