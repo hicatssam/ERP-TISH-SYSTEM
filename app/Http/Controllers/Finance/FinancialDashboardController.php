@@ -18,7 +18,10 @@ class FinancialDashboardController extends Controller
 {
     public function index(Request $request): View
     {
-        $request->validate(['location_id' => ['nullable', 'integer', 'exists:locations,id']]);
+        $request->validate([
+            'location_id' => ['nullable', 'integer', 'exists:locations,id'],
+            'scope' => ['nullable', 'in:active,history'],
+        ]);
         $user = $request->user();
         $canViewAll = $user->isAdmin() || $user->can('financial.global.view');
         $locationId = $request->integer('location_id') ?: null;
@@ -29,12 +32,20 @@ class FinancialDashboardController extends Controller
             $locationId = $primaryId;
         }
 
-        $locationIds = $locationId ? collect([$locationId]) : Location::query()->pluck('id');
+        // Default operational totals exclude inactive/historical locations.
+        // Historical totals require an explicit global-user selection.
+        $historicalScope = $canViewAll && ! $locationId && $request->input('scope') === 'history';
+        $locationIds = $locationId
+            ? collect([$locationId])
+            : ($historicalScope
+                ? Location::query()->pluck('id')
+                : Location::query()->where('is_active', true)->pluck('id'));
 
         return view('finance.dashboard', [
             'data' => $this->buildFinancialData($locationIds),
             'locations' => $canViewAll ? Location::query()->orderBy('name')->get() : collect(),
             'locationId' => $locationId,
+            'historicalScope' => $historicalScope,
             'currencySymbol' => Currency::query()->where('is_base', true)->value('symbol') ?: '₪',
         ]);
     }
@@ -49,6 +60,7 @@ class FinancialDashboardController extends Controller
             'data' => $this->buildFinancialData(collect([$location->id])),
             'locations' => $canViewAll ? Location::query()->orderBy('name')->get() : collect(),
             'locationId' => $location->id,
+            'historicalScope' => false,
             'currencySymbol' => Currency::query()->where('is_base', true)->value('symbol') ?: '₪',
         ]);
     }
