@@ -40,7 +40,7 @@ class TishExistingDatabaseSeeder extends Seeder
             $this->call(BurgerRestaurantSeeder::class);
             $catalogue = new BurgerRestaurantDemoSeeder();
             $raw = $catalogue->seedIngredients();
-            $catalogue->seedRecipes($raw, $admin);
+            $catalogue->seedRecipes($raw, $admin, skipTrashedProducts: true);
 
             $area = RestaurantArea::query()->firstOrCreate(
                 ['location_id' => $branch->id, 'code' => 'HALL'],
@@ -57,6 +57,7 @@ class TishExistingDatabaseSeeder extends Seeder
             }
 
             $productIds = [];
+            $skippedTrashed = 0;
             foreach (BurgerRestaurantSeeder::catalogue() as $group => $definition) {
                 $station = in_array($group, ['sauces', 'drinks', 'shakes'], true)
                     ? $stations['PREP'] : $stations['KITCHEN'];
@@ -68,7 +69,13 @@ class TishExistingDatabaseSeeder extends Seeder
                 );
 
                 foreach ($definition['items'] as [$code]) {
-                    $product = Product::query()->where('sku', 'BRG-'.strtoupper($group).'-'.$code)->firstOrFail();
+                    $sku = 'BRG-'.strtoupper($group).'-'.$code;
+                    $product = Product::withTrashed()->where('sku', $sku)->firstOrFail();
+                    if ($product->trashed()) {
+                        // An administrator deliberately removed this menu product.
+                        $skippedTrashed++;
+                        continue;
+                    }
                     $productIds[] = $product->id;
 
                     $recipe = Recipe::query()->where('product_id', $product->id)
@@ -102,10 +109,10 @@ class TishExistingDatabaseSeeder extends Seeder
                     $menu->save();
                 }
             }
-            if (count($productIds) !== 76 || $raw->count() !== 53) {
+            if (count($productIds) + $skippedTrashed !== 76 || $raw->count() !== 53) {
                 throw new RuntimeException('Unexpected Tish product or ingredient catalogue size.');
             }
-            $this->command?->info('Tish B01: 76 menu recipes checked, 53 raw ingredients, KITCHEN/PREP routes ready.');
+            $this->command?->info('Tish B01: '.count($productIds).' active menu recipes checked, '.$skippedTrashed.' deleted products preserved, 53 raw ingredients, KITCHEN/PREP routes ready.');
             $this->command?->warn('Historical B02/FAC data and old kitchen tickets untouched. No stock was added.');
         });
     }
