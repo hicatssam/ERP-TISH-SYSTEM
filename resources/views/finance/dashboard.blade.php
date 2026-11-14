@@ -158,6 +158,7 @@
             </a>
             @endcan
             @can('financial.reports.view')
+                <a href="{{ route('financial.audit.index') }}" class="btn btn-outline btn-full">مركز الرقابة المالية</a>
                 <a href="{{ route('accounting.ledger.index') }}" class="btn btn-outline btn-full">سجل الترحيلات المالية</a>
             @endcan
             @can('reports.view')
