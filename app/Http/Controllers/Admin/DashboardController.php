@@ -200,13 +200,13 @@ class DashboardController extends Controller
                 ->whereBetween('issued_at', [$monthStart, $now])
                 ->count();
 
-            /*
-             * refunds لا يضمن location_id في النسخة الحالية.
-             * لذلك لا نخصم مرتجعات مواقع أخرى من مستخدم الفرع.
-             */
-            $refunds = $user->isAdmin() && Schema::hasTable('refunds')
+            // Refunds belong to the original payment's location and use the
+            // processing date, matching the financial dashboard.
+            $refunds = Schema::hasTable('refunds')
                 ? (float) DB::table('refunds')
-                    ->whereBetween('created_at', [$monthStart, $now])
+                    ->whereIn('payment_id', fn ($query) => $query->select('id')
+                        ->from('payments')->whereIn('location_id', $baseLocationIds->all()))
+                    ->whereBetween('processed_at', [$monthStart, $now])
                     ->sum('amount')
                 : 0.0;
 
@@ -284,20 +284,19 @@ class DashboardController extends Controller
             && $user->can('payments.record')
             && $baseLocationIds->isNotEmpty()
         ) {
-            $stats['collections_month'] = (float) Payment::query()
-                ->whereIn(
-                    'location_id',
-                    $baseLocationIds->all()
-                )
-                ->where(
-                    'status',
-                    'confirmed'
-                )
-                ->whereBetween(
-                    'paid_at',
-                    [$monthStart, $now]
-                )
+            $orderCollections = (float) Payment::query()
+                ->whereIn('location_id', $baseLocationIds->all())
+                ->whereIn('status', ['confirmed', 'corrected', 'refunded'])
+                ->whereBetween('paid_at', [$monthStart, $now])
                 ->sum('amount');
+            $customerCollections = Schema::hasTable('customer_payments')
+                ? (float) DB::table('customer_payments')
+                    ->whereIn('location_id', $baseLocationIds->all())
+                    ->where('status', 'confirmed')
+                    ->whereBetween('paid_at', [$monthStart, $now])
+                    ->sum('amount')
+                : 0.0;
+            $stats['collections_month'] = round($orderCollections + $customerCollections, 2);
         }
 
         if (
@@ -446,11 +445,7 @@ class DashboardController extends Controller
                     'orders.created_at',
                     [$monthStart, $now]
                 )
-                ->where(
-                    'orders.status',
-                    '!=',
-                    'cancelled'
-                )
+                ->whereIn('orders.status', ['confirmed', 'completed'])
                 ->groupBy(
                     'order_items.product_id',
                     'order_items.product_name'
