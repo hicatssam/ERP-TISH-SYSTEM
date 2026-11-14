@@ -56,6 +56,52 @@ class PwaController extends Controller
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 
+    /**
+     * Independent install identity for the cashier station. It reuses the
+     * existing authenticated POS, stock and accounting workflow.
+     * Do not cache transactions or attempt offline payment submission.
+     */
+    public function cashierManifest(): JsonResponse
+    {
+        return response()->json([
+            'id' => '/tish-cashier',
+            'name' => 'TISH — نقطة بيع الكاشير',
+            'short_name' => 'TISH POS',
+            'description' => 'نقطة البيع المستقلة لمطعم TISH',
+            'lang' => 'ar',
+            'dir' => 'rtl',
+            'start_url' => route('restaurant.pos.index', [], false),
+            'scope' => '/restaurant/pos',
+            'display' => 'standalone',
+            'orientation' => 'any',
+            'background_color' => '#FFF7F9',
+            'theme_color' => '#8B1238',
+            'icons' => [
+                [
+                    'src' => '/assets/tish-paper/pwa/icon-192.png',
+                    'sizes' => '192x192',
+                    'type' => 'image/png',
+                    'purpose' => 'any',
+                ],
+                [
+                    'src' => '/assets/tish-paper/pwa/icon-512.png',
+                    'sizes' => '512x512',
+                    'type' => 'image/png',
+                    'purpose' => 'any',
+                ],
+                [
+                    'src' => '/assets/tish-paper/pwa/icon-maskable-512.png',
+                    'sizes' => '512x512',
+                    'type' => 'image/png',
+                    'purpose' => 'maskable',
+                ],
+            ],
+        ], 200, [
+            'Content-Type' => 'application/manifest+json; charset=UTF-8',
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
+
     public function start(Request $request): RedirectResponse
     {
         $user = $request->user();
