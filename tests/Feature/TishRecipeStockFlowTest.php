@@ -214,4 +214,38 @@ class TishRecipeStockFlowTest extends TestCase
                 ->where('sku', 'like', 'BRG-%')->pluck('id'))->count());
     }
 
+
+    public function test_deducting_recipe_ingredient_below_minimum_dispatches_low_stock_alert(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $branch = Location::query()->where('code', 'B01')->firstOrFail();
+        $admin = User::query()->where('username', 'admin')->firstOrFail();
+        $bun = Product::query()->where('sku', 'BRG-ING-BUN')->firstOrFail();
+
+        // Isolated RefreshDatabase fixture: simulate stock approaching the minimum.
+        DB::table('inventories')->where('location_id', $branch->id)
+            ->where('product_id', $bun->id)->update(['quantity' => 10.5, 'reserved_quantity' => 0]);
+        DB::table('location_products')->where('location_id', $branch->id)
+            ->where('product_id', $bun->id)->update(['minimum_stock_level' => 10]);
+
+        \Illuminate\Support\Facades\Event::fake([\App\Events\LowStockDetected::class]);
+
+        app(\App\Services\Inventory\InventoryService::class)->decrease(
+            locationId: $branch->id,
+            productId: $bun->id,
+            quantity: 1,
+            reason: 'order_sale',
+            userId: $admin->id
+        );
+
+        \Illuminate\Support\Facades\Event::assertDispatched(
+            \App\Events\LowStockDetected::class,
+            fn ($event) => $event->inventory->location_id === $branch->id
+                && $event->inventory->product_id === $bun->id
+                && abs($event->currentQuantity - 9.5) < 0.001
+                && abs($event->minimumLevel - 10.0) < 0.001
+        );
+    }
+
 }
