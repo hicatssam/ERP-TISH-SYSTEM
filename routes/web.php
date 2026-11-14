@@ -35,6 +35,7 @@ use App\Http\Controllers\Finance\ExpenseController;
 use App\Http\Controllers\Finance\InvoiceController;
 use App\Http\Controllers\Finance\FinancialPeriodController;
 use App\Http\Controllers\Finance\FinancialDashboardController;
+use App\Http\Controllers\Finance\FinancialAuditController;
 use App\Http\Controllers\Finance\AccountingLedgerController;
 use App\Http\Controllers\Finance\EmployeePurchaseController;
 use App\Http\Controllers\Finance\AccountingBooksController;
@@ -875,6 +876,10 @@ Route::post(
         Route::get('financial/accounting/ledger', [AccountingLedgerController::class, 'index'])
             ->middleware('can:financial.reports.view')
             ->name('accounting.ledger.index');
+
+        Route::get('financial/accounting/audit', [FinancialAuditController::class, 'index'])
+            ->middleware('can:financial.reports.view')
+            ->name('financial.audit.index');
 
         Route::prefix('financial/accounting/books')->name('accounting.books.')->group(function () {
             Route::get('/accounts', [AccountingBooksController::class, 'accounts'])->middleware('can:accounting.books.view')->name('accounts');
