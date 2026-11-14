@@ -145,7 +145,7 @@
     <div class="card">
         <div class="card-header"><span class="card-title">الأقسام المالية</span></div>
         <div class="card-body" style="display:grid;gap:.625rem">
-            @can('costing.view')<a href="{{ route('costing.profitability.index') }}" class="btn btn-outline btn-full">الربحية وجودة التكلفة</a>@endcan
+            @can('costing.view')<a href="{{ route('costing.profitability') }}" class="btn btn-outline btn-full">الربحية وجودة التكلفة</a>@endcan
             @can('financial.cash.view')<a href="{{ route('daily-cash.index') }}" class="btn btn-outline btn-full">مطابقة خزينة الفرع</a>@endcan
             @can('payments.view')<a href="{{ route('payments.index') }}" class="btn btn-outline btn-full">المدفوعات والتحقق</a>@endcan
             @can('expenses.view')<a href="{{ route('costing.expenses.index') }}" class="btn btn-outline btn-full">المصروفات</a>@endcan
