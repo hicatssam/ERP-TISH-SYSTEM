@@ -719,4 +719,16 @@ class SystemAuditTestNotification extends LaravelNotification
         $this->assertStringContainsString("route('pwa.cashier-manifest')", $layout);
     }
 
+
+    #[Test]
+    public function recipes_navigation_uses_the_registered_production_recipes_route(): void
+    {
+        $this->assertTrue(Route::has('production.recipes.index'));
+
+        $layout = file_get_contents(resource_path('views/layouts/app.blade.php'));
+        $this->assertStringContainsString("Route::has('production.recipes.index')", $layout);
+        $this->assertStringContainsString("route('production.recipes.index')", $layout);
+        $this->assertStringNotContainsString("Route::has('recipes.index')", $layout);
+    }
+
 }
