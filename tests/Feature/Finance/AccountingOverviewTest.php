@@ -75,6 +75,43 @@ class AccountingOverviewTest extends TestCase
             ->assertOk()->assertViewHas('data', fn ($data): bool => (float) $data['collections'] === 710.0);
     }
 
+    public function test_dashboard_defaults_to_active_locations_but_global_viewer_can_request_history(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
+        $active = $this->branch();
+        $retired = $this->branch();
+        $retired->update(['is_active' => false]);
+        $global = $this->userAt($active, ['financial.dashboard.view', 'financial.global.view']);
+        $limited = $this->userAt($active, ['financial.dashboard.view']);
+
+        $this->invoice($active, $global, 100, 0, 0, 100, 30);
+        $this->invoice($retired, $global, 400, 0, 0, 400, 200);
+
+        $this->actingAs($global)->get(route('financial.dashboard'))
+            ->assertOk()
+            ->assertViewHas('historicalScope', false)
+            ->assertViewHas('data', fn ($data) => (float) $data['netSales'] === 100.0)
+            ->assertSee('عرض الأرقام التاريخية');
+
+        $this->actingAs($global)->get(route('financial.dashboard', ['scope' => 'history']))
+            ->assertOk()
+            ->assertViewHas('historicalScope', true)
+            ->assertViewHas('data', fn ($data) => (float) $data['netSales'] === 500.0)
+            ->assertSee('تشمل المواقع المعطلة والتاريخية');
+
+        $this->actingAs($global)->get(route('financial.dashboard', ['location_id' => $retired->id]))
+            ->assertOk()
+            ->assertViewHas('data', fn ($data) => (float) $data['netSales'] === 400.0);
+
+        $this->actingAs($limited)->get(route('financial.dashboard', ['scope' => 'history']))
+            ->assertOk()
+            ->assertViewHas('historicalScope', false)
+            ->assertViewHas('data', fn ($data) => (float) $data['netSales'] === 100.0);
+
+        $this->actingAs($limited)->get(route('financial.dashboard', ['location_id' => $retired->id]))
+            ->assertForbidden();
+    }
+
     public function test_finance_views_enforce_branch_and_separate_ledger_permission(): void
     {
         $first = $this->branch();
