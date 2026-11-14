@@ -21,6 +21,34 @@ class TishRecipeStockFlowTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_main_dashboard_recipe_totals_match_recipe_index_and_active_approved_subset(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $admin = User::query()->where('username', 'admin')->firstOrFail();
+        $total = Recipe::query()->count();
+        $this->assertGreaterThan(0, $total);
+
+        $recipe = Recipe::query()->approved()->active()->firstOrFail();
+        $recipe->update(['status' => 'archived', 'is_active' => false]);
+
+        $expectedActive = Recipe::query()->approved()->active()->count();
+        $this->assertLessThan($total, $expectedActive);
+
+        $this->actingAs($admin)->get(route('dashboard'))
+            ->assertOk()
+            ->assertViewHas('stats', fn (array $stats): bool =>
+                (int) $stats['production']['total_recipes'] === $total
+                && (int) $stats['production']['active_recipes'] === $expectedActive)
+            ->assertSee('الوصفات المسجلة')
+            ->assertSee('معتمدة وفعّالة');
+
+        $this->actingAs($admin)->get(route('production.recipes.index'))
+            ->assertOk()
+            ->assertViewHas('recipes', fn ($recipes): bool =>
+                $recipes->total() === $total);
+    }
+
     public function test_every_tish_menu_product_has_approved_recipe_and_raw_stock_in_each_branch(): void
     {
         $this->seed(DatabaseSeeder::class);
