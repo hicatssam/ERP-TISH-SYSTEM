@@ -84,10 +84,12 @@ class BurgerRestaurantDemoSeeder extends Seeder
             $this->call(BurgerRestaurantSeeder::class);
             $raw = $this->seedIngredients();
             $this->seedRecipes($raw, $admin);
+            $this->requireRecipesForDemoMenu();
             $this->openingStock($raw, $admin);
             $this->seedRestaurantOperations($admin);
             $this->seedOrders($admin);
             $this->seedStockRequests($raw, $admin);
+            $this->assertDemoInventoryAndRecipes();
         });
 
         $this->command?->info('تم تجهيز Tish بالكامل: منيو برجر مصور، وصفات، مواد خام، مخزون، مطبخ، طاولات وطلبات مترابطة.');
@@ -302,6 +304,95 @@ class BurgerRestaurantDemoSeeder extends Seeder
                         'expected_waste_percent' => 0, 'stage' => 'تحضير', 'sort_order' => 10,
                     ]);
                 }
+            }
+        }
+    }
+
+    /**
+     * Demo only: make an incomplete recipe a hard error rather than silently
+     * deducting the finished menu product (inventory_mode=auto fallback).
+     * Leave manually selected non-auto modes alone on repeated demo seeds.
+     */
+    private function requireRecipesForDemoMenu(): void
+    {
+        $products = Product::query()
+            ->where('is_raw_material', false)
+            ->where('sku', 'like', 'BRG-%')
+            ->pluck('id');
+
+        RestaurantMenuItem::query()
+            ->whereIn('product_id', $products)
+            ->where('inventory_mode', 'auto')
+            ->update(['inventory_mode' => 'recipe']);
+    }
+
+    /**
+     * Stop an incomplete training fixture immediately. No opening balance is
+     * considered valid unless the menu -> approved recipe -> raw ingredient ->
+     * branch inventory and stock movements are all connected.
+     */
+    private function assertDemoInventoryAndRecipes(): void
+    {
+        $menuProducts = Product::query()
+            ->where('is_raw_material', false)
+            ->where('sku', 'like', 'BRG-%')
+            ->get(['id', 'sku']);
+
+        foreach ($menuProducts as $product) {
+            $recipe = Recipe::query()
+                ->where('product_id', $product->id)
+                ->whereNull('product_variant_id')
+                ->where('status', 'approved')
+                ->where('is_active', true)
+                ->with('items.ingredient')
+                ->first();
+
+            if (! $recipe || (float) $recipe->yield_quantity <= 0 || $recipe->items->isEmpty()) {
+                throw new RuntimeException("Missing active ingredient recipe: {$product->sku}");
+            }
+
+            foreach ($recipe->items as $item) {
+                if (! $item->ingredient?->is_raw_material || (float) $item->quantity <= 0) {
+                    throw new RuntimeException("Invalid recipe ingredient: {$product->sku}");
+                }
+            }
+
+            foreach (Location::query()->branches()->active()->get() as $branch) {
+                $menu = RestaurantMenuItem::query()
+                    ->where('location_id', $branch->id)
+                    ->where('product_id', $product->id)
+                    ->first();
+
+                if (! $menu || $menu->inventory_mode !== 'recipe') {
+                    throw new RuntimeException("Menu recipe mode missing: {$branch->code}/{$product->sku}");
+                }
+
+                foreach ($recipe->items as $item) {
+                    if (! \App\Models\Inventory::query()
+                        ->where('location_id', $branch->id)
+                        ->where('product_id', $item->ingredient_product_id)
+                        ->exists()) {
+                        throw new RuntimeException("Ingredient stock record missing: {$branch->code}/{$product->sku}");
+                    }
+                }
+            }
+        }
+
+        if (DB::table('inventories')->where('quantity', '<', 0)->exists()) {
+            throw new RuntimeException('Negative raw inventory found after Tish demo orders.');
+        }
+
+        $confirmedIds = Order::query()
+            ->where('notes', 'like', 'TISH-DEMO-%')
+            ->whereIn('status', ['confirmed', 'completed'])
+            ->pluck('id');
+
+        foreach ($confirmedIds as $orderId) {
+            if (! DB::table('order_inventory_consumptions')
+                ->where('order_id', $orderId)
+                ->where('source', 'recipe')
+                ->exists()) {
+                throw new RuntimeException("Demo order lacks recipe consumption: {$orderId}");
             }
         }
     }
