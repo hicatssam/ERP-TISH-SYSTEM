@@ -248,4 +248,23 @@ class TishRecipeStockFlowTest extends TestCase
         );
     }
 
+
+    public function test_existing_seeder_preserves_deliberately_deleted_menu_products(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $product = Product::query()->where('sku', 'BRG-BEEF-CLASSIC')->firstOrFail();
+        $product->delete();
+
+        $ordersBefore = DB::table('orders')->count();
+        $stockMovementsBefore = DB::table('stock_movements')->count();
+
+        $this->seed(\Database\Seeders\TishExistingDatabaseSeeder::class);
+
+        $this->assertSoftDeleted('products', ['id' => $product->id]);
+        $this->assertSame($ordersBefore, DB::table('orders')->count());
+        $this->assertSame($stockMovementsBefore, DB::table('stock_movements')->count());
+        $this->assertSame(75, Product::query()
+            ->where('is_raw_material', false)->where('sku', 'like', 'BRG-%')->count());
+    }
+
 }
