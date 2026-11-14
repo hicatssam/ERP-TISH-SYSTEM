@@ -698,4 +698,25 @@ class SystemAuditTestNotification extends LaravelNotification
             'message' => $this->marker,
         ];
     }
+
+    #[Test]
+    public function cashier_manifest_is_separate_from_staff_app_and_starts_at_pos(): void
+    {
+        $response = $this->get(route('pwa.cashier-manifest'))
+            ->assertOk()
+            ->assertHeader('Content-Type', 'application/manifest+json; charset=UTF-8');
+
+        $response->assertJsonPath('id', '/tish-cashier')
+            ->assertJsonPath('start_url', '/restaurant/pos')
+            ->assertJsonPath('scope', '/restaurant/pos')
+            ->assertJsonPath('display', 'standalone');
+
+        $this->assertNotSame('/staff-app', $response->json('id'));
+        $this->assertSame(3, count($response->json('icons')));
+
+        $layout = file_get_contents(resource_path('views/layouts/app.blade.php'));
+        $this->assertStringContainsString("routeIs('restaurant.pos.*')", $layout);
+        $this->assertStringContainsString("route('pwa.cashier-manifest')", $layout);
+    }
+
 }
