@@ -181,4 +181,37 @@ class TishRecipeStockFlowTest extends TestCase
             $this->assertNull($order->fresh()->invoice);
         }
     }
+
+    public function test_safe_existing_database_seeder_preserves_stock_orders_and_recipe_quantities_on_rerun(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $branch = Location::query()->where('code', 'B01')->firstOrFail();
+        $stockBefore = DB::table('inventories')->where('location_id', $branch->id)
+            ->orderBy('product_id')->pluck('quantity', 'product_id')->all();
+        $movementsBefore = DB::table('stock_movements')->count();
+        $ordersBefore = DB::table('orders')->count();
+        $invoicesBefore = DB::table('invoices')->count();
+        $recipeItemsBefore = DB::table('recipe_items')->count();
+
+        $this->seed(\\Database\\Seeders\\TishExistingDatabaseSeeder::class);
+        $this->seed(\\Database\\Seeders\\TishExistingDatabaseSeeder::class);
+
+        $this->assertSame($movementsBefore, DB::table('stock_movements')->count());
+        $this->assertSame($ordersBefore, DB::table('orders')->count());
+        $this->assertSame($invoicesBefore, DB::table('invoices')->count());
+        $this->assertSame($recipeItemsBefore, DB::table('recipe_items')->count());
+        $this->assertEquals($stockBefore, DB::table('inventories')
+            ->where('location_id', $branch->id)->orderBy('product_id')
+            ->pluck('quantity', 'product_id')->all());
+        $this->assertSame(2, DB::table('kitchen_stations')
+            ->where('location_id', $branch->id)->whereIn('code', ['KITCHEN', 'PREP'])->count());
+        $this->assertSame(8, DB::table('kitchen_category_routes')
+            ->where('location_id', $branch->id)->count());
+        $this->assertSame(76, DB::table('restaurant_menu_items')
+            ->where('location_id', $branch->id)->where('inventory_mode', 'recipe')
+            ->whereIn('product_id', Product::query()->where('is_raw_material', false)
+                ->where('sku', 'like', 'BRG-%')->pluck('id'))->count());
+    }
+
 }
