@@ -277,11 +277,18 @@ class BurgerRestaurantDemoSeeder extends Seeder
         return $items;
     }
 
-    public function seedRecipes($raw, User $admin): void
+    public function seedRecipes($raw, User $admin, bool $skipTrashedProducts = false): void
     {
         foreach (BurgerRestaurantSeeder::catalogue() as $group => $definition) {
             foreach ($definition['items'] as [$code]) {
-                $product = Product::where('sku', 'BRG-'.strtoupper($group).'-'.$code)->firstOrFail();
+                $sku = 'BRG-'.strtoupper($group).'-'.$code;
+                $product = Product::withTrashed()->where('sku', $sku)->firstOrFail();
+                if ($product->trashed() && $skipTrashedProducts) {
+                    continue;
+                }
+                if ($product->trashed()) {
+                    throw new RuntimeException('Demo catalogue product is deleted: '.$sku);
+                }
                 $recipe = Recipe::firstOrCreate(['code' => 'RCP-'.$product->sku], [
                     'product_id' => $product->id, 'name' => 'وصفة '.$product->name_ar,
                     'version' => 1, 'yield_quantity' => 1, 'labor_cost_per_batch' => .8,
