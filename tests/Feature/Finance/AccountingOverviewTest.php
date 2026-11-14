@@ -89,6 +89,45 @@ class AccountingOverviewTest extends TestCase
         $this->actingAs($dashboardOnly)->get(route('accounting.ledger.index'))->assertForbidden();
     }
 
+    public function test_financial_audit_center_is_read_only_and_scoped_to_authorized_branch(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
+        $branch = $this->branch();
+        $other = $this->branch();
+        $reader = $this->userAt($branch, ['financial.reports.view']);
+        $noAccess = $this->userAt($branch, ['financial.dashboard.view']);
+        $global = $this->userAt($branch, ['financial.reports.view', 'financial.global.view']);
+
+        $this->entry($branch, $reader, 'sale', 'B01 unlinked sale', 75, 'ILS');
+        $this->entry($other, $reader, 'sale', 'Other unlinked sale', 90, 'ILS');
+        $journalsBefore = DB::table('accounting_journals')->count();
+        $entriesBefore = DB::table('sales_ledger_entries')->count();
+
+        $this->actingAs($reader)->get(route('financial.audit.index', [
+            'date_from' => '2026-10-01', 'date_to' => '2026-10-02',
+        ]))->assertOk()
+            ->assertViewHas('locationId', $branch->id)
+            ->assertViewHas('report', fn ($report): bool =>
+                $report['read_only'] === true
+                && $report['missing_total'] === 1
+                && count($report['missing']) === 1
+                && (int) $report['missing'][0]['location_id'] === $branch->id)
+            ->assertSee('B01', false);
+
+        $this->actingAs($reader)->get(route('financial.audit.index', ['location_id' => $other->id]))
+            ->assertForbidden();
+        $this->actingAs($noAccess)->get(route('financial.audit.index'))->assertForbidden();
+
+        $this->actingAs($global)->get(route('financial.audit.index', [
+            'location_id' => $other->id, 'date_from' => '2026-10-01', 'date_to' => '2026-10-02',
+        ]))->assertOk()->assertViewHas('report', fn ($report): bool =>
+            $report['missing_total'] === 1
+            && (int) $report['missing'][0]['location_id'] === $other->id);
+
+        $this->assertSame($journalsBefore, DB::table('accounting_journals')->count());
+        $this->assertSame($entriesBefore, DB::table('sales_ledger_entries')->count());
+    }
+
     public function test_ledger_filters_date_type_and_branch_without_mixing_currency_or_other_locations(): void
     {
         $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
