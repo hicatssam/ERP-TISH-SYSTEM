@@ -195,7 +195,7 @@ class BurgerRestaurantDemoSeeder extends Seeder
         ];
     }
 
-    private function seedIngredients()
+    public function seedIngredients()
     {
         $category = Category::firstOrCreate(['slug' => 'burger-ingredients'], [
             'name' => 'Burger Ingredients', 'name_ar' => 'مواد خام للمطعم', 'is_active' => true, 'sort_order' => 900,
@@ -277,7 +277,7 @@ class BurgerRestaurantDemoSeeder extends Seeder
         return $items;
     }
 
-    private function seedRecipes($raw, User $admin): void
+    public function seedRecipes($raw, User $admin): void
     {
         foreach (BurgerRestaurantSeeder::catalogue() as $group => $definition) {
             foreach ($definition['items'] as [$code]) {
