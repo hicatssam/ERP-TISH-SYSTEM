@@ -38,7 +38,7 @@ class BurgerRestaurantDemoSeederTest extends TestCase
             ->where('location_id', $branchId)->orderBy('code')->pluck('code')->all());
         $this->assertSame(6, Order::where('restaurant_service_type', 'dine_in')->count());
         $this->assertSame(6, Order::where('restaurant_service_type', 'takeaway')->count());
-        $this->assertSame('0', (string) SystemSetting::get('customer_menu_allow_delivery'));
+        $this->assertFalse((bool) SystemSetting::get('customer_menu_allow_delivery'));
         $this->assertDatabaseHas('recipe_items', [
             'recipe_id' => Recipe::where('code', 'RCP-BRG-SAUCES-RANCH')->value('id'),
             'ingredient_product_id' => Product::where('sku', 'BRG-ING-RANCH')->value('id'),
