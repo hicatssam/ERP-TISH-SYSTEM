@@ -26,7 +26,7 @@ class BurgerRestaurantDemoSeederTest extends TestCase
         $this->seed(DatabaseSeeder::class);
         $this->assertSame(76, Product::where('is_raw_material', false)->count());
         $this->assertSame(76, Recipe::where('status', 'approved')->count());
-        $this->assertSame(152, RestaurantMenuItem::count());
+        $this->assertSame(76, RestaurantMenuItem::count());
         $this->assertSame(12, Order::count());
         $this->assertSame(12, Invoice::count());
         $this->assertSame(8, Product::where('sku', 'like', 'BRG-SAUCES-%')->count());
