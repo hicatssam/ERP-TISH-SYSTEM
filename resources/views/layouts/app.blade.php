@@ -1957,7 +1957,7 @@ a.app-page-btn:hover {
 
                     @can('recipes.view')
 
-                        @if(\Illuminate\Support\Facades\Route::has('recipes.index'))
+                        @if(\Illuminate\Support\Facades\Route::has('production.recipes.index'))
 
                             <a href="{{ route('production.recipes.index') }}" class="nav-item {{ request()->routeIs('production.recipes.*') ? 'active' : '' }}">
 
