@@ -139,6 +139,7 @@ class DashboardController extends Controller
                 'in_progress' => 0,
                 'awaiting_quality' => 0,
                 'completed_today' => 0,
+                'total_recipes' => 0,
                 'active_recipes' => 0,
             ],
 
@@ -621,13 +622,14 @@ class DashboardController extends Controller
             && $user->can('recipes.view')
             && Schema::hasTable('recipes')
         ) {
-            $stats['production']['active_recipes'] =
-                Recipe::query()
-                    ->where(
-                        'status',
-                        'active'
-                    )
-                    ->count();
+            // The recipes index lists every non-deleted version unless filtered.
+            // 'active' is NOT a recipe status: approved + is_active is the
+            // actual usable recipe condition.
+            $stats['production']['total_recipes'] = Recipe::query()->count();
+            $stats['production']['active_recipes'] = Recipe::query()
+                ->approved()
+                ->active()
+                ->count();
         }
 
         if (
