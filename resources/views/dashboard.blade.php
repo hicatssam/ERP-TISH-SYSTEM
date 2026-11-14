@@ -1024,15 +1024,15 @@
                     class="dashboard-module-card"
                 >
                     <div class="dashboard-module-card-label">
-                        الوصفات الفعالة
+                        الوصفات المسجلة
                     </div>
 
                     <div class="dashboard-module-card-value">
-                        {{ $productionStats['active_recipes'] ?? 0 }}
+                        {{ $productionStats['total_recipes'] ?? 0 }}
                     </div>
 
                     <div class="dashboard-module-card-action">
-                        فتح الوصفات
+                        منها {{ $productionStats['active_recipes'] ?? 0 }} معتمدة وفعّالة — فتح الوصفات
                     </div>
                 </a>
 
