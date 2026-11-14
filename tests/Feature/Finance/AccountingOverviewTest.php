@@ -112,6 +112,54 @@ class AccountingOverviewTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_main_dashboard_finance_uses_real_branch_refunds_and_all_confirmed_collections(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
+        $first = $this->branch();
+        $other = $this->branch();
+        $user = $this->userAt($first, [
+            'dashboard.view', 'financial.dashboard.view', 'payments.record',
+        ]);
+        $method = $this->method();
+
+        // Only finance/payments are enabled in this focused test fixture.
+        $modules = \Mockery::mock(\App\Services\ModuleService::class);
+        $modules->shouldReceive('isEnabled')->andReturnUsing(
+            fn (string $name): bool => in_array($name, ['finance', 'payments'], true)
+        );
+        app()->instance(\App\Services\ModuleService::class, $modules);
+
+        $this->invoice($first, $user, 100, 0, 0, 100, 20);
+        $this->invoice($other, $user, 900, 0, 0, 900, 0);
+        $paid = $this->payment($first, $user, $method, 70, 'confirmed');
+        $this->payment($first, $user, $method, 20, 'corrected');
+        $this->payment($first, $user, $method, 10, 'refunded');
+        $this->payment($other, $user, $method, 500, 'confirmed');
+
+        DB::table('refunds')->insert([
+            'payment_id' => $paid, 'order_type' => 'order', 'order_id' => 999,
+            'payment_method_id' => $method->id, 'amount' => 12, 'reason' => 'UAT',
+            'processed_by' => $user->id, 'processed_at' => now(),
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $customer = Customer::query()->create([
+            'name' => 'UAT', 'phone' => '059'.Str::random(7),
+        ]);
+        DB::table('customer_payments')->insert([
+            'customer_id' => $customer->id, 'location_id' => $first->id,
+            'payment_method_id' => $method->id, 'amount' => 30,
+            'status' => 'confirmed', 'received_by' => $user->id,
+            'paid_at' => now(), 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $this->actingAs($user)->get(route('dashboard'))
+            ->assertOk()
+            ->assertViewHas('stats', fn (array $stats): bool =>
+                (float) $stats['net_sales_month'] === 100.0
+                && (float) $stats['collections_month'] === 130.0
+                && (float) $stats['net_sales_after_refunds'] === 88.0);
+    }
+
     public function test_finance_views_enforce_branch_and_separate_ledger_permission(): void
     {
         $first = $this->branch();
