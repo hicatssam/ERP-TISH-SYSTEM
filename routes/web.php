@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\ProductVariantController;
 use App\Http\Controllers\Admin\LocationProductController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\PaymentCheckoutSettingsController;
 use App\Http\Controllers\Inventory\InventoryController;
 use App\Http\Controllers\Inventory\StockMovementController;
 use App\Http\Controllers\Inventory\StockCountController;
@@ -991,6 +992,10 @@ Route::post(
         // ─── Settings ──────────────────────────────────────────────────────
         Route::middleware('can:settings.manage')->group(function () {
             Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');
+            Route::get('settings/payment-checkout', [PaymentCheckoutSettingsController::class, 'index'])
+                ->name('settings.payment-checkout.index');
+            Route::post('settings/payment-checkout', [PaymentCheckoutSettingsController::class, 'update'])
+                ->name('settings.payment-checkout.update');
             Route::post('settings', [SettingsController::class, 'update'])->name('settings.update');
         });
     });
