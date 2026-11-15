@@ -65,6 +65,12 @@ class PaymentCheckoutSettingsTest extends TestCase
             'customer_non_cash' => '1',
         ])->assertSessionHasErrors('pos_arrangements');
 
+        $this->actingAs($admin)->post(route('settings.payment-checkout.update'), [
+            'pos_arrangements' => ['pay_now'],
+            'customer_cash' => '0',
+            'customer_non_cash' => '0',
+        ])->assertSessionHasErrors('customer_cash');
+
         $this->assertSame('0', (string) SystemSetting::get('checkout_customer_cash_enabled'));
     }
 }
