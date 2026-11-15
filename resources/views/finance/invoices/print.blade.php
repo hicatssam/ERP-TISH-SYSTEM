@@ -120,7 +120,7 @@
 @push('print_styles')
 <style>
     /*
-     * Transparent rubber-stamp overlay. Absolute positioning deliberately
+     * Bold semi-transparent rubber-stamp overlay. Absolute positioning deliberately
      * takes no space, so the original invoice header, tables and totals never
      * move. Limited to this invoice view; shared print layouts are untouched.
      */
@@ -130,27 +130,27 @@
 
     .invoice-payment-watermark {
         position: absolute;
-        top: 205px;
-        left: 13%;
-        width: 74%;
-        height: 155px;
+        top: 245px;
+        left: 17%;
+        width: 78%;
+        height: 150px;
         z-index: 5;
         pointer-events: none;
         text-align: center;
         direction: rtl;
         -webkit-transform: rotate(-17deg);
         transform: rotate(-17deg);
-        opacity: .25;
+        opacity: .82;
     }
 
     .invoice-payment-watermark-inner {
         display: block;
         width: 100%;
         height: 100%;
-        border: 9px solid #b42318;
+        border: 9px double #b42318;
         border-radius: 18px;
         padding: 20px 4px;
-        font-size: 45pt;
+        font-size: 43pt;
         font-weight: 900;
         line-height: 1.5;
         white-space: nowrap;
@@ -178,10 +178,10 @@
 
     @media (max-width: 600px) {
         .invoice-payment-watermark {
-            top: 215px;
-            left: 9%;
-            width: 82%;
-            height: 112px;
+            top: 235px;
+            left: 10%;
+            width: 84%;
+            height: 118px;
         }
         .invoice-payment-watermark-inner {
             border-width: 6px;
