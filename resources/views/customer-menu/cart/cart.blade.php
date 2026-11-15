@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-cart-summary-v5.css') }}?v=5">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-polish-v13.css') }}?v=17">
 @include('customer-menu.partials.pwa-head')
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-drive-ui-fixes-v1.css') }}?v=1">
 </head>
 <body class="crisp-customer-menu tish-paper tish-cart-page">
 <div class="app crisp-menu-app">
