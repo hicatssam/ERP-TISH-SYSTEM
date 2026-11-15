@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-checkout-paper.css') }}?v=4">
 @include('customer-menu.partials.pwa-head')
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-drive-ui-fixes-v1.css') }}?v=1">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-ux-v2.css') }}?v=2">
 </head>
 <body class="crisp-customer-menu tish-paper tish-checkout-page">
 <div class="app crisp-menu-app">
