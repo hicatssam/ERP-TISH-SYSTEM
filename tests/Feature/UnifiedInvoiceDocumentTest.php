@@ -82,6 +82,55 @@ class UnifiedInvoiceDocumentTest extends TestCase
     }
 
     #[Test]
+    public function payment_stamp_overlays_existing_invoice_without_replacing_original_content(): void
+    {
+        $this->setPrintBrand();
+
+        foreach ([
+            ['paid_amount' => 49, 'remaining_amount' => 0, 'label' => 'مدفوعة', 'class' => 'invoice-watermark-paid'],
+            ['paid_amount' => 0, 'remaining_amount' => 49, 'label' => 'غير مدفوعة', 'class' => 'invoice-watermark-unpaid'],
+            ['paid_amount' => 20, 'remaining_amount' => 29, 'label' => 'مدفوعة جزئيًا', 'class' => 'invoice-watermark-partial'],
+        ] as $case) {
+            $invoice = Invoice::make([
+                'invoice_number' => 'TSH-STAMP-TEST',
+                'invoice_type' => 'regular_order',
+                'order_type' => 'order',
+                'status' => 'active',
+                'subtotal' => 49,
+                'discount_amount' => 0,
+                'tax_amount' => 0,
+                'total_amount' => 49,
+                'paid_amount' => $case['paid_amount'],
+                'remaining_amount' => $case['remaining_amount'],
+                'issued_at' => '2026-11-15 12:40:00',
+            ]);
+            $invoice->setRelation('location', Location::make(['name' => 'TISH B01']));
+            $invoice->setRelation('customer', null);
+            $invoice->setRelation('items', collect([
+                InvoiceItem::make([
+                    'description' => 'برجر خضار',
+                    'quantity' => 1,
+                    'unit_price' => 49,
+                    'line_total' => 49,
+                ]),
+            ]));
+
+            foreach ([false, true] as $pdfMode) {
+                $html = view('finance.invoices.print', compact('invoice', 'pdfMode'))->render();
+                $this->assertStringContainsString('invoice-payment-watermark '.$case['class'], $html);
+                $this->assertStringContainsString('>'.$case['label'].'</div>', $html);
+                $this->assertStringContainsString('position: absolute;', $html);
+                $this->assertStringContainsString('class="invoice-party-table"', $html);
+                $this->assertStringContainsString('TSH-STAMP-TEST', $html);
+                $this->assertStringContainsString('برجر خضار', $html);
+                if ($pdfMode) {
+                    $this->assertCanGeneratePdf($html);
+                }
+            }
+        }
+    }
+
+    #[Test]
     public function receiving_invoice_uses_the_same_configurable_document_brand_in_both_modes(): void
     {
         $this->setPrintBrand();
