@@ -1,0 +1,223 @@
+/* TISH customer menu refinements, grounded in the nine Drive screenshots.
+   Visual changes only; order, pricing, payment and inventory logic unchanged. */
+
+/* 1 — Compact itemized checkout summary: orderly product name, quantity, price. */
+body.tish-paper.tish-checkout-page #summaryItems {
+  display:grid;
+  gap:10px;
+}
+body.tish-paper.tish-checkout-page #summaryItems .cart-row {
+  display:grid;
+  grid-template-columns:70px minmax(0,1fr) auto;
+  align-items:center;
+  gap:11px;
+  min-width:0;
+  padding:12px 14px;
+  background:url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat;
+  border:0;
+  box-shadow:none;
+}
+body.tish-paper.tish-checkout-page #summaryItems .cart-thumb {
+  width:68px;
+  height:68px;
+  display:grid;
+  place-items:center;
+  background:url('../../tish-paper/paper/product-disc.webp') center/100% 100% no-repeat;
+  border:0;
+  border-radius:50%;
+}
+body.tish-paper.tish-checkout-page #summaryItems .cart-thumb img {
+  width:88%;
+  height:88%;
+  object-fit:contain;
+}
+body.tish-paper.tish-checkout-page #summaryItems .row-copy {min-width:0}
+body.tish-paper.tish-checkout-page #summaryItems .row-copy strong {font-weight:900;overflow-wrap:anywhere}
+body.tish-paper.tish-checkout-page #summaryItems .cart-line-total {
+  font-weight:900;
+  white-space:nowrap;
+  color:#9e1917;
+  direction:ltr;
+  text-align:left;
+}
+body.tish-paper.tish-checkout-page #summaryItems .cart-line-meta {
+  display:block;
+  color:#a71f1b;
+  font-weight:800;
+  font-size:.8rem;
+  direction:ltr;
+  text-align:start;
+}
+@media(max-width:420px) {
+  body.tish-paper.tish-checkout-page #summaryItems .cart-row {
+    grid-template-columns:56px minmax(0,1fr);
+    gap:5px 9px;
+    padding:11px 12px;
+  }
+  body.tish-paper.tish-checkout-page #summaryItems .cart-thumb {width:54px;height:54px;grid-row:span 2}
+  body.tish-paper.tish-checkout-page #summaryItems .cart-line-total {grid-column:2;justify-self:start}
+}
+
+/* 2 — Payment options in compact cards side-by-side; keep all selections visible. */
+body.tish-paper.tish-checkout-page .payment-methods {
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  align-items:stretch;
+  gap:10px!important;
+}
+body.tish-paper.tish-checkout-page .payment-methods .payment-card {
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  position:relative;
+  min-width:0;
+  min-height:120px!important;
+  gap:7px!important;
+  padding:14px 9px!important;
+  text-align:center!important;
+}
+body.tish-paper.tish-checkout-page .payment-methods .payment-card .p-icon {
+  order:0;
+  width:50px!important;
+  height:45px!important;
+}
+body.tish-paper.tish-checkout-page .payment-methods .payment-card .p-copy {
+  order:1;
+  flex:none;
+  width:100%;
+  min-width:0;
+}
+body.tish-paper.tish-checkout-page .payment-methods .payment-card .p-copy strong {
+  font-size:clamp(.78rem,2.8vw,.98rem);
+  line-height:1.35;
+  overflow-wrap:anywhere;
+}
+body.tish-paper.tish-checkout-page .payment-methods .payment-card .p-copy small {
+  font-size:.7rem;
+  overflow-wrap:anywhere;
+}
+body.tish-paper.tish-checkout-page .payment-methods .payment-card .radio {
+  position:absolute;
+  top:9px;
+  inset-inline-start:9px;
+  width:16px;
+  height:16px;
+}
+@media(min-width:780px) {
+  body.tish-paper.tish-checkout-page .payment-methods {
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+}
+
+/* 3 — Remove unwanted red rectangular search focus effect (retain keyboard affordance). */
+body.tish-paper.reference-home .tools .search,
+body.tish-paper.reference-home .tools .search:focus-within {
+  outline:none!important;
+  box-shadow:none!important;
+  border-color:transparent!important;
+}
+body.tish-paper.reference-home .tools .search input:focus {
+  outline:0!important;
+  box-shadow:none!important;
+  border-color:transparent!important;
+}
+body.tish-paper.reference-home .tools .search input:focus-visible {
+  outline:2px solid #7a5146!important;
+  outline-offset:-4px;
+  border-radius:16px;
+}
+
+/* 4 — Keep the original round TISH artwork; let its logo fill the disk. */
+body.tish-paper.reference-home .reference-logo-square {
+  padding:0!important;
+  width:clamp(88px,21vw,120px)!important;
+  height:clamp(88px,21vw,120px)!important;
+  flex:none!important;
+}
+body.tish-paper.reference-home .reference-logo-square .reference-client-logo {
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  padding:0!important;
+}
+body.tish-paper.reference-home .reference-home-copy::before,
+body.tish-paper.reference-home .reference-home-copy::after,
+body.tish-paper.reference-home .reference-masthead .tish-spark,
+body.tish-paper.reference-home .reference-masthead .reference-spark {
+  display:none!important;
+  content:none!important;
+}
+
+/* 6 — Remove faint red bottom decorative frame in My Orders, keep navigation. */
+body.tish-paper.cm-my-orders::after {
+  background-image:
+    url('../../tish-paper/decor/halftone.svg'),
+    url('../../tish-paper/decor/halftone.svg')!important;
+  background-position:left -24px top 18px,right -44px bottom 150px!important;
+  background-size:106px auto,112px auto!important;
+  background-repeat:no-repeat!important;
+}
+body.tish-paper.cm-my-orders .orders,
+body.tish-paper.cm-my-orders .orders>.empty {
+  border-bottom:0!important;
+}
+
+/* 7 — Cart items as roomy cards with larger round product art. */
+body.tish-paper.tish-cart-page #cartItems:not(:empty):has(.cart-row) {
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:12px!important;
+}
+body.tish-paper.tish-cart-page #cartItems .cart-row {
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  min-width:0!important;
+  min-height:240px!important;
+  padding:22px 12px!important;
+  gap:7px!important;
+  text-align:center!important;
+}
+body.tish-paper.tish-cart-page #cartItems .cart-thumb {
+  grid-column:auto!important;
+  grid-row:auto!important;
+  width:clamp(88px,24vw,124px)!important;
+  height:clamp(88px,24vw,124px)!important;
+  flex:none!important;
+}
+body.tish-paper.tish-cart-page #cartItems .cart-row .row-copy {
+  grid-column:auto!important;
+  grid-row:auto!important;
+  width:100%!important;
+  display:flex!important;
+  align-items:center!important;
+  text-align:center!important;
+}
+body.tish-paper.tish-cart-page #cartItems .row-copy .tish-cart-line-price {
+  align-self:center!important;
+}
+body.tish-paper.tish-cart-page #cartItems .cart-row .row-actions {
+  grid-column:auto!important;
+  grid-row:auto!important;
+  justify-content:center!important;
+  flex-wrap:wrap!important;
+}
+@media(min-width:740px) {
+  body.tish-paper.tish-cart-page #cartItems:not(:empty):has(.cart-row) {
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+}
+@media(max-width:355px) {
+  body.tish-paper.tish-cart-page #cartItems:not(:empty):has(.cart-row) {
+    grid-template-columns:1fr!important;
+  }
+}
+
+/* 8 — The duplicate install/pin button is intentionally not rendered.
+   Existing browser/PWA install behavior is otherwise unchanged. */
+body.tish-paper #pwaInstallBtn.tish-paper-pin-control {display:none!important}
+
+/* 9 — Branch selection remains in branch-entry flow, not each menu header. */
+body.tish-paper .page-head [aria-label="تغيير الفرع"] {display:none!important}
