@@ -149,6 +149,17 @@ body.tish-paper.reference-home .reference-masthead .reference-spark {
   content:none!important;
 }
 
+/* Larger TISH round emblem, without stray sparks around it. */
+body.tish-paper.reference-home .tish-paper-brand-hero .paper-stamp {
+  width:49%!important;
+  max-width:275px!important;
+  object-fit:contain!important;
+}
+body.tish-paper.reference-home .tish-paper-brand-hero [class*="spark"],
+body.tish-paper.reference-home .tish-paper-brand-hero [class*="lightning"] {
+  display:none!important;
+}
+
 /* 6 — Remove faint red bottom decorative frame in My Orders, keep navigation. */
 body.tish-paper.cm-my-orders::after {
   background-image:
