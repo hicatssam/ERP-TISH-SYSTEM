@@ -172,6 +172,7 @@
                 <div class="rb-products-footer">
                     <span><b id="rbVisibleProductCount">0</b> من <b id="rbMatchingProductCount">0</b> منتج مطابق</span>
                     <span>{{ $location->name }}</span>
+                    <button type="button" id="rbRefreshCatalog" class="rb-menu-management-link" title="تحديث المنتجات والأسعار والتوفر من السيرفر">تحديث المنتجات</button>
                     @can('restaurant_menu.view')
                         <a href="{{ route('restaurant.menu.index', ['location_id' => $location->id]) }}"
                            class="rb-menu-management-link" title="راجع إتاحة الأصناف للفرع، الصور والأسعار">
@@ -2469,6 +2470,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const brands = @json($catalogFacets['brands']);
     const oldItems = @json(old('items', []));
     const locationId = @json((int) $location->id);
+    const cashierUserId = @json((int) auth()->id());
     const cashierName = @json($cashierName);
     const locationName = @json($location->name);
 
@@ -2621,7 +2623,59 @@ document.addEventListener('DOMContentLoaded', () => {
     let searchTimer = null;
     let pendingProduct = null;
     let previousFocus = null;
+    // Full active POS catalogue is kept in this tab between page navigation.
+    // Cache is user+branch scoped, short-lived (5 minutes), never shared across
+    // sessions and never used to bypass checkout's server-side validations.
+    const catalogStorageKey = `tish_pos_catalog_v2_${cashierUserId}_${locationId}`;
+    const catalogTtlMs = 5 * 60 * 1000;
+    let completeCatalog = !hasMoreProducts;
+    let allProducts = completeCatalog ? products.slice() : [];
+    try {
+        const cached = JSON.parse(sessionStorage.getItem(catalogStorageKey) || 'null');
+        if (cached?.version === 2
+            && cached.savedAt > Date.now() - catalogTtlMs
+            && Array.isArray(cached.products)
+            && cached.products.length === cached.total
+            && cached.products.every(product => Number.isInteger(Number(product.id)))) {
+            allProducts = cached.products;
+            products = allProducts.slice();
+            completeCatalog = true;
+            matchingTotal = cached.total;
+            hasMoreProducts = false;
+            nextCatalogPage = 2;
+        }
+    } catch (_) { /* Private browsing or storage quota: server payload still works. */ }
+
+    function saveCompleteCatalog() {
+        if (!completeCatalog) return;
+        try {
+            sessionStorage.setItem(catalogStorageKey, JSON.stringify({
+                version: 2, savedAt: Date.now(), total: allProducts.length,
+                products: allProducts,
+            }));
+        } catch (_) { /* The live catalogue remains available in memory. */ }
+    }
+
+    function filterLoadedCatalog() {
+        if (!completeCatalog) return false;
+        const search = normalizeSearch(productSearch.value);
+        products = allProducts.filter(product => {
+            if (activeCategory !== '__all__' && Number(product.category_id) !== Number(activeCategory)) return false;
+            if (activeBrand !== '__all__' && Number(product.brand_id) !== Number(activeBrand)) return false;
+            if (!search) return true;
+            return [product.name, product.description, product.category, product.brand,
+                product.sku, product.barcode].some(value => normalizeSearch(value).includes(search));
+        });
+        matchingTotal = products.length;
+        hasMoreProducts = false;
+        catalogLoading = false;
+        catalogError = false;
+        renderProducts();
+        return true;
+    }
+
     const productCache = new Map(products.map(product => [Number(product.id), product]));
+    if (completeCatalog && allProducts.length) saveCompleteCatalog();
 
     function normalizeSearch(value) {
         return String(value || '').toLocaleLowerCase('ar')
@@ -3109,7 +3163,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }).join('');
     }
 
-    async function loadCatalog(page = 1, append = false) {
+    async function loadCatalog(page = 1, append = false, forceServer = false) {
+        if (!forceServer && !append && filterLoadedCatalog()) return { products, total: matchingTotal };
         clearTimeout(searchTimer);
         searchTimer = null;
         const requestNumber = ++catalogRequest;
@@ -4294,12 +4349,68 @@ async function submitOrder(action) {
         );
     });
 
+    // Populate the whole branch catalogue once (also for future larger menus).
+    // Filtering/navigation after warm-up is memory-only; the explicit refresh
+    // control is the way to pick up revised prices/availability immediately.
+    async function warmCatalog() {
+        if (completeCatalog) return;
+        const collected = products.slice();
+        let page = 2;
+        try {
+            while (page <= 20) {
+                const url = new URL(catalogUrl, window.location.origin);
+                url.searchParams.set('location_id', locationId);
+                url.searchParams.set('page', page);
+                const response = await fetch(url, { headers: { Accept: 'application/json' } });
+                if (!response.ok) return;
+                const data = await response.json();
+                if (!Array.isArray(data.products)) return;
+                collected.push(...data.products);
+                if (!data.has_more) {
+                    const byId = new Map(collected.map(product => [Number(product.id), product]));
+                    if (byId.size !== Number(data.total)) return;
+                    allProducts = [...byId.values()];
+                    completeCatalog = true;
+                    allProducts.forEach(product => productCache.set(Number(product.id), product));
+                    saveCompleteCatalog();
+                    filterLoadedCatalog();
+                    return;
+                }
+                page++;
+            }
+        } catch (_) { /* Existing paginated server search remains available. */ }
+    }
+
+    document.getElementById('rbRefreshCatalog')?.addEventListener('click', () => {
+        try { sessionStorage.removeItem(catalogStorageKey); } catch (_) {}
+        completeCatalog = false;
+        allProducts = [];
+        products = [];
+        productCache.clear();
+        activeCategory = '__all__';
+        activeBrand = '__all__';
+        productSearch.value = '';
+        renderFilters();
+        loadCatalog(1, false, true).then(data => {
+            if (!data) return;
+            if (!data.has_more) {
+                allProducts = data.products.slice();
+                completeCatalog = true;
+                saveCompleteCatalog();
+            } else {
+                warmCatalog();
+            }
+        });
+    });
+
     // Initial render
     renderFilters();
     renderCart();
     syncServiceType();
     syncPayment();
     renderLocalDraftCard();
+    if (completeCatalog) filterLoadedCatalog();
+    else { renderProducts(); warmCatalog(); }
     if (Array.isArray(oldItems) && oldItems.length) {
         loadProductsByIds(oldItems.map(item => item.product_id))
             .then(availableProducts => {
