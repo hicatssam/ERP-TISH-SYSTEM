@@ -32,6 +32,12 @@ class PaymentCheckoutSettingsController extends Controller
             'customer_non_cash' => ['required', 'boolean'],
         ]);
 
+        if (! $validated['customer_cash'] && ! $validated['customer_non_cash']) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'customer_cash' => 'يجب إبقاء خيار دفع واحد على الأقل متاحًا للعميل.',
+            ]);
+        }
+
         // KOT printing forces unpaid preparation and is not a checkout choice.
         // If disabled, the POS controller must not bypass the policy.
         $checkout->save(
