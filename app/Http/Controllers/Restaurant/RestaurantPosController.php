@@ -17,6 +17,7 @@ use App\Services\Restaurant\RestaurantContextService;
 use App\Services\Restaurant\RestaurantPosCatalogService;
 use App\Services\Restaurant\RestaurantOrderService;
 use App\Services\ModuleService;
+use App\Services\Payments\PaymentCheckoutSettings;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
@@ -140,7 +141,7 @@ class RestaurantPosController extends Controller
                 'tables' => $tables,
                 'recentOrders' => $recentOrders,
                 'serviceTypes' => RestaurantServiceType::cases(),
-                'paymentArrangements' => PaymentArrangement::cases(),
+                'paymentArrangements' => app(PaymentCheckoutSettings::class)->posOptions(),
             ]
         );
     }
@@ -245,6 +246,12 @@ class RestaurantPosController extends Controller
             $data['payment_arrangement'] = 'pay_on_pickup';
             unset($data['payment_method_id'], $data['paid_amount'], $data['reference_number'],
                 $data['payment_proof'], $data['payment_received_confirmed']);
+        }
+
+        if (! app(PaymentCheckoutSettings::class)->permitsPos($data['payment_arrangement'])) {
+            throw ValidationException::withMessages([
+                'payment_arrangement' => 'ترتيب الدفع المحدد معطل من إعدادات الدفع والطلبات.',
+            ]);
         }
 
         if ($action === 'bill_print' && (
