@@ -2417,6 +2417,21 @@ body.rb-pos-mode {
         margin-bottom: 4px;
     }
 }
+/* Final viewport rules take precedence over legacy breakpoint selectors. */
+@media (min-width: 821px) {
+    .rb-product-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 175px), 1fr)); }
+    .rb-order-panel { max-height: calc(100dvh - 16px); overflow-y: auto; top: 8px; }
+}
+@media (min-width: 821px) and (max-width: 1180px) {
+    .rb-product-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 145px), 1fr)); }
+}
+@media (max-width: 820px) {
+    .rb-pos-workspace { min-width: 0; width: 100%; }
+    .rb-product-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+    .rb-product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 </style>
 
 <script>
