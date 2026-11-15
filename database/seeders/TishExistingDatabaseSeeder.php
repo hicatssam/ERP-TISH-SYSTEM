@@ -24,6 +24,20 @@ use RuntimeException;
  */
 class TishExistingDatabaseSeeder extends Seeder
 {
+    /**
+     * Explicitly requested reactivation of TISH B01's 21 deleted catalogue products.
+     * Other soft-deleted products remain deleted, including future manual removals.
+     */
+    private const RESTORE_SKUS = [
+        'BRG-BEEF-DOUBLE', 'BRG-BEEF-TRIPLE', 'BRG-BEEF-MUSHROOM',
+        'BRG-BEEF-JALAPENO', 'BRG-BEEF-TURKEY-BACON', 'BRG-BEEF-MOZZARELLA',
+        'BRG-BEEF-ONION', 'BRG-BEEF-BLUE-CHEESE', 'BRG-BEEF-TRUFFLE',
+        'BRG-BEEF-SLIDERS', 'BRG-CHICKEN-SPICY', 'BRG-CHICKEN-MUSHROOM',
+        'BRG-CHICKEN-HONEY', 'BRG-VEGETARIAN-VEGGIE', 'BRG-VEGETARIAN-FALAFEL',
+        'BRG-FRIES-CAJUN', 'BRG-FRIES-CURLY', 'BRG-FRIES-SWEET',
+        'BRG-FRIES-TRUFFLE', 'BRG-APPETIZERS-JALAPENO', 'BRG-APPETIZERS-NACHOS',
+    ];
+
     public function run(): void
     {
         $branch = Location::query()->where('code', 'B01')->where('is_active', true)->firstOrFail();
@@ -40,6 +54,12 @@ class TishExistingDatabaseSeeder extends Seeder
             $this->call(BurgerRestaurantSeeder::class);
             $catalogue = new BurgerRestaurantDemoSeeder();
             $raw = $catalogue->seedIngredients();
+
+            // Restore only the 21 explicitly approved B01 products, keeping their
+            // original IDs, prices, menu assignments, stock and historical orders.
+            // Everything is inside the parent transaction, so any failed recipe/
+            // inventory validation rolls back these soft-delete restorations.
+            $restored = $this->restoreSelectedProducts($branch);
             $catalogue->seedRecipes($raw, $admin, skipTrashedProducts: true);
 
             $area = RestaurantArea::query()->firstOrCreate(
@@ -72,7 +92,7 @@ class TishExistingDatabaseSeeder extends Seeder
                     $sku = 'BRG-'.strtoupper($group).'-'.$code;
                     $product = Product::withTrashed()->where('sku', $sku)->firstOrFail();
                     if ($product->trashed()) {
-                        // An administrator deliberately removed this menu product.
+                        // Preserve deletion of every product outside RESTORE_SKUS.
                         $skippedTrashed++;
                         continue;
                     }
@@ -85,7 +105,8 @@ class TishExistingDatabaseSeeder extends Seeder
                         throw new RuntimeException('Missing approved ingredient recipe: '.$product->sku);
                     }
                     foreach ($recipe->items as $item) {
-                        if (! $item->ingredient?->is_raw_material || (float) $item->quantity <= 0) {
+                        if (! $item->ingredient || ! $item->ingredient->is_active
+                            || ! $item->ingredient->is_raw_material || (float) $item->quantity <= 0) {
                             throw new RuntimeException('Invalid ingredient for '.$product->sku);
                         }
                         // Refuse to fabricate real stock. It must be received or counted through InventoryService.
@@ -94,6 +115,11 @@ class TishExistingDatabaseSeeder extends Seeder
                             throw new RuntimeException('Missing B01 inventory for '.$item->ingredient->sku.
                                 '. Receive actual stock through inventory workflow first.');
                         }
+                    }
+
+                    $price = $product->getEffectivePriceForLocation((int) $branch->id);
+                    if ((float) $price <= 0) {
+                        throw new RuntimeException('Missing positive sale price for '.$product->sku);
                     }
 
                     $menu = RestaurantMenuItem::query()->where('location_id', $branch->id)
@@ -112,8 +138,43 @@ class TishExistingDatabaseSeeder extends Seeder
             if (count($productIds) + $skippedTrashed !== 76 || $raw->count() !== 53) {
                 throw new RuntimeException('Unexpected Tish product or ingredient catalogue size.');
             }
-            $this->command?->info('Tish B01: '.count($productIds).' active menu recipes checked, '.$skippedTrashed.' deleted products preserved, 53 raw ingredients, KITCHEN/PREP routes ready.');
+            $this->command?->info('Tish B01: '.count($productIds).' active menu recipes checked; '.$restored.' targeted products restored; '.$skippedTrashed.' other deleted products preserved; 53 raw ingredients; KITCHEN/PREP routes ready.');
             $this->command?->warn('Historical B02/FAC data and old kitchen tickets untouched. No stock was added.');
         });
+    }
+
+    private function restoreSelectedProducts(Location $branch): int
+    {
+        $restored = 0;
+
+        foreach (self::RESTORE_SKUS as $sku) {
+            $product = Product::withTrashed()->where('sku', $sku)->firstOrFail();
+
+            if (! $product->trashed()) {
+                continue;
+            }
+
+            // The product must already be assigned to the target B01 menu and
+            // selling location. Never auto-create prices or availability here.
+            $menu = RestaurantMenuItem::query()
+                ->where('location_id', $branch->id)
+                ->where('product_id', $product->id)
+                ->firstOrFail();
+            $assignment = \App\Models\LocationProduct::query()
+                ->where('location_id', $branch->id)
+                ->where('product_id', $product->id)
+                ->firstOrFail();
+
+            if (! $product->is_active || ! $menu->is_active
+                || ! $menu->show_in_pos || ! $assignment->is_available
+                || (float) ($assignment->local_selling_price ?? $product->base_selling_price) <= 0) {
+                throw new RuntimeException('Restore preflight failed for '.$sku);
+            }
+
+            $product->restore();
+            $restored++;
+        }
+
+        return $restored;
     }
 }

@@ -277,6 +277,51 @@ class TishRecipeStockFlowTest extends TestCase
     }
 
 
+    public function test_existing_tish_seeder_restores_only_21_approved_deleted_skus_preserving_stock_and_history(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $branch = Location::query()->where('code', 'B01')->firstOrFail();
+        $sku = 'BRG-BEEF-DOUBLE';
+        $target = Product::query()->where('sku', $sku)->firstOrFail();
+        $targetId = $target->id;
+        $targetPrice = $target->base_selling_price;
+        $target->delete();
+
+        // An unrelated deliberate deletion must still be respected.
+        $other = Product::query()->where('sku', 'BRG-BEEF-CLASSIC')->firstOrFail();
+        $other->delete();
+
+        $beforeStock = DB::table('inventories')->where('location_id', $branch->id)
+            ->orderBy('product_id')->pluck('quantity', 'product_id')->all();
+        $beforeOrders = DB::table('orders')->count();
+        $beforeInvoices = DB::table('invoices')->count();
+        $beforeMovements = DB::table('stock_movements')->count();
+        $beforeRecipeItems = DB::table('recipe_items')->count();
+
+        $this->seed(\Database\Seeders\TishExistingDatabaseSeeder::class);
+        $this->seed(\Database\Seeders\TishExistingDatabaseSeeder::class);
+
+        $restored = Product::query()->where('sku', $sku)->firstOrFail();
+        $this->assertSame($targetId, $restored->id);
+        $this->assertEquals($targetPrice, $restored->base_selling_price);
+        $this->assertSoftDeleted('products', ['id' => $other->id]);
+        $this->assertDatabaseHas('restaurant_menu_items', [
+            'product_id' => $targetId, 'location_id' => $branch->id,
+            'inventory_mode' => 'recipe',
+        ]);
+        $this->assertTrue(Recipe::query()->where('product_id', $targetId)
+            ->where('status', 'approved')->where('is_active', true)->has('items')->exists());
+
+        $this->assertSame($beforeOrders, DB::table('orders')->count());
+        $this->assertSame($beforeInvoices, DB::table('invoices')->count());
+        $this->assertSame($beforeMovements, DB::table('stock_movements')->count());
+        $this->assertSame($beforeRecipeItems, DB::table('recipe_items')->count());
+        $this->assertEquals($beforeStock, DB::table('inventories')
+            ->where('location_id', $branch->id)->orderBy('product_id')
+            ->pluck('quantity', 'product_id')->all());
+    }
+
     public function test_existing_seeder_preserves_deliberately_deleted_menu_products(): void
     {
         $this->seed(DatabaseSeeder::class);
