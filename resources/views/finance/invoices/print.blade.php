@@ -129,20 +129,19 @@
     }
 
     .invoice-payment-watermark {
+        /* Compact ink-like rubber stamp over the upper-right invoice body. */
         position: absolute;
-        /* Place the stamp in the open right half of the existing invoice,
-           above the products table, like the approved reference preview. */
-        top: 135px;
-        right: 6%;
-        width: 42%;
-        height: 102px;
+        top: 95px;
+        left: 38%;
+        width: 54%;
+        height: 112px;
         z-index: 5;
         pointer-events: none;
         text-align: center;
         direction: rtl;
-        -webkit-transform: rotate(-17deg);
-        transform: rotate(-17deg);
-        opacity: .75;
+        -webkit-transform: rotate(-16deg);
+        transform: rotate(-16deg);
+        opacity: .78;
     }
 
     .invoice-payment-watermark-inner {
@@ -150,9 +149,9 @@
         width: 100%;
         height: 100%;
         border: 6px solid #b42318;
-        border-radius: 12px;
-        padding: 10px 2px;
-        font-size: 29pt;
+        border-radius: 13px;
+        padding: 12px 3px;
+        font-size: 31pt;
         font-weight: 900;
         line-height: 1.55;
         white-space: nowrap;
