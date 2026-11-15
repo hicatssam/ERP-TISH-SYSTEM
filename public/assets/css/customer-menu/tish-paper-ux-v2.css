@@ -10,12 +10,12 @@ body.tish-paper.tish-cart-page #cartItems .cart-row {
   position:relative!important;
   display:grid!important;
   grid-template-columns:minmax(0,1fr)!important;
-  grid-template-rows:96px minmax(47px,auto) 38px 48px!important;
+  grid-template-rows:96px minmax(64px,auto) 45px 48px!important;
   align-content:start!important;
   justify-items:center!important;
   gap:5px!important;
   height:100%!important;
-  min-height:279px!important;
+  min-height:309px!important;
   padding:18px 11px 24px!important;
   box-sizing:border-box!important;
   background-image:url('../../tish-paper/paper/category-ivory.webp')!important;
@@ -37,10 +37,10 @@ body.tish-paper.tish-cart-page #cartItems .cart-row .row-copy {
   grid-column:1!important;
   width:100%!important;
   min-height:0!important;
-  display:grid!important;
-  grid-template-rows:minmax(47px,auto) 38px!important;
-  align-content:start!important;
-  justify-items:center!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
   gap:1px!important;
   padding:0 7px!important;
   box-sizing:border-box!important;
@@ -53,6 +53,7 @@ body.tish-paper.tish-cart-page #cartItems .cart-row .row-copy > strong {
   overflow:hidden;
   width:100%!important;
   max-height:47px!important;
+  min-height:39px!important;
   font-size:clamp(.86rem,3.4vw,1.01rem)!important;
   line-height:1.45!important;
   font-weight:900!important;
@@ -61,6 +62,7 @@ body.tish-paper.tish-cart-page #cartItems .cart-row .row-copy > strong {
 }
 body.tish-paper.tish-cart-page #cartItems .cart-row .row-copy > span {
   max-width:100%;
+  flex:0 0 auto;
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
@@ -75,7 +77,7 @@ body.tish-paper.tish-cart-page #cartItems .cart-row .row-copy .tish-cart-line-pr
   height:38px!important;
   min-height:38px!important;
   padding:0 7px!important;
-  margin:0!important;
+  margin:auto 0 0!important;
   font-size:clamp(.92rem,3.5vw,1.02rem)!important;
   line-height:1!important;
   direction:ltr!important;
@@ -176,8 +178,8 @@ body.tish-paper.tish-cart-page #cartItems .cart-row .row-actions button:active {
 }
 @media(min-width:740px) {
   body.tish-paper.tish-cart-page #cartItems .cart-row {
-    grid-template-rows:115px minmax(47px,auto) 40px 48px!important;
-    min-height:309px!important;
+    grid-template-rows:115px minmax(64px,auto) 45px 48px!important;
+    min-height:329px!important;
   }
   body.tish-paper.tish-cart-page #cartItems .cart-row .cart-thumb {
     width:112px!important;
