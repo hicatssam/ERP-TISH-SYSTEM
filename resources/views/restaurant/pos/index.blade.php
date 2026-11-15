@@ -13,10 +13,15 @@
         ?? 'المستخدم';
 
     $oldServiceType = old('service_type', $selectedTableId ? 'dine_in' : 'takeaway');
-    $oldPaymentArrangement = old(
-        'payment_arrangement',
-        $selectedTableId ? 'pay_on_pickup' : 'pay_now'
-    );
+    $allowedArrangementCodes = collect($paymentArrangements)->map(fn ($arrangement) => $arrangement->value)->all();
+    $preferredArrangement = $selectedTableId ? 'pay_on_pickup' : 'pay_now';
+    $defaultArrangement = in_array($preferredArrangement, $allowedArrangementCodes, true)
+        ? $preferredArrangement
+        : ($allowedArrangementCodes[0] ?? '');
+    $oldPaymentArrangement = old('payment_arrangement', $defaultArrangement);
+    if (! in_array($oldPaymentArrangement, $allowedArrangementCodes, true)) {
+        $oldPaymentArrangement = $defaultArrangement;
+    }
 
     $defaultSalesChannelId = old('sales_channel_id', $salesChannels->first()?->id);
 @endphp
@@ -3222,11 +3227,16 @@ document.addEventListener('DOMContentLoaded', () => {
             tableSelect.value = '';
         }
 
-        if (dineIn && paymentArrangement.value === 'pay_now' && !paymentMethod.value) {
+        const hasArrangement = value => Array.from(paymentArrangement.options)
+            .some(option => option.value === value);
+
+        if (dineIn && paymentArrangement.value === 'pay_now'
+            && !paymentMethod.value && hasArrangement('pay_on_pickup')) {
             paymentArrangement.value = 'pay_on_pickup';
         }
 
-        if (!dineIn && paymentArrangement.value === 'pay_on_pickup') {
+        if (!dineIn && paymentArrangement.value === 'pay_on_pickup'
+            && hasArrangement('pay_now')) {
             paymentArrangement.value = 'pay_now';
         }
 

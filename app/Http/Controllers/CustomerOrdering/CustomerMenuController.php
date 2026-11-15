@@ -199,8 +199,12 @@ class CustomerMenuController extends Controller
     {
         $this->assertMenuAvailable($location);
 
+        $checkout = app(\App\Services\Payments\PaymentCheckoutSettings::class);
+
         $methods = PaymentMethod::query()
             ->where('is_active', true)
+            ->when(! $checkout->customerCashEnabled(), fn ($query) => $query->where('type', '!=', 'cash'))
+            ->when(! $checkout->customerNonCashEnabled(), fn ($query) => $query->where('type', 'cash'))
             ->whereHas('locationPaymentMethods', function ($query) use ($location): void {
                 $query
                     ->where('location_id', $location->id)

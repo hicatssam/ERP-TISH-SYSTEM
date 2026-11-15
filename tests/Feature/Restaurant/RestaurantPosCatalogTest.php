@@ -62,6 +62,44 @@ class RestaurantPosCatalogTest extends TestCase
     }
 
     #[Test]
+    public function payment_configuration_hides_disabled_checkout_option_and_rejects_forged_pos_submission(): void
+    {
+        $branch = $this->branch('SETTINGS');
+        $cashier = $this->cashier($branch);
+        $cashier->givePermissionTo(Permission::findOrCreate('orders.create', 'web'));
+
+        app(\App\Services\Payments\PaymentCheckoutSettings::class)
+            ->save(['pay_on_pickup'], true, false);
+
+        $page = $this->actingAs($cashier)->get(route('restaurant.pos.index'))->assertOk();
+        $page->assertSee('value="pay_on_pickup"', false)
+            ->assertDontSee('value="pay_now"', false)
+            ->assertDontSee('value="on_account"', false);
+
+        $channel = SalesChannel::query()->create([
+            'name' => 'Payment settings test', 'slug' => 'pos-policy',
+            'type' => 'direct', 'is_active' => true,
+        ]);
+        $product = $this->product($this->category(), 'POLICY-ITEM');
+        $method = PaymentMethod::query()->create([
+            'name' => 'Cash', 'name_ar' => 'نقدي', 'code' => 'policy-cash',
+            'type' => 'cash', 'is_active' => true,
+        ]);
+        $this->onMenu($branch, $product, 1);
+        $this->atBranch($branch, $product, true);
+
+        $this->actingAs($cashier)->postJson(route('restaurant.pos.orders.store'), [
+            'service_type' => 'takeaway',
+            'payment_arrangement' => 'pay_now',
+            'payment_method_id' => $method->id,
+            'sales_channel_id' => $channel->id,
+            'items' => [['product_id' => $product->id, 'quantity' => 1]],
+        ])->assertUnprocessable()->assertJsonValidationErrors('payment_arrangement');
+
+        $this->assertDatabaseCount('orders', 0);
+    }
+
+    #[Test]
     public function cashier_only_sees_branch_payment_methods_and_cannot_submit_another_branch_method(): void
     {
         $branch = $this->branch('PAY-A');
