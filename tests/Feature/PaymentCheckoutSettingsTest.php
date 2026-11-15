@@ -4,6 +4,9 @@ namespace Tests\Feature;
 
 use App\Enums\PaymentArrangement;
 use App\Models\SystemSetting;
+use App\Models\Location;
+use App\Models\Employee;
+use Illuminate\Support\Str;
 use App\Models\User;
 use App\Services\Payments\PaymentCheckoutSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -28,13 +31,27 @@ class PaymentCheckoutSettingsTest extends TestCase
     #[Test]
     public function authorized_admin_can_save_options_and_restricted_user_cannot(): void
     {
-        $admin = User::factory()->create([
-            'is_active' => true, 'must_change_password' => false,
+        $branch = Location::query()->create([
+            'name' => 'Payment settings test', 'code' => 'PAY-SETTINGS',
+            'type' => 'branch', 'is_active' => true,
         ]);
+        $makeUser = function (string $label) use ($branch): User {
+            $employee = Employee::query()->create([
+                'employee_number' => 'PAY-'.Str::upper(Str::random(8)),
+                'full_name' => $label,
+                'employment_status' => 'active',
+            ]);
+            $employee->locations()->attach($branch->id, ['is_primary' => true]);
+
+            return User::factory()->create([
+                'employee_id' => $employee->id,
+                'is_active' => true,
+                'must_change_password' => false,
+            ]);
+        };
+        $admin = $makeUser('Payment Admin');
         $admin->givePermissionTo(Permission::findOrCreate('settings.manage', 'web'));
-        $limited = User::factory()->create([
-            'is_active' => true, 'must_change_password' => false,
-        ]);
+        $limited = $makeUser('Payment Viewer');
 
         $payload = [
             'pos_arrangements' => ['pay_now', 'pay_on_pickup'],
