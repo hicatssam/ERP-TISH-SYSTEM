@@ -172,6 +172,12 @@
                 <div class="rb-products-footer">
                     <span><b id="rbVisibleProductCount">0</b> من <b id="rbMatchingProductCount">0</b> منتج مطابق</span>
                     <span>{{ $location->name }}</span>
+                    @can('restaurant_menu.view')
+                        <a href="{{ route('restaurant.menu.index', ['location_id' => $location->id]) }}"
+                           class="rb-menu-management-link" title="راجع إتاحة الأصناف للفرع، الصور والأسعار">
+                            إدارة منتجات المنيو
+                        </a>
+                    @endcan
                 </div>
             </section>
 
@@ -2417,6 +2423,8 @@ body.rb-pos-mode {
         margin-bottom: 4px;
     }
 }
+.rb-menu-management-link { color: var(--rb-orange); font-size: 11px; font-weight: 800; text-decoration: underline; }
+.rb-menu-management-link:focus-visible { outline: 2px solid var(--rb-orange); outline-offset: 3px; }
 /* Final viewport rules take precedence over legacy breakpoint selectors. */
 @media (min-width: 821px) {
     .rb-product-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 175px), 1fr)); }
