@@ -289,6 +289,13 @@ class CustomerOrderingService
             ]);
         }
 
+        if (! app(\App\Services\Payments\PaymentCheckoutSettings::class)
+            ->permitsCustomerMethodType((string) $method->type)) {
+            throw ValidationException::withMessages([
+                'payment_method_id' => 'طريقة الدفع هذه معطلة في إعدادات طلب العميل.',
+            ]);
+        }
+
         $isCash = (string) $method->type === 'cash';
         $account = null;
 
