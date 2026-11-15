@@ -76,11 +76,24 @@ class RestaurantPosCatalogTest extends TestCase
             ->assertDontSee('value="pay_now"', false)
             ->assertDontSee('value="on_account"', false);
 
+        $channel = SalesChannel::query()->create([
+            'name' => 'Payment settings test', 'slug' => 'pos-policy',
+            'type' => 'direct', 'is_active' => true,
+        ]);
+        $product = $this->product($this->category(), 'POLICY-ITEM');
+        $method = PaymentMethod::query()->create([
+            'name' => 'Cash', 'name_ar' => 'نقدي', 'code' => 'policy-cash',
+            'type' => 'cash', 'is_active' => true,
+        ]);
+        $this->onMenu($branch, $product, 1);
+        $this->atBranch($branch, $product, true);
+
         $this->actingAs($cashier)->postJson(route('restaurant.pos.orders.store'), [
             'service_type' => 'takeaway',
             'payment_arrangement' => 'pay_now',
-            'sales_channel_id' => 999,
-            'items' => [['product_id' => 999, 'quantity' => 1]],
+            'payment_method_id' => $method->id,
+            'sales_channel_id' => $channel->id,
+            'items' => [['product_id' => $product->id, 'quantity' => 1]],
         ])->assertUnprocessable()->assertJsonValidationErrors('payment_arrangement');
 
         $this->assertDatabaseCount('orders', 0);
