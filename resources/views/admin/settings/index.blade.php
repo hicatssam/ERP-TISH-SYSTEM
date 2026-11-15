@@ -11,6 +11,9 @@
         <p class="page-subheading">
             بيانات المنشأة والهوية والتشغيل والمساعد الذكي، مرتبة بحسب الاستخدام
         </p>
+        <div style="margin-top:.75rem">
+            <a class="btn btn-outline btn-sm" href="{{ route('settings.payment-checkout.index') }}">إعدادات الدفع والطلبات</a>
+        </div>
     </div>
 </div>
 
