@@ -360,6 +360,7 @@ body.tish-paper #intro .intro-enter:focus-visible{
 })();
 </script>
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-menu-cinematic.css') }}">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-drive-ui-fixes-v1.css') }}?v=1">
 </head>
 <body class="crisp-customer-menu reference-home tish-paper">
 @php
@@ -546,7 +547,7 @@ body.tish-paper #intro .intro-enter:focus-visible{
    </div>
    <div class="grid" id="productGrid"></div>
   </section>
-  <div class="tish-home-install">@include('customer-menu.partials.pwa-install')</div>
+  {{-- Install prompt is available via the browser; duplicate in-menu install control removed. --}}
  </div>
 </main>
 </div>
