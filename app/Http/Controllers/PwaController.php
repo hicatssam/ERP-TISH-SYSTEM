@@ -78,19 +78,19 @@ class PwaController extends Controller
             'theme_color' => '#8B1238',
             'icons' => [
                 [
-                    'src' => '/assets/tish-paper/pwa/icon-192.png',
+                    'src' => route('pwa.cashier-icon', ['size' => 192, 'v' => 'round1'], false),
                     'sizes' => '192x192',
                     'type' => 'image/png',
                     'purpose' => 'any',
                 ],
                 [
-                    'src' => '/assets/tish-paper/pwa/icon-512.png',
+                    'src' => route('pwa.cashier-icon', ['size' => 512, 'v' => 'round1'], false),
                     'sizes' => '512x512',
                     'type' => 'image/png',
                     'purpose' => 'any',
                 ],
                 [
-                    'src' => '/assets/tish-paper/pwa/icon-maskable-512.png',
+                    'src' => '/assets/tish-paper/pwa/icon-maskable-512.png?v=round1',
                     'sizes' => '512x512',
                     'type' => 'image/png',
                     'purpose' => 'maskable',
@@ -100,6 +100,65 @@ class PwaController extends Controller
             'Content-Type' => 'application/manifest+json; charset=UTF-8',
             'Cache-Control' => 'no-cache, no-store, must-revalidate',
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
+
+    /**
+     * Circular cashier app icon based on the same logo-disc artwork as the
+     * public TISH menu. Transparent outside the circular badge.
+     * The separate maskable icon retains a safe full-square background.
+     */
+    public function cashierIcon(int $size): BinaryFileResponse
+    {
+        abort_unless(in_array($size, [192, 512], true), 404);
+        $fallback = public_path("assets/tish-paper/pwa/icon-{$size}.png");
+        $artwork = public_path('assets/tish-paper/brand/logo-disc.webp');
+
+        if (! extension_loaded('gd') || ! is_file($artwork)) {
+            return response()->file($fallback, ['Content-Type' => 'image/png']);
+        }
+
+        $output = storage_path("app/pwa-icons/tish-cashier-round1-{$size}.png");
+        if (! is_file($output)) {
+            File::ensureDirectoryExists(dirname($output));
+            $source = @imagecreatefromstring((string) file_get_contents($artwork));
+            if ($source === false) {
+                return response()->file($fallback, ['Content-Type' => 'image/png']);
+            }
+
+            $canvas = imagecreatetruecolor($size, $size);
+            imagealphablending($canvas, false);
+            imagesavealpha($canvas, true);
+            $transparent = imagecolorallocatealpha($canvas, 0, 0, 0, 127);
+            imagefill($canvas, 0, 0, $transparent);
+
+            $side = min(imagesx($source), imagesy($source));
+            $inset = (int) round($size * 0.025);
+            $diameter = $size - 2 * $inset;
+            imagecopyresampled(
+                $canvas, $source, $inset, $inset,
+                (int) floor((imagesx($source) - $side) / 2),
+                (int) floor((imagesy($source) - $side) / 2),
+                $diameter, $diameter, $side, $side
+            );
+            $center = ($size - 1) / 2;
+            $radius = $diameter / 2;
+            for ($y = 0; $y < $size; $y++) {
+                for ($x = 0; $x < $size; $x++) {
+                    if (($x - $center) ** 2 + ($y - $center) ** 2 > $radius ** 2) {
+                        imagesetpixel($canvas, $x, $y, $transparent);
+                    }
+                }
+            }
+
+            imagepng($canvas, $output, 9);
+            imagedestroy($canvas);
+            imagedestroy($source);
+        }
+
+        return response()->file($output, [
+            'Content-Type' => 'image/png',
+            'Cache-Control' => 'public, max-age=604800',
+        ]);
     }
 
     public function start(Request $request): RedirectResponse
