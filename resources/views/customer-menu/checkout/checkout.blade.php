@@ -12,6 +12,7 @@
 @include('customer-menu.partials.styles')
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-checkout-paper.css') }}?v=4">
 @include('customer-menu.partials.pwa-head')
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-drive-ui-fixes-v1.css') }}?v=1">
 </head>
 <body class="crisp-customer-menu tish-paper tish-checkout-page">
 <div class="app crisp-menu-app">
@@ -156,9 +157,9 @@ function renderSummary() {
         <div class="row-copy">
           <strong>${CM.esc(String(x.name || 'صنف').split(' - ')[0])}</strong>
           ${subtitle ? `<span style="display:block;font-size:.74rem;color:var(--muted)">${CM.esc(subtitle)}</span>` : ''}
-          <small>${x.quantity} × ${CM.money(x.price)}</small>
+          <small class="cart-line-meta">${x.quantity} × ${CM.money(x.price)}</small>
         </div>
-        <div class="row-copy"><strong>${CM.money(x.price * x.quantity)}</strong></div>
+        <strong class="cart-line-total">${CM.money(x.price * x.quantity)}</strong>
       </div>`;
     }).join('');
     document.getElementById('summaryTotal').textContent = CM.money(CM.cartTotal());
