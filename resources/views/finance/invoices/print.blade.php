@@ -147,7 +147,7 @@
         display: block;
         width: 100%;
         height: 100%;
-        border: 9px double currentColor;
+        border: 9px solid #b42318;
         border-radius: 18px;
         padding: 20px 4px;
         font-size: 45pt;
@@ -156,9 +156,18 @@
         white-space: nowrap;
     }
 
-    .invoice-watermark-paid { color: #08783e; }
-    .invoice-watermark-unpaid { color: #b42318; }
-    .invoice-watermark-partial { color: #b16a00; }
+    .invoice-watermark-paid .invoice-payment-watermark-inner {
+        color: #08783e;
+        border-color: #08783e;
+    }
+    .invoice-watermark-unpaid .invoice-payment-watermark-inner {
+        color: #b42318;
+        border-color: #b42318;
+    }
+    .invoice-watermark-partial .invoice-payment-watermark-inner {
+        color: #b16a00;
+        border-color: #b16a00;
+    }
 
     @media print {
         .invoice-payment-watermark {
