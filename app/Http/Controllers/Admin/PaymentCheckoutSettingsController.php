@@ -38,8 +38,6 @@ class PaymentCheckoutSettingsController extends Controller
             ]);
         }
 
-        // KOT printing forces unpaid preparation and is not a checkout choice.
-        // If disabled, the POS controller must not bypass the policy.
         $checkout->save(
             $validated['pos_arrangements'],
             (bool) $validated['customer_cash'],
