@@ -23,3 +23,7 @@ Route::get('/orders-app.webmanifest', [OrdersAppController::class, 'manifest'])
 
 Route::get('/cashier.webmanifest', [PwaController::class, 'cashierManifest'])
     ->name('pwa.cashier-manifest');
+
+Route::get('/cashier-icon-{size}.png', [PwaController::class, 'cashierIcon'])
+    ->whereIn('size', [192, 512])
+    ->name('pwa.cashier-icon');
