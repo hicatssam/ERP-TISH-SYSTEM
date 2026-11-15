@@ -44,9 +44,11 @@ class LoginController extends Controller
 
         // Locked out
         if ($user->isLocked()) {
-            $minutes = now()->diffInMinutes($user->login_locked_until);
+            $remainingSeconds = max(1, $user->login_locked_until->getTimestamp() - now()->getTimestamp());
+            $request->session()->flash('login_lock_seconds', $remainingSeconds);
+
             throw ValidationException::withMessages([
-                'login' => ["تم قفل الحساب مؤقتاً. يرجى المحاولة بعد {$minutes} دقيقة."],
+                'login' => ['تم قفل الحساب مؤقتًا لحماية حسابك.'],
             ]);
         }
 
@@ -57,8 +59,9 @@ class LoginController extends Controller
             if ($user->failed_login_attempts >= 5) {
                 $user->update(['login_locked_until' => now()->addMinutes(15)]);
                 $this->logActivity($user, 'login_locked', 'auth');
+                $request->session()->flash('login_lock_seconds', 15 * 60);
                 throw ValidationException::withMessages([
-                    'login' => ['تم قفل الحساب مؤقتاً بسبب محاولات فاشلة متكررة. يرجى المحاولة بعد 15 دقيقة.'],
+                    'login' => ['تم قفل الحساب مؤقتًا بسبب محاولات تسجيل دخول فاشلة متكررة.'],
                 ]);
             }
 

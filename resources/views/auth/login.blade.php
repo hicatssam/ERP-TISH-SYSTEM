@@ -570,6 +570,30 @@
         |--------------------------------------------------------------------------
         */
 
+        .login-lock-timer {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border: 1px solid rgba(248, 113, 113, .3);
+            border-radius: 9px;
+            background: rgba(0, 0, 0, .2);
+            text-align: center;
+        }
+        .login-lock-timer strong {
+            display: block;
+            margin-top: 4px;
+            color: #fff5ef;
+            font-size: 1.35rem;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+            direction: rtl;
+        }
+        .login-lock-timer small {
+            display: block;
+            margin-top: 4px;
+            color: #ffd9cd;
+            font-size: .75rem;
+        }
+
         .alert-error {
             margin-bottom:
                 18px;
@@ -1091,6 +1115,21 @@
 
                     @endforeach
 
+                    @if(session('login_lock_seconds'))
+                        @php
+                            $lockSeconds = max(0, (int) session('login_lock_seconds'));
+                            $lockMinutes = intdiv($lockSeconds, 60);
+                            $lockRemainderSeconds = $lockSeconds % 60;
+                        @endphp
+                        <div class="login-lock-timer" id="loginLockTimer"
+                             role="timer" aria-label="الوقت المتبقي لإعادة المحاولة"
+                             data-seconds="{{ $lockSeconds }}">
+                            الوقت المتبقي لإعادة المحاولة
+                            <strong id="loginLockTime">{{ $lockMinutes }} دقيقة و{{ $lockRemainderSeconds }} ثانية</strong>
+                            <small id="loginLockHint">سيُسمح بالمحاولة بعد انتهاء العداد. لا حاجة لتحديث الصفحة الآن.</small>
+                        </div>
+                    @endif
+
                 </div>
 
             @endif
@@ -1363,6 +1402,33 @@
                         : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
             }
         );
+    </script>
+    <script>
+        (() => {
+            const timer = document.getElementById('loginLockTimer');
+            const value = document.getElementById('loginLockTime');
+            const hint = document.getElementById('loginLockHint');
+            if (!timer || !value) return;
+
+            const seconds = Math.max(0, Number(timer.dataset.seconds) || 0);
+            const deadline = performance.now() + seconds * 1000;
+
+            function render() {
+                const remaining = Math.max(0, Math.ceil((deadline - performance.now()) / 1000));
+                const minutes = Math.floor(remaining / 60);
+                const rest = remaining % 60;
+                value.textContent = minutes + ' دقيقة و' + rest + ' ثانية';
+
+                if (remaining === 0) {
+                    value.textContent = 'يمكنك المحاولة الآن';
+                    if (hint) hint.textContent = 'أعد تسجيل الدخول باستخدام بياناتك الصحيحة.';
+                    clearInterval(interval);
+                }
+            }
+
+            const interval = setInterval(render, 1000);
+            render();
+        })();
     </script>
     <script>
         // Prevent a second submit with a stale CSRF/session token while the first
