@@ -23,6 +23,7 @@
 .crisp-customer-menu .details:active{transform:scale(.96)}
 @media(prefers-reduced-motion:reduce){.crisp-customer-menu .product.cm-card-motion{animation:none!important}.crisp-customer-menu .cat{transition:none!important}}
 </style>
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-drive-ui-fixes-v1.css') }}?v=1">
 </head>
 <body class="crisp-customer-menu tish-paper tish-paper-products">
 @include('customer-menu.partials.brand-watermark')
