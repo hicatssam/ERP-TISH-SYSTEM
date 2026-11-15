@@ -248,7 +248,9 @@ class RestaurantPosController extends Controller
                 $data['payment_proof'], $data['payment_received_confirmed']);
         }
 
-        if (! app(PaymentCheckoutSettings::class)->permitsPos($data['payment_arrangement'])) {
+        // Kitchen-only printing is an internal unpaid hand-off, not a payment selection.
+        if ($action !== 'kot_print'
+            && ! app(PaymentCheckoutSettings::class)->permitsPos($data['payment_arrangement'])) {
             throw ValidationException::withMessages([
                 'payment_arrangement' => 'ترتيب الدفع المحدد معطل من إعدادات الدفع والطلبات.',
             ]);
