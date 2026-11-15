@@ -172,6 +172,12 @@
                 <div class="rb-products-footer">
                     <span><b id="rbVisibleProductCount">0</b> من <b id="rbMatchingProductCount">0</b> منتج مطابق</span>
                     <span>{{ $location->name }}</span>
+                    @can('restaurant_menu.view')
+                        <a href="{{ route('restaurant.menu.index', ['location_id' => $location->id]) }}"
+                           class="rb-menu-management-link" title="راجع إتاحة الأصناف للفرع، الصور والأسعار">
+                            إدارة منتجات المنيو
+                        </a>
+                    @endcan
                 </div>
             </section>
 
@@ -2174,6 +2180,62 @@ body.rb-pos-mode {
     font-size: 13px;
 }
 
+/* Cashier screen ergonomics: readable touch targets, independent scroll areas and safe heights. */
+@media (min-width: 821px) {
+    .rb-pos-workspace {
+        padding: clamp(10px, 1.4vw, 20px);
+    }
+    .rb-pos-shell {
+        grid-template-columns: minmax(0, 1fr) clamp(330px, 29vw, 420px);
+        align-items: start;
+    }
+    .rb-order-panel {
+        top: 8px;
+        max-height: calc(100dvh - 16px);
+        overflow-y: auto;
+        scrollbar-width: thin;
+    }
+    .rb-products-panel {
+        min-height: calc(100dvh - 110px);
+    }
+    .rb-product-grid {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 175px), 1fr));
+    }
+    .rb-control, .rb-search, .rb-category-tab {
+        min-height: 42px;
+    }
+    .rb-control, .rb-search input {
+        font-size: 13px;
+    }
+}
+@media (min-width: 821px) and (max-height: 760px) {
+    .rb-pos-header { margin-bottom: 8px; }
+    .rb-pos-workspace { padding: 8px 12px; }
+    .rb-order-panel { max-height: calc(100dvh - 12px); }
+    .rb-cart-scroll { min-height: 100px; max-height: 24dvh; }
+}
+@media (min-width: 821px) and (max-width: 1180px) {
+    .rb-pos-shell { grid-template-columns: minmax(0, 1fr) 330px; }
+    .rb-products-toolbar { grid-template-columns: minmax(150px, 1fr) 125px 125px; }
+    .rb-product-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 145px), 1fr)); }
+    .rb-product-image { height: 116px; }
+    .rb-product-card { min-height: 210px; }
+}
+@media (max-width: 820px) {
+    .rb-pos { overflow-y: auto; overscroll-behavior: contain; }
+    .rb-pos-header-actions .rb-btn { min-height: 42px; }
+    .rb-product-card { min-height: 210px; }
+    .rb-product-image { height: 120px; }
+    .rb-control, .rb-search { min-height: 44px; }
+    .rb-control, .rb-search input { font-size: 14px; }
+}
+@media (max-width: 560px) {
+    .rb-product-grid { gap: 8px; }
+    .rb-products-panel { padding: 10px; min-height: 0; }
+    .rb-product-card { min-height: 188px; }
+    .rb-product-image { height: 103px; }
+}
+
 /* Responsive */
 @media (max-width: 1320px) {
     .rb-pos {
@@ -2360,6 +2422,23 @@ body.rb-pos-mode {
         margin-left: 0;
         margin-bottom: 4px;
     }
+}
+.rb-menu-management-link { color: var(--rb-orange); font-size: 11px; font-weight: 800; text-decoration: underline; }
+.rb-menu-management-link:focus-visible { outline: 2px solid var(--rb-orange); outline-offset: 3px; }
+/* Final viewport rules take precedence over legacy breakpoint selectors. */
+@media (min-width: 821px) {
+    .rb-product-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 175px), 1fr)); }
+    .rb-order-panel { max-height: calc(100dvh - 16px); overflow-y: auto; top: 8px; }
+}
+@media (min-width: 821px) and (max-width: 1180px) {
+    .rb-product-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 145px), 1fr)); }
+}
+@media (max-width: 820px) {
+    .rb-pos-workspace { min-width: 0; width: 100%; }
+    .rb-product-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+    .rb-product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 </style>
 
@@ -2940,7 +3019,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         brandSelect.value = activeBrand;
 
-        const tabCategories = categories.slice(0, 8);
+        const tabCategories = categories;
         categoryTabs.innerHTML = `
             <button type="button" class="rb-category-tab ${activeCategory === '__all__' ? 'active' : ''}" data-category="__all__" aria-pressed="${activeCategory === '__all__'}">
                 عرض الكل (${categories.reduce((total, category) => total + category.count, 0)})

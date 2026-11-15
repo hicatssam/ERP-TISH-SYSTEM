@@ -13,7 +13,8 @@ use Illuminate\Support\Collection;
 
 class RestaurantPosCatalogService
 {
-    public const PAGE_SIZE = 48;
+    // TISH's full active menu fits on the initial POS page; larger catalogues still paginate.
+    public const PAGE_SIZE = 96;
 
     private function availableAt(int $locationId): Builder
     {

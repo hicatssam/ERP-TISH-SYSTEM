@@ -411,14 +411,14 @@ class RestaurantPosCatalogTest extends TestCase
             'code' => 'POS-BRAND', 'name' => 'Brand', 'name_ar' => 'ماركة', 'is_active' => true,
         ]);
 
-        for ($index = 1; $index <= 53; $index++) {
+        for ($index = 1; $index <= 100; $index++) {
             $product = $this->product($category, 'ITEM-'.$index, [
-                'brand_id' => $index === 53 ? $brand->id : null,
+                'brand_id' => $index === 100 ? $brand->id : null,
             ]);
-            $this->onMenu($branch, $product, $index, $index === 53
+            $this->onMenu($branch, $product, $index, $index === 100
                 ? ['display_name_ar' => 'آخر منتج في المنيو'] : []);
-            $this->atBranch($branch, $product, true, $index === 53 ? 27 : null);
-            if ($index === 53) {
+            $this->atBranch($branch, $product, true, $index === 100 ? 27 : null);
+            if ($index === 100) {
                 $last = $product;
             }
         }
@@ -433,13 +433,13 @@ class RestaurantPosCatalogTest extends TestCase
         $initial = $this->actingAs($cashier)->get(route('restaurant.pos.index'))->assertOk();
         preg_match('/let products = (.*?);\s*const catalogUrl/s', $initial->getContent(), $match);
         $firstPage = json_decode($match[1], true, 512, JSON_THROW_ON_ERROR);
-        $this->assertCount(48, $firstPage);
+        $this->assertCount(96, $firstPage);
         $this->assertSame('ITEM-1', $firstPage[0]['sku']);
 
         $page2 = $this->getJson(route('restaurant.pos.catalog', ['page' => 2]))->assertOk()
-            ->assertJsonPath('total', 53)->assertJsonPath('has_more', false);
-        $this->assertCount(5, $page2->json('products'));
-        $this->assertSame($last->id, $page2->json('products.4.id'));
+            ->assertJsonPath('total', 100)->assertJsonPath('has_more', false);
+        $this->assertCount(4, $page2->json('products'));
+        $this->assertSame($last->id, $page2->json('products.3.id'));
 
         $this->getJson(route('restaurant.pos.catalog', [
             'q' => 'آخر منتج', 'category_id' => $category->id, 'brand_id' => $brand->id,
