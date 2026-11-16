@@ -1,0 +1,113 @@
+/* First-fold TISH banner, supplied by the restaurant via Drive.
+   This replaces only the old masthead artwork; search, categories, banners and menu remain live. */
+body.tish-paper.reference-home .reference-masthead .tish-drive-firstfold{
+ position:relative;
+ isolation:isolate;
+ width:min(100%,630px);
+ max-width:630px;
+ margin:0 auto 14px;
+ line-height:0;
+}
+body.tish-paper.reference-home .reference-masthead .tish-drive-hero-art{
+ display:block;
+ width:100%;
+ height:auto;
+ aspect-ratio:630/360;
+ object-fit:contain;
+}
+body.tish-paper.reference-home .reference-masthead .tish-drive-hero-actions{
+ position:absolute;
+ inset:0;
+ z-index:3;
+ pointer-events:none;
+ direction:ltr;
+}
+body.tish-paper.reference-home .reference-masthead .tish-drive-hero-actions .icon-btn{
+ position:absolute!important;
+ top:6.7%!important;
+ bottom:auto!important;
+ display:flex!important;
+ align-items:center!important;
+ justify-content:center!important;
+ gap:7px;
+ width:auto;
+ min-width:0!important;
+ min-height:36px!important;
+ height:12%!important;
+ padding:3px 8px!important;
+ border:0!important;
+ border-radius:0!important;
+ box-shadow:none!important;
+ background: #a91f17 url('../../tish-paper/paper/price-ticket.webp') center/100% 100% no-repeat!important;
+ color:#fff5e9!important;
+ text-decoration:none;
+ pointer-events:auto;
+ filter:drop-shadow(0 3px 2px #24131155);
+ transition:transform .18s ease,filter .18s ease;
+}
+body.tish-paper.reference-home .reference-masthead .tish-drive-hero-actions .tish-drive-hero-cart{
+ left:5.9%!important;
+ right:auto!important;
+ width:22.5%!important;
+}
+body.tish-paper.reference-home .reference-masthead .tish-drive-hero-actions .tish-drive-hero-fav{
+ left:auto!important;
+ right:1.5%!important;
+ width:12.8%!important;
+}
+body.tish-paper.reference-home .reference-masthead .tish-drive-hero-actions .icon-btn i{
+ display:block!important;
+ font-size:clamp(1rem,3vw,1.3rem)!important;
+ line-height:1!important;
+ color:#fff5e9!important;
+}
+body.tish-paper.reference-home .reference-masthead .tish-drive-hero-actions .badge{
+ position:absolute!important;
+ z-index:4;
+ top:-5px!important;
+ right:-4px!important;
+ left:auto!important;
+ min-width:18px;
+ height:18px;
+ padding:2px 4px;
+ display:grid;
+ place-items:center;
+ border-radius:50%;
+ background:#241d18!important;
+ color:#fff!important;
+ font-size:10px!important;
+ line-height:1!important;
+}
+body.tish-paper.reference-home .reference-masthead .tish-drive-hero-actions .icon-btn:hover{
+ transform:translateY(-2px);
+ filter:drop-shadow(0 5px 3px #24131166);
+}
+body.tish-paper.reference-home .reference-masthead .tish-drive-hero-actions .icon-btn:focus-visible{
+ outline:3px solid #a91f17!important;
+ outline-offset:3px;
+}
+@media(max-width:430px){
+ body.tish-paper.reference-home .reference-masthead .tish-drive-firstfold{margin-bottom:9px}
+ body.tish-paper.reference-home .reference-masthead .tish-drive-hero-actions .icon-btn{
+  min-height:30px!important;
+  padding:2px 5px!important;
+ }
+ body.tish-paper.reference-home .reference-masthead .tish-drive-hero-actions .icon-btn i{
+  font-size:1rem!important;
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ body.tish-paper.reference-home .reference-masthead .tish-drive-hero-actions .icon-btn{
+  transition:none!important;
+ }
+}
+
+/* Preserve editable brand/tagline text for screen readers without duplicating
+   the logo and words already printed on the supplied graphic. */
+body.tish-paper.reference-home .tish-drive-hero-sr{
+ position:absolute!important;
+ width:1px!important;height:1px!important;
+ padding:0!important;margin:-1px!important;
+ overflow:hidden!important;clip:rect(0,0,0,0)!important;
+ white-space:nowrap!important;border:0!important;
+}
