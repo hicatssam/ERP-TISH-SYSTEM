@@ -221,3 +221,66 @@ html[dir="ltr"] .tish-invoice-totals{margin-left:0;margin-right:auto}
 @media(prefers-reduced-motion:reduce){
  .tish-customer-invoice .tish-invoice-toolbar :is(a,button){transition:none}
 }
+
+
+/* Keep decorative dots clear of amounts: do not paint them on the invoice. */
+.tish-customer-invoice .tish-invoice-paper::after{display:none!important}
+
+/* Readable issue date and time in independent TISH paper chips. */
+.tish-customer-invoice .tish-invoice-meta{
+ width:100%;display:flex;align-items:stretch;justify-content:center;
+ gap:9px;direction:inherit;flex-wrap:wrap;
+ margin:7px 0 12px;
+}
+.tish-customer-invoice .tish-invoice-datetime-part{
+ display:flex;flex-direction:column;align-items:center;justify-content:center;
+ gap:5px;min-width:116px;padding:8px 15px;
+ background:rgba(255,249,237,.62);
+ border:1px solid #b79c8280;border-radius:8px;
+ color:#3e2b25;line-height:1.25;
+}
+.tish-customer-invoice .tish-invoice-datetime-part > span{
+ font-size:clamp(.7rem,1.8vw,.85rem);color:#765b4b;font-weight:700;
+}
+.tish-customer-invoice .tish-invoice-datetime-part time{
+ font-size:clamp(.86rem,2.2vw,1.12rem);font-weight:900;
+ font-variant-numeric:tabular-nums;white-space:nowrap;
+}
+.tish-customer-invoice .tish-invoice-payment{
+ display:flex;align-items:center;justify-content:center;flex-wrap:wrap;
+ gap:8px 12px;width:fit-content;max-width:100%;margin:0 auto 7px;
+ padding:9px 15px;border:1px solid #af8b6c8a;border-radius:8px;
+ background:rgba(255,248,234,.8);color:#43251f;
+ font-weight:800;font-size:clamp(.8rem,2vw,.97rem);text-align:center;
+}
+.tish-customer-invoice .tish-invoice-payment strong{
+ padding:5px 12px;border-radius:999px;
+ background:#f1dfbd;color:#885000;font-weight:900;
+}
+.tish-customer-invoice .tish-invoice-payment[data-payment-state="paid"] strong{
+ background:#d9eee2;color:#12603c;
+}
+.tish-customer-invoice .tish-invoice-payment[data-payment-state="refunded"] strong{
+ background:#e6e0ef;color:#554477;
+}
+.tish-customer-invoice .tish-invoice-payment[data-payment-state="unknown"] strong{
+ background:#e8e3dd;color:#65554e;
+}
+.tish-customer-invoice .tish-invoice-payment small{flex-basis:100%;line-height:1.35}
+.tish-customer-invoice .tish-invoice-order-reference{margin:6px auto 0}
+@media(max-width:420px){
+ .tish-customer-invoice .tish-invoice-meta{gap:7px;margin:5px 0 10px}
+ .tish-customer-invoice .tish-invoice-datetime-part{
+  flex:1 1 0;min-width:0;padding:8px 7px;
+ }
+ .tish-customer-invoice .tish-invoice-payment{
+  width:100%;padding:8px 7px;font-size:.78rem;gap:6px;
+ }
+ .tish-customer-invoice .tish-invoice-payment strong{padding:5px 9px}
+}
+@media print{
+ .tish-customer-invoice .tish-invoice-payment,
+ .tish-customer-invoice .tish-invoice-datetime-part{
+  break-inside:avoid;print-color-adjust:exact;
+ }
+}
