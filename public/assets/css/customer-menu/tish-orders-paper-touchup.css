@@ -66,3 +66,74 @@ body.tish-paper.cm-my-orders::after{
     width:43px!important;height:43px!important;
   }
 }
+
+
+/* Compact torn-paper order ticket — applies only to real My Orders links.
+   Keep all status polling, order navigation and the page ornaments unchanged. */
+body.tish-paper.cm-my-orders .orders > .order{
+  grid-template-columns:clamp(38px,9vw,54px) minmax(0,1fr) clamp(38px,9vw,54px)!important;
+  min-height:clamp(106px,22vw,138px)!important;
+  gap:clamp(6px,1.5vw,11px)!important;
+  padding:12px clamp(10px,2.4vw,22px)!important;
+  filter:drop-shadow(0 6px 4px #4b35222b)!important;
+}
+body.tish-paper.cm-my-orders .orders > .order :is(.orderIcon,.arrow){
+  width:clamp(37px,9vw,52px)!important;
+  height:clamp(37px,9vw,52px)!important;
+  min-width:37px!important;
+  min-height:37px!important;
+  padding:7px!important;
+  margin:auto!important;
+  background:linear-gradient(#fff7ed26,#fff7ed1a),url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;
+  box-shadow:0 1px 0 #fff8e9a6 inset,0 3px 5px #3d251c30!important;
+}
+body.tish-paper.cm-my-orders .orders > .order :is(.orderIcon,.arrow)::before{
+  inset:2px 1px -2px 2px;
+  background:linear-gradient(#ffffff16,#00000009),url('../../tish-paper/paper/background.webp') center/cover no-repeat;
+}
+body.tish-paper.cm-my-orders .orders > .order :is(.orderIcon,.arrow) i{
+  font-size:clamp(1.05rem,3vw,1.4rem)!important;
+}
+body.tish-paper.cm-my-orders .orders > .order .orderInfo{
+  align-items:flex-start!important;
+  text-align:start!important;
+  gap:3px!important;
+}
+body.tish-paper.cm-my-orders .orders > .order .orderInfo strong{
+  font-size:clamp(.93rem,2.6vw,1.12rem)!important;
+  line-height:1.2!important;
+}
+body.tish-paper.cm-my-orders .orders > .order .orderInfo .orderStatus{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  max-width:max-content!important;
+  min-height:27px!important;
+  padding:4px 11px!important;
+  font-size:clamp(.72rem,1.8vw,.83rem)!important;
+  line-height:1.25!important;
+}
+body.tish-paper.cm-my-orders .orders > .order .orderInfo small:last-child{
+  font-size:clamp(.68rem,1.55vw,.77rem)!important;
+  line-height:1.35!important;
+  color:#8a7d78!important;
+}
+@media(max-width:380px){
+  body.tish-paper.cm-my-orders .orders > .order{
+    min-height:100px!important;
+    grid-template-columns:36px minmax(0,1fr) 36px!important;
+    gap:5px!important;
+    padding:10px 9px!important;
+  }
+  body.tish-paper.cm-my-orders .orders > .order :is(.orderIcon,.arrow){
+    width:36px!important;
+    height:36px!important;
+    min-width:36px!important;
+    min-height:36px!important;
+    padding:6px!important;
+  }
+  body.tish-paper.cm-my-orders .orders > .order .orderInfo strong{font-size:.9rem!important}
+  body.tish-paper.cm-my-orders .orders > .order .orderInfo .orderStatus{
+    min-height:24px!important;padding:3px 8px!important;font-size:.68rem!important;
+  }
+}
