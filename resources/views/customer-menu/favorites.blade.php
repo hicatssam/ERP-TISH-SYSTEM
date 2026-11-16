@@ -4,15 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="csrf-token" content="{{ csrf_token() }}">
-<title>المفضلة - {{ $branding['name'] ?? config('app.name') }}</title>
+<title>{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Favorites' : 'المفضلة' }} - {{ $branding['name'] ?? config('app.name') }}</title>
 @if(!empty($branding['favicon']))<link rel="icon" href="{{ $branding['favicon'] }}">@endif
 @include('customer-menu.partials.styles')
-<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-favorites-paper.css') }}?v=1">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-favorites-paper.css') }}?v=2">
 @include('customer-menu.partials.pwa-head')
 </head>
 <body class="crisp-customer-menu tish-paper tish-favorites-page">
 <div class="app crisp-menu-app">
-@include('customer-menu.partials.topbar', ['pageTitle' => 'المفضلة', 'pageSubtitle' => $location->name])
+@include('customer-menu.partials.topbar', ['pageTitle' => \App\Support\CustomerMenuLanguage::isEnglish() ? 'Favorites' : 'المفضلة', 'pageSubtitle' => $location->name])
 
 <main class="menu-area">
  <div class="shell">
