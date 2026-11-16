@@ -44,14 +44,14 @@ body.tish-paper.cm-my-orders .orders>.order:focus-visible{
   outline:3px solid var(--tish-paper-red,#a91f17)!important;
   outline-offset:5px!important;
 }
-/* Keep the upper-left ink pattern. Flip the bottom-right pattern vertically
+/* Anchor the upper-left red dots against the torn red roof. Flip the bottom-right pattern vertically
    so its widest dotted edge rests against the torn black navigation. */
 body.tish-paper.cm-my-orders::after{
   background-image:
     url('../../tish-paper/decor/halftone.svg'),
     url('../../tish-paper/decor/halftone-bottom-flipped.svg')!important;
   background-position:
-    left -24px top 18px,
+    left -24px top 4px,
     right -16px bottom calc(76px + env(safe-area-inset-bottom,0px))!important;
   background-size:106px auto,clamp(118px,28vw,170px) auto!important;
   background-repeat:no-repeat!important;
