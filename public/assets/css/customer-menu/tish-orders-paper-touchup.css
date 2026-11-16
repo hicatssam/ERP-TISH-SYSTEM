@@ -1,0 +1,68 @@
+/* TISH My Orders: tactile paper controls and halftone anchored to torn footer.
+   Loaded last deliberately: older polishing and Drive fix sheets set !important. */
+body.tish-paper.cm-my-orders .orders>.order :is(.orderIcon,.arrow){
+  position:relative!important;
+  isolation:isolate;
+  width:clamp(43px,10vw,58px)!important;
+  height:clamp(43px,10vw,58px)!important;
+  min-width:43px!important;
+  min-height:43px!important;
+  aspect-ratio:1;
+  display:grid!important;
+  place-items:center!important;
+  padding:8px!important;
+  border:0!important;
+  border-radius:5px!important;
+  background:#f2dfc2 url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;
+  box-shadow:0 1px 0 #fff8e9 inset,0 4px 7px #3d251c45!important;
+  filter:drop-shadow(0 3px 2px #51372240)!important;
+  color:var(--tish-paper-red,#a91f17)!important;
+}
+body.tish-paper.cm-my-orders .orders>.order :is(.orderIcon,.arrow)::before{
+  content:"";
+  position:absolute;
+  inset:2px 1px -3px 2px;
+  z-index:-1;
+  pointer-events:none;
+  border-radius:4px;
+  background:#e7cda9;
+  clip-path:polygon(0 3%,12% 0,26% 3%,42% 0,58% 3%,74% 0,90% 2%,100% 4%,98% 96%,86% 100%,67% 97%,45% 100%,23% 98%,0 100%);
+  transform:translateY(2px) rotate(-2deg);
+  box-shadow:0 4px 6px #3d251c30;
+}
+body.tish-paper.cm-my-orders .orders>.order :is(.orderIcon,.arrow) i{
+  position:relative;
+  z-index:1;
+  font-size:clamp(1.15rem,3.8vw,1.6rem);
+  color:var(--tish-paper-red,#a91f17);
+  filter:drop-shadow(0 1px 0 #f9e9d6);
+}
+body.tish-paper.cm-my-orders .orders>.order:hover :is(.orderIcon,.arrow){
+  filter:drop-shadow(0 5px 3px #51372255)!important;
+}
+body.tish-paper.cm-my-orders .orders>.order:focus-visible{
+  outline:3px solid var(--tish-paper-red,#a91f17)!important;
+  outline-offset:5px!important;
+}
+/* Keep the upper-left ink pattern. Flip the bottom-right pattern vertically
+   so its widest dotted edge rests against the torn black navigation. */
+body.tish-paper.cm-my-orders::after{
+  background-image:
+    url('../../tish-paper/decor/halftone.svg'),
+    url('../../tish-paper/decor/halftone-bottom-flipped.svg')!important;
+  background-position:
+    left -24px top 18px,
+    right -16px bottom calc(76px + env(safe-area-inset-bottom,0px))!important;
+  background-size:106px auto,clamp(118px,28vw,170px) auto!important;
+  background-repeat:no-repeat!important;
+}
+@media(min-width:561px){
+  body.tish-paper.cm-my-orders::after{
+    background-position:left -24px top 18px,right -16px bottom 20px!important;
+  }
+}
+@media(max-width:380px){
+  body.tish-paper.cm-my-orders .orders>.order :is(.orderIcon,.arrow){
+    width:43px!important;height:43px!important;
+  }
+}
