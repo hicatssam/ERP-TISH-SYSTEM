@@ -404,15 +404,15 @@ body.tish-paper #intro .intro-enter:focus-visible{
         src="{{ asset('assets/tish-paper/brand/tish-drive-hero.png') }}"
         alt="{{ $branding['name'] }} — Hear it. Feel it."
         width="630" height="360" fetchpriority="high">
-   <nav class="tish-drive-hero-actions" aria-label="{{ \\App\\Support\\CustomerMenuLanguage::isEnglish() ? 'Quick actions' : 'أزرار المنيو' }}">
+   <nav class="tish-drive-hero-actions" aria-label="{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Quick actions' : 'أزرار المنيو' }}">
     <a class="icon-btn tish-drive-hero-cart"
        href="{{ route('customer-menu.cart', $location->code) }}"
-       aria-label="{{ \\App\\Support\\CustomerMenuLanguage::isEnglish() ? 'Cart' : 'السلة' }}">
+       aria-label="{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Cart' : 'السلة' }}">
      <i class="fa-solid fa-bag-shopping" aria-hidden="true"></i><span class="badge" id="cartBadgeTop">0</span>
     </a>
     <a class="icon-btn tish-drive-hero-fav"
        href="{{ route('customer-menu.favorites', $location->code) }}"
-       aria-label="{{ \\App\\Support\\CustomerMenuLanguage::isEnglish() ? 'Favorites' : 'المفضلة' }}">
+       aria-label="{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Favorites' : 'المفضلة' }}">
      <i class="fa-regular fa-heart" aria-hidden="true"></i><span class="badge" id="favBadgeTop">0</span>
     </a>
    </nav>
