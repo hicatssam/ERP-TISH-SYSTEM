@@ -404,6 +404,9 @@ body.tish-paper #intro .intro-enter:focus-visible{
         src="{{ asset('assets/tish-paper/brand/tish-drive-hero.png') }}"
         alt="{{ $branding['name'] }} — Hear it. Feel it."
         width="630" height="360" fetchpriority="high">
+   {{-- Preserve admin-editable brand identity for assistive technologies and
+        customer header customization, while the supplied art is visual. --}}
+   <span class="tish-drive-hero-sr">{{ $branding['name'] }}@if(!empty($branding['tagline'])) — {{ $branding['tagline'] }}@endif</span>
    <nav class="tish-drive-hero-actions" aria-label="{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Quick actions' : 'أزرار المنيو' }}">
     <a class="icon-btn tish-drive-hero-cart"
        href="{{ route('customer-menu.cart', $location->code) }}"
