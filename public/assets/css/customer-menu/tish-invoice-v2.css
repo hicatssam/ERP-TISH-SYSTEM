@@ -171,3 +171,53 @@ html[dir="ltr"] .tish-invoice-totals{margin-left:0;margin-right:auto}
  .tish-invoice-totals{width:min(100%,480px)}
  .tish-invoice-paper{width:100%!important}
 }
+
+
+/* TISH paper navigation controls for the public invoice only.
+   Preserve the original routes and print button: visual treatment only. */
+.tish-customer-invoice .tish-invoice-toolbar{
+ direction:inherit;
+ align-items:center;
+ gap:clamp(7px,2vw,12px);
+ padding:15px 12px 11px;
+}
+.tish-customer-invoice .tish-invoice-toolbar :is(a,button){
+ display:inline-flex;
+ align-items:center;
+ justify-content:center;
+ text-align:center;
+ position:relative;
+ min-height:46px;
+ padding:10px clamp(13px,2.2vw,22px);
+ border:0;
+ border-radius:4px;
+ background:#f1dfc9 url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat;
+ box-shadow:0 1px 0 #fff7e9 inset,0 3px 7px #4a261c38;
+ filter:drop-shadow(0 2px 2px #39241d24);
+ color:#8f2118;
+ font:900 clamp(.81rem,1.8vw,.98rem)/1.2 Tajawal,Cairo,sans-serif;
+ transition:transform .18s ease,filter .18s ease;
+}
+.tish-customer-invoice .tish-invoice-toolbar button{
+ background:#ab2119 url('../../tish-paper/paper/nav-active.webp') center/100% 100% no-repeat;
+ color:#fff5e7;
+}
+.tish-customer-invoice .tish-invoice-toolbar :is(a,button):hover{
+ transform:translateY(-2px);
+ filter:drop-shadow(0 4px 3px #39241d44);
+}
+.tish-customer-invoice .tish-invoice-toolbar :is(a,button):focus-visible{
+ outline:3px solid #a91f17;
+ outline-offset:3px;
+}
+@media(max-width:420px){
+ .tish-customer-invoice .tish-invoice-toolbar{gap:6px;flex-wrap:wrap;padding:11px 8px}
+ .tish-customer-invoice .tish-invoice-toolbar :is(a,button){
+  min-height:44px;
+  padding:8px 10px;
+  font-size:clamp(.75rem,3vw,.9rem);
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ .tish-customer-invoice .tish-invoice-toolbar :is(a,button){transition:none}
+}

@@ -290,6 +290,33 @@ body.tish-paper.reference-home #bannerTrack > .banner-slide[data-banner-active]{
 </style>
 <style>
 /* Prevent an already-dismissed intro from flashing during navigation. */
+
+/* Explicit user-gesture sound control for browser autoplay restrictions. */
+#intro.tish-reel-intro .tish-intro-sound-toggle:not([hidden]){
+ position:absolute;
+ z-index:8;
+ top:calc(16px + env(safe-area-inset-top,0px));
+ inset-inline-end:16px;
+ display:inline-flex;
+ align-items:center;
+ justify-content:center;
+ gap:9px;
+ min-height:44px;
+ max-width:calc(100% - 32px);
+ padding:10px 15px;
+ background:#f5e4cd url('{{ asset('assets/tish-paper/paper/category-ivory.webp') }}') center/100% 100% no-repeat;
+ color:#a91f17;
+ border:0;
+ border-radius:5px;
+ box-shadow:0 5px 11px #1f110e66;
+ font:900 .85rem Tajawal,Cairo,Arial,sans-serif;
+ cursor:pointer;
+}
+#intro.tish-reel-intro .tish-intro-sound-toggle:focus-visible{
+ outline:3px solid #a91f17;outline-offset:3px;
+}
+#intro.tish-reel-intro .tish-intro-sound-toggle i{font-size:1.1rem}
+
 html.cm-skip-menu-intro #intro{display:none!important}
 html.cm-intro-open{overflow:hidden}
 body.tish-paper #intro.tish-reel-intro{overflow:hidden;background:#f5e4cd;overscroll-behavior:contain}
@@ -381,6 +408,12 @@ body.tish-paper #intro .intro-enter:focus-visible{
       reel.src = reel.dataset.src;
   }
  </script>
+ <button type="button" id="introSoundToggle" class="tish-intro-sound-toggle"
+         aria-label="{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Turn on video sound' : 'تشغيل صوت الفيديو' }}"
+         aria-pressed="false" hidden>
+   <i class="fa-solid fa-volume-high" aria-hidden="true"></i>
+   <span>{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Turn sound on' : 'تشغيل الصوت' }}</span>
+ </button>
  <div class="intro-box">
   <button class="intro-enter" id="introEnter" type="button" hidden>{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Order now' : 'اطلب الآن' }}</button>
  </div>
@@ -829,6 +862,39 @@ body.tish-paper #intro .intro-enter:focus-visible{
         } else {
             const reel = document.getElementById('introReel');
             const enter = document.getElementById('introEnter');
+            const soundToggle = document.getElementById('introSoundToggle');
+            const englishIntro = @json(\App\Support\CustomerMenuLanguage::isEnglish());
+            let soundEnabledByUser = false;
+            function syncSoundToggle() {
+                if (!soundToggle || dismissed) return;
+                soundToggle.hidden = false;
+                const audible = !reel.muted && !reel.paused;
+                soundToggle.setAttribute('aria-pressed', String(audible));
+                soundToggle.querySelector('i').className = audible ? 'fa-solid fa-volume-xmark' : 'fa-solid fa-volume-high';
+                soundToggle.querySelector('span').textContent = audible
+                    ? (englishIntro ? 'Mute sound' : 'كتم الصوت')
+                    : (englishIntro ? 'Turn sound on' : 'تشغيل الصوت');
+                soundToggle.setAttribute('aria-label', soundToggle.querySelector('span').textContent);
+            }
+            soundToggle?.addEventListener('click', () => {
+                if (!reel.muted && !reel.paused) {
+                    reel.muted = true;
+                    soundEnabledByUser = false;
+                    syncSoundToggle();
+                    return;
+                }
+                // This click is the necessary user gesture for audible playback.
+                // Restart so the customer can actually hear the reel from the beginning.
+                reel.muted = false;
+                reel.volume = 1;
+                try { reel.currentTime = 0; } catch (_) { /* metadata not ready */ }
+                soundEnabledByUser = true;
+                reel.play().then(syncSoundToggle).catch(() => {
+                    reel.muted = true;
+                    soundEnabledByUser = false;
+                    syncSoundToggle();
+                });
+            });
             let startupTimeout;
             let revealDeadline;
             let revealed = false;
@@ -866,6 +932,7 @@ body.tish-paper #intro .intro-enter:focus-visible{
 
             document.documentElement.classList.add('cm-intro-open');
             enter.addEventListener('click', () => {
+                soundToggle.hidden = true;
                 dismissed = true;
                 frameObserver?.disconnect();
                 hideIntro();
@@ -876,6 +943,7 @@ body.tish-paper #intro .intro-enter:focus-visible{
             } else {
                 reel.addEventListener('playing', () => {
                     window.clearTimeout(startupTimeout);
+                    syncSoundToggle();
                     intro.classList.add('has-reel-frame');
                     alignOrderButton();
                 });
@@ -905,18 +973,21 @@ body.tish-paper #intro .intro-enter:focus-visible{
                     revealOrderButton();
                 }, {once:true});
                 reel.hidden = false;
+                reel.muted = true;
+                syncSoundToggle();
                 if (!reel.src) reel.src = reel.dataset.src;
                 startupTimeout = window.setTimeout(revealOrderButton, 3000);
                 revealDeadline = window.setTimeout(revealOrderButton, 8500);
+                // Browsers commonly block autoplay with audio. Start muted and
+                // expose a real tap-to-enable-sound action instead of silent failure.
                 reel.play().catch(() => {
                     if (dismissed) return;
                     if (reel.error) {
                         revealOrderButton();
                         return;
                     }
-                    // Keep audio when autoplay allows it.
-                    reel.muted = true;
-                    reel.play().catch(revealOrderButton);
+                    syncSoundToggle();
+                    revealOrderButton();
                 });
             }
         }
