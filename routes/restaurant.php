@@ -112,6 +112,10 @@ Route::middleware([
                 [RestaurantPosController::class, 'catalog']
             )->name('pos.catalog');
 
+            Route::post('/pos/customers/quick', [RestaurantPosController::class, 'quickStoreCustomer'])
+                ->name('pos.customers.quick-store')
+                ->middleware('can:customers.create');
+
             Route::get('/pos/qr-orders', [RestaurantPosController::class, 'qrOrders'])
                 ->name('pos.qr-orders');
 
