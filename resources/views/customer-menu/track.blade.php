@@ -242,6 +242,26 @@
             .appLink{padding:6px 8px;font-size:.74rem}
             .websiteLink span{display:none}
         }
+
+        /* Order-status paper overlay, deliberately separate from system push. */
+        .tish-status-overlay{position:fixed;inset:0;z-index:120;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(25,12,11,.68);backdrop-filter:blur(5px)}
+        .tish-status-overlay.is-open{display:flex}
+        .tish-status-sheet{position:relative;width:min(100%,410px);max-height:min(90dvh,700px);overflow:auto;padding:30px 22px 24px;text-align:center;color:#251512;background:#f5e5c6;border:3px solid #271b17;box-shadow:12px 14px 0 #b92c24,0 24px 65px rgba(0,0,0,.45);clip-path:polygon(0 0,98% 0,100% 3%,99% 96%,96% 100%,2% 99%,0 96%,1% 3%);animation:tish-paper-open .48s cubic-bezier(.2,1.2,.25,1) both}
+        .tish-status-close{position:absolute;top:10px;left:12px;border:2px solid #251512;background:transparent;border-radius:50%;width:36px;height:36px;font-weight:900;cursor:pointer}
+        .tish-status-icon{position:relative;display:grid;place-items:center;margin:6px auto 14px;width:100px;height:100px;border:4px solid #271b17;border-radius:50%;background:#c52e27;color:white;font-size:48px}
+        .tish-status-overlay[data-state="preparing"] .tish-status-icon::before{content:"♨";position:absolute;top:-30px;font-size:30px;animation:tish-steam 1.6s ease-in-out infinite}
+        .tish-status-sheet h2{font-size:clamp(23px,6vw,32px);margin:8px 0;color:#c52e27}
+        .tish-status-sheet p{margin:7px 0 12px;line-height:1.6}
+        .tish-status-items{margin:15px 0;padding:12px;border-top:2px dashed #624d40;border-bottom:2px dashed #624d40;text-align:start;font-weight:700;font-size:.87rem}
+        .tish-status-items span{display:block;margin:5px 0}
+        .tish-status-actions{display:flex;gap:8px;margin-top:18px}
+        .tish-status-actions button{flex:1;padding:12px 10px;cursor:pointer;border:2px solid #251512;font-weight:900;font-family:inherit;background:#c52e27;color:#fff}
+        .tish-status-actions button:last-child{background:#f5e5c6;color:#251512}
+        .tish-status-mini{position:fixed;z-index:90;bottom:calc(85px + env(safe-area-inset-bottom,0px));left:12px;right:12px;max-width:440px;margin:auto;display:none;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;background:#f5e5c6;color:#251512;border:2px solid #251512;box-shadow:4px 5px 0 #c52e27;border-radius:9px;cursor:pointer;font:900 .85rem Cairo,Tajawal,Arial,sans-serif}
+        .tish-status-mini.is-visible{display:flex}
+        @keyframes tish-paper-open{from{opacity:0;transform:translateY(80px) rotate(-5deg) scale(.82)}to{opacity:1;transform:none}}
+        @keyframes tish-steam{50%{opacity:.3;transform:translateY(-12px)}}
+        @media(prefers-reduced-motion:reduce){.tish-status-sheet,.tish-status-overlay[data-state="preparing"] .tish-status-icon::before{animation:none}}
     </style>
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-v2.css') }}?v=1">
 </head>
@@ -371,6 +391,28 @@
         </section>
     </main>
 
+
+    <div class="tish-status-overlay" id="tishStatusOverlay" role="dialog" aria-modal="true" aria-labelledby="tishPopupTitle" aria-hidden="true">
+        <div class="tish-status-sheet">
+            <button type="button" class="tish-status-close" id="tishPopupClose" aria-label="إغلاق">×</button>
+            <div class="tish-status-icon" aria-hidden="true">🍔</div>
+            <small>طلب #{{ $order->order_number }}</small>
+            <h2 id="tishPopupTitle">حالة طلبك</h2>
+            <p id="tishPopupDescription"></p>
+            <div class="tish-status-items">
+                @foreach($order->items as $item)
+                    <span>{{ $item->quantity }} × {{ $item->product_name }}</span>
+                @endforeach
+            </div>
+            <p id="tishPopupEta"></p>
+            <div class="tish-status-actions">
+                <button type="button" id="tishPopupFollow">متابعة طلبي</button>
+                <button type="button" id="tishPopupDismiss">إغلاق</button>
+            </div>
+        </div>
+    </div>
+    <button class="tish-status-mini" id="tishStatusMini" type="button" aria-label="افتح بطاقة متابعة الطلب"><span>🍔 <span id="tishStatusMiniText">متابعة الطلب</span></span><span>عرض التفاصيل</span></button>
+
     {{-- Tracking belongs to My Orders; all destinations use the order's branch. --}}
     @include('customer-menu.partials.bottom-nav', ['activeNav' => 'orders'])
     @include('customer-menu.partials.nav-badge-sync')
@@ -414,6 +456,50 @@
         let lastNotifiedMessage = null;
         let alertsEnabled = sessionStorage.getItem(alertKey) === 'enabled';
         let audioContext = null;
+
+        const tishOverlay = document.getElementById('tishStatusOverlay');
+        const tishMini = document.getElementById('tishStatusMini');
+        const tishPopupTitle = document.getElementById('tishPopupTitle');
+        const tishPopupDescription = document.getElementById('tishPopupDescription');
+        const tishPopupEta = document.getElementById('tishPopupEta');
+        let lastPopupState = '';
+        function closeTishPopup() {
+            tishOverlay.classList.remove('is-open');
+            tishOverlay.setAttribute('aria-hidden','true');
+            tishMini.classList.add('is-visible');
+            tishMini.focus();
+        }
+        function openTishPopup(data) {
+            const state = String(data.state || 'received').toLowerCase();
+            tishOverlay.dataset.state = state;
+            tishPopupTitle.textContent = ({
+                received:'وصلنا طلبك!', accepted:'اعتمدنا طلبك!',
+                preparing:'طلبك على السماش 🔥',ready:'طلبك جاهز، بالعافية!',
+                completed:'بالعافية عليك!',cancelled:'تم إلغاء الطلب'
+            })[state] || data.label || 'تحديث طلبك';
+            tishPopupDescription.textContent = data.customer_message || data.description || '';
+            const minutes = Number(data.estimated_ready_minutes);
+            tishPopupEta.textContent = ['ready','completed','cancelled'].includes(state)
+                ? '' : (Number.isFinite(minutes) && minutes > 0
+                    ? '⏱️ الوقت التقديري: حوالي ' + minutes + ' دقيقة (غير مضمون)'
+                    : 'بانتظار تحديث وقت التحضير من المطعم');
+            tishOverlay.classList.add('is-open');
+            tishOverlay.setAttribute('aria-hidden','false');
+            tishMini.classList.remove('is-visible');
+            document.getElementById('tishPopupClose').focus();
+        }
+        ['tishPopupClose','tishPopupDismiss','tishPopupFollow'].forEach(id => {
+            document.getElementById(id)?.addEventListener('click',closeTishPopup);
+        });
+        tishMini?.addEventListener('click',() => {
+            if (window.tishLatestTracking) openTishPopup(window.tishLatestTracking);
+        });
+        document.addEventListener('keydown',event => {
+            if (event.key === 'Escape' && tishOverlay.classList.contains('is-open')) closeTishPopup();
+        });
+        tishOverlay?.addEventListener('click',event => {
+            if (event.target === tishOverlay) closeTishPopup();
+        });
 
         function playOrderChime() {
             if (!alertsEnabled) return;
@@ -472,11 +558,19 @@
             if (lastNotifiedState === null) {
                 lastNotifiedState = state;
                 lastNotifiedMessage = message;
+                lastPopupState = state;
+                window.tishLatestTracking = data;
+                tishMini.classList.add('is-visible');
+                document.getElementById('tishStatusMiniText').textContent = data.label || 'متابعة الطلب';
                 return;
             }
             if (state === lastNotifiedState && message === lastNotifiedMessage) return;
             lastNotifiedState = state;
             lastNotifiedMessage = message;
+            // Only real state transitions open the paper card; a customer message alone
+            // still uses the existing text alert without replaying the status animation.
+            if (state !== lastPopupState) openTishPopup(data);
+            lastPopupState = state;
             const title = menuT(data.label || statusText[state] || 'تحديث طلبك');
             alertBox.textContent = title + (message ? ' — ' + menuF('رسالة من الفرع: {message}', {message}) : '');
             alertBox.classList.add('show');
@@ -496,6 +590,8 @@
         }
 
         function updateTracking(data) {
+            window.tishLatestTracking = data;
+            document.getElementById('tishStatusMiniText').textContent = data.label || 'متابعة الطلب';
             // The backend already computes the correct step (1=received,
             // 2=accepted, 3=preparing, 4=ready/completed) from the real
             // kitchen ticket states — trust it directly instead of
