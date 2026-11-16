@@ -13,8 +13,8 @@ body.tish-paper.cm-my-orders .orders>.order :is(.orderIcon,.arrow){
   padding:8px!important;
   border:0!important;
   border-radius:5px!important;
-  background:#f2dfc2 url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;
-  box-shadow:0 1px 0 #fff8e9 inset,0 4px 7px #3d251c45!important;
+  background:linear-gradient(#fff7ed40,#fff7ed40),url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;
+  box-shadow:0 1px 0 #fffaf1a8 inset,0 3px 5px #3d251c2e!important;
   filter:drop-shadow(0 3px 2px #51372240)!important;
   color:var(--tish-paper-red,#a91f17)!important;
 }
@@ -25,10 +25,10 @@ body.tish-paper.cm-my-orders .orders>.order :is(.orderIcon,.arrow)::before{
   z-index:-1;
   pointer-events:none;
   border-radius:4px;
-  background:#e7cda9;
+  background:#e9d8c8 url('../../tish-paper/paper/background.webp') center/540px auto repeat;
   clip-path:polygon(0 3%,12% 0,26% 3%,42% 0,58% 3%,74% 0,90% 2%,100% 4%,98% 96%,86% 100%,67% 97%,45% 100%,23% 98%,0 100%);
   transform:translateY(2px) rotate(-2deg);
-  box-shadow:0 4px 6px #3d251c30;
+  box-shadow:0 3px 5px #3d251c23;
 }
 body.tish-paper.cm-my-orders .orders>.order :is(.orderIcon,.arrow) i{
   position:relative;
