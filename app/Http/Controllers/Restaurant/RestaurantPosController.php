@@ -146,6 +146,48 @@ class RestaurantPosController extends Controller
         );
     }
 
+    /**
+     * Create a walk-in customer while keeping the active POS draft intact.
+     * The POS module and customers.create permission are enforced by the route.
+     */
+    public function quickStoreCustomer(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $location = $this->context->resolveLocation(
+            $request->user(),
+            $request->integer('location_id') ?: null
+        );
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:150'],
+            'phone' => [
+                'required',
+                'string',
+                'max:20',
+                \Illuminate\Validation\Rule::unique('customers', 'phone')
+                    ->where(fn ($query) => $query->where('location_id', $location->id)),
+            ],
+        ]);
+
+        $customer = Customer::query()->create([
+            'location_id' => $location->id,
+            'customer_type' => Customer::TYPE_INDIVIDUAL,
+            'scope' => Customer::SCOPE_BRANCH,
+            'name' => $validated['name'],
+            'phone' => $validated['phone'],
+            'allow_credit' => false,
+            'billing_cycle' => 'immediate',
+            'payment_terms_days' => 0,
+        ]);
+
+        return response()->json([
+            'customer' => [
+                'id' => $customer->id,
+                'name' => $customer->name,
+                'phone' => $customer->phone,
+            ],
+        ], 201);
+    }
+
     public function catalog(Request $request)
     {
         $data = $request->validate([

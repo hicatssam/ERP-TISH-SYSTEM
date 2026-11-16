@@ -349,8 +349,13 @@
                 <div class="rb-modal-body">
                     <div class="rb-modal-grid">
                         <div class="rb-field">
-                            <label>العميل</label>
-                            <select name="customer_id" class="rb-control">
+                            <div class="rb-customer-field-head">
+                                <label for="rbCustomerSelect">العميل</label>
+                                @can('customers.create')
+                                    <button type="button" id="rbQuickCustomerOpen" class="rb-btn rb-btn-light rb-quick-customer-button">+ عميل جديد</button>
+                                @endcan
+                            </div>
+                            <select id="rbCustomerSelect" name="customer_id" class="rb-control">
                                 <option value="">عميل نقدي</option>
                                 @foreach($customers as $customer)
                                     <option
@@ -557,6 +562,37 @@
             </div>
         </div>
     </form>
+
+
+    @can('customers.create')
+    <div class="rb-modal" id="rbQuickCustomerModal" hidden aria-hidden="true">
+        <div class="rb-modal-backdrop" data-close-quick-customer></div>
+        <div class="rb-modal-dialog rb-quick-customer-dialog" role="dialog" aria-modal="true" aria-labelledby="rbQuickCustomerTitle">
+            <div class="rb-modal-head">
+                <div>
+                    <h2 id="rbQuickCustomerTitle">إضافة عميل جديد</h2>
+                    <p>يُحفظ في الفرع الحالي ويُختار تلقائيًا للطلب.</p>
+                </div>
+                <button type="button" class="rb-modal-close" data-close-quick-customer aria-label="إغلاق">×</button>
+            </div>
+            <div class="rb-modal-body">
+                <div class="rb-field">
+                    <label for="rbQuickCustomerName">اسم العميل *</label>
+                    <input id="rbQuickCustomerName" class="rb-control" maxlength="150" autocomplete="name" required>
+                </div>
+                <div class="rb-field" style="margin-top:12px">
+                    <label for="rbQuickCustomerPhone">رقم الجوال *</label>
+                    <input id="rbQuickCustomerPhone" class="rb-control" type="tel" maxlength="20" autocomplete="tel" required>
+                </div>
+                <p class="rb-quick-customer-error" id="rbQuickCustomerError" role="alert" hidden></p>
+            </div>
+            <div class="rb-modal-foot">
+                <button type="button" class="rb-btn rb-btn-light" data-close-quick-customer>إلغاء</button>
+                <button type="button" class="rb-btn rb-btn-primary" id="rbQuickCustomerSave">حفظ العميل</button>
+            </div>
+        </div>
+    </div>
+    @endcan
 
     <div class="rb-modal" id="rbProductOptionsModal" hidden aria-hidden="true">
         <div class="rb-modal-backdrop" data-close-product-options></div>
@@ -1818,6 +1854,14 @@ body.rb-pos-mode {
     border-color: var(--rb-green);
 }
 
+/* POS customer quick-add, scoped to the existing checkout modal */
+.rb-customer-field-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px}
+.rb-customer-field-head label{margin:0}
+.rb-quick-customer-button{font-size:.8rem;min-height:36px;padding:6px 12px;flex:0 0 auto}
+.rb-modal.rb-quick-customer-visible{z-index:10060}
+.rb-quick-customer-dialog{width:min(420px,96vw)}
+.rb-quick-customer-error{margin:12px 0 0;color:#b42318;font-weight:800;font-size:.85rem;line-height:1.5}
+@media(max-width:390px){.rb-customer-field-head{align-items:flex-start}.rb-quick-customer-button{font-size:.72rem;padding:6px 9px}}
 /* Modal */
 .rb-modal {
     position: fixed;
@@ -2465,6 +2509,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let products = @json($productPayload);
     const catalogUrl = @json(route('restaurant.pos.catalog'));
     const qrOrdersUrl = @json(route('restaurant.pos.qr-orders'));
+    @can('customers.create')
+    const quickCustomerUrl = @json(route('restaurant.pos.customers.quick-store'));
+    @else
+    const quickCustomerUrl = null;
+    @endcan
     const channelRules = @json($channelDiscountRules);
     const categories = @json($catalogFacets['categories']);
     const brands = @json($catalogFacets['brands']);
@@ -2527,6 +2576,86 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const checkoutModal = document.getElementById('rbCheckoutModal');
     const checkoutContinueBtn = document.getElementById('rbCheckoutContinueBtn');
+    const customerSelect = document.getElementById('rbCustomerSelect');
+    const quickCustomerModal = document.getElementById('rbQuickCustomerModal');
+    const quickCustomerOpen = document.getElementById('rbQuickCustomerOpen');
+    const quickCustomerSave = document.getElementById('rbQuickCustomerSave');
+    const quickCustomerName = document.getElementById('rbQuickCustomerName');
+    const quickCustomerPhone = document.getElementById('rbQuickCustomerPhone');
+    const quickCustomerError = document.getElementById('rbQuickCustomerError');
+    let quickCustomerSaving = false;
+
+    function closeQuickCustomer() {
+        if (!quickCustomerModal || quickCustomerSaving) return;
+        quickCustomerModal.hidden = true;
+        quickCustomerModal.setAttribute('aria-hidden', 'true');
+        quickCustomerModal.classList.remove('rb-quick-customer-visible');
+        quickCustomerOpen?.focus();
+    }
+    quickCustomerOpen?.addEventListener('click', () => {
+        quickCustomerName.value = '';
+        quickCustomerPhone.value = '';
+        quickCustomerError.hidden = true;
+        quickCustomerError.textContent = '';
+        quickCustomerModal.hidden = false;
+        quickCustomerModal.setAttribute('aria-hidden', 'false');
+        quickCustomerModal.classList.add('rb-quick-customer-visible');
+        quickCustomerName.focus();
+    });
+    quickCustomerModal?.querySelectorAll('[data-close-quick-customer]').forEach(button => {
+        button.addEventListener('click', closeQuickCustomer);
+    });
+    quickCustomerSave?.addEventListener('click', async () => {
+        if (quickCustomerSaving || !quickCustomerUrl) return;
+        const name = quickCustomerName.value.trim();
+        const phone = quickCustomerPhone.value.trim();
+        if (!name || !phone) {
+            quickCustomerError.textContent = 'أدخل اسم العميل ورقم الجوال.';
+            quickCustomerError.hidden = false;
+            (!name ? quickCustomerName : quickCustomerPhone).focus();
+            return;
+        }
+        quickCustomerSaving = true;
+        quickCustomerSave.disabled = true;
+        quickCustomerSave.textContent = 'جارٍ الحفظ...';
+        quickCustomerError.hidden = true;
+        try {
+            const response = await fetch(quickCustomerUrl, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || form.querySelector('[name="_token"]').value,
+                },
+                body: JSON.stringify({name, phone, location_id: locationId}),
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                const firstError = Object.values(data.errors || {}).flat()[0];
+                throw new Error(firstError || data.message || 'تعذر حفظ العميل.');
+            }
+            const customer = data.customer;
+            const option = new Option(customer.name + ' — ' + customer.phone, String(customer.id), true, true);
+            customerSelect.add(option);
+            customerSelect.value = String(customer.id);
+            customerSelect.dispatchEvent(new Event('change', {bubbles:true}));
+            closeQuickCustomerAfterSave();
+        } catch (error) {
+            quickCustomerError.textContent = error.message || 'تعذر حفظ العميل.';
+            quickCustomerError.hidden = false;
+        } finally {
+            quickCustomerSaving = false;
+            quickCustomerSave.disabled = false;
+            quickCustomerSave.textContent = 'حفظ العميل';
+        }
+    });
+    function closeQuickCustomerAfterSave() {
+        quickCustomerModal.hidden = true;
+        quickCustomerModal.setAttribute('aria-hidden', 'true');
+        quickCustomerModal.classList.remove('rb-quick-customer-visible');
+        customerSelect.focus();
+    }
 
     const newOrderBtn = document.getElementById('rbNewOrderBtn');
     const newOrderConfirm = document.getElementById('rbNewOrderConfirm');
@@ -4299,6 +4428,10 @@ async function submitOrder(action) {
     // -----------------------------
     document.addEventListener('keydown', event => {
         if (event.key === 'Escape') {
+            if (quickCustomerModal && !quickCustomerModal.hidden) {
+                closeQuickCustomer();
+                return;
+            }
             if (newOrderConfirm && !newOrderConfirm.hidden) {
                 finishNewOrderConfirmation(false);
                 return;
