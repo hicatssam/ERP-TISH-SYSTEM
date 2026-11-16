@@ -111,3 +111,47 @@ body.tish-paper.tish-favorites-page .favorites-install #pwaInstallBtn.tish-paper
   gap:7px!important;
   padding:8px 14px!important;
 }
+
+
+/* Language-safe layout: the first grid column follows document direction. */
+.tish-favorites-page .favorite-card{
+ direction:inherit;
+ grid-template-columns:clamp(70px,22vw,112px) minmax(0,1fr) 44px;
+}
+.tish-favorites-page .favorite-details{
+ min-width:0;
+ justify-items:start;
+ text-align:start;
+}
+.tish-favorites-page .favorite-details h2,
+.tish-favorites-page .favorite-details h2 a{
+ max-width:100%;
+ overflow-wrap:anywhere;
+ text-align:start;
+}
+.tish-favorites-page .favorite-price{
+ direction:ltr;
+ unicode-bidi:isolate;
+ text-align:start;
+}
+.tish-favorites-page .favorite-action{
+ max-width:100%;
+ text-align:center;
+ white-space:normal;
+ line-height:1.35;
+}
+.tish-favorites-page .favorite-remove{justify-self:end}
+html[dir="ltr"] body.tish-favorites-page .page-back.tish-paper-page-arrow i{
+ transform:rotate(180deg);
+}
+@media(max-width:390px){
+ .tish-favorites-page .favorite-card{
+  grid-template-columns:66px minmax(0,1fr) 38px;
+  gap:6px;
+  padding:15px 9px 18px;
+ }
+ .tish-favorites-page .favorite-photo{padding:8%}
+ .tish-favorites-page .favorite-remove{width:38px;height:38px}
+ .tish-favorites-page .favorite-action{font-size:.75rem;padding:7px 9px}
+ .tish-favorites-page .favorite-details h2{font-size:.89rem}
+}

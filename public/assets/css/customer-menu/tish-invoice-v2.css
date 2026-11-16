@@ -95,3 +95,79 @@ body.tish-customer-invoice{font-family:Tajawal,Cairo,Arial,sans-serif;-webkit-pr
  .tish-invoice-grand{font-size:23pt!important}
  .tish-invoice-totals{break-inside:avoid}
 }
+
+
+/* Public invoice only: one design with correct Arabic/English reading order. */
+.tish-customer-invoice{direction:inherit}
+.tish-invoice-brand-copy,
+.tish-invoice-item-title,
+.tish-invoice-notes{text-align:start}
+.tish-invoice-item-money{text-align:end!important}
+.tish-invoice-items td.tish-invoice-item-money > span,
+.tish-invoice-total-row > span,
+.tish-invoice-grand > span{display:inline-block;direction:ltr;unicode-bidi:isolate}
+.tish-invoice-items td.tish-invoice-item-money > span{white-space:normal;overflow-wrap:anywhere}
+.tish-invoice-totals{
+ width:min(100%,480px);
+ max-width:100%;
+ align-items:stretch;
+ margin:22px 0 0 auto;
+ text-align:start;
+}
+html[dir="ltr"] .tish-invoice-totals{margin-left:0;margin-right:auto}
+.tish-invoice-total-row{
+ width:100%;
+ justify-content:space-between;
+ gap:12px;
+ flex-wrap:nowrap;
+}
+.tish-invoice-total-row > strong{min-width:0}
+.tish-invoice-total-row > span{flex-shrink:0;text-align:end}
+.tish-invoice-grand{max-width:100%;margin:12px 0 0;justify-content:space-between}
+.tish-invoice-heading h1{max-width:100%;overflow-wrap:anywhere}
+.tish-invoice-items table{direction:inherit}
+.tish-invoice-item-title{overflow-wrap:anywhere}
+@media(max-width:720px){
+ .tish-invoice-toolbar{gap:7px;padding:10px 8px}
+ .tish-invoice-toolbar a,.tish-invoice-toolbar button{
+  padding:9px 11px;min-height:44px;font-size:clamp(.73rem,2.7vw,.9rem);
+ }
+ .tish-invoice-paper{
+  width:calc(100% - 18px);
+  min-height:0;
+  padding:17px 13px 34px;
+  border-width:5px;
+  margin-bottom:20px;
+ }
+ .tish-invoice-header{padding-bottom:14px}
+ .tish-invoice-brand{gap:8px;margin-bottom:12px}
+ .tish-invoice-logo{width:70px;height:70px}
+ .tish-invoice-brand-copy{min-width:0}
+ .tish-invoice-brand-copy strong{font-size:clamp(.98rem,3.4vw,1.35rem)}
+ .tish-invoice-brand-copy span{font-size:clamp(.83rem,3vw,1.04rem)}
+ .tish-invoice-heading h1{font-size:clamp(1.05rem,4vw,1.55rem);padding:10px 13px}
+ .tish-invoice-meta{font-size:.82rem;gap:7px;flex-wrap:wrap}
+ .tish-invoice-items table{table-layout:fixed}
+ .tish-invoice-items td{padding:12px 6px}
+ .tish-invoice-item-title{font-size:clamp(.92rem,3.4vw,1.15rem);line-height:1.45}
+ .tish-invoice-items td.tish-invoice-item-money{width:43%;font-size:clamp(.8rem,2.8vw,1rem);line-height:1.4}
+ .tish-invoice-multiply{display:inline-block}
+ .tish-invoice-totals{width:100%;margin-top:16px}
+ .tish-invoice-total-row{font-size:clamp(.9rem,3.2vw,1.14rem);gap:8px}
+ .tish-invoice-grand{
+  min-width:0;min-height:62px;
+  padding:12px clamp(12px,4vw,22px);
+  font-size:clamp(1.06rem,4.2vw,1.55rem);
+  flex-wrap:wrap;gap:7px;white-space:normal;
+ }
+}
+@media(max-width:360px){
+ .tish-invoice-paper{width:calc(100% - 10px);padding:13px 8px 25px}
+ .tish-invoice-logo{width:58px;height:58px}
+ .tish-invoice-items td.tish-invoice-item-money{width:46%}
+ .tish-invoice-meta{font-size:.72rem}
+}
+@media print{
+ .tish-invoice-totals{width:min(100%,480px)}
+ .tish-invoice-paper{width:100%!important}
+}
