@@ -361,6 +361,7 @@ body.tish-paper #intro .intro-enter:focus-visible{
 </script>
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-menu-cinematic.css') }}">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-drive-ui-fixes-v1.css') }}?v=1">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-drive-home-hero-v1.css') }}?v=1">
 </head>
 <body class="crisp-customer-menu reference-home tish-paper">
 @php
@@ -396,23 +397,26 @@ body.tish-paper #intro .intro-enter:focus-visible{
     <img class="reference-masthead-image" src="{{ $theme['header_image'] }}" alt="" fetchpriority="high"
          style="object-position:{{ $theme['header_position'] ?? 'center' }}">
    @endif
-  <header class="reference-header">
-   <div class="reference-header-row">
-    <div class="reference-brand">
-     <span class="reference-logo-square">
-      <img class="reference-client-logo" src="{{ asset('assets/tish-paper/brand/logo-disc.webp') }}" alt="">
-     </span>
-     <div class="reference-brand-copy">
-     <strong class="reference-brand-name">{{ $branding['name'] }}</strong>
-     @if(!empty($branding['tagline']))<p>{{ $branding['tagline'] }}</p>@endif
-     </div>
-    </div>
-    <div class="reference-actions">
-     <a class="icon-btn" href="{{ route('customer-menu.cart', $location->code) }}" aria-label="السلة"><i class="fa-solid fa-bag-shopping"></i><span class="badge" id="cartBadgeTop">0</span></a>
-     <a class="icon-btn" href="{{ route('customer-menu.favorites', $location->code) }}" aria-label="المفضلة"><i class="fa-regular fa-heart"></i><span class="badge" id="favBadgeTop">0</span></a>
-    </div>
-   </div>
-  </header>
+  {{-- Supplied TISH Drive hero replaces the old London-style header artwork.
+       Keep cart/favorites as real links and preserve their badge IDs for JS sync. --}}
+  <div class="tish-drive-firstfold" aria-label="{{ $branding['name'] }}">
+   <img class="tish-drive-hero-art"
+        src="{{ asset('assets/tish-paper/brand/tish-drive-hero.png') }}"
+        alt="{{ $branding['name'] }} — Hear it. Feel it."
+        width="630" height="360" fetchpriority="high">
+   <nav class="tish-drive-hero-actions" aria-label="{{ \\App\\Support\\CustomerMenuLanguage::isEnglish() ? 'Quick actions' : 'أزرار المنيو' }}">
+    <a class="icon-btn tish-drive-hero-cart"
+       href="{{ route('customer-menu.cart', $location->code) }}"
+       aria-label="{{ \\App\\Support\\CustomerMenuLanguage::isEnglish() ? 'Cart' : 'السلة' }}">
+     <i class="fa-solid fa-bag-shopping" aria-hidden="true"></i><span class="badge" id="cartBadgeTop">0</span>
+    </a>
+    <a class="icon-btn tish-drive-hero-fav"
+       href="{{ route('customer-menu.favorites', $location->code) }}"
+       aria-label="{{ \\App\\Support\\CustomerMenuLanguage::isEnglish() ? 'Favorites' : 'المفضلة' }}">
+     <i class="fa-regular fa-heart" aria-hidden="true"></i><span class="badge" id="favBadgeTop">0</span>
+    </a>
+   </nav>
+  </div>
   <div class="reference-home-copy"><h1>{{ $homeTitle }}</h1><p>{{ $homeSubtitle }}</p></div>
 
 
