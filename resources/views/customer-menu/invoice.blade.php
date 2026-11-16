@@ -6,7 +6,7 @@
     $english = \App\Support\CustomerMenuLanguage::isEnglish();
     $currency = $invoice->currency?->symbol ?? $printSettings['currency_symbol'] ?? '₪';
     $number = $invoice->invoice_number ?? $invoice->number ?? ('INV-' . $invoice->id);
-    $issuedAt = $invoice->issued_at ?? now();
+    $issuedAt = $invoice->issued_at ?? $invoice->created_at ?? $order->created_at ?? now();
     $businessName = $branding['name'] ?? $printSettings['business_name'] ?? 'Tish Restaurant';
     // Match the real torn-paper TISH emblem used in the menu and PNG export.
     $logo = asset('assets/tish-paper/brand/logo-disc.webp');
@@ -34,6 +34,24 @@
     $discount = (float) ($invoice->discount_amount ?? 0);
     $tax = (float) ($invoice->tax_amount ?? 0);
     $total = (float) $invoice->total_amount;
+    // Reflect the actual order payment confirmation; invoice creation does not imply payment.
+    $paymentStatus = $order->payment_status instanceof \BackedEnum
+        ? $order->payment_status->value
+        : (string) ($order->payment_status ?? '');
+    $paymentArrangement = $order->payment_arrangement instanceof \BackedEnum
+        ? $order->payment_arrangement->value
+        : (string) ($order->payment_arrangement ?? '');
+    $paymentLabels = [
+        'payment_pending' => ['في انتظار الدفع', 'Payment pending', 'pending'],
+        'partially_paid' => ['مدفوع جزئيًا', 'Partially paid', 'partial'],
+        'paid' => ['مدفوع', 'Paid', 'paid'],
+        'pending_payment_verification' => ['بانتظار التحقق من الدفع', 'Payment under review', 'review'],
+        'partially_refunded' => ['مسترجع جزئيًا', 'Partially refunded', 'refunded'],
+        'refunded' => ['مسترجع', 'Refunded', 'refunded'],
+    ];
+    $paymentInfo = $paymentLabels[$paymentStatus] ?? ['الحالة غير متاحة', 'Payment status unavailable', 'unknown'];
+    $paymentLabel = $paymentInfo[$english ? 1 : 0];
+    $payOnPickup = $paymentStatus === 'payment_pending' && $paymentArrangement === 'pay_on_pickup';
 @endphp
 <!doctype html>
 <html lang="{{ \App\Support\CustomerMenuLanguage::current() }}" dir="{{ \App\Support\CustomerMenuLanguage::direction() }}">
@@ -45,7 +63,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Tajawal:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-invoice-v2.css') }}?v=5">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-invoice-v2.css') }}?v=6">
 </head>
 <body class="tish-customer-invoice">
 <div class="tish-invoice-toolbar" aria-label="{{ $english ? 'Invoice actions' : 'إجراءات الفاتورة' }}">
@@ -66,10 +84,20 @@
    <img class="tish-invoice-bolt" src="{{ asset('assets/tish-paper/decor/lightning.svg') }}" alt="" aria-hidden="true">
    <h1>{{ $english ? 'Invoice No.' : 'فاتورة رقم' }} <bdi dir="ltr">{{ $number }}</bdi></h1>
   </div>
-  <div class="tish-invoice-meta">
-   <span dir="ltr">{{ $number }}</span>
-   <span aria-hidden="true">|</span>
-   <time dir="ltr" datetime="{{ $issuedAt->format('Y-m-d\TH:i:s') }}">{{ $issuedAt->format('Y-m-d H:i') }}</time>
+  <div class="tish-invoice-meta" aria-label="{{ $english ? 'Invoice issue date and time' : 'تاريخ ووقت إصدار الفاتورة' }}">
+   <div class="tish-invoice-datetime-part">
+    <span>{{ $english ? 'Issue date' : 'تاريخ الإصدار' }}</span>
+    <time dir="ltr" datetime="{{ $issuedAt->format('Y-m-d') }}">{{ $issuedAt->format('Y-m-d') }}</time>
+   </div>
+   <div class="tish-invoice-datetime-part">
+    <span>{{ $english ? 'Time' : 'الوقت' }}</span>
+    <time dir="ltr" datetime="{{ $issuedAt->format('Y-m-d\TH:i:sP') }}">{{ $issuedAt->format('H:i') }}</time>
+   </div>
+  </div>
+  <div class="tish-invoice-payment" role="status" data-payment-state="{{ $paymentInfo[2] }}">
+   <span class="tish-invoice-payment-label">{{ $english ? 'Payment status' : 'حالة الدفع' }}</span>
+   <strong>{{ $paymentLabel }}</strong>
+   @if($payOnPickup)<small>{{ $english ? 'Pay on pickup — not collected yet' : 'الدفع عند الاستلام — لم يتم التحصيل بعد' }}</small>@endif
   </div>
   <p class="tish-invoice-order-reference">{{ $english ? 'Order number:' : 'رقم الطلب:' }} <bdi dir="ltr">{{ $order->order_number }}</bdi></p>
  </header>
