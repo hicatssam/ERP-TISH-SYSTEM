@@ -156,6 +156,29 @@ class CustomerMenuOrderLifecycleTest extends TestCase
             ->assertSee($invoice->invoice_number)
             ->assertSee($order->order_number);
 
+        // Invoice must show the persisted payment state, never infer payment from creation.
+        $this->get(route('customer-menu.invoice', ['token' => $publicToken]) . '?lang=en')
+            ->assertOk()
+            ->assertSee('Payment pending')
+            ->assertSee('Pay on pickup')
+            ->assertSee('Issue date')
+            ->assertSee('Time');
+
+        DB::table('orders')->where('id', $order->id)->update([
+            'payment_status' => 'pending_payment_verification',
+            'payment_arrangement' => 'pending_verification',
+        ]);
+        $this->get(route('customer-menu.invoice', ['token' => $publicToken]) . '?lang=en')
+            ->assertOk()
+            ->assertSee('Payment under review')
+            ->assertDontSee('Pay on pickup');
+
+        DB::table('orders')->where('id', $order->id)->update(['payment_status' => 'paid']);
+        $this->get(route('customer-menu.invoice', ['token' => $publicToken]) . '?lang=ar')
+            ->assertOk()
+            ->assertSee('مدفوع')
+            ->assertSee('تاريخ الإصدار');
+
         $this->get(route('customer-menu.invoice', ['token' => (string) Str::uuid()]))
             ->assertNotFound();
     }
