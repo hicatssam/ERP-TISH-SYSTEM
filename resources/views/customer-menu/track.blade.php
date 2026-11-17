@@ -456,6 +456,47 @@
         let lastNotifiedMessage = null;
         let alertsEnabled = sessionStorage.getItem(alertKey) === 'enabled';
         let audioContext = null;
+        const pushKeyUrl = @json(route('customer-menu.push.public-key'));
+        const pushSaveUrl = @json(route('customer-menu.push.save', $order->public_token));
+        const pushDeleteUrl = @json(route('customer-menu.push.delete', $order->public_token));
+        const csrfToken = @json(csrf_token());
+        const pushEnabledKey = 'tish-push:' + orderNumber;
+        let pushSubscribed = localStorage.getItem(pushEnabledKey) === 'yes';
+        function base64UrlToBytes(base64) {
+            const binary = atob(base64.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - base64.length % 4) % 4));
+            return Uint8Array.from(binary, char => char.charCodeAt(0));
+        }
+        async function enableTishBackgroundPush() {
+            if (!('serviceWorker' in navigator) || !('PushManager' in window) || !window.isSecureContext) {
+                throw new Error('هذا الجهاز لا يدعم إشعارات الخلفية على هذه الصفحة.');
+            }
+            const configResponse = await fetch(pushKeyUrl, {cache:'no-store', credentials:'same-origin'});
+            if (!configResponse.ok) throw new Error('تعذر قراءة إعدادات إشعارات الخلفية.');
+            const config = await configResponse.json();
+            if (!config.enabled || !config.public_key) throw new Error('إشعارات الخلفية تحتاج إعداد مفاتيح VAPID على السيرفر.');
+            if (!('Notification' in window)) throw new Error('إشعارات النظام غير مدعومة على هذا الجهاز.');
+            if (Notification.permission !== 'granted') {
+                const permission = await Notification.requestPermission();
+                if (permission !== 'granted') throw new Error('لم يتم منح إذن الإشعارات.');
+            }
+            const registration = await navigator.serviceWorker.register('/sw.js', {scope:'/'});
+            const ready = await navigator.serviceWorker.ready;
+            const subscribed = await ready.pushManager.getSubscription();
+            const subscription = subscribed || await ready.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: base64UrlToBytes(config.public_key)
+            });
+            const json = subscription.toJSON();
+            const response = await fetch(pushSaveUrl, {
+                method:'POST', credentials:'same-origin',
+                headers:{'Content-Type':'application/json', Accept:'application/json', 'X-CSRF-TOKEN':csrfToken},
+                body:JSON.stringify({endpoint:json.endpoint, keys:json.keys})
+            });
+            if (!response.ok) throw new Error('تعذر حفظ اشتراك الجهاز في السيرفر.');
+            pushSubscribed = true;
+            localStorage.setItem(pushEnabledKey, 'yes');
+            refreshAlertsHint();
+        }
 
         const tishOverlay = document.getElementById('tishStatusOverlay');
         const tishMini = document.getElementById('tishStatusMini');
@@ -588,7 +629,7 @@
             alertsButton.textContent = alertsEnabled ? '🔔 إشعارات الطلب مفعّلة' : '🔔 تفعيل صوت وإشعارات الطلب';
             alertsHint.textContent = alertsEnabled
                 ? ('Notification' in window && Notification.permission === 'granted'
-                    ? 'الصوت وإشعارات الجهاز مفعّلان أثناء فتح الصفحة.'
+                    ? (pushSubscribed ? 'الصوت وإشعارات الخلفية مفعّلان على هذا الجهاز.' : 'الصوت مفعّل. إشعارات الخلفية تحتاج إعدادًا إضافيًا.')
                     : 'الصوت مفعّل. إشعارات الجهاز تحتاج إذن المتصفح.')
                 : 'فعّل التنبيهات لتسمع صوتًا عند تغيّر حالة الطلب.';
         }
@@ -605,6 +646,11 @@
             } catch (error) { console.warn('Audio could not start:', error); }
             if ('Notification' in window && Notification.permission === 'default' && window.isSecureContext) {
                 try { await Notification.requestPermission(); } catch (error) {}
+            }
+            try {
+                await enableTishBackgroundPush();
+            } catch (error) {
+                if (alertsHint) alertsHint.textContent = String(error.message || error);
             }
             refreshAlertsHint();
         });
@@ -645,7 +691,7 @@
                     playOrderChime();
                 }
                 if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
-                if ('Notification' in window && Notification.permission === 'granted') {
+                if (!pushSubscribed && 'Notification' in window && Notification.permission === 'granted') {
                     try {
                         const notification = new Notification(title, {
                             body: menuT(message || data.description || 'تم تحديث حالة طلبك.'),
