@@ -18,6 +18,7 @@ The backup ZIP contains .env and private financial data. The command rejects raw
     TISH_BACKUP_RCLONE_REMOTE=tish_drive_crypt
     TISH_BACKUP_FOLDER=tish-erp
     TISH_BACKUP_KEEP=12
+    TISH_BACKUP_TIMEZONE=Asia/Gaza
     TISH_BACKUP_RCLONE_BIN=/usr/bin/rclone
     TISH_BACKUP_MYSQLDUMP_BIN=/usr/bin/mysqldump
     TISH_BACKUP_ALERT_EMAIL=operations@example.com
@@ -25,7 +26,7 @@ The backup ZIP contains .env and private financial data. The command rejects raw
 6. Run php artisan optimize:clear; php artisan backup:tish-drive --dry-run, then php artisan backup:tish-drive for a real upload. Success requires a verified ZIP, successful encrypted upload, and rclone cryptcheck integrity verification. Failures exit nonzero and are logged; optional alert email attempted.
 7. Add a production cron job to run Laravel Scheduler every minute:
     * * * * * cd /ABSOLUTE/PATH/TO/TISH && /usr/bin/php artisan schedule:run >> /dev/null 2>&1
-   Laravel automatically runs the backup each Monday at 03:00 server-local time (with overlap prevention). Confirm php artisan schedule:list and production timezone. A worker or local browser does not run cron. Windows can use Task Scheduler, but production should run on its own host.
+   Laravel automatically runs the backup each Monday at 03:00 in the configured TISH_BACKUP_TIMEZONE (Asia/Gaza by default) (with overlap prevention). Confirm php artisan schedule:list and configured backup timezone. A worker or local browser does not run cron. Windows can use Task Scheduler, but production should run on its own host.
 
 ## Retention and safety
 The service retains the newest 12 backups (minimum 2). After upload verification, it removes older files matching tish-backup-YYYYMMDD-HHMMSS-XXXXXXXX.zip from the dedicated encrypted folder. It never runs rclone sync/purge or deletes arbitrary Drive files. Plaintext SQL and ZIP working files exist temporarily in storage/app/private/tish-backups and are deleted at the end, even on failure. Workspace access must be restricted to the OS account. Do NOT store backup data within public webroot.
