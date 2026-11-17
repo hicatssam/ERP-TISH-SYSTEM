@@ -493,8 +493,7 @@
 
                         <div class="form-group">
                             <label class="form-label">
-                                إثبات الدفع
-                                <span id="bankTransferProofRequired"></span>
+                                صورة / ملف إثبات التحويل (اختياري للكاشير)
                             </label>
                             <input
                                 type="file"
@@ -504,7 +503,7 @@
                                 accept=".jpg,.jpeg,.png,.pdf"
                             >
                             <div class="order-transfer-field-hint">
-                                JPG / PNG / PDF — بحد أقصى 5MB
+                                يمكنك حفظ الحوالة دون مرفق؛ تبقى بانتظار تحقق المسؤول المالي. JPG / PNG / PDF — بحد أقصى 5MB
                             </div>
                             @error('payment_proof')
                                 <div class="order-transfer-error">{{ $message }}</div>
@@ -810,7 +809,6 @@
         const reference = document.getElementById('bankTransferReference');
         const proof = document.getElementById('bankTransferProof');
         const referenceRequired = document.getElementById('bankTransferReferenceRequired');
-        const proofRequired = document.getElementById('bankTransferProofRequired');
         const accountHint = document.getElementById('bankTransferAccountHint');
 
         if (!method || !account) {
@@ -820,7 +818,6 @@
         const selectedMethod = method.options[method.selectedIndex];
         const methodId = method.value;
         const requiresReference = selectedMethod?.dataset.requiresReference === '1';
-        const requiresProof = selectedMethod?.dataset.requiresProof === '1';
         let availableAccounts = 0;
 
         Array.from(account.options).forEach((option, index) => {
@@ -861,17 +858,10 @@
             reference.required = requiresReference;
         }
 
-        if (proof) {
-            proof.required = requiresProof;
-        }
-
         if (referenceRequired) {
             referenceRequired.textContent = requiresReference ? '*' : '';
         }
 
-        if (proofRequired) {
-            proofRequired.textContent = requiresProof ? '*' : '';
-        }
     }
 
     document.addEventListener('DOMContentLoaded', function () {

@@ -80,7 +80,14 @@ class PaymentService
             }
 
             $proof = $data['payment_proof'] ?? null;
-            if ($method->requires_verification && ! $proof instanceof UploadedFile) {
+            // Staff-entered bank/e-wallet transfers are reviewed by the finance team,
+            // so an attachment is optional at entry time. Customer-submitted proofs
+            // retain their own mandatory validation in the public menu checkout.
+            $isStaffOrderTransfer = ($data['entry_context'] ?? null) === 'order_bank_transfer'
+                && $source instanceof Order
+                && in_array($method->type, ['bank_transfer', 'electronic_wallet'], true)
+                && (bool) ($data['force_verification'] ?? false);
+            if ($method->requires_verification && ! $proof instanceof UploadedFile && ! $isStaffOrderTransfer) {
                 throw ValidationException::withMessages(['payment_proof' => 'طريقة الدفع المختارة تتطلب إرفاق إثبات دفع.']);
             }
 

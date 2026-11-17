@@ -186,12 +186,9 @@ class CustomerAccountController extends Controller
                 ->withInput();
         }
 
-        if ($method->requires_verification && ! $request->hasFile('payment_proof')) {
-            return back()
-                ->withErrors(['payment_proof' => 'إثبات الدفع مطلوب لطريقة الدفع المحددة.'])
-                ->withInput();
-        }
-
+        // An employee can log a transfer without an attachment. The payment
+        // stays pending verification and is never allocated or posted until approved.
+        // Public menu checkout uses a separate mandatory-proof validator.
         $proofPath = $request->hasFile('payment_proof')
             ? $request->file('payment_proof')->store('customer-payment-proofs', 'public')
             : null;

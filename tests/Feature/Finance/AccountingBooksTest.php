@@ -972,6 +972,54 @@ class AccountingBooksTest extends TestCase
         $this->assertSame(1, AccountingJournal::query()->count());
     }
 
+    public function test_staff_bank_transfer_proof_is_optional_but_customer_style_payment_requires_it(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
+        Storage::fake('local');
+        [$branch, $user] = $this->branchUser([...$this->allPermissions(), 'payments.record']);
+        $this->baseCurrency();
+        $this->openPeriod($user);
+        $bank = $this->method('bank_transfer', true);
+        $order = Order::query()->create([
+            'order_number' => 'STAFF-PROOF-OPTIONAL', 'location_id' => $branch->id,
+            'created_by' => $user->id, 'status' => 'confirmed',
+            'subtotal' => 30, 'total_amount' => 30,
+            'payment_arrangement' => 'pay_on_pickup',
+        ]);
+
+        $staffPayload = [
+            'entry_context' => 'order_bank_transfer', 'force_verification' => true,
+            'order_type' => 'order', 'order_id' => $order->id,
+            'payment_method_id' => $bank->id, 'amount' => 10,
+            'reference_number' => 'TRANSFER-OPTIONAL-1',
+        ];
+        $payment = app(PaymentService::class)->recordPayment($staffPayload, $user);
+        $this->assertSame('pending_verification', $payment->statusValue());
+        $this->assertNull($payment->payment_proof);
+        $this->assertSame(0, AccountingJournal::query()->count());
+
+        $withProof = app(PaymentService::class)->recordPayment(array_replace($staffPayload, [
+            'reference_number' => 'TRANSFER-OPTIONAL-2',
+            'payment_proof' => UploadedFile::fake()->image('receipt.png'),
+        ]), $user);
+        $this->assertSame('pending_verification', $withProof->statusValue());
+        $this->assertNotNull($withProof->payment_proof);
+        Storage::disk('local')->assertExists($withProof->payment_proof);
+        $this->assertSame(0, AccountingJournal::query()->count());
+
+        try {
+            app(PaymentService::class)->recordPayment([
+                'order_type' => 'order', 'order_id' => $order->id,
+                'payment_method_id' => $bank->id, 'amount' => 5,
+                'reference_number' => 'CUSTOMER-PROOF-REQUIRED',
+            ], $user);
+            $this->fail('Verified transfers without the staff context still require proof.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('payment_proof', $exception->errors());
+        }
+        $this->assertSame(2, Payment::query()->count());
+    }
+
     public function test_bank_proof_and_branch_permissions_protect_vouchers_and_reports(): void
     {
         $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
