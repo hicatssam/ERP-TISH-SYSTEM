@@ -744,6 +744,8 @@
 
 
 
+@include('sales.orders.partials.cash-settlement')
+
 @include('sales.orders.partials.bank-transfers')
 
 
