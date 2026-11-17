@@ -24,6 +24,12 @@
     }
 
     $defaultSalesChannelId = old('sales_channel_id', $salesChannels->first()?->id);
+    $activeSessionAccountUrls = $tables->filter(fn ($table) => $table->activeSession !== null)->mapWithKeys(
+        fn ($table) => [(string) $table->id => route('restaurant.pos.tables.account', [
+            'restaurantTable' => $table,
+            'location_id' => $location->id,
+        ])]
+    );
 @endphp
 
 <div class="rb-pos" id="rbPosRoot">
@@ -2522,12 +2528,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const brands = @json($catalogFacets['brands']);
     const oldItems = @json(old('items', []));
     const locationId = @json((int) $location->id);
-    const activeSessionAccountUrls = @json($tables->filter(fn ($table) => $table->activeSession !== null)->mapWithKeys(
-        fn ($table) => [(string) $table->id => route('restaurant.pos.tables.account', [
-            'restaurantTable' => $table,
-            'location_id' => $location->id,
-        ])]
-    ));
+    const activeSessionAccountUrls = @json($activeSessionAccountUrls);
     const cashierUserId = @json((int) auth()->id());
     const cashierName = @json($cashierName);
     const locationName = @json($location->name);
