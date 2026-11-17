@@ -106,7 +106,7 @@ class AccountingBooksTest extends TestCase
         // A corrupted or modified source cannot be masked by idempotent retries.
         $source->update(['amount' => 120]);
         try {
-            app(\\App\\Services\\Finance\\OperationalJournalService::class)->post($source->fresh(), $user);
+            app(\App\Services\Finance\OperationalJournalService::class)->post($source->fresh(), $user);
             $this->fail('Changed source amount must not reuse its original journal.');
         } catch (ValidationException $exception) {
             $this->assertArrayHasKey('accounting', $exception->errors());
@@ -117,12 +117,12 @@ class AccountingBooksTest extends TestCase
         $source->update(['amount' => 100]);
         // Retrying the same historical entry must remain valid after an account is deactivated.
         AccountingAccount::query()->where('code', '4000')->update(['is_active' => false]);
-        app(\\App\\Services\\Finance\\OperationalJournalService::class)->post($source->fresh(), $user);
+        app(\App\Services\Finance\OperationalJournalService::class)->post($source->fresh(), $user);
         $this->assertSame(1, AccountingJournal::query()->count());
 
         $source->update(['entry_date' => '2026-10-03']);
         $this->expectException(ValidationException::class);
-        app(\\App\\Services\\Finance\\OperationalJournalService::class)->post($source->fresh(), $user);
+        app(\App\Services\Finance\OperationalJournalService::class)->post($source->fresh(), $user);
     }
 
     public function test_invoice_adjustment_posts_only_signed_delta_and_noop_does_not_duplicate(): void
