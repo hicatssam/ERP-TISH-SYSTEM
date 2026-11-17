@@ -211,10 +211,12 @@
                                     </a>
                                 @endcan
 
+                                <a class="btn btn-outline btn-sm" href="{{ route('restaurant.tables.account', ['restaurantTable' => $table, 'location_id' => $location->id]) }}">كشف حساب الجلسة</a>
                                 @can('restaurant_tables.close_session')
-                                    <form method="POST" action="{{ route('restaurant.tables.close', $table) }}" onsubmit="return confirm('هل تم إخلاء الطاولة وإنهاء جميع طلباتها؟')">
+                                    <form method="POST" action="{{ route('restaurant.tables.close', $table) }}" onsubmit="return confirm('هل غادر الضيوف وتمت تسوية حساب جميع الطلبات؟')">
                                         @csrf
                                         <input type="hidden" name="location_id" value="{{ $location->id }}">
+                                        <label class="table-checkout-confirm"><input name="guests_departed" type="checkbox" value="1" required> أؤكد مغادرة الضيوف</label>
                                         <button class="btn btn-ghost btn-sm" type="submit">إخلاء الطاولة</button>
                                     </form>
                                 @endcan
