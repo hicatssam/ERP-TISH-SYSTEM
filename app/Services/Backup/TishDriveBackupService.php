@@ -256,6 +256,51 @@ class TishDriveBackupService
     }
 
     /**
+     * Remove only our own abandoned private workspaces after 48 hours.
+     * A process crash or power failure cannot execute a PHP finally block.
+     */
+    public function cleanupStaleWorkspaces(): int
+    {
+        $root = storage_path('app/private/tish-backups');
+        if (! is_dir($root)) {
+            return 0;
+        }
+
+        $removed = 0;
+        foreach (new \DirectoryIterator($root) as $entry) {
+            if ($entry->isDot() || $entry->isLink() || ! $entry->isDir()) {
+                continue;
+            }
+
+            // All workspaces use exactly 24 lowercase hex characters.
+            if (! preg_match('/^[a-f0-9]{24}$/D', $entry->getFilename())) {
+                continue;
+            }
+            if ($entry->getMTime() > time() - 48 * 3600) {
+                continue;
+            }
+
+            $path = $entry->getPathname();
+            $iterator = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS),
+                \RecursiveIteratorIterator::CHILD_FIRST
+            );
+            foreach ($iterator as $child) {
+                if ($child->isDir() && ! $child->isLink()) {
+                    @rmdir($child->getPathname());
+                } else {
+                    @unlink($child->getPathname());
+                }
+            }
+            if (@rmdir($path)) {
+                $removed++;
+            }
+        }
+
+        return $removed;
+    }
+
+    /**
      * @return array{file:string,bytes:int,files:int,sha256:string}
      */
     public function backup(bool $dryRun = false): array
