@@ -1,7 +1,7 @@
 # TISH ERP: encrypted weekly Google Drive backup
 
 ## Scope
-Every snapshot contains MySQL/MariaDB business data (orders, invoice records, payment records, stock, customer data) and application files: app/, bootstrap/, config/, routes/, resources/, database/, public/, storage/, source lockfiles, and .env. Business PDFs and attachments within public/ and storage/ are covered. Dependencies vendor/ and node_modules/, .git, and runtime caches/logs are excluded and must be rebuilt from lockfiles. This is NOT an operating system / complete host image.
+Every snapshot contains MySQL/MariaDB business data (orders, invoice records, payment records, stock, customer data) and application files: app/, bootstrap/, config/, routes/, resources/, database/, public/, storage/, source lockfiles, and .env. Business PDFs and attachments within public/ and storage/ are covered. PDF invoices generated dynamically on demand are recoverable from the database and application code, but this version does not pre-render a separate PDF for every historical invoice. Dependencies vendor/ and node_modules/, .git, and runtime caches/logs are excluded and must be rebuilt from lockfiles. This is NOT an operating system / complete host image.
 
 The live SQL dump uses --single-transaction; the file tree is collected afterwards, so files and SQL do not form a simultaneous atomic filesystem snapshot. For high-volume uploads consider maintenance mode, filesystem snapshots, or another consistent capture strategy.
 
