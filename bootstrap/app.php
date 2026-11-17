@@ -28,6 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Google Drive rclone remote and scheduler cron are configured.
         $schedule->command('backup:tish-drive')
             ->weeklyOn(1, '03:00')
+            ->timezone(config('tish-backup.timezone', 'Asia/Gaza'))
             ->when(fn () => (bool) config('tish-backup.enabled'))
             ->withoutOverlapping(360);
 
