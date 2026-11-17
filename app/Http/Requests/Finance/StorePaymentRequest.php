@@ -27,7 +27,7 @@ class StorePaymentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'entry_context' => ['nullable', 'in:order_bank_transfer'],
+            'entry_context' => ['nullable', 'in:order_bank_transfer,order_cash_settlement'],
             'force_verification' => ['nullable', 'boolean'],
             'order_type' => ['required', 'in:order,special_cake_order'],
             'order_id' => ['required', 'integer', 'min:1'],
@@ -54,6 +54,21 @@ class StorePaymentRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
+            if ($this->input('entry_context') === 'order_cash_settlement') {
+                $method = PaymentMethod::query()->find((int) $this->input('payment_method_id'));
+                if ($this->input('order_type') !== 'order' || ! $method || $method->type !== 'cash'
+                    || $method->requires_verification) {
+                    $validator->errors()->add('payment_method_id', 'تسوية النقدية متاحة لطلبات البيع وبطريقة دفع نقدية فقط.');
+                }
+                if (! preg_match('/^POS-CASH-[a-f0-9-]{36}$/i', (string) $this->input('reference_number'))) {
+                    $validator->errors()->add('reference_number', 'معرّف عملية التسوية غير صالح. حدّث صفحة الطلب.');
+                }
+                if ($this->boolean('force_verification')) {
+                    $validator->errors()->add('force_verification', 'التحصيل النقدي لا يحتاج انتظار تحقق.');
+                }
+                return;
+            }
+
             if ($this->input('entry_context') !== 'order_bank_transfer') {
                 return;
             }
