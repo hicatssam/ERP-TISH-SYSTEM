@@ -27,7 +27,35 @@ class PaymentService
             [$source, $locationId, $total] = $this->lockSource((string) $data['order_type'], (int) $data['order_id']);
             $this->assertLocationAccess($user, $locationId);
 
+            if (($data['entry_context'] ?? null) === 'order_cash_settlement') {
+                if (! $source instanceof Order || ! in_array($source->statusValue(), ['confirmed', 'completed'], true)
+                    || ! $source->invoice()->where('status', 'active')->exists()) {
+                    throw ValidationException::withMessages([
+                        'order_id' => 'تسوية الرصيد متاحة فقط لطلب مؤكد أو مكتمل لديه فاتورة فعالة.',
+                    ]);
+                }
+                $requestKey = (string) ($data['reference_number'] ?? '');
+                if (! preg_match('/^POS-CASH-[a-f0-9-]{36}$/i', $requestKey)) {
+                    throw ValidationException::withMessages(['reference_number' => 'معرّف التسوية غير صالح.']);
+                }
+                // The source-order row is locked: a repeated browser submission
+                // cannot create a second collection under the same request key.
+                if (Payment::query()->where('order_type', 'order')->where('order_id', $source->id)
+                    ->where('reference_number', $requestKey)->exists()) {
+                    throw ValidationException::withMessages([
+                        'payment' => 'تم تسجيل هذه التسوية مسبقًا. افتح الطلب مجددًا لرؤية الرصيد الحالي.',
+                    ]);
+                }
+            }
+
             $method = PaymentMethod::query()->active()->findOrFail($data['payment_method_id']);
+            if (($data['entry_context'] ?? null) === 'order_cash_settlement'
+                && ($method->type !== 'cash' || $method->requires_verification
+                    || (bool) ($data['force_verification'] ?? false))) {
+                throw ValidationException::withMessages([
+                    'payment_method_id' => 'لا يمكن استخدام طريقة دفع غير نقدية في تسوية النقدية.',
+                ]);
+            }
             $this->assertMethodAvailable($method, $locationId);
 
             $account = null;
