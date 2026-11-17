@@ -3,7 +3,6 @@
 namespace App\Services\Restaurant;
 
 use App\Models\RestaurantTableSession;
-use Illuminate\Support\Collection;
 
 /**
  * Operational, non-tax session account. Never edits/merges issued invoices.
@@ -23,18 +22,15 @@ class RestaurantTableAccountService
             $invoice = $order->invoice;
             $validInvoice = $invoice && $invoice->statusValue() !== 'cancelled';
             $total = $validInvoice ? $invoice->total_amount : $order->total_amount;
-            // Confirmation is authoritative: pending verification is not received money.
-            $paid = $order->payments
-                ->filter(fn ($payment) => (
-                    $payment->status instanceof \BackedEnum
-                        ? $payment->status->value
-                        : (string) $payment->status
-                ) === 'confirmed')
-                ->sum(fn ($payment) => (float) $payment->amount);
-
+            // InvoiceService already reconciles confirmed/corrected payments,
+            // verified customer credits and refunds. Reuse its net amounts.
             $totalCents = (int) round(((float) $total) * 100);
-            $paidCents = (int) round(((float) $paid) * 100);
-            $outstandingCents = max(0, $totalCents - $paidCents);
+            $paidCents = $validInvoice
+                ? (int) round(((float) $invoice->paid_amount) * 100)
+                : 0;
+            $outstandingCents = $validInvoice
+                ? max(0, (int) round(((float) $invoice->remaining_amount) * 100))
+                : max(0, $totalCents);
 
             return [
                 'order' => $order,
