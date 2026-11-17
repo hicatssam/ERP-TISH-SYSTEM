@@ -352,6 +352,7 @@
             <div class="notice show" id="statusDescription"></div>
             <div class="customer-alert-controls">
                 <button type="button" id="enableOrderAlerts"><i class="fa-solid fa-bell"></i> تفعيل صوت وإشعارات الطلب</button>
+                <button type="button" id="disableOrderPush" hidden>إيقاف إشعارات الخلفية لهذا الطلب</button>
                 <small id="alertPermissionHint" aria-live="polite">ستصلك التنبيهات أثناء فتح صفحة الطلب.</small>
             </div>
             <div class="customer-status-alert" id="customerStatusAlert" role="status" aria-live="polite"></div>
@@ -463,6 +464,7 @@
         const pushEnabledKey = 'tish-push:' + orderNumber;
         let pushSubscribed = localStorage.getItem(pushEnabledKey) === 'yes';
         let pushErrorMessage = '';
+        const disablePushButton = document.getElementById('disableOrderPush');
         function base64UrlToBytes(base64) {
             const binary = atob(base64.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - base64.length % 4) % 4));
             return Uint8Array.from(binary, char => char.charCodeAt(0));
@@ -506,6 +508,7 @@
         const tishPopupEta = document.getElementById('tishPopupEta');
         let lastPopupState = '';
         let tishDeadlineMs = null;
+        let tishClockOffsetMs = 0;
         let tishTimerDone = false;
         const tishTimeFormat = seconds => {
             const minutes = Math.floor(seconds / 60);
@@ -515,7 +518,7 @@
             if (!tishDeadlineMs) return;
             const state = String(window.tishLatestTracking?.state || '').toLowerCase();
             if (['ready', 'completed', 'cancelled', 'canceled'].includes(state)) return;
-            const remaining = Math.max(0, Math.ceil((tishDeadlineMs - Date.now()) / 1000));
+            const remaining = Math.max(0, Math.ceil((tishDeadlineMs - (Date.now() - tishClockOffsetMs)) / 1000));
             const label = remaining ? '⏱️ الوقت التقديري المتبقي: ' + tishTimeFormat(remaining)
                 : '⏱️ انتهى الوقت التقديري، ننتظر تحديث المطبخ';
             const mainEta = document.getElementById('eta');
@@ -526,6 +529,8 @@
         }
         setInterval(renderTishCountdown, 1000);
         function setTishDeadline(data) {
+            const serverNow = Date.parse(data.server_time || '');
+            if (Number.isFinite(serverNow)) tishClockOffsetMs = Date.now() - serverNow;
             const date = typeof data.estimated_ready_at === 'string'
                 ? Date.parse(data.estimated_ready_at) : NaN;
             tishDeadlineMs = Number.isFinite(date) ? date : null;
@@ -628,6 +633,7 @@
         function refreshAlertsHint() {
             if (!alertsButton || !alertsHint) return;
             alertsButton.textContent = alertsEnabled ? '🔔 إشعارات الطلب مفعّلة' : '🔔 تفعيل صوت وإشعارات الطلب';
+            if (disablePushButton) disablePushButton.hidden = !pushSubscribed;
             alertsHint.textContent = pushErrorMessage || (alertsEnabled
                 ? ('Notification' in window && Notification.permission === 'granted'
                     ? (pushSubscribed ? 'الصوت وإشعارات الخلفية مفعّلان على هذا الجهاز.' : 'الصوت مفعّل. إشعارات الخلفية تحتاج إعدادًا إضافيًا.')
@@ -651,6 +657,25 @@
             pushErrorMessage = '';
             try {
                 await enableTishBackgroundPush();
+            } catch (error) {
+                pushErrorMessage = String(error.message || error);
+            }
+            refreshAlertsHint();
+        });
+        disablePushButton?.addEventListener('click', async () => {
+            try {
+                const subscription = await (await navigator.serviceWorker.ready).pushManager.getSubscription();
+                if (subscription) {
+                    const response = await fetch(pushDeleteUrl, {
+                        method:'DELETE', credentials:'same-origin',
+                        headers:{'Content-Type':'application/json', Accept:'application/json', 'X-CSRF-TOKEN':csrfToken},
+                        body:JSON.stringify({endpoint:subscription.endpoint})
+                    });
+                    if (!response.ok) throw new Error('تعذر إلغاء اشتراك هذا الطلب.');
+                }
+                pushSubscribed = false;
+                localStorage.removeItem(pushEnabledKey);
+                pushErrorMessage = '';
             } catch (error) {
                 pushErrorMessage = String(error.message || error);
             }
