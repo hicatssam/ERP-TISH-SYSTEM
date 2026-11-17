@@ -36,7 +36,11 @@ class ExpenseWorkflowService
                 ),
             ]);
 
-            $this->log($expense, $user, 'expense.created', null, ['status' => 'draft']);
+            $this->log($expense, $user, 'expense.created', null, [
+                'status' => 'draft',
+                'cost_behavior' => $expense->cost_behavior,
+                'cost_center' => $expense->cost_center,
+            ]);
 
             return $expense->fresh(['category', 'location']);
         });
@@ -58,7 +62,8 @@ class ExpenseWorkflowService
             }
 
             $old = $locked->only([
-                'expense_category_id', 'location_id', 'amount', 'expense_date',
+                'expense_category_id', 'cost_behavior', 'cost_center',
+                'location_id', 'amount', 'expense_date',
                 'payee', 'reference_number', 'description', 'status',
             ]);
 

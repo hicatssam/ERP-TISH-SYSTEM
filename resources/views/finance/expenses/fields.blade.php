@@ -11,6 +11,23 @@
         <option value="">اختر التصنيف</option>
         @foreach($categories as $category)<option value="{{ $category->id }}" @selected((int)old('expense_category_id',$expense->expense_category_id) === (int)$category->id)>{{ $category->name }}</option>@endforeach
     </select></div>
+    <div class="form-group"><label class="form-label" for="expenseCostBehavior">سلوك التكلفة *</label>
+        <select class="form-input" name="cost_behavior" id="expenseCostBehavior" required>
+            <option value="">اختر نوع التكلفة</option>
+            @foreach(['fixed' => 'ثابتة — إيجار أو اشتراك دوري', 'variable' => 'متغيرة — مرتبطة بحجم النشاط', 'temporary' => 'مؤقتة — مصروف استثنائي أو قصير الأجل'] as $value => $label)
+                <option value="{{ $value }}" @selected(old('cost_behavior', $expense->cost_behavior) === $value)>{{ $label }}</option>
+            @endforeach
+        </select>
+    </div>
+    <div class="form-group"><label class="form-label" for="expenseCostCenter">مركز التكلفة *</label>
+        <select class="form-input" name="cost_center" id="expenseCostCenter" required>
+            <option value="">اختر مركز التكلفة</option>
+            @foreach(['kitchen' => 'المطبخ والإنتاج', 'service' => 'الصالة والخدمة', 'delivery' => 'التوصيل', 'facilities' => 'المرافق والصيانة', 'admin' => 'الإدارة', 'general' => 'عام / مشترك'] as $value => $label)
+                <option value="{{ $value }}" @selected(old('cost_center', $expense->cost_center) === $value)>{{ $label }}</option>
+            @endforeach
+        </select>
+        <small>يتم ربط المركز بالفرع المحدد. مشتريات المواد المخزنية تُسجّل في المشتريات والمخزون، ولا تُحمّل هنا مرة ثانية.</small>
+    </div>
     <div class="form-group"><label class="form-label">القيمة ₪ *</label><input class="form-input" type="number" step="0.01" min="0.01" name="amount" required value="{{ old('amount',$expense->amount) }}"></div>
     <div class="form-group"><label class="form-label">تاريخ المصروف *</label><input class="form-input" type="date" name="expense_date" max="{{ now()->toDateString() }}" required value="{{ old('expense_date',$expense->expense_date?->toDateString() ?? now()->toDateString()) }}"></div>
     <div class="form-group"><label class="form-label">طريقة الدفع *</label><select class="form-input" name="payment_method_id" required>

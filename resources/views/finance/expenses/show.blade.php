@@ -20,6 +20,8 @@
 
 <div class="card"><div class="card-body">
     <div class="details-grid">
+        <div><strong>سلوك التكلفة:</strong> {{ ['fixed' => 'ثابتة', 'variable' => 'متغيرة', 'temporary' => 'مؤقتة'][$expense->cost_behavior] ?? 'غير مصنّف' }}</div>
+        <div><strong>مركز التكلفة:</strong> {{ ['kitchen' => 'المطبخ', 'service' => 'الخدمة', 'delivery' => 'التوصيل', 'facilities' => 'المرافق', 'admin' => 'الإدارة', 'general' => 'عام'][$expense->cost_center] ?? 'غير محدد' }}</div>
         <div><strong>المستفيد:</strong> {{ $expense->payee ?: '—' }}</div>
         <div><strong>طريقة الدفع:</strong> {{ $expense->paymentMethod?->name_ar ?: ($expense->paymentMethod?->name ?? 'غير محددة') }}</div>
         <div><strong>المرجع:</strong> {{ $expense->reference_number ?: '—' }}</div>
