@@ -93,6 +93,11 @@ class CustomerOrderStatusService
             },
 
             'estimated_ready_minutes' => $this->estimatedReadyMinutes($order, $statusKey),
+            // Immutable estimate for new customer orders; legacy orders remain
+            // explicitly approximate and will not display a fake countdown.
+            'estimated_ready_at' => in_array($statusKey, ['ready', 'completed', 'cancelled'], true)
+                ? null
+                : data_get($order->public_order_meta, 'estimated_ready_at'),
 
             'table' => $table
                 ? [
