@@ -24,6 +24,20 @@ return Application::configure(basePath: dirname(__DIR__))
             ->hourly()
             ->withoutOverlapping();
 
+        // Monday 03:00 server-local time. Keep DISABLED until encrypted
+        // Google Drive rclone remote and scheduler cron are configured.
+        $schedule->command('backup:tish-drive')
+            ->weeklyOn(1, '03:00')
+            ->timezone(config('tish-backup.timezone', 'Asia/Gaza'))
+            ->when(fn () => (bool) config('tish-backup.enabled'))
+            ->withoutOverlapping(360);
+
+        // Remove abandoned plaintext workspace files if a backup process was
+        // killed or the server lost power. No Drive credentials needed.
+        $schedule->command('backup:tish-cleanup')
+            ->dailyAt('04:30')
+            ->withoutOverlapping(60);
+
         // Run the registered expiry command once per day. Keeping the schedule
         // here gives Laravel 12 one canonical scheduling source.
         $schedule->command('inventory:check-expiry')
