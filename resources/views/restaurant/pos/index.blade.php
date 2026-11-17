@@ -238,6 +238,7 @@
                                     {{ $table->area?->name ? $table->area->name . ' — ' : '' }}
                                     {{ $table->displayName() }}
                                     {{ $table->activeSession ? ' — مشغولة' : '' }}
+                                    {{ $table->activeSession?->diningGroup ? ' — مجموعة ' . $table->activeSession->diningGroup->name : '' }}
                                 </option>
                             @endforeach
                         </select>
