@@ -135,7 +135,7 @@ class RestaurantPosController extends Controller
             ->active()
             ->with([
                 'area:id,name',
-                'activeSession',
+                'activeSession.diningGroup',
             ])
             ->orderBy('area_id')
             ->orderBy('sort_order')
