@@ -419,7 +419,7 @@ class CustomerMenuBranchIsolationTest extends TestCase
             ->assertUnprocessable()->assertJsonValidationErrors('restaurant_table_id');
         $this->assertDatabaseCount('orders', 1);
         app(\App\Services\Orders\OrderService::class)->cancelOrder($order, 'Cancelled reservation', $actor);
-        app(\App\Services\Restaurant\RestaurantTableService::class)->close($table, $actor);
+        app(\App\Services\Restaurant\RestaurantTableService::class)->close($table, $actor, true);
         $this->assertFalse($table->fresh()->isOccupied());
         $this->getJson($result['status_url'])->assertOk()->assertJsonPath('state', 'cancelled');
     }
