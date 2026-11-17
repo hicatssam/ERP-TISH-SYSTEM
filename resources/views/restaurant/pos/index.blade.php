@@ -600,6 +600,40 @@
                     <label for="rbQuickCustomerPhone">رقم الجوال *</label>
                     <input id="rbQuickCustomerPhone" class="rb-control" type="tel" maxlength="20" autocomplete="tel" required>
                 </div>
+                <div class="rb-quick-customer-grid">
+                    <div class="rb-field">
+                        <label for="rbQuickCustomerType">نوع العميل</label>
+                        <select id="rbQuickCustomerType" class="rb-control">
+                            <option value="individual">فرد</option>
+                            <option value="institution">مؤسسة</option>
+                            <option value="company">شركة</option>
+                            <option value="government">جهة / قطاع</option>
+                        </select>
+                    </div>
+                    <div class="rb-field">
+                        <label for="rbQuickCustomerSecondaryPhone">هاتف بديل</label>
+                        <input id="rbQuickCustomerSecondaryPhone" class="rb-control" type="tel" maxlength="20" autocomplete="off">
+                    </div>
+                </div>
+                <div class="rb-field" style="margin-top:12px">
+                    <label for="rbQuickCustomerAddress">عنوان العميل</label>
+                    <textarea id="rbQuickCustomerAddress" class="rb-control" rows="2" maxlength="500" autocomplete="street-address"></textarea>
+                </div>
+                <div class="rb-quick-customer-grid rb-quick-customer-institutional" id="rbQuickCustomerInstitutional" hidden>
+                    <div class="rb-field">
+                        <label for="rbQuickCustomerContactPerson">مسؤول التواصل</label>
+                        <input id="rbQuickCustomerContactPerson" class="rb-control" maxlength="150">
+                    </div>
+                    <div class="rb-field">
+                        <label for="rbQuickCustomerTaxNumber">الرقم الضريبي</label>
+                        <input id="rbQuickCustomerTaxNumber" class="rb-control" maxlength="100">
+                    </div>
+                </div>
+                <div class="rb-field" style="margin-top:12px">
+                    <label for="rbQuickCustomerNotes">ملاحظات داخلية</label>
+                    <textarea id="rbQuickCustomerNotes" class="rb-control" rows="2" maxlength="2000" placeholder="تعليمات التواصل أو التوصيل (اختياري)"></textarea>
+                </div>
+                <p class="rb-quick-customer-help">يُربط العميل بفرع الطلب الحالي. إعداد الذمم والائتمان يتم من إدارة العملاء فقط.</p>
                 <p class="rb-quick-customer-error" id="rbQuickCustomerError" role="alert" hidden></p>
             </div>
             <div class="rb-modal-foot">
@@ -1875,7 +1909,7 @@ body.rb-pos-mode {
 .rb-customer-field-head label{margin:0}
 .rb-quick-customer-button{font-size:.8rem;min-height:36px;padding:6px 12px;flex:0 0 auto}
 .rb-modal.rb-quick-customer-visible{z-index:10060}
-.rb-quick-customer-dialog{width:min(420px,96vw)}
+.rb-quick-customer-dialog{width:min(620px,96vw);max-height:min(90vh,850px);overflow-y:auto}\n.rb-quick-customer-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}\n.rb-quick-customer-institutional[hidden]{display:none}\n.rb-quick-customer-help{font-size:.78rem;color:#776b70;margin:10px 0 0}\n@media(max-width:540px){.rb-quick-customer-grid{grid-template-columns:1fr}}
 .rb-quick-customer-error{margin:12px 0 0;color:#b42318;font-weight:800;font-size:.85rem;line-height:1.5}
 @media(max-width:390px){.rb-customer-field-head{align-items:flex-start}.rb-quick-customer-button{font-size:.72rem;padding:6px 9px}}
 #rbTableSessionAccountLink{margin-top:9px;max-width:max-content}
@@ -2623,6 +2657,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const quickCustomerSave = document.getElementById('rbQuickCustomerSave');
     const quickCustomerName = document.getElementById('rbQuickCustomerName');
     const quickCustomerPhone = document.getElementById('rbQuickCustomerPhone');
+    const quickCustomerType = document.getElementById('rbQuickCustomerType');
+    const quickCustomerSecondaryPhone = document.getElementById('rbQuickCustomerSecondaryPhone');
+    const quickCustomerAddress = document.getElementById('rbQuickCustomerAddress');
+    const quickCustomerContactPerson = document.getElementById('rbQuickCustomerContactPerson');
+    const quickCustomerTaxNumber = document.getElementById('rbQuickCustomerTaxNumber');
+    const quickCustomerNotes = document.getElementById('rbQuickCustomerNotes');
+    const quickCustomerInstitutional = document.getElementById('rbQuickCustomerInstitutional');
+    function updateQuickCustomerType() {
+        const isInstitutional = quickCustomerType?.value !== 'individual';
+        if (quickCustomerInstitutional) quickCustomerInstitutional.hidden = !isInstitutional;
+        if (!isInstitutional) {
+            if (quickCustomerContactPerson) quickCustomerContactPerson.value = '';
+            if (quickCustomerTaxNumber) quickCustomerTaxNumber.value = '';
+        }
+    }
+    quickCustomerType?.addEventListener('change', updateQuickCustomerType);
     const quickCustomerError = document.getElementById('rbQuickCustomerError');
     let quickCustomerSaving = false;
 
@@ -2636,6 +2686,9 @@ document.addEventListener('DOMContentLoaded', () => {
     quickCustomerOpen?.addEventListener('click', () => {
         quickCustomerName.value = '';
         quickCustomerPhone.value = '';
+        quickCustomerType.value = 'individual';
+        [quickCustomerSecondaryPhone, quickCustomerAddress, quickCustomerContactPerson, quickCustomerTaxNumber, quickCustomerNotes].forEach(input => { if (input) input.value = ''; });
+        updateQuickCustomerType();
         quickCustomerError.hidden = true;
         quickCustomerError.textContent = '';
         quickCustomerModal.hidden = false;
@@ -2669,7 +2722,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || form.querySelector('[name="_token"]').value,
                 },
-                body: JSON.stringify({name, phone, location_id: locationId}),
+                body: JSON.stringify({
+                    name, phone, location_id: locationId,
+                    customer_type: quickCustomerType.value,
+                    secondary_phone: quickCustomerSecondaryPhone.value.trim(),
+                    address: quickCustomerAddress.value.trim(),
+                    contact_person: quickCustomerType.value === 'individual' ? null : quickCustomerContactPerson.value.trim(),
+                    tax_number: quickCustomerType.value === 'individual' ? null : quickCustomerTaxNumber.value.trim(),
+                    notes: quickCustomerNotes.value.trim(),
+                }),
             });
             const data = await response.json();
             if (!response.ok) {
