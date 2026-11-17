@@ -178,6 +178,11 @@ Route::middleware([
                     ->name('open')
                     ->middleware('can:restaurant_tables.open_session');
 
+                Route::get(
+                    '/{restaurantTable}/account',
+                    [RestaurantTableController::class, 'account']
+                )->name('account');
+
                 Route::post(
                     '/{restaurantTable}/close',
                     [RestaurantTableController::class, 'closeSession']
