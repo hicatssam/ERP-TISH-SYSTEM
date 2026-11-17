@@ -24,6 +24,12 @@
     }
 
     $defaultSalesChannelId = old('sales_channel_id', $salesChannels->first()?->id);
+    $activeSessionAccountUrls = $tables->filter(fn ($table) => $table->activeSession !== null)->mapWithKeys(
+        fn ($table) => [(string) $table->id => route('restaurant.pos.tables.account', [
+            'restaurantTable' => $table,
+            'location_id' => $location->id,
+        ])]
+    );
 @endphp
 
 <div class="rb-pos" id="rbPosRoot">
@@ -236,6 +242,7 @@
                             @endforeach
                         </select>
                     </div>
+                    <a id="rbTableSessionAccountLink" class="rb-btn rb-btn-light" href="#" target="_blank" rel="noopener" hidden>كشف حساب الجلسة الحالية</a>
                 </div>
 
                 <div class="rb-order-card">
@@ -1862,6 +1869,8 @@ body.rb-pos-mode {
 .rb-quick-customer-dialog{width:min(420px,96vw)}
 .rb-quick-customer-error{margin:12px 0 0;color:#b42318;font-weight:800;font-size:.85rem;line-height:1.5}
 @media(max-width:390px){.rb-customer-field-head{align-items:flex-start}.rb-quick-customer-button{font-size:.72rem;padding:6px 9px}}
+#rbTableSessionAccountLink{margin-top:9px;max-width:max-content}
+#rbTableSessionAccountLink[hidden]{display:none!important}
 /* Modal */
 .rb-modal {
     position: fixed;
@@ -2519,6 +2528,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const brands = @json($catalogFacets['brands']);
     const oldItems = @json(old('items', []));
     const locationId = @json((int) $location->id);
+    const activeSessionAccountUrls = @json($activeSessionAccountUrls);
     const cashierUserId = @json((int) auth()->id());
     const cashierName = @json($cashierName);
     const locationName = @json($location->name);
@@ -2551,6 +2561,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const serviceType = document.getElementById('rbServiceType');
     const tableSelect = document.getElementById('rbTableSelect');
+    const tableSessionAccountLink = document.getElementById('rbTableSessionAccountLink');
+    function updateTableSessionAccountLink() {
+        const accountUrl = activeSessionAccountUrls[String(tableSelect?.value || '')];
+        if (!tableSessionAccountLink) return;
+        tableSessionAccountLink.hidden = !accountUrl;
+        if (accountUrl) tableSessionAccountLink.href = accountUrl;
+    }
+    tableSelect?.addEventListener('change', updateTableSessionAccountLink);
+    updateTableSessionAccountLink();
     const guestCountGroup = document.getElementById('rbGuestCountGroup');
 
     const discountType = document.getElementById('rbDiscountType');

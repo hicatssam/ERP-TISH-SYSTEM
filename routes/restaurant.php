@@ -116,6 +116,9 @@ Route::middleware([
                 ->name('pos.customers.quick-store')
                 ->middleware('can:customers.create');
 
+            Route::get('/pos/tables/{restaurantTable}/account', [RestaurantPosController::class, 'tableAccount'])
+                ->name('pos.tables.account');
+
             Route::get('/pos/qr-orders', [RestaurantPosController::class, 'qrOrders'])
                 ->name('pos.qr-orders');
 
@@ -177,6 +180,11 @@ Route::middleware([
                 )
                     ->name('open')
                     ->middleware('can:restaurant_tables.open_session');
+
+                Route::get(
+                    '/{restaurantTable}/account',
+                    [RestaurantTableController::class, 'account']
+                )->name('account');
 
                 Route::post(
                     '/{restaurantTable}/close',
