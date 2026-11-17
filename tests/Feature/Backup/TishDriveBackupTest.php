@@ -21,7 +21,6 @@ class TishDriveBackupTest extends TestCase
             '.git', '.git/HEAD', 'vendor/autoload.php', 'node_modules/a.js',
             'storage/framework/cache/foo', 'storage/logs/laravel.log',
             'storage/app/private/tish-backups/temporary.zip',
-            'public/storage', 'public/storage/invoices/1.pdf',
             'bootstrap/cache/config.php', 'public/hot',
         ] as $file) {
             $this->assertTrue(TishDriveBackupService::excluded($file), $file);
@@ -34,6 +33,7 @@ class TishDriveBackupTest extends TestCase
             '.env', 'artisan', 'composer.json',
             'app/Models/Invoice.php', 'resources/views/customer-menu/invoice.blade.php',
             'public/assets/tish-paper/brand/tish-drive-hero.png',
+            'public/storage/invoices/2026-01.pdf',
             'public/uploads/invoices/2026-01.pdf',
             'storage/app/private/invoices/2026-01.pdf',
             'storage/app/public/receipts/2026-01.pdf',
