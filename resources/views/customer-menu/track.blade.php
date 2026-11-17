@@ -463,6 +463,32 @@
         const tishPopupDescription = document.getElementById('tishPopupDescription');
         const tishPopupEta = document.getElementById('tishPopupEta');
         let lastPopupState = '';
+        let tishDeadlineMs = null;
+        let tishTimerDone = false;
+        const tishTimeFormat = seconds => {
+            const minutes = Math.floor(seconds / 60);
+            return String(minutes).padStart(2, '0') + ':' + String(seconds % 60).padStart(2, '0');
+        };
+        function renderTishCountdown() {
+            if (!tishDeadlineMs) return;
+            const state = String(window.tishLatestTracking?.state || '').toLowerCase();
+            if (['ready', 'completed', 'cancelled', 'canceled'].includes(state)) return;
+            const remaining = Math.max(0, Math.ceil((tishDeadlineMs - Date.now()) / 1000));
+            const label = remaining ? '⏱️ الوقت التقديري المتبقي: ' + tishTimeFormat(remaining)
+                : '⏱️ انتهى الوقت التقديري، ننتظر تحديث المطبخ';
+            const mainEta = document.getElementById('eta');
+            mainEta.textContent = label;
+            mainEta.classList.add('show');
+            tishPopupEta.textContent = label;
+            if (!remaining && !tishTimerDone) tishTimerDone = true;
+        }
+        setInterval(renderTishCountdown, 1000);
+        function setTishDeadline(data) {
+            const date = typeof data.estimated_ready_at === 'string'
+                ? Date.parse(data.estimated_ready_at) : NaN;
+            tishDeadlineMs = Number.isFinite(date) ? date : null;
+            if (tishDeadlineMs) renderTishCountdown();
+        }
         function closeTishPopup() {
             tishOverlay.classList.remove('is-open');
             tishOverlay.setAttribute('aria-hidden','true');
@@ -483,6 +509,7 @@
                 ? '' : (Number.isFinite(minutes) && minutes > 0
                     ? '⏱️ الوقت التقديري: حوالي ' + minutes + ' دقيقة (غير مضمون)'
                     : 'بانتظار تحديث وقت التحضير من المطعم');
+            if (tishDeadlineMs) renderTishCountdown();
             tishOverlay.classList.add('is-open');
             tishOverlay.setAttribute('aria-hidden','false');
             tishMini.classList.remove('is-visible');
@@ -500,6 +527,38 @@
         tishOverlay?.addEventListener('click',event => {
             if (event.target === tishOverlay) closeTishPopup();
         });
+
+        // An original, synthesized smash sizzle; no external audio assets.
+        function playTishSmash() {
+            if (!alertsEnabled) return;
+            try {
+                const Ctx = window.AudioContext || window.webkitAudioContext;
+                if (!Ctx) return;
+                audioContext = audioContext || new Ctx();
+                if (audioContext.state !== 'running') return;
+                const now = audioContext.currentTime;
+                const duration = .34;
+                const buffer = audioContext.createBuffer(1, Math.ceil(audioContext.sampleRate * duration), audioContext.sampleRate);
+                const channel = buffer.getChannelData(0);
+                for (let i = 0; i < channel.length; i++) {
+                    const t = i / audioContext.sampleRate;
+                    channel[i] = (Math.random() * 2 - 1) * Math.exp(-t * 13);
+                }
+                const noise = audioContext.createBufferSource();
+                noise.buffer = buffer;
+                const filter = audioContext.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(1300, now);
+                filter.frequency.exponentialRampToValueAtTime(240, now + duration);
+                const gain = audioContext.createGain();
+                gain.gain.setValueAtTime(.0001, now);
+                gain.gain.exponentialRampToValueAtTime(.34, now + .015);
+                gain.gain.exponentialRampToValueAtTime(.0001, now + duration);
+                noise.connect(filter).connect(gain).connect(audioContext.destination);
+                noise.start(now);
+                noise.stop(now + duration);
+            } catch (error) { console.warn('TISH smash unavailable:', error); }
+        }
 
         function playOrderChime() {
             if (!alertsEnabled) return;
@@ -575,7 +634,16 @@
             alertBox.textContent = title + (message ? ' — ' + menuF('رسالة من الفرع: {message}', {message}) : '');
             alertBox.classList.add('show');
             if (alertsEnabled) {
-                playOrderChime();
+                if (state === 'preparing') {
+                    // localStorage allows tabs to deduplicate audible transition.
+                    const soundKey = 'tish-smash:' + orderNumber + ':' + (data.event_at || state);
+                    if (localStorage.getItem(soundKey) !== 'played') {
+                        localStorage.setItem(soundKey, 'played');
+                        playTishSmash();
+                    }
+                } else {
+                    playOrderChime();
+                }
                 if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
                 if ('Notification' in window && Notification.permission === 'granted') {
                     try {
@@ -591,6 +659,7 @@
 
         function updateTracking(data) {
             window.tishLatestTracking = data;
+            setTishDeadline(data);
             document.getElementById('tishStatusMiniText').textContent = data.label || 'متابعة الطلب';
             // The backend already computes the correct step (1=received,
             // 2=accepted, 3=preparing, 4=ready/completed) from the real
@@ -645,8 +714,16 @@
 
             const minutes = Number(data.estimated_ready_minutes);
             const showEta = !cancelled && Number.isFinite(minutes) && minutes > 0;
-            eta.textContent = showEta ? '⏱️ ' + menuF('الوقت المتوقع لتجهيز طلبك: حوالي {minutes} دقيقة', {minutes}) : '';
-            eta.classList.toggle('show', showEta);
+            if (!tishDeadlineMs) {
+                eta.textContent = showEta ? '⏱️ ' + menuF('الوقت المتوقع لتجهيز طلبك: حوالي {minutes} دقيقة', {minutes}) : '';
+                eta.classList.toggle('show', showEta);
+            } else if (cancelled || ['ready', 'completed'].includes(state)) {
+                eta.textContent = '';
+                eta.classList.remove('show');
+                tishPopupEta.textContent = '';
+            } else {
+                renderTishCountdown();
+            }
 
             notifyStatusChange(data);
         }
