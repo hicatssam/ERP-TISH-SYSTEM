@@ -15,6 +15,7 @@ use App\Models\RestaurantTable;
 use App\Models\SalesChannel;
 use App\Services\Restaurant\RestaurantContextService;
 use App\Services\Restaurant\RestaurantPosCatalogService;
+use App\Services\Restaurant\RestaurantTableAccountService;
 use App\Services\Restaurant\RestaurantOrderService;
 use App\Services\ModuleService;
 use App\Services\Payments\PaymentCheckoutSettings;
@@ -28,6 +29,24 @@ class RestaurantPosController extends Controller
         private readonly RestaurantOrderService $restaurantOrders,
         private readonly RestaurantPosCatalogService $catalog,
     ) {
+    }
+
+    public function tableAccount(Request $request, \App\Models\RestaurantTable $restaurantTable, RestaurantTableAccountService $accounts)
+    {
+        $location = $this->context->resolveLocation(
+            $request->user(),
+            $request->integer('location_id') ?: null
+        );
+        abort_unless((int) $restaurantTable->location_id === (int) $location->id, 403);
+        $session = $restaurantTable->activeSession()->first();
+        abort_unless($session, 404, 'لا توجد جلسة مفتوحة للطاولة.');
+
+        return view('restaurant.tables.account', [
+            'location' => $location,
+            'table' => $restaurantTable,
+            'session' => $session,
+            'account' => $accounts->summary($session),
+        ]);
     }
 
     public function printInvoice(Request $request, Order $order, InvoiceController $invoices)
