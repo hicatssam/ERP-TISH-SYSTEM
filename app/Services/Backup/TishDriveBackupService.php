@@ -28,9 +28,9 @@ class TishDriveBackupService
             }
         }
 
-        return $path === '' || str_contains($path, "\0")
-            || $path === 'public/storage' // Laravel public -> storage symlink; storage/ is archived once
-            || str_starts_with($path, 'public/storage/');
+        // Symlinks are skipped by the iterator. A real public/storage directory
+        // is NOT excluded, because it may contain user-managed attachments.
+        return $path === '' || str_contains($path, "\0");
     }
 
     private function run(array $args, int $timeoutSeconds = 3600): string
