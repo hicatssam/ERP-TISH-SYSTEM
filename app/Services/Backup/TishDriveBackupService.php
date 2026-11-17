@@ -67,6 +67,18 @@ class TishDriveBackupService
         return $this->remoteName().':'.$folder;
     }
 
+    private function verifyLocalTools(): void
+    {
+        if (! extension_loaded('zip')) {
+            throw new RuntimeException('PHP Zip extension is required for backups.');
+        }
+        $connection = config('database.connections.'.config('database.default'));
+        if (! is_array($connection) || ($connection['driver'] ?? null) !== 'mysql') {
+            throw new RuntimeException('Backups require a MySQL/MariaDB database connection.');
+        }
+        $this->run([(string) config('tish-backup.mysqldump_bin'), '--version'], 30);
+    }
+
     /** Fail closed: a raw Drive remote or unencrypted filename setup is rejected. */
     public function verifyEncryptedDriveRemote(): void
     {
@@ -253,6 +265,7 @@ class TishDriveBackupService
         }
 
         $this->verifyEncryptedDriveRemote();
+        $this->verifyLocalTools();
 
         if ($dryRun) {
             return ['file' => 'DRY-RUN', 'bytes' => 0, 'files' => 0, 'sha256' => ''];
