@@ -200,15 +200,34 @@ class RestaurantPosController extends Controller
                 \Illuminate\Validation\Rule::unique('customers', 'phone')
                     ->where(fn ($query) => $query->where('location_id', $location->id)),
             ],
+            'customer_type' => ['sometimes', \Illuminate\Validation\Rule::in([
+                Customer::TYPE_INDIVIDUAL,
+                Customer::TYPE_INSTITUTION,
+                Customer::TYPE_COMPANY,
+                Customer::TYPE_GOVERNMENT,
+            ])],
+            'secondary_phone' => ['nullable', 'string', 'max:20'],
+            'address' => ['nullable', 'string', 'max:500'],
+            'tax_number' => ['nullable', 'string', 'max:100'],
+            'contact_person' => ['nullable', 'string', 'max:150'],
+            'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
+        // Quick POS registration is always branch-scoped and cannot grant credit,
+        // change payment terms or make a customer available across branches.
         $customer = Customer::query()->create([
             'location_id' => $location->id,
-            'customer_type' => Customer::TYPE_INDIVIDUAL,
+            'customer_type' => $validated['customer_type'] ?? Customer::TYPE_INDIVIDUAL,
             'scope' => Customer::SCOPE_BRANCH,
             'name' => $validated['name'],
             'phone' => $validated['phone'],
+            'secondary_phone' => $validated['secondary_phone'] ?? null,
+            'address' => $validated['address'] ?? null,
+            'tax_number' => $validated['tax_number'] ?? null,
+            'contact_person' => $validated['contact_person'] ?? null,
+            'notes' => $validated['notes'] ?? null,
             'allow_credit' => false,
+            'credit_limit' => null,
             'billing_cycle' => 'immediate',
             'payment_terms_days' => 0,
         ]);
