@@ -35,6 +35,7 @@ class RestaurantTableController extends Controller
                 'tables' => fn ($query) => $query
                     ->with([
                         'activeSession.openedBy.employee',
+                        'activeSession.diningGroup',
                         'activeSession.orders',
                     ])
                     ->orderBy('sort_order')
@@ -50,6 +51,7 @@ class RestaurantTableController extends Controller
             ->whereNull('area_id')
             ->with([
                 'activeSession.openedBy.employee',
+                        'activeSession.diningGroup',
                 'activeSession.orders',
             ])
             ->orderBy('sort_order')

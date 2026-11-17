@@ -11,6 +11,14 @@
             <h1>كشف حساب الطاولة {{ $table->displayName() }}</h1>
             <p>جلسة #{{ $session->id }} · بدأت {{ $session->opened_at?->format('Y-m-d H:i') }} · {{ $session->guest_count }} ضيوف</p>
             <p class="table-account-note">كشف تجميعي للزيارة، وليس فاتورة ضريبية جديدة. كل فاتورة أصلية محفوظة بشكل مستقل.</p>
+            @if($session->restaurant_dining_group_id)
+                @can('restaurant_pos.use')
+                    <a class="btn btn-outline" href="{{ route('restaurant.pos.groups.account', ['restaurantDiningGroup' => $session->restaurant_dining_group_id, 'location_id' => $location->id]) }}">كشف حساب المجموعة المرتبطة</a>
+                @elsecan('restaurant_tables.view')
+                    <a class="btn btn-outline" href="{{ route('restaurant.tables.groups.show', ['restaurantDiningGroup' => $session->restaurant_dining_group_id, 'location_id' => $location->id]) }}">كشف حساب المجموعة المرتبطة</a>
+                @endcan
+            @endif
+
         </div>
         <div class="table-account-actions">
             @can('restaurant_pos.use')

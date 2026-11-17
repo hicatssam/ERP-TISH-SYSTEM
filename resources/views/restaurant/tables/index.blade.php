@@ -78,6 +78,42 @@
     <div class="table-live-connection"><i></i><span>تحديث مباشر كل 10 ثوانٍ</span></div>
 </div>
 
+@can('restaurant_tables.open_session')
+<details class="dining-group-create">
+    <summary>+ فتح زيارة لمجموعة طاولات (فاتورة تجميعية)</summary>
+    <form method="POST" action="{{ route('restaurant.tables.groups.store') }}">
+        @csrf
+        <input type="hidden" name="location_id" value="{{ $location->id }}">
+        <label>اسم المجموعة أو المؤسسة
+            <input type="text" name="name" maxlength="150" required placeholder="مثال: مؤسسة ABC">
+        </label>
+        <label>عدد الضيوف
+            <input type="number" name="guest_count" min="2" max="500" value="6" required>
+        </label>
+        <fieldset><legend>اختر طاولتين أو أكثر (المتاحة فقط)</legend>
+            <div class="dining-group-table-choices">
+                @foreach($allTables->filter(fn ($t) => $t->is_active && $t->activeSession === null) as $freeTable)
+                    <label><input type="checkbox" name="table_ids[]" value="{{ $freeTable->id }}"> {{ $freeTable->displayName() }}</label>
+                @endforeach
+            </div>
+        </fieldset>
+        <label>ملاحظات الحجز <textarea name="notes" rows="2" maxlength="1000"></textarea></label>
+        <button type="submit" class="btn btn-gold">فتح المجموعة وحجز الطاولات</button>
+        <p>تنشأ جلسة مستقلة لكل طاولة مرتبطة بزيارة واحدة، مع كشف حساب تجميعي دون تعديل الفواتير القديمة.</p>
+    </form>
+</details>
+<style>
+.dining-group-create{margin:18px 0;padding:16px;border:1px solid var(--border,#e0d0c5);border-radius:13px;background:var(--surface,#fff)}
+.dining-group-create summary{cursor:pointer;font-weight:900;font-size:1rem}
+.dining-group-create form{display:grid;gap:12px;margin-top:14px}
+.dining-group-create label{display:grid;gap:5px;font-weight:700}
+.dining-group-create input[type=text],.dining-group-create input[type=number],.dining-group-create textarea{max-width:100%;width:100%;padding:10px;border:1px solid var(--border,#d9ccc3);border-radius:7px;background:var(--surface,#fff)}
+.dining-group-table-choices{display:flex;flex-wrap:wrap;gap:9px}
+.dining-group-table-choices label{display:flex;flex-direction:row;gap:7px;align-items:center;border:1px solid var(--border,#d9ccc3);border-radius:8px;padding:8px 12px}
+.dining-group-create fieldset{border:1px solid var(--border,#d9ccc3);border-radius:8px;min-width:0}
+</style>
+@endcan
+
 @can('restaurant_tables.manage')
 <details class="table-management" @if($errors->any()) open @endif>
     <summary>
@@ -182,6 +218,9 @@
                         @if($occupied)
                             <div class="table-session-info">
                                 <span class="session-chip guest-count">{{ $session->guest_count }} ضيوف</span>
+                                @if($session->diningGroup)
+                                    <a class="session-chip" href="{{ route('restaurant.tables.groups.show', ['restaurantDiningGroup' => $session->diningGroup, 'location_id' => $location->id]) }}">مجموعة: {{ $session->diningGroup->name }}</a>
+                                @endif
                                 <span class="session-chip open-orders">{{ $openOrders }} طلب مفتوح</span>
                                 <span class="session-duration" data-opened-at="{{ $session->opened_at?->toIso8601String() }}">منذ {{ $session->opened_at?->format('H:i') }}</span>
                             </div>

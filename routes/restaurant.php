@@ -4,6 +4,7 @@ use App\Http\Controllers\Restaurant\RestaurantDashboardController;
 use App\Http\Controllers\Restaurant\RestaurantMenuController;
 use App\Http\Controllers\Restaurant\RestaurantPosController;
 use App\Http\Controllers\Restaurant\RestaurantTableController;
+use App\Http\Controllers\Restaurant\RestaurantDiningGroupController;
 use App\Http\Controllers\Restaurant\TakeawayDailyReportController;
 use App\Http\Middleware\EnsureModuleEnabled;
 use Illuminate\Support\Facades\Route;
@@ -118,6 +119,8 @@ Route::middleware([
 
             Route::get('/pos/tables/{restaurantTable}/account', [RestaurantPosController::class, 'tableAccount'])
                 ->name('pos.tables.account');
+            Route::get('/pos/dining-groups/{restaurantDiningGroup}/account', [RestaurantPosController::class, 'diningGroupAccount'])
+                ->name('pos.groups.account');
 
             Route::get('/pos/qr-orders', [RestaurantPosController::class, 'qrOrders'])
                 ->name('pos.qr-orders');
@@ -152,6 +155,13 @@ Route::middleware([
                     '/status-feed',
                     [RestaurantTableController::class, 'statusFeed']
                 )->name('status-feed');
+                Route::post('/groups', [RestaurantDiningGroupController::class, 'store'])
+                    ->name('groups.store')
+                    ->middleware('can:restaurant_tables.open_session');
+
+                Route::get('/groups/{restaurantDiningGroup}', [RestaurantDiningGroupController::class, 'show'])
+                    ->name('groups.show');
+
 
                 Route::post(
                     '/areas',

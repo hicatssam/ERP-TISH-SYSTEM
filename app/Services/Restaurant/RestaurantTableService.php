@@ -245,6 +245,38 @@ class RestaurantTableService
                 'closed_by' => $user->id,
                 'closed_at' => now(),
             ]);
+            // The dining group remains occupied until all linked table sessions
+            // finish and settle; close it automatically after the final table.
+            if ($session->restaurant_dining_group_id) {
+                $remaining = RestaurantTableSession::query()
+                    ->where('restaurant_dining_group_id', $session->restaurant_dining_group_id)
+                    ->where('status', RestaurantTableSessionStatus::Open->value)
+                    ->exists();
+
+                if (! $remaining) {
+                    $group = \App\Models\RestaurantDiningGroup::query()
+                        ->whereKey($session->restaurant_dining_group_id)
+                        ->lockForUpdate()
+                        ->first();
+                    if ($group && $group->isOpen()) {
+                        $group->update([
+                            'status' => 'closed',
+                            'closed_by' => $user->id,
+                            'closed_at' => now(),
+                        ]);
+                        ActivityLogger::log(
+                            userId: $user->id,
+                            action: 'restaurant.dining_group.closed',
+                            module: 'restaurant',
+                            recordType: 'restaurant_dining_groups',
+                            recordId: $group->id,
+                            oldValues: ['status' => 'open'],
+                            newValues: ['status' => 'closed'],
+                        );
+                    }
+                }
+            }
+
 
             ActivityLogger::log(
                 userId: $user->id,

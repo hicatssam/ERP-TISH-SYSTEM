@@ -31,6 +31,21 @@ class RestaurantPosController extends Controller
     ) {
     }
 
+    public function diningGroupAccount(Request $request, \App\Models\RestaurantDiningGroup $restaurantDiningGroup, \App\Services\Restaurant\RestaurantDiningGroupService $groups)
+    {
+        $location = $this->context->resolveLocation(
+            $request->user(),
+            $request->integer('location_id') ?: null
+        );
+        abort_unless((int) $restaurantDiningGroup->location_id === (int) $location->id, 403);
+
+        return view('restaurant.tables.group-account', [
+            'location' => $location,
+            'group' => $restaurantDiningGroup,
+            'account' => $groups->statement($restaurantDiningGroup),
+        ]);
+    }
+
     public function tableAccount(Request $request, \App\Models\RestaurantTable $restaurantTable, RestaurantTableAccountService $accounts)
     {
         $location = $this->context->resolveLocation(
@@ -120,7 +135,7 @@ class RestaurantPosController extends Controller
             ->active()
             ->with([
                 'area:id,name',
-                'activeSession',
+                'activeSession.diningGroup',
             ])
             ->orderBy('area_id')
             ->orderBy('sort_order')
