@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class RestaurantTableSession extends Model
 {
     protected $fillable = [
-        'restaurant_table_id', 'location_id', 'opened_by', 'closed_by',
+        'restaurant_table_id', 'restaurant_dining_group_id', 'location_id', 'opened_by', 'closed_by',
         'status', 'guest_count', 'opened_at', 'closed_at', 'notes',
     ];
 
@@ -22,6 +22,11 @@ class RestaurantTableSession extends Model
             'opened_at' => 'datetime',
             'closed_at' => 'datetime',
         ];
+    }
+
+    public function diningGroup(): BelongsTo
+    {
+        return $this->belongsTo(RestaurantDiningGroup::class, 'restaurant_dining_group_id');
     }
 
     public function table(): BelongsTo
