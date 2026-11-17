@@ -27,7 +27,8 @@ class TishPushSubscriptionController extends Controller
             'keys.p256dh' => ['required', 'string', 'max:300'],
             'keys.auth' => ['required', 'string', 'max:100'],
         ]);
-        if (! $sender->available() || ! $sender::allowedEndpoint($data['endpoint'])) {
+        if (! $sender->available() || ! $sender::allowedEndpoint($data['endpoint'])
+            || ! $sender::validSubscriptionKeys($data['keys']['p256dh'], $data['keys']['auth'])) {
             return response()->json(['message' => 'Push is not configured or unsupported'], 422);
         }
         $order = Order::query()->where('order_source', 'customer_menu')
