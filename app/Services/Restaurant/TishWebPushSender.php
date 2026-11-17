@@ -101,7 +101,7 @@ class TishWebPushSender
             throw new RuntimeException('Web Push not configured or endpoint disallowed');
         }
         $vapidPublic = self::decode((string) config('services.tish_push.public_key'));
-        if (strlen($vapidPublic) !== 65 || $vapidPublic[0] !== "\\x04") {
+        if (strlen($vapidPublic) !== 65 || $vapidPublic[0] !== "\x04") {
             throw new RuntimeException('Invalid VAPID public key');
         }
         $client = self::decode($p256dh);
