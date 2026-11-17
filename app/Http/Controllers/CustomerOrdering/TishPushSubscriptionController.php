@@ -35,13 +35,9 @@ class TishPushSubscriptionController extends Controller
         $current = $status->payload($order)['state'];
         $hash = hash('sha256', $data['endpoint']);
         // Bound to the actual token-scoped order, never a client-provided order_id.
-        $existing = TishPushSubscription::query()->where('endpoint_hash', $hash)->first();
-        if ($existing && (int) $existing->order_id !== (int) $order->id) {
-            // Device may place another order: reassign its push subscription.
-            $existing->delete();
-        }
+        // One browser/device may subscribe to multiple independent orders.
         TishPushSubscription::updateOrCreate(
-            ['endpoint_hash' => $hash],
+            ['order_id' => $order->id, 'endpoint_hash' => $hash],
             ['order_id' => $order->id, 'endpoint' => $data['endpoint'],
                 'p256dh' => $data['keys']['p256dh'], 'auth_secret' => $data['keys']['auth'],
                 'last_state' => $current]
