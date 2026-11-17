@@ -177,8 +177,40 @@ class AccountingBookService
     {
         return DB::transaction(function () use ($entry, $lines, $actor): AccountingJournal {
             $existing = AccountingJournal::query()
-                ->where('source_type', 'sales_ledger_entries')->where('source_id', $entry->id)->first();
+                ->where('source_type', 'sales_ledger_entries')->where('source_id', $entry->id)
+                ->lockForUpdate()->first();
             if ($existing) {
+                // A retry must never silently accept a journal whose source has changed.
+                // Empty $lines are intentional for retries after ledger accounts were disabled;
+                // in that case verify the immutable source totals and metadata instead.
+                $amount = $this->cents((string) $entry->amount);
+                $matchesSource = (int) $existing->location_id === (int) $entry->location_id
+                    && $existing->entry_date->toDateString() === $entry->entry_date->toDateString()
+                    && $existing->currency_code === $entry->currency_code
+                    && $existing->kind === 'operational'
+                    && $this->cents((string) $existing->total_debit) === $amount
+                    && $this->cents((string) $existing->total_credit) === $amount;
+
+                if ($matchesSource && $lines !== []) {
+                    $expected = collect($lines)->map(fn (array $line): array => [
+                        'account_id' => (int) $line['account_id'],
+                        'debit' => $this->cents((string) ($line['debit'] ?? 0)),
+                        'credit' => $this->cents((string) ($line['credit'] ?? 0)),
+                    ])->sortBy(fn (array $line) => $line['account_id'].':'.$line['debit'].':'.$line['credit'])->values()->all();
+                    $actual = $existing->lines()->get()->map(fn ($line): array => [
+                        'account_id' => (int) $line->accounting_account_id,
+                        'debit' => $this->cents((string) $line->debit),
+                        'credit' => $this->cents((string) $line->credit),
+                    ])->sortBy(fn (array $line) => $line['account_id'].':'.$line['debit'].':'.$line['credit'])->values()->all();
+                    $matchesSource = $expected === $actual;
+                }
+
+                if (! $matchesSource) {
+                    throw ValidationException::withMessages([
+                        'accounting' => 'تغيّرت بيانات مصدر قيد مرحّل أو سطوره؛ يجب تسجيل تسوية موثقة بدل إعادة استخدامه.',
+                    ]);
+                }
+
                 return $existing;
             }
 
