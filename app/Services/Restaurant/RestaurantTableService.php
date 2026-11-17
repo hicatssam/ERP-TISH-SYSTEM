@@ -185,11 +185,13 @@ class RestaurantTableService
      */
     public function close(
         RestaurantTable $table,
-        User $user
+        User $user,
+        bool $guestsDeparted = false
     ): RestaurantTableSession {
         return DB::transaction(function () use (
             $table,
-            $user
+            $user,
+            $guestsDeparted
         ): RestaurantTableSession {
             $lockedTable = RestaurantTable::query()
                 ->whereKey($table->id)
@@ -216,6 +218,19 @@ class RestaurantTableService
             if ($hasOpenOrders) {
                 throw ValidationException::withMessages([
                     'restaurant_table_id' => 'لا يمكن إغلاق الجلسة قبل إكمال أو إلغاء الطلبات المفتوحة على الطاولة.',
+                ]);
+            }
+
+            if (! $guestsDeparted) {
+                throw ValidationException::withMessages([
+                    'guests_departed' => 'يجب تأكيد مغادرة الضيوف قبل إخلاء الطاولة.',
+                ]);
+            }
+
+            $account = app(RestaurantTableAccountService::class)->summary($session);
+            if ($account['outstanding_cents'] > 0 || $account['requires_review']) {
+                throw ValidationException::withMessages([
+                    'restaurant_table_id' => 'لا يمكن إخلاء الطاولة قبل تسوية الحساب. راجع كشف حساب الجلسة والمدفوعات أولاً.',
                 ]);
             }
 
