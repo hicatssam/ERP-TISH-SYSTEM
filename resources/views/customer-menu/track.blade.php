@@ -462,6 +462,7 @@
         const csrfToken = @json(csrf_token());
         const pushEnabledKey = 'tish-push:' + orderNumber;
         let pushSubscribed = localStorage.getItem(pushEnabledKey) === 'yes';
+        let pushErrorMessage = '';
         function base64UrlToBytes(base64) {
             const binary = atob(base64.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - base64.length % 4) % 4));
             return Uint8Array.from(binary, char => char.charCodeAt(0));
@@ -627,11 +628,11 @@
         function refreshAlertsHint() {
             if (!alertsButton || !alertsHint) return;
             alertsButton.textContent = alertsEnabled ? '🔔 إشعارات الطلب مفعّلة' : '🔔 تفعيل صوت وإشعارات الطلب';
-            alertsHint.textContent = alertsEnabled
+            alertsHint.textContent = pushErrorMessage || (alertsEnabled
                 ? ('Notification' in window && Notification.permission === 'granted'
                     ? (pushSubscribed ? 'الصوت وإشعارات الخلفية مفعّلان على هذا الجهاز.' : 'الصوت مفعّل. إشعارات الخلفية تحتاج إعدادًا إضافيًا.')
                     : 'الصوت مفعّل. إشعارات الجهاز تحتاج إذن المتصفح.')
-                : 'فعّل التنبيهات لتسمع صوتًا عند تغيّر حالة الطلب.';
+                : 'فعّل التنبيهات لتسمع صوتًا عند تغيّر حالة الطلب.');
         }
 
         alertsButton?.addEventListener('click', async () => {
@@ -647,10 +648,11 @@
             if ('Notification' in window && Notification.permission === 'default' && window.isSecureContext) {
                 try { await Notification.requestPermission(); } catch (error) {}
             }
+            pushErrorMessage = '';
             try {
                 await enableTishBackgroundPush();
             } catch (error) {
-                if (alertsHint) alertsHint.textContent = String(error.message || error);
+                pushErrorMessage = String(error.message || error);
             }
             refreshAlertsHint();
         });
