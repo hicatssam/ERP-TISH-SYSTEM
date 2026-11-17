@@ -175,3 +175,26 @@ body.tish-paper.reference-home .product h3{
     transition:none!important;translate:none!important;
   }
 }
+
+
+/* Flush the first-fold artwork to the top edge of its paper canvas.
+   Prior legacy skins stacked .menu-area padding (12px), masthead
+   padding (14px) and margin (6px), leaving a conspicuous top gap. */
+body.tish-paper.reference-home .menu-area{
+  padding-top:0!important;
+}
+body.tish-paper.reference-home .menu-area>.shell{
+  padding-top:0!important;
+  margin-top:0!important;
+}
+body.tish-paper.reference-home .reference-masthead{
+  margin-top:0!important;
+  padding-top:0!important;
+}
+body.tish-paper.reference-home .reference-masthead .tish-drive-firstfold{
+  margin-top:0!important;
+}
+@media(max-width:600px){
+  body.tish-paper.reference-home .menu-area{padding-top:0!important}
+  body.tish-paper.reference-home .reference-masthead{padding-top:0!important}
+}
