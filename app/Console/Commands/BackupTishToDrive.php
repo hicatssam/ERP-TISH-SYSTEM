@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Services\Backup\TishDriveBackupService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Throwable;
@@ -15,6 +16,14 @@ class BackupTishToDrive extends Command
 
     public function handle(TishDriveBackupService $backup): int
     {
+        // Shared between manual and scheduled invocations, even if the
+        // scheduler's separate withoutOverlapping mutex is not in use.
+        $lock = Cache::lock('tish-erp:encrypted-drive-backup', 43200);
+        if (! $lock->get()) {
+            $this->error('Another TISH encrypted backup is already running.');
+            return self::FAILURE;
+        }
+
         try {
             $result = $backup->backup((bool) $this->option('dry-run'));
             if ($this->option('dry-run')) {
@@ -49,6 +58,8 @@ class BackupTishToDrive extends Command
             }
 
             return self::FAILURE;
+        } finally {
+            $lock->release();
         }
     }
 }
