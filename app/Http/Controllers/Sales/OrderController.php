@@ -440,10 +440,25 @@ class OrderController extends Controller
             ->orderBy('name')
             ->get();
 
+        $cashPaymentMethods = PaymentMethod::query()
+            ->active()
+            ->where('type', 'cash')
+            ->where('requires_verification', false)
+            ->where(function ($query) use ($order): void {
+                $query->whereDoesntHave('locationPaymentMethods')
+                    ->orWhereHas('locationPaymentMethods', fn ($assignment) => $assignment
+                        ->where('location_id', $order->location_id)
+                        ->where('is_active', true));
+            })
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+
         return view('sales.orders.show', compact(
             'order',
             'bankPaymentMethods',
-            'bankPaymentAccounts'
+            'bankPaymentAccounts',
+            'cashPaymentMethods'
         ));
     }
 

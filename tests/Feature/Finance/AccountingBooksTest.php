@@ -335,6 +335,117 @@ class AccountingBooksTest extends TestCase
         $this->assertSame(0, AccountingJournal::query()->count());
     }
 
+    public function test_restaurant_invoice_cash_settlement_is_partial_then_full_and_retry_is_rejected(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
+        [$branch, $user] = $this->branchUser([...$this->allPermissions(), 'payments.record']);
+        $this->baseCurrency();
+        $this->openPeriod($user);
+        $cash = $this->method('cash');
+
+        $order = Order::query()->create([
+            'order_number' => 'SETTLE-28', 'location_id' => $branch->id,
+            'created_by' => $user->id, 'status' => 'confirmed',
+            'payment_arrangement' => 'pay_on_pickup',
+            'subtotal' => 28, 'total_amount' => 28, 'confirmed_at' => now(),
+            'restaurant_service_type' => 'takeaway',
+        ]);
+        $invoice = Invoice::query()->create([
+            'invoice_number' => 'INV-SETTLE-28', 'invoice_type' => 'regular_order',
+            'order_type' => 'order', 'order_id' => $order->id, 'location_id' => $branch->id,
+            'status' => 'active', 'subtotal' => 28, 'total_amount' => 28,
+            'paid_amount' => 0, 'remaining_amount' => 28,
+            'issued_by' => $user->id, 'issued_at' => now(),
+        ]);
+        app(FinancialPostingService::class)->sale($invoice, $user);
+
+        $first = [
+            'entry_context' => 'order_cash_settlement',
+            'order_type' => 'order', 'order_id' => $order->id,
+            'payment_method_id' => $cash->id, 'amount' => 10,
+            'reference_number' => 'POS-CASH-00000000-0000-4000-8000-000000000001',
+        ];
+        $payments = app(PaymentService::class);
+        $payments->recordPayment($first, $user);
+        $this->assertEquals(10, $invoice->fresh()->paid_amount);
+        $this->assertEquals(18, $invoice->fresh()->remaining_amount);
+        $this->assertSame('partially_paid', $order->fresh()->payment_status->value);
+
+        try {
+            $payments->recordPayment($first, $user);
+            $this->fail('A repeated cash collection request must be rejected.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('payment', $exception->errors());
+        }
+        $this->assertSame(1, Payment::query()->count());
+
+        $payments->recordPayment(array_replace($first, [
+            'amount' => 18,
+            'reference_number' => 'POS-CASH-00000000-0000-4000-8000-000000000002',
+        ]), $user);
+        $this->assertEquals(28, $invoice->fresh()->paid_amount);
+        $this->assertEquals(0, $invoice->fresh()->remaining_amount);
+        $this->assertSame('paid', $order->fresh()->payment_status->value);
+        $this->assertSame(2, Payment::query()->count());
+        $this->assertEquals(28, app(DailyCashReconciliationService::class)
+            ->forDay($branch->id, '2026-10-02')['components']['sales']);
+        $this->assertSame(0, app(AccountingReportService::class)
+            ->report([$branch->id], '2026-10-01', '2026-10-02')['position']['difference']);
+
+        try {
+            $payments->recordPayment(array_replace($first, [
+                'amount' => 1,
+                'reference_number' => 'POS-CASH-00000000-0000-4000-8000-000000000003',
+            ]), $user);
+            $this->fail('Fully settled invoices must reject additional collection.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('amount', $exception->errors());
+        }
+    }
+
+    public function test_cash_settlement_rejects_unconfirmed_order_and_non_cash_method(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
+        [$branch, $user] = $this->branchUser($this->allPermissions());
+        $this->baseCurrency();
+        $this->openPeriod($user);
+        $bank = $this->method('bank_transfer');
+        $order = Order::query()->create([
+            'order_number' => 'SETTLE-DRAFT', 'location_id' => $branch->id,
+            'created_by' => $user->id, 'status' => 'draft',
+            'payment_arrangement' => 'pay_on_pickup',
+            'subtotal' => 28, 'total_amount' => 28,
+            'restaurant_service_type' => 'takeaway',
+        ]);
+        Invoice::query()->create([
+            'invoice_number' => 'INV-SETTLE-DRAFT', 'invoice_type' => 'regular_order',
+            'order_type' => 'order', 'order_id' => $order->id, 'location_id' => $branch->id,
+            'status' => 'active', 'subtotal' => 28, 'total_amount' => 28,
+            'paid_amount' => 0, 'remaining_amount' => 28,
+            'issued_by' => $user->id, 'issued_at' => now(),
+        ]);
+        $request = [
+            'entry_context' => 'order_cash_settlement',
+            'order_type' => 'order', 'order_id' => $order->id,
+            'payment_method_id' => $bank->id, 'amount' => 28,
+            'reference_number' => 'POS-CASH-00000000-0000-4000-8000-000000000004',
+        ];
+        try {
+            app(PaymentService::class)->recordPayment($request, $user);
+            $this->fail('Draft orders must reject cash settlement.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('order_id', $exception->errors());
+        }
+        $order->update(['status' => 'confirmed']);
+        try {
+            app(PaymentService::class)->recordPayment($request, $user);
+            $this->fail('Non-cash methods must not be used for cash settlement.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('payment_method_id', $exception->errors());
+        }
+        $this->assertSame(0, Payment::query()->count());
+    }
+
     public function test_closed_cash_day_prevents_new_cash_payment_without_creating_records(): void
     {
         $this->travelTo(now()->setDate(2026, 10, 2)->setTime(16, 0));
