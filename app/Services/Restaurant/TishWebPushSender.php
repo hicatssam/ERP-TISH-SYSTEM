@@ -121,6 +121,9 @@ class TishWebPushSender
         $cek = self::hkdf($ikm, $salt, "Content-Encoding: aes128gcm\x00", 16);
         $nonce = self::hkdf($ikm, $salt, "Content-Encoding: nonce\x00", 12);
         $plain = json_encode($message, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) . "\x02";
+        if (strlen($plain) + 16 >= 4096) {
+            throw new RuntimeException('Web Push message exceeds one record');
+        }
         $tag = '';
         $encrypted = openssl_encrypt($plain, 'aes-128-gcm', $cek, OPENSSL_RAW_DATA, $nonce, $tag);
         if ($encrypted === false) throw new RuntimeException('AES-GCM encryption failed');
