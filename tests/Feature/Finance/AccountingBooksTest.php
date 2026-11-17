@@ -84,6 +84,47 @@ class AccountingBooksTest extends TestCase
             ->firstOrFail()->lines()->whereHas('account', fn ($q) => $q->where('code', '1000'))->value('debit'));
     }
 
+    public function test_operational_journal_retry_rejects_changed_source_and_preserves_original_posting(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
+        [$branch, $user] = $this->branchUser($this->allPermissions());
+        $this->baseCurrency();
+        $this->openPeriod($user);
+
+        $invoice = Invoice::query()->create([
+            'invoice_number' => 'GL-RETRY-001', 'invoice_type' => 'regular_order',
+            'order_type' => 'order', 'order_id' => 98901, 'location_id' => $branch->id,
+            'status' => 'active', 'subtotal' => 100, 'total_amount' => 100,
+            'issued_by' => $user->id, 'issued_at' => now(),
+        ]);
+        app(FinancialPostingService::class)->sale($invoice, $user);
+        $source = SalesLedgerEntry::query()
+            ->where('idempotency_key', "invoice:{$invoice->id}:sale")->firstOrFail();
+        $original = AccountingJournal::query()->sole();
+        $this->assertEquals(100, $original->total_debit);
+
+        // A corrupted or modified source cannot be masked by idempotent retries.
+        $source->update(['amount' => 120]);
+        try {
+            app(\\App\\Services\\Finance\\OperationalJournalService::class)->post($source->fresh(), $user);
+            $this->fail('Changed source amount must not reuse its original journal.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('accounting', $exception->errors());
+        }
+        $this->assertSame(1, AccountingJournal::query()->count());
+        $this->assertEquals(100, $original->fresh()->total_debit);
+
+        $source->update(['amount' => 100]);
+        // Retrying the same historical entry must remain valid after an account is deactivated.
+        AccountingAccount::query()->where('code', '4000')->update(['is_active' => false]);
+        app(\\App\\Services\\Finance\\OperationalJournalService::class)->post($source->fresh(), $user);
+        $this->assertSame(1, AccountingJournal::query()->count());
+
+        $source->update(['entry_date' => '2026-10-03']);
+        $this->expectException(ValidationException::class);
+        app(\\App\\Services\\Finance\\OperationalJournalService::class)->post($source->fresh(), $user);
+    }
+
     public function test_invoice_adjustment_posts_only_signed_delta_and_noop_does_not_duplicate(): void
     {
         $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
