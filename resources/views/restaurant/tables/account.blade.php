@@ -16,7 +16,9 @@
             @can('restaurant_pos.use')
                 <a class="btn btn-gold" href="{{ route('restaurant.pos.index', ['location_id' => $location->id, 'table_id' => $table->id]) }}">+ طلب إضافي لنفس الجلسة</a>
             @endcan
-            <a class="btn btn-outline" href="{{ route('restaurant.tables.index', ['location_id' => $location->id]) }}">رجوع للطاولات</a>
+            @can('restaurant_tables.view')
+                <a class="btn btn-outline" href="{{ route('restaurant.tables.index', ['location_id' => $location->id]) }}">رجوع للطاولات</a>
+            @endcan
             <button type="button" class="btn btn-outline" onclick="window.print()">طباعة كشف الحساب</button>
         </div>
     </div>
