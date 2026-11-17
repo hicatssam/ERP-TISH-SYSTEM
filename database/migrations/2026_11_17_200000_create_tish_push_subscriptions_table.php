@@ -11,7 +11,8 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('order_id')->constrained('orders')->cascadeOnDelete();
             $table->text('endpoint');
-            $table->char('endpoint_hash', 64)->unique();
+            $table->char('endpoint_hash', 64);
+            $table->unique(['order_id', 'endpoint_hash'], 'tish_push_order_endpoint_unique');
             $table->text('p256dh');
             $table->text('auth_secret');
             $table->string('last_state', 40);
