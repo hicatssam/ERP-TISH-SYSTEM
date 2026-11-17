@@ -33,6 +33,17 @@ class TishWebPushSender
         return substr($output, 0, $length);
     }
 
+    public static function validSubscriptionKeys(string $public, string $auth): bool
+    {
+        try {
+            $point = self::decode($public);
+            $secret = self::decode($auth);
+            return strlen($point) === 65 && $point[0] === "\x04" && strlen($secret) >= 16;
+        } catch (RuntimeException) {
+            return false;
+        }
+    }
+
     public function available(): bool
     {
         return extension_loaded('openssl')
@@ -146,7 +157,7 @@ class TishWebPushSender
             'Content-Encoding' => 'aes128gcm',
             'Authorization' => 'vapid t=' . $jwt . ', k=' . (string) config('services.tish_push.public_key'),
             'Urgency' => 'normal',
-        ])->timeout(10)->withBody($body, 'application/octet-stream')->post($endpoint);
+        ])->timeout(10)->withoutRedirecting()->withBody($body, 'application/octet-stream')->post($endpoint);
         return $response->status();
     }
 }
