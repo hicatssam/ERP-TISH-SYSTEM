@@ -80,3 +80,38 @@ self.addEventListener('fetch', event => {
     );
 });
 
+
+/* Real background Web Push, separate from page polling. */
+self.addEventListener('push', event => {
+    event.waitUntil((async () => {
+        let data = {};
+        try { data = event.data ? event.data.json() : {}; } catch (_) {}
+        const target = new URL(String(data.url || '/menu/'), self.location.origin);
+        if (target.origin !== self.location.origin || !target.pathname.startsWith('/menu/track/')) {
+            target.pathname = '/menu/';
+            target.search = '';
+        }
+        await self.registration.showNotification(String(data.title || 'TISH — تحديث الطلب').slice(0, 100), {
+            body: String(data.body || 'تم تحديث حالة طلبك.').slice(0, 240),
+            icon: '/assets/tish-paper/pwa/apple-touch-icon-180.png',
+            badge: '/assets/tish-paper/pwa/apple-touch-icon-180.png',
+            tag: String(data.tag || 'tish-status'),
+            renotify: true,
+            data: {url: target.href},
+        });
+    })());
+});
+self.addEventListener('notificationclick', event => {
+    event.notification.close();
+    event.waitUntil((async () => {
+        const url = new URL(String(event.notification.data?.url || '/menu/'), self.location.origin);
+        if (url.origin !== self.location.origin) return;
+        const windows = await self.clients.matchAll({type: 'window', includeUncontrolled: true});
+        for (const windowClient of windows) {
+            if (windowClient.url === url.href && 'focus' in windowClient) {
+                return windowClient.focus();
+            }
+        }
+        return self.clients.openWindow(url.href);
+    })());
+});
