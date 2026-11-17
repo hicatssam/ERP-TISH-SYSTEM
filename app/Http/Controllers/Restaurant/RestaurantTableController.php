@@ -272,6 +272,27 @@ class RestaurantTableController extends Controller
         return back()->with('success', 'تم فتح جلسة الطاولة.');
     }
 
+    public function account(Request $request, RestaurantTable $restaurantTable, \App\Services\Restaurant\RestaurantTableAccountService $accounts)
+    {
+        $location = $this->context->resolveLocation(
+            $request->user(),
+            $request->integer('location_id') ?: null
+        );
+        abort_unless((int) $restaurantTable->location_id === (int) $location->id, 403);
+
+        $session = $restaurantTable->activeSession()->first();
+        abort_unless($session, 404, 'لا توجد جلسة مفتوحة لهذه الطاولة.');
+
+        $account = $accounts->summary($session);
+
+        return view('restaurant.tables.account', [
+            'location' => $location,
+            'table' => $restaurantTable,
+            'session' => $session,
+            'account' => $account,
+        ]);
+    }
+
     public function closeSession(Request $request, RestaurantTable $restaurantTable)
     {
         $validated = $request->validate([
@@ -290,9 +311,14 @@ class RestaurantTableController extends Controller
             403
         );
 
+        $data = $request->validate([
+            'guests_departed' => ['required', 'accepted'],
+        ]);
+
         $session = $this->tables->close(
             $restaurantTable,
-            $request->user()
+            $request->user(),
+            (bool) $data['guests_departed']
         );
 
         $this->tables->notifyClosed($session);
