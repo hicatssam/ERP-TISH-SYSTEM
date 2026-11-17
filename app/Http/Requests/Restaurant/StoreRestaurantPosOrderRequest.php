@@ -61,6 +61,7 @@ class StoreRestaurantPosOrderRequest extends FormRequest
             'sales_channel_id' => ['required', 'integer', 'exists:sales_channels,id'],
             'discount_type' => ['nullable', Rule::in(['none', 'percentage', 'fixed'])],
             'discount_value' => ['nullable', 'numeric', 'min:0'],
+            'discount_reason' => ['nullable', 'string', 'max:300'],
         ];
     }
 
@@ -222,6 +223,17 @@ class StoreRestaurantPosOrderRequest extends FormRequest
                 $validator->errors()->add(
                     'sales_channel_id',
                     'قناة البيع المحددة غير مفعلة.'
+                );
+            }
+
+            if (
+                in_array($this->input('discount_type'), ['percentage', 'fixed'], true)
+                && (float) $this->input('discount_value', 0) > 0
+                && mb_strlen(trim((string) $this->input('discount_reason', ''))) < 8
+            ) {
+                $validator->errors()->add(
+                    'discount_reason',
+                    'يجب توضيح سبب الخصم اليدوي (ثمانية أحرف على الأقل).'
                 );
             }
 
