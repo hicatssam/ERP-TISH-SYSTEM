@@ -418,4 +418,6 @@ body.tish-paper {
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-polish-v13.css') }}?v=17">
 <script src="{{ asset('assets/js/customer-menu/tish-paper-controls-v12.js') }}?v=14" defer></script>
 
+{{-- Responsive nav motion is shared by all customer TISH pages. --}}
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-nav-motion-v1.css') }}?v=1">
 <script src="{{ asset('assets/js/customer-menu/tish-visuals.js') }}?v=3" defer></script>

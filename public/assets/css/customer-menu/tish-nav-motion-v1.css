@@ -1,0 +1,132 @@
+/* TISH customer UI: responsive paper polish / bottom-nav motion.
+   Loaded after legacy skins. Public pages only; never affects ERP admin. */
+body.tish-paper{
+  --tish-nav-height:78px;
+}
+body.tish-paper .bottom-nav{
+  min-height:calc(var(--tish-nav-height) + env(safe-area-inset-bottom,0px))!important;
+  padding:7px 7px calc(7px + env(safe-area-inset-bottom,0px))!important;
+  overflow:visible;
+  contain:layout;
+}
+body.tish-paper .bottom-nav .nav-btn{
+  display:flex;position:relative;isolation:isolate;
+  min-width:0;min-height:58px;height:62px!important;
+  gap:2px!important;padding:6px 2px 5px!important;
+  text-decoration:none;
+  -webkit-tap-highlight-color:transparent;
+  transition:color .22s ease!important;
+}
+body.tish-paper .bottom-nav .nav-btn::after{
+  content:"";position:absolute;inset:5px 5px 2px;z-index:-1;
+  border:1px solid rgba(255,232,211,.17);
+  border-radius:9px;opacity:0;transform:scale(.84);
+  transition:opacity .18s ease,transform .24s cubic-bezier(.2,.85,.25,1);
+  pointer-events:none;
+}
+body.tish-paper .bottom-nav .nav-btn:not(.active):hover::after,
+body.tish-paper .bottom-nav .nav-btn:focus-visible::after{
+  opacity:1;transform:scale(1);
+}
+body.tish-paper .bottom-nav .nav-btn:focus-visible{
+  outline:2px solid #f1d5ad!important;outline-offset:-4px;
+}
+body.tish-paper .bottom-nav .nav-btn .tish-paper-nav-icon{
+  width:27px!important;height:27px!important;
+  transition:translate .26s cubic-bezier(.2,.8,.2,1),scale .24s cubic-bezier(.2,.8,.2,1),filter .24s ease!important;
+  will-change:auto;
+}
+body.tish-paper .bottom-nav .nav-btn>span:not(.tish-paper-cart-icon-disc){
+  font-size:clamp(.62rem,2.3vw,.76rem);font-weight:800;
+  line-height:1.2!important;letter-spacing:0;white-space:nowrap;
+  transition:translate .2s ease,opacity .2s ease;
+}
+body.tish-paper .bottom-nav .nav-btn.active{
+  animation:tishNavPaperReveal .38s cubic-bezier(.2,.83,.28,1) both;
+}
+body.tish-paper .bottom-nav .nav-btn.active .tish-paper-nav-icon{
+  translate:0 -3px;scale:1.08;
+}
+body.tish-paper .bottom-nav .nav-btn:not(.active):hover .tish-paper-nav-icon,
+body.tish-paper .bottom-nav .nav-btn.is-pressing .tish-paper-nav-icon{
+  translate:0 -4px;scale:1.1;
+}
+body.tish-paper .bottom-nav .nav-btn.is-pressing .tish-paper-nav-icon{
+  animation:tishNavIconTap .34s cubic-bezier(.24,.8,.24,1);
+}
+body.tish-paper .bottom-nav .nav-btn .nav-badge{
+  top:0!important;right:calc(50% - 26px)!important;
+  min-width:17px!important;height:17px!important;padding:0 3px!important;
+  font-size:.62rem!important;line-height:1!important;pointer-events:none;
+}
+body.tish-paper .bottom-nav .nav-btn .nav-badge[hidden]{display:none!important}
+body.tish-paper .bottom-nav .nav-btn.is-pressing .nav-badge{
+  animation:tishNavBadgePulse .32s ease-out;
+}
+body.tish-paper .bottom-nav .nav-btn .tish-nav-ripple{
+  position:absolute;top:37%;left:50%;width:45px;height:45px;
+  border:1px solid rgba(255,239,226,.55);border-radius:50%;z-index:2;
+  pointer-events:none;translate:-50% -50%;
+  animation:tishNavRipple .48s ease-out forwards;
+}
+@keyframes tishNavPaperReveal{
+  0%{opacity:.78;filter:brightness(1.24);scale:.9}
+  60%{opacity:1;filter:brightness(1.08);scale:1.045}
+  100%{opacity:1;filter:brightness(1);scale:1}
+}
+@keyframes tishNavIconTap{
+  0%{scale:1}45%{scale:.82;rotate:-7deg}78%{scale:1.15;rotate:4deg}100%{scale:1;rotate:0}
+}
+@keyframes tishNavBadgePulse{
+  0%{scale:1}45%{scale:1.2}100%{scale:1}
+}
+@keyframes tishNavRipple{
+  from{opacity:.65;scale:.4}to{opacity:0;scale:1.85}
+}
+/* Stable gap above the nav: the cart is never hidden behind the bar. */
+body.tish-paper .cm-sticky-cart:not([hidden]){
+  bottom:calc(var(--tish-nav-height) + 12px + env(safe-area-inset-bottom,0px))!important;
+  z-index:46;max-width:min(96vw,890px);
+  display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;
+  align-items:center;gap:clamp(7px,2vw,17px);
+  min-height:62px;padding:9px clamp(12px,2.5vw,22px)!important;
+}
+body.tish-paper .cm-sticky-cart .cm-sticky-cart-icon{flex-shrink:0}
+body.tish-paper .cm-sticky-cart .cm-sticky-cart-copy{min-width:0;line-height:1.25}
+body.tish-paper .cm-sticky-cart .cm-sticky-cart-copy strong,
+body.tish-paper .cm-sticky-cart .cm-sticky-cart-copy small{display:block}
+body.tish-paper .cm-sticky-cart .cm-sticky-cart-total{
+  direction:ltr;white-space:nowrap;font-variant-numeric:tabular-nums;
+}
+body.tish-paper .cm-sticky-cart .cm-sticky-cart-cta{
+  display:inline-flex;align-items:center;justify-content:center;
+  gap:5px;min-height:36px;white-space:nowrap;
+}
+@media(max-width:600px){
+  body.tish-paper{--tish-nav-height:75px}
+  body.tish-paper .bottom-nav{padding-inline:3px!important}
+  body.tish-paper .bottom-nav .nav-btn{height:60px!important;padding-inline:0!important}
+  body.tish-paper .bottom-nav .nav-btn .tish-paper-nav-icon{width:25px!important;height:25px!important}
+  body.tish-paper .bottom-nav .nav-btn>span:not(.tish-paper-cart-icon-disc){font-size:clamp(.57rem,2.7vw,.68rem)}
+  body.tish-paper .cm-sticky-cart:not([hidden]){max-width:calc(100vw - 14px);grid-template-columns:auto minmax(0,1fr) auto auto;gap:8px;padding:8px 10px!important;min-height:58px}
+  body.tish-paper .cm-sticky-cart .cm-sticky-cart-icon{width:32px;height:32px}
+  body.tish-paper .cm-sticky-cart .cm-sticky-cart-cta{font-size:.7rem;padding-inline:6px;min-height:32px}
+  body.tish-paper .cm-sticky-cart .cm-sticky-cart-copy strong{font-size:.75rem}
+  body.tish-paper .cm-sticky-cart .cm-sticky-cart-copy small{font-size:.65rem}
+}
+@media(max-width:365px){
+  body.tish-paper .cm-sticky-cart:not([hidden]){grid-template-columns:auto minmax(0,1fr) auto}
+  body.tish-paper .cm-sticky-cart .cm-sticky-cart-cta{display:none!important}
+  body.tish-paper .bottom-nav .nav-btn>span:not(.tish-paper-cart-icon-disc){font-size:.55rem}
+}
+@media(prefers-reduced-motion:reduce){
+  body.tish-paper .bottom-nav .nav-btn,
+  body.tish-paper .bottom-nav .nav-btn::after,
+  body.tish-paper .bottom-nav .nav-btn.active,
+  body.tish-paper .bottom-nav .nav-btn .tish-paper-nav-icon,
+  body.tish-paper .bottom-nav .nav-btn .nav-badge{
+    animation:none!important;transition:none!important;
+    translate:none!important;scale:1!important;rotate:0!important;
+  }
+  body.tish-paper .bottom-nav .tish-nav-ripple{display:none!important}
+}
