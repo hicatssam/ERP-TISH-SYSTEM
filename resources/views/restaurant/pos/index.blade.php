@@ -478,6 +478,14 @@
                             >
                         </div>
 
+                        <div class="rb-field rb-field-wide" id="rbDiscountReasonGroup" hidden>
+                            <label for="rbDiscountReason">سبب الخصم اليدوي *</label>
+                            <textarea name="discount_reason" id="rbDiscountReason" class="rb-control"
+                                      maxlength="300" minlength="8" rows="2"
+                                      placeholder="مثال: تعويض الزبون عن تأخر تجهيز الطلب">{{ old('discount_reason') }}</textarea>
+                            <small>يُسجل السبب باسم الموظف ورقم الطلب ضمن سجل العمليات.</small>
+                        </div>
+
                         <div class="rb-field rb-field-wide" id="rbReferenceGroup" hidden>
                             <label>رقم العملية / المرجع</label>
                             <input
@@ -2575,6 +2583,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const discountType = document.getElementById('rbDiscountType');
     const discountValue = document.getElementById('rbDiscountValue');
+    const discountReasonGroup = document.getElementById('rbDiscountReasonGroup');
+    const discountReason = document.getElementById('rbDiscountReason');
+    function syncDiscountReason() {
+        const needed = ['percentage', 'fixed'].includes(discountType.value)
+            && Number(discountValue.value || 0) > 0;
+        discountReasonGroup.hidden = !needed;
+        discountReason.required = needed;
+    }
+    [discountType, discountValue].forEach(field => {
+        field?.addEventListener('input', syncDiscountReason);
+        field?.addEventListener('change', syncDiscountReason);
+    });
+    syncDiscountReason();
 
     const paymentArrangement = document.getElementById('rbPaymentArrangement');
     const paymentMethod = document.getElementById('rbPaymentMethod');
@@ -3734,6 +3755,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 paid_amount: simpleField('paid_amount'),
                 discount_type: discountType.value,
                 discount_value: discountValue.value,
+                discount_reason: discountReason.value.trim(),
                 reference_number: simpleField('reference_number'),
                 sender_name: simpleField('sender_name'),
                 sender_phone: simpleField('sender_phone'),

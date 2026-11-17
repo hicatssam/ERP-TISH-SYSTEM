@@ -102,6 +102,9 @@ class RestaurantOrderService
                 metadata: [
                     'location_id' => $locationId,
                     'source' => 'restaurant_pos',
+                    'manual_discount_type' => $payload['discount_type'] ?? 'none',
+                    'manual_discount_value' => $payload['discount_value'] ?? 0,
+                    'manual_discount_reason' => $payload['discount_reason'] ?? null,
                 ],
             );
 
