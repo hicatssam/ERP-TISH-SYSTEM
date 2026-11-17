@@ -46,10 +46,19 @@ class TishWebPushSender
 
     public function available(): bool
     {
-        return extension_loaded('openssl')
-            && filled(config('services.tish_push.public_key'))
-            && filled(config('services.tish_push.private_key'))
-            && filled(config('services.tish_push.subject'));
+        if (! extension_loaded('openssl')) return false;
+        $subject = (string) config('services.tish_push.subject');
+        if (! str_starts_with($subject, 'mailto:') && ! str_starts_with($subject, 'https://')) return false;
+        try {
+            $public = self::decode((string) config('services.tish_push.public_key'));
+            $private = self::decode((string) config('services.tish_push.private_key'));
+            if (strlen($public) !== 65 || $public[0] !== "\x04" || strlen($private) !== 32) return false;
+            $details = openssl_pkey_get_details($this->vapidPrivateKey());
+            return is_array($details) && isset($details['ec']['x'], $details['ec']['y'])
+                && hash_equals($public, "\x04" . $details['ec']['x'] . $details['ec']['y']);
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     public static function allowedEndpoint(string $endpoint): bool
