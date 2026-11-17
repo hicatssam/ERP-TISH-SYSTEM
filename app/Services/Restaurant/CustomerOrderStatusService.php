@@ -92,6 +92,7 @@ class CustomerOrderStatusService
                 default => 'طلب مطعم',
             },
 
+            'server_time' => now()->toIso8601String(),
             'estimated_ready_minutes' => $this->estimatedReadyMinutes($order, $statusKey),
             // Immutable estimate for new customer orders; legacy orders remain
             // explicitly approximate and will not display a fake countdown.
