@@ -3,6 +3,7 @@
 return [
     // Default OFF until an operator configures and tests an encrypted Drive remote.
     'enabled' => (bool) env('TISH_BACKUP_ENABLED', false),
+    'timezone' => env('TISH_BACKUP_TIMEZONE', 'Asia/Gaza'),
     'remote' => env('TISH_BACKUP_RCLONE_REMOTE', 'tish_drive_crypt'),
     // Prefix is a folder INSIDE the crypt remote (not the raw Google Drive remote).
     'folder' => env('TISH_BACKUP_FOLDER', 'tish-erp'),
