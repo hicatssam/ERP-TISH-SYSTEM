@@ -33,6 +33,8 @@ class ExpenseController extends Controller
         $request->validate([
             'status' => ['nullable', Rule::enum(ExpenseStatus::class)],
             'category_id' => ['nullable', 'integer', 'exists:expense_categories,id'],
+            'cost_behavior' => ['nullable', Rule::in(['fixed', 'variable', 'temporary'])],
+            'cost_center' => ['nullable', Rule::in(['kitchen', 'service', 'delivery', 'facilities', 'admin', 'general'])],
             'location_id' => ['nullable', 'integer', 'exists:locations,id'],
             'date_from' => ['nullable', 'date_format:Y-m-d'],
             'date_to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:date_from'],
@@ -56,6 +58,13 @@ class ExpenseController extends Controller
 
         if ($request->filled('category_id')) {
             $query->where('expense_category_id', $request->integer('category_id'));
+        }
+
+        if ($request->filled('cost_behavior')) {
+            $query->where('cost_behavior', $request->string('cost_behavior')->toString());
+        }
+        if ($request->filled('cost_center')) {
+            $query->where('cost_center', $request->string('cost_center')->toString());
         }
 
         if ($request->filled('date_from')) {

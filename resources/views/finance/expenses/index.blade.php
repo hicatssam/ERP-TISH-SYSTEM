@@ -3,6 +3,11 @@
 @section('page-title', 'المصروفات')
 
 @section('content')
+@php
+    $behaviorLabels = ['fixed' => 'ثابتة', 'variable' => 'متغيرة', 'temporary' => 'مؤقتة'];
+    $centerLabels = ['kitchen' => 'المطبخ', 'service' => 'الخدمة', 'delivery' => 'التوصيل',
+        'facilities' => 'المرافق', 'admin' => 'الإدارة', 'general' => 'عام'];
+@endphp
 <div class="page-header">
     <div>
         <h1 class="page-heading">المصروفات</h1>
@@ -64,6 +69,22 @@
                     @endforeach
                 </select>
             </div>
+            <div class="filter-group"><label class="filter-label">سلوك التكلفة</label>
+                <select name="cost_behavior" class="form-input">
+                    <option value="">الكل</option>
+                    @foreach($behaviorLabels as $value => $label)
+                        <option value="{{ $value }}" @selected(request('cost_behavior') === $value)>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="filter-group"><label class="filter-label">مركز التكلفة</label>
+                <select name="cost_center" class="form-input">
+                    <option value="">الكل</option>
+                    @foreach($centerLabels as $value => $label)
+                        <option value="{{ $value }}" @selected(request('cost_center') === $value)>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
             <div class="filter-group"><label class="filter-label">من</label><input type="date" name="date_from" value="{{ request('date_from') }}" class="form-input"></div>
             <div class="filter-group"><label class="filter-label">إلى</label><input type="date" name="date_to" value="{{ request('date_to') }}" class="form-input"></div>
             <div class="filter-group" style="justify-content:flex-end"><label class="filter-label">&nbsp;</label><button class="btn btn-gold">تطبيق</button></div>
@@ -75,7 +96,7 @@
     <div class="card-header"><span class="card-title">سجل المصروفات</span><span>{{ number_format($expenses->total()) }} سجل</span></div>
     <div class="table-wrap" style="border:0;border-radius:0">
         <table class="data-table">
-            <thead><tr><th>الرقم</th><th>التاريخ</th><th>الموقع</th><th>التصنيف</th><th>الوصف</th><th>القيمة</th><th>الحالة</th><th>المنشئ</th><th></th></tr></thead>
+            <thead><tr><th>الرقم</th><th>التاريخ</th><th>الموقع</th><th>التصنيف</th><th>السلوك</th><th>مركز التكلفة</th><th>الوصف</th><th>القيمة</th><th>الحالة</th><th>المنشئ</th><th></th></tr></thead>
             <tbody>
             @forelse($expenses as $expense)
                 <tr>
@@ -83,6 +104,8 @@
                     <td>{{ $expense->expense_date?->format('d/m/Y') }}</td>
                     <td>{{ $expense->location?->name ?? '—' }}</td>
                     <td>{{ $expense->category?->name ?? '—' }}</td>
+                    <td>{{ $behaviorLabels[$expense->cost_behavior] ?? 'غير مصنّف' }}</td>
+                    <td>{{ $centerLabels[$expense->cost_center] ?? '—' }}</td>
                     <td style="max-width:280px">{{ \Illuminate\Support\Str::limit($expense->description, 65) }}</td>
                     <td><strong>₪{{ number_format((float)$expense->amount, 2) }}</strong></td>
                     <td><span class="badge {{ $expense->status?->badgeClass() }}">{{ $expense->status?->label() }}</span></td>
@@ -90,7 +113,7 @@
                     <td><a class="btn btn-ghost btn-sm" href="{{ route('costing.expenses.show', $expense) }}">فتح</a></td>
                 </tr>
             @empty
-                <tr><td colspan="9"><div class="empty-state"><h3>لا توجد مصروفات</h3></div></td></tr>
+                <tr><td colspan="11"><div class="empty-state"><h3>لا توجد مصروفات</h3></div></td></tr>
             @endforelse
             </tbody>
         </table>
