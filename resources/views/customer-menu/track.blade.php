@@ -461,7 +461,7 @@
         const pushSaveUrl = @json(route('customer-menu.push.save', $order->public_token));
         const pushDeleteUrl = @json(route('customer-menu.push.delete', $order->public_token));
         const csrfToken = @json(csrf_token());
-        const pushEnabledKey = 'tish-push:' + orderNumber;
+        const pushEnabledKey = 'tish-push:' + url;
         let pushSubscribed = localStorage.getItem(pushEnabledKey) === 'yes';
         let pushErrorMessage = '';
         const disablePushButton = document.getElementById('disableOrderPush');
@@ -709,7 +709,7 @@
             if (alertsEnabled) {
                 if (state === 'preparing') {
                     // localStorage allows tabs to deduplicate audible transition.
-                    const soundKey = 'tish-smash:' + orderNumber + ':' + (data.event_at || state);
+                    const soundKey = 'tish-smash:' + url + ':' + (data.event_at || state);
                     if (localStorage.getItem(soundKey) !== 'played') {
                         localStorage.setItem(soundKey, 'played');
                         playTishSmash();
