@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CustomerOrdering\CustomerMenuAssetController;
 use App\Http\Controllers\CustomerOrdering\CustomerMenuController;
+use App\Http\Controllers\CustomerOrdering\TishPushSubscriptionController;
 use App\Http\Controllers\Sales\OrderController;
 use App\Http\Controllers\Customer\CartController;
 use App\Http\Controllers\Customer\CheckoutController;
@@ -21,6 +22,14 @@ Route::prefix('menu')->name('customer-menu.')->group(function (): void {
 
     Route::get('track/{token}/status', [CustomerMenuController::class, 'status'])
         ->where('token', '[A-Za-z0-9_-]{20,80}')->name('status');
+
+    // Public tokens scope subscriptions to the customer's own order.
+    Route::get('push/public-key', [TishPushSubscriptionController::class, 'key'])
+        ->middleware('throttle:30,1')->name('push.public-key');
+    Route::post('track/{token}/push-subscription', [TishPushSubscriptionController::class, 'save'])
+        ->where('token', '[A-Za-z0-9_-]{20,80}')->middleware('throttle:8,1')->name('push.save');
+    Route::delete('track/{token}/push-subscription', [TishPushSubscriptionController::class, 'delete'])
+        ->where('token', '[A-Za-z0-9_-]{20,80}')->middleware('throttle:8,1')->name('push.delete');
 
     Route::get('track/{token}/invoice', [CustomerMenuController::class, 'invoice'])
         ->where('token', '[A-Za-z0-9_-]{20,80}')->name('invoice');
