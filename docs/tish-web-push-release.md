@@ -14,7 +14,7 @@ This feature is intentionally isolated in a draft PR until the full Laravel/brow
 
 ## Deployment order
 1. Confirm current production Git commit; back up database and `.env`.
-2. Ensure normal Laravel `schedule:run` runs once per minute and works with cache locks. Set `APP_KEY` reliably (subscription keys are encrypted with it).
+2. Ensure normal Laravel `schedule:run` runs once per minute and works with cache locks. For near-real-time KDS events, run the Laravel default queue worker (`php artisan queue:work --queue=default`) under a process supervisor. When queue is sync or the worker is down, the schedule is the recovery fallback. Keep `APP_KEY` stable (subscription keys are encrypted with it).
 3. Pull only an already-tested merged commit, not the unreviewed draft branch.
 4. Run `php artisan migrate --force`, `php artisan optimize:clear`, `php artisan config:cache`.
 5. Check `GET /menu/push/public-key` responds `enabled:true` **only after VAPID configuration**.
@@ -26,6 +26,6 @@ This feature is intentionally isolated in a draft PR until the full Laravel/brow
 - Browser permission and `PushManager.subscribe` must be triggered by a user gesture, and HTTPS is required.
 - iOS requires a supporting iOS/browser environment; home-screen web app installation is necessary on iOS 16.4+ for classical Web Push.
 - The custom Web Audio burger sizzle can only play when the page is allowed to run audio. **A custom sound cannot be guaranteed for a background Web Push**; the OS controls the audible notification.
-- Current state dispatch uses the Laravel minute scheduler, so background push may be delayed by up to roughly one minute plus provider delivery. This is not an instant queue/event consumer.
+- KDS/order model events enqueue notifications after commit when an asynchronous queue is configured. The Laravel minute scheduler is an eventual-delivery fallback; it may only see the latest state if several KDS transitions happen before its next run. Background delivery also depends on push-provider and OS behavior.
 - An estimated deadline is approximate, not a kitchen promise. Older orders without one show minutes only.
 - Check actual PHP/browser test results before production rollout; do not infer success from code review alone.
