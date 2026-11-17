@@ -35,6 +35,12 @@ class TishPushSubscriptionController extends Controller
             ->where('public_token', $token)->firstOrFail();
         $current = $status->payload($order)['state'];
         $hash = hash('sha256', $data['endpoint']);
+        // Prevent a shared tracking token from creating unlimited endpoints.
+        $alreadySaved = TishPushSubscription::query()
+            ->where('order_id', $order->id)->where('endpoint_hash', $hash)->exists();
+        if (! $alreadySaved && TishPushSubscription::query()->where('order_id', $order->id)->count() >= 8) {
+            return response()->json(['message' => 'Too many devices subscribed to this order'], 429);
+        }
         // Bound to the actual token-scoped order, never a client-provided order_id.
         // One browser/device may subscribe to multiple independent orders.
         TishPushSubscription::updateOrCreate(
