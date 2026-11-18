@@ -52,6 +52,7 @@ class PosCashierShiftSimulationTest extends TestCase
             $product = Product::query()->create([
                 'category_id' => $category->id,
                 'name' => $name, 'sku' => $name . '-' . Str::random(5),
+                'barcode' => 'SIM-' . $name . '-' . Str::random(8),
                 'base_selling_price' => 10 + $i * 5,
                 'is_active' => true,
             ]);
