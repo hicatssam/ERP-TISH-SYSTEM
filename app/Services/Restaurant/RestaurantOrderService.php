@@ -10,6 +10,8 @@ use App\Models\User;
 use App\Services\ActivityLogger;
 use App\Services\Orders\OrderService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Arr;
 use Illuminate\Validation\ValidationException;
 
 class RestaurantOrderService
@@ -28,12 +30,35 @@ class RestaurantOrderService
 
         $openedSession = null;
         $locationId = (int) $data['location_id'];
+        $token = (string) ($data['pos_request_token'] ?? '');
+        $payloadHash = hash('sha256', json_encode(
+            Arr::except($data, ['pos_request_token', 'payment_proof']),
+            JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE
+        ));
+        $replay = function () use ($token, $payloadHash, $locationId, $user): ?Order {
+            if ($token === '') return null;
+            $existing = Order::query()->where('public_request_token', $token)->first();
+            if (! $existing) return null;
+            if ($existing->order_source !== 'restaurant_pos'
+                || (int) $existing->location_id !== $locationId
+                || (int) $existing->created_by !== (int) $user->id
+                || data_get($existing->public_order_meta, 'pos_payload_hash') !== $payloadHash) {
+                throw ValidationException::withMessages([
+                    'pos_request_token' => 'رمز عملية الكاشير مستخدم لطلب مختلف. افتح طلبًا جديدًا.',
+                ]);
+            }
+            return $existing->fresh(['items', 'invoice', 'restaurantTable.area', 'restaurantTableSession', 'waiter.employee']);
+        };
+        if ($existing = $replay()) return $existing;
 
+        try {
         $order = DB::transaction(function () use (
             $data,
             $user,
             $serviceType,
             $locationId,
+            $token,
+            $payloadHash,
             &$openedSession
         ): Order {
             $payload = $data;
@@ -41,6 +66,11 @@ class RestaurantOrderService
             $payload['location_id'] = $locationId;
             $payload['restaurant_service_type'] = $serviceType->value;
             $payload['waiter_id'] = $user->id;
+            $payload['order_source'] = 'restaurant_pos';
+            if ($token !== '') {
+                $payload['public_request_token'] = $token;
+                $payload['public_order_meta'] = ['pos_payload_hash' => $payloadHash];
+            }
 
             $payload['guest_count'] =
                 $serviceType === RestaurantServiceType::DineIn
@@ -110,6 +140,11 @@ class RestaurantOrderService
 
             return $order;
         });
+        } catch (QueryException $error) {
+            // Unique request-token index wins any concurrent duplicate race.
+            if ($token === '' || ! ($existing = $replay())) throw $error;
+            return $existing;
+        }
 
         if ($openedSession) {
             $this->tables->notifyOpened(
