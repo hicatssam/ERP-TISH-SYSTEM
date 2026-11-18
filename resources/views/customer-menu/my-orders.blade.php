@@ -35,12 +35,8 @@ main{padding:22px 0}.titleRow{margin-bottom:18px}.titleRow h1{margin:0 0 4px;fon
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-orders-paper-touchup.css') }}?v=3">
 </head>
 <body class="cm-my-orders tish-paper">
-<header class="topbar"><div class="wrap topin">
-<a class="brand" href="{{ route('customer-menu.show',$location->code) }}">
-<img src="{{ asset('assets/tish-paper/brand/logo-disc.webp') }}" alt="{{ $brandName }}">
-<span><b>{{ $brandName }}</b><small>{{ $location->name }}</small></span>
-</a>
-<a class="back tish-paper-page-arrow" href="{{ route('customer-menu.show',$location->code) }}" aria-label="العودة"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i></a>
+<header class="topbar cm-unified-header-outer"><div class="wrap">
+@include('customer-menu.partials.unified-header', ['backUrl' => route('customer-menu.show',$location->code)])
 </div></header>
 <main class="wrap">
 <div class="titleRow"><h1>طلباتي<span class="tish-orders-spark" aria-hidden="true"></span></h1><p>الطلبات التي أنشأتها من هذا الجهاز.</p></div>
