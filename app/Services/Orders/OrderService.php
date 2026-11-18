@@ -526,14 +526,22 @@ public function confirmOrder(Order $order, User $user): Order
             $newQtyMap[(int) $row['id']] = (float) $row['quantity'];
         }
 
-        $this->kitchenTicketService->assertOrderItemChangesAllowed(
-            $order,
-            $data['items'] ?? []
-        );
-
         return DB::transaction(function () use ($order, $data, $user, $isConfirmed, $newQtyMap, $newItems) {
             $order = Order::query()->lockForUpdate()->findOrFail($order->id);
             $order->load(['items.product', 'items.modifiers']);
+
+            // Check *inside* the order lock: concurrent KDS dispatch also locks
+            // this order, so a cashier can never validate an outdated kitchen state.
+            $currentConfirmed = $order->statusValue() === 'confirmed';
+            if ($currentConfirmed !== $isConfirmed || ! in_array($order->statusValue(), ['draft', 'confirmed'], true)) {
+                throw ValidationException::withMessages([
+                    'order' => 'حالة الطلب تغيرت أثناء التعديل. حدّث الصفحة وأعد المحاولة.',
+                ]);
+            }
+            $this->kitchenTicketService->assertOrderItemChangesAllowed(
+                $order,
+                $data['items'] ?? []
+            );
             // ── Inventory sync for confirmed orders ───────────────────────────
             // Runs before OrderItem quantities change, using the frozen stock plan.
             if ($isConfirmed && ! empty($newQtyMap)) {
