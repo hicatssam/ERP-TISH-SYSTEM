@@ -1005,6 +1005,58 @@ class PosCashierShiftSimulationTest extends TestCase
     }
 
     #[Test]
+    public function pos_50_existing_unpaid_order_can_collect_cash_and_card_separately_without_overpayment(): void
+    {
+        // This proves split settlement through PaymentService, not that the
+        // current single-method POS checkout UI supports mixed tender.
+        $f = $this->fixture();
+        $this->kitchenFixture($f);
+        $f['method']->update(['type' => 'cash']);
+        $card = PaymentMethod::query()->create([
+            'name' => 'Simulation card', 'name_ar' => 'بطاقة اختبار',
+            'code' => 'sim-card-' . Str::random(8),
+            'type' => 'card', 'is_active' => true,
+            'requires_verification' => false,
+            'requires_reference' => false,
+        ]);
+
+        $payload = $this->orderPayload($f, [
+            ['product_id' => $f['products'][0]->id, 'quantity' => 1],
+        ]);
+        $payload['pos_action'] = 'kot_print';
+        $this->actingAs($f['cashier'])->postJson(
+            route('restaurant.pos.orders.store'), $payload
+        )->assertCreated();
+        $order = Order::query()->sole();
+        $service = app(\App\Services\Payments\PaymentService::class);
+
+        $cash = $service->recordPayment([
+            'order_type' => 'order', 'order_id' => $order->id,
+            'payment_method_id' => $f['method']->id, 'amount' => 4,
+        ], $f['cashier']);
+        $cardPayment = $service->recordPayment([
+            'order_type' => 'order', 'order_id' => $order->id,
+            'payment_method_id' => $card->id, 'amount' => 6,
+        ], $f['cashier']);
+
+        $this->assertNotSame($cash->id, $cardPayment->id);
+        $this->assertSame(2, $order->payments()->count());
+        $this->assertEquals(10, $order->payments()->sum('amount'));
+        $this->assertEquals(10, $order->fresh()->invoice?->paid_amount);
+
+        try {
+            $service->recordPayment([
+                'order_type' => 'order', 'order_id' => $order->id,
+                'payment_method_id' => $card->id, 'amount' => 1,
+            ], $f['cashier']);
+            $this->fail('Cannot collect money beyond the already settled order.');
+        } catch (\Illuminate\Validation\ValidationException $exception) {
+            $this->assertArrayHasKey('amount', $exception->errors());
+        }
+        $this->assertDatabaseCount('payments', 2);
+    }
+
+    #[Test]
     public function pos_09_unauthorized_cashier_cannot_create_paid_order(): void
     {
         $f = $this->fixture();
