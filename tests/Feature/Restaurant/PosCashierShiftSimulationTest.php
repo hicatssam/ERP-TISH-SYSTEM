@@ -402,6 +402,137 @@ class PosCashierShiftSimulationTest extends TestCase
     }
 
     #[Test]
+    public function pos_21_same_token_from_second_cashier_cannot_read_original_order(): void
+    {
+        $f = $this->fixture();
+        $payload = $this->orderPayload($f, [
+            ['product_id' => $f['products'][0]->id, 'quantity' => 1],
+        ]);
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.store'), $payload)->assertCreated();
+
+        $employee = Employee::query()->create([
+            'employee_number' => 'SIM-CASHIER-B', 'full_name' => 'Other cashier',
+        ]);
+        $employee->locations()->attach($f['branch']->id, ['is_primary' => true]);
+        $second = User::factory()->create(['employee_id' => $employee->id]);
+        foreach (['restaurant.view', 'restaurant_pos.use', 'restaurant_menu.view', 'orders.create'] as $ability) {
+            $second->givePermissionTo(Permission::findOrCreate($ability, 'web'));
+        }
+        $this->actingAs($second)->postJson(route('restaurant.pos.orders.store'), $payload)
+            ->assertUnprocessable()->assertJsonValidationErrors('pos_request_token');
+        $this->assertDatabaseCount('orders', 1);
+    }
+
+    #[Test]
+    public function pos_22_cashier_cannot_submit_order_to_another_branch(): void
+    {
+        $f = $this->fixture();
+        $other = Location::query()->create([
+            'name' => 'Other test branch', 'code' => 'SIM-OTHER',
+            'type' => 'branch', 'is_active' => true,
+        ]);
+        $payload = $this->orderPayload($f, [
+            ['product_id' => $f['products'][0]->id, 'quantity' => 1],
+        ]);
+        $payload['location_id'] = $other->id;
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.store'), $payload)
+            ->assertForbidden();
+        $this->assertDatabaseCount('orders', 0);
+    }
+
+    #[Test]
+    public function pos_23_huge_quantity_cannot_sell_beyond_available_stock(): void
+    {
+        $f = $this->fixture(5);
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.store'),
+            $this->orderPayload($f, [
+                ['product_id' => $f['products'][0]->id, 'quantity' => 9999999],
+            ])
+        )->assertUnprocessable();
+        $this->assertDatabaseCount('orders', 0);
+        $this->assertDatabaseCount('payments', 0);
+    }
+
+    #[Test]
+    public function pos_24_nonexistent_product_cannot_be_purchased(): void
+    {
+        $f = $this->fixture();
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.store'),
+            $this->orderPayload($f, [['product_id' => 999999, 'quantity' => 1]])
+        )->assertUnprocessable()->assertJsonValidationErrors('items.0.product_id');
+        $this->assertDatabaseCount('orders', 0);
+    }
+
+    #[Test]
+    public function pos_25_disabled_sales_channel_rejects_checkout(): void
+    {
+        $f = $this->fixture();
+        $f['channel']->update(['is_active' => false]);
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.store'),
+            $this->orderPayload($f, [['product_id' => $f['products'][0]->id, 'quantity' => 1]])
+        )->assertUnprocessable()->assertJsonValidationErrors('sales_channel_id');
+        $this->assertDatabaseCount('orders', 0);
+    }
+
+    #[Test]
+    public function pos_26_inactive_wallet_rejects_checkout(): void
+    {
+        $f = $this->fixture();
+        $f['method']->update(['is_active' => false]);
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.store'),
+            $this->orderPayload($f, [['product_id' => $f['products'][0]->id, 'quantity' => 1]])
+        )->assertUnprocessable()->assertJsonValidationErrors('payment_method_id');
+        $this->assertDatabaseCount('orders', 0);
+    }
+
+    #[Test]
+    public function pos_27_negative_paid_amount_is_rejected_by_validation(): void
+    {
+        $f = $this->fixture();
+        $payload = $this->orderPayload($f, [
+            ['product_id' => $f['products'][0]->id, 'quantity' => 1],
+        ]);
+        $payload['paid_amount'] = -100;
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.store'), $payload)
+            ->assertUnprocessable()->assertJsonValidationErrors('paid_amount');
+        $this->assertDatabaseCount('payments', 0);
+    }
+
+    #[Test]
+    public function pos_28_pending_verification_does_not_consume_inventory_or_issue_invoice(): void
+    {
+        $f = $this->fixture(20);
+        $f['method']->update(['requires_verification' => true]);
+        $payload = $this->orderPayload($f, [
+            ['product_id' => $f['products'][0]->id, 'quantity' => 1],
+        ]);
+        $payload['payment_arrangement'] = 'pending_verification';
+        $payload['payment_proof'] = \Illuminate\Http\UploadedFile::fake()->image('receipt.png');
+        $this->actingAs($f['cashier'])->post(route('restaurant.pos.orders.store'), $payload, [
+            'Accept' => 'application/json',
+        ])->assertCreated()->assertJsonPath('status', 'draft');
+
+        $order = Order::query()->sole();
+        $this->assertNull($order->invoice);
+        $this->assertEquals(20, Inventory::query()->where('product_id', $f['products'][0]->id)->sole()->quantity);
+        $this->assertSame('pending_verification', $order->payments()->sole()->statusValue());
+    }
+
+    #[Test]
+    public function pos_29_on_account_without_named_customer_is_rejected(): void
+    {
+        $f = $this->fixture();
+        $payload = $this->orderPayload($f, [
+            ['product_id' => $f['products'][0]->id, 'quantity' => 1],
+        ]);
+        $payload['payment_arrangement'] = 'on_account';
+        unset($payload['payment_method_id']);
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.store'), $payload)
+            ->assertUnprocessable()->assertJsonValidationErrors('customer_id');
+        $this->assertDatabaseCount('orders', 0);
+    }
+
+    #[Test]
     public function pos_09_unauthorized_cashier_cannot_create_paid_order(): void
     {
         $f = $this->fixture();
