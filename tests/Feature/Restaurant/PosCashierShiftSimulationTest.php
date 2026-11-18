@@ -14,6 +14,7 @@ use App\Models\Module;
 use App\Models\KitchenStation;
 use Illuminate\Support\Facades\Cache;
 use App\Models\PaymentMethod;
+use App\Models\CashSession;
 use App\Models\Product;
 use App\Models\RestaurantMenuItem;
 use App\Models\SalesChannel;
@@ -723,6 +724,100 @@ class PosCashierShiftSimulationTest extends TestCase
         $this->assertSame('cancelled', $order->fresh()->invoice->statusValue());
         $this->assertDatabaseCount('refunds', 1);
         $this->assertDatabaseCount('payments', 1);
+    }
+
+    #[Test]
+    public function pos_37_cashier_shift_opens_with_float_and_rejects_duplicate_open(): void
+    {
+        $f = $this->fixture();
+        $f['cashier']->givePermissionTo(Permission::findOrCreate('cash_sessions.manage', 'web'));
+        $this->actingAs($f['cashier'])->post(route('cash-sessions.open'), [
+            'opening_balance' => 100,
+        ])->assertRedirect();
+        $session = CashSession::query()->sole();
+        $this->assertSame('open', $session->status->value);
+        $this->assertEquals(100, $session->opening_balance);
+        $this->assertEquals(100, $session->expected_cash);
+
+        $this->post(route('cash-sessions.open'), ['opening_balance' => 50])
+            ->assertSessionHasErrors('cash_session');
+        $this->assertDatabaseCount('cash_sessions', 1);
+    }
+
+    #[Test]
+    public function pos_38_cashier_shift_rejects_invalid_opening_float(): void
+    {
+        $f = $this->fixture();
+        $f['cashier']->givePermissionTo(Permission::findOrCreate('cash_sessions.manage', 'web'));
+        $this->actingAs($f['cashier'])->post(route('cash-sessions.open'), [
+            'opening_balance' => -10,
+        ])->assertSessionHasErrors('opening_balance');
+        $this->assertDatabaseCount('cash_sessions', 0);
+    }
+
+    #[Test]
+    public function pos_39_shift_close_records_cash_shortage_and_cannot_close_twice(): void
+    {
+        $f = $this->fixture();
+        $f['cashier']->givePermissionTo(Permission::findOrCreate('cash_sessions.manage', 'web'));
+        $this->actingAs($f['cashier'])->post(route('cash-sessions.open'), [
+            'opening_balance' => 100,
+        ])->assertRedirect();
+        $session = CashSession::query()->sole();
+        $this->post(route('cash-sessions.close', $session), [
+            'actual_cash' => 95, 'closing_note' => 'Cash shortage confirmed in test',
+        ])->assertRedirect();
+
+        $this->assertSame('closed', $session->fresh()->status->value);
+        $this->assertEquals(100, $session->fresh()->expected_cash);
+        $this->assertEquals(-5, $session->fresh()->variance);
+        $this->post(route('cash-sessions.close', $session), [
+            'actual_cash' => 95,
+        ])->assertSessionHasErrors('cash_session');
+        $this->assertDatabaseCount('cash_sessions', 1);
+    }
+
+    #[Test]
+    public function pos_40_wallet_payment_does_not_inflate_physical_cash_shift(): void
+    {
+        $f = $this->fixture();
+        $f['cashier']->givePermissionTo(Permission::findOrCreate('cash_sessions.manage', 'web'));
+        $this->actingAs($f['cashier'])->post(route('cash-sessions.open'), [
+            'opening_balance' => 80,
+        ])->assertRedirect();
+        $this->postJson(route('restaurant.pos.orders.store'),
+            $this->orderPayload($f, [['product_id' => $f['products'][0]->id, 'quantity' => 1]])
+        )->assertCreated();
+        $session = CashSession::query()->sole();
+
+        $this->post(route('cash-sessions.close', $session), [
+            'actual_cash' => 80,
+        ])->assertRedirect();
+        $this->assertEquals(0, $session->fresh()->cash_received);
+        $this->assertEquals(80, $session->fresh()->expected_cash);
+        $this->assertEquals(0, $session->fresh()->variance);
+    }
+
+    #[Test]
+    public function pos_41_real_cash_sale_increases_expected_drawer_balance(): void
+    {
+        $f = $this->fixture();
+        $f['method']->update(['type' => 'cash']);
+        $f['cashier']->givePermissionTo(Permission::findOrCreate('cash_sessions.manage', 'web'));
+        $this->actingAs($f['cashier'])->post(route('cash-sessions.open'), [
+            'opening_balance' => 50,
+        ])->assertRedirect();
+        $this->postJson(route('restaurant.pos.orders.store'),
+            $this->orderPayload($f, [['product_id' => $f['products'][0]->id, 'quantity' => 2]])
+        )->assertCreated();
+        $session = CashSession::query()->sole();
+
+        $this->post(route('cash-sessions.close', $session), [
+            'actual_cash' => 70,
+        ])->assertRedirect();
+        $this->assertEquals(20, $session->fresh()->cash_received);
+        $this->assertEquals(70, $session->fresh()->expected_cash);
+        $this->assertEquals(0, $session->fresh()->variance);
     }
 
     #[Test]
