@@ -15,10 +15,10 @@ Audit branch: `audit/pos-real-world-scenarios-20261118`
 | A01 | One burger | Automated new POS-01 | Single paid line, stock, invoice |
 | A02 | Three distinct products | Automated new POS-02 | Three lines, one payment |
 | A03 | Ten burgers | Automated new POS-03 | Exactly ten stock deductions |
-| A04 | Burger with paid modifiers | Existing regression + code only | `RestaurantOrderCustomizationService::resolve()`, `RestaurantPosCatalogTest` |
+| A04 | Burger with paid modifiers | Automated new POS-48 | Modifier required, server snapshot, payment and invoice totals |
 | A05 | Remove ingredient via modifier | Code only | Modifier selection and kitchen notes; needs physical-kitchen acceptance |
 | A06 | Out-of-stock product | Automated new POS-06/POS-07/POS-23 | Rejected with no partial writes |
-| A07 | Variants / sizes | Existing regression | `RestaurantPosCatalogTest` |
+| A07 | Variants / sizes | Automated new POS-46/POS-47 | Unsized order rejected; selected variant price from database |
 | A08 | Change mind before sending | Code only | Cart plus/minus/remove; browser test outstanding |
 | A09 | Repeat previous order | Not tested | Recent-orders drawer is not an explicit clone-order operation |
 
@@ -27,7 +27,7 @@ Audit branch: `audit/pos-real-world-scenarios-20261118`
 |---|---|---|---|
 | B01 | Add item to unconfirmed draft | Existing regression | `OrderUpdateInventoryGuardTest` |
 | B02 | Remove item from unsent cart | Code only | `rb-cart-remove` and cart listener |
-| B03 | Remove after kitchen handoff | Code only | `KitchenTicketService::assertOrderItemChangesAllowed` |
+| B03 | Modify item/notes after kitchen handoff | Automated new POS-31/POS-32 for quantity/notes | Blocked after dispatch; deleting individual lines still not tested |
 | B04 | Increase/decrease quantity | Automated new POS-10 + existing regression | Discount and invoice reconciliation |
 | B05 | Change modifiers after submit | Not tested | Must verify KDS + consumption snapshots |
 | B06 | Cancel unpaid confirmed order | Existing regression | `TishRecipeStockFlowTest` |
@@ -40,7 +40,7 @@ Audit branch: `audit/pos-real-world-scenarios-20261118`
 ## Payment and accounting
 | ID | Scenario | Coverage | Evidence |
 |---|---|---|---|
-| C01 | Full cash payment | Existing regression | `DailyCashReconciliationTest`; actual POS end-to-end cash test pending |
+| C01 | Full cash payment | Automated new POS-41 | POS cash payment contributes correctly to cashier session closing balance |
 | C02 | Card / wallet | Automated new POS-01/POS-08/POS-18 | Real card gateway settlement not tested |
 | C03 | Mixed cash + card in one checkout | Not confirmed | POS form takes one payment method |
 | C04 | Cash change for overpayment | Not confirmed | Server caps recorded payment at order total |
@@ -49,7 +49,7 @@ Audit branch: `audit/pos-real-world-scenarios-20261118`
 | C07 | Network fails after commit | Automated new POS-04/POS-05 | Safe exact retry; actual network fault injection outstanding |
 | C08 | Double click within browser | Frontend structural regression + server POS-04 | Actual touch/Playwright test pending |
 | C09 | Void / correct payment | Existing regression | `PaymentService::correct` |
-| C10 | Partial/full refund | Implementation + cash finance regression | `PaymentController::refund`; direct POS refund test pending |
+| C10 | Partial/full refund | Automated new POS-33/POS-34/POS-35/POS-36 | Unauthorized, partial, excessive, full refund then order cancellation |
 | C11 | Fixed discount | Automated new POS-16/POS-17 | Reject over-total; correct invoice/payments |
 | C12 | Percentage discount | Automated new POS-15/POS-10 | Reject >100%; preserve channel discount |
 | C13 | Coupon code | Not confirmed | No verified POS coupon code flow |
@@ -66,21 +66,21 @@ Audit branch: `audit/pos-real-world-scenarios-20261118`
 | D03 | Order changed while kitchen updates | Not tested | P1 race audit |
 | D04 | Rush checkout | Code only | F2 search, F8 checkout, cached product catalog |
 | D05 | Delayed order complaint | Code only | KDS state + public tracking |
-| D06 | Two cashiers at once | Automated new POS-21 for token isolation | Actual parallel DB transactions untested |
+| D06 | Two cashiers at once | POS-21 and MySQL POS-RACE-01/POS-RACE-02 | Two actual PHP processes with independent MySQL connections; no browser load test |
 | D07 | Cashier closes tab before saving | Code only | Local draft exists; browser crash restore untested |
 | D08 | Network outage / server timeout | Automated new POS-04 retry | Actual fault injection untested |
 | D09 | Printer offline after payment | Code only | UI shows print warning; browser/hardware test needed |
-| D10 | Stock runs out between cart and submit | Automated new POS-06/POS-23 | Rechecks stock in transaction |
+| D10 | Stock runs out between cart and submit | POS-06/POS-23 + MySQL POS-RACE-02 | Two independent orders race for last inventory unit; one sale only |
 | D11 | Two distinct legitimate orders | Automated new POS-20 | Correct independent payments |
-| D12 | Duplicate browser POST | Automated new POS-04/POS-05 | DB token index + replay hash |
+| D12 | Duplicate browser POST | POS-04/POS-05 + MySQL POS-RACE-01 | Concurrent PHP processes use same request token; one order/payment/invoice/stock movement |
 
 ## Order channels and customer data
 | ID | Scenario | Coverage | Evidence |
 |---|---|---|---|
-| E01 | Dine-in / table | Existing regression | `DiningGroupAccountTest` and POS table routes |
+| E01 | Dine-in / table | Automated new POS-42/POS-43/POS-44 | Open correct table session, require table, reject foreign branch table |
 | E02 | Takeaway | Automated new POS-01 | End-to-end |
-| E03 | Delivery | Code only | `RestaurantServiceType::Delivery` |
-| E04 | Pickup / outdoor | Code only | `RestaurantServiceType::Outdoor` |
+| E03 | Delivery | Automated new POS-45 | Delivery and outdoor orders remain distinct |
+| E04 | Pickup / outdoor | Automated new POS-45 | Separate outdoor request persisted |
 | E05 | Phone / web | Code only | `RestaurantServiceType` |
 | E06 | Public QR orders | Existing regression | `CustomerMenuOrderLifecycleTest` + POS QR drawer |
 | E07 | Wrong branch | Automated new POS-22 | Reject cross-branch |
@@ -91,21 +91,27 @@ Audit branch: `audit/pos-real-world-scenarios-20261118`
 ## Drawer, cashier shifts and end-of-day
 | ID | Scenario | Coverage | Evidence |
 |---|---|---|---|
-| F01 | Open cashier cash drawer shift | Not confirmed | `WorkShift` is employee scheduling, not necessarily drawer shift |
-| F02 | Opening float | Existing cash day regression | `DailyCashReconciliationTest` |
-| F03 | Daily sales reconcile | Existing cash day regression | `DailyCashReconciliationTest` |
+| F01 | Open cashier cash drawer shift | Automated new POS-37 | `CashSession` opened with float; second open refused |
+| F02 | Opening float | Automated new POS-37/POS-38 | Correct float; rejects negative float |
+| F03 | Daily sales reconcile | Automated new POS-40/POS-41 + existing cash-day tests | Cash vs wallet reconciled separately |
 | F04 | Refund and manual cash movement | Existing cash day regression | `DailyCashReconciliationTest` |
 | F05 | Switch cashier with open cart | Not tested | Requires multi-user/browser test |
 | F06 | Logout with open order | Not tested | Browser session expiry test |
 | F07 | Close cash day with outstanding orders | Not tested | Cash day vs open order policy |
-| F08 | Shortage / overage | Existing cash day regression | `DailyCashReconciliationTest` |
-| F09 | Closing report | Existing cash day regression | `DailyCashReconciliationTest` |
-| F10 | Edit closed cash day | Existing cash day regression | `DailyCashReconciliationTest` |
+| F08 | Shortage / overage | Automated new POS-39 (shortage) + existing cash-day tests | Cashier shift variance recorded; overage still needs specific test |
+| F09 | Closing report | Automated new POS-39/POS-40/POS-41 | Closing totals computed from cashier shift; printed report UX untested |
+| F10 | Edit closed cashier session | Automated new POS-39 + existing cash-day tests | Second close denied, existing cash day closed-guard tested |
+
+## Latest execution evidence (2026-11-18)
+- **48/48 new Laravel POS feature scenarios PASS** in the latest full-suite log; one separate WebAuthn registration test failed intermittently in run #44362574445.
+- **MySQL POS-RACE-01 / POS-RACE-02 PASS** in the GitHub Actions step `MySQL — two-process POS duplicate and last-stock races` on run #44364827855.
+- Regression script: `scripts/qa/pos-concurrency.php` requires MySQL, `APP_ENV=testing`, and a database name ending in `_test`. It uses two separate PHP workers and verifies payment, invoice, order, and inventory counts.
+- Tests do **not** yet cover actual physical card settlement, hardware printing, touchscreen usability, genuine browser interruptions, or all shift handover edge cases.
 
 ## Highest priority issues
-1. **P0:** Duplicate creation after HTTP timeout. Code mitigation: `pos_request_token` validated UUID, `orders.public_request_token` unique index, actor+branch+payload-hash guard, repeat returns original. **Actual parallel MySQL race test still required**; older custom clients without token are not yet fully covered.
+1. **P0:** Duplicate creation after HTTP timeout. Code mitigation: `pos_request_token` validated UUID, `orders.public_request_token` unique index, actor+branch+payload-hash guard, repeat returns original. **MySQL POS-RACE-01 PASS with two actual PHP processes**; clients not sending tokens and browser-level fault injection are still outstanding.
 2. **P1:** A confirmed order quantity edit could discard manual/channel discount by resetting `total_amount` to `subtotal`. Repricing via `OrderSalesChannelService::apply()` is in this PR with POS-10 regression.
-3. **P1:** Kitchen checks before acquiring order row lock may admit race with KDS transitions. Needs database-level concurrency test and consistent lock order; not modified yet to avoid introducing deadlocks.
+3. **P1:** Kitchen edits previously validated before the order row lock. The check now happens inside the order lock; POS-31/POS-32 validate queued-ticket behavior. True simultaneous KDS state transitions versus order changes remain untested.
 4. **P1:** Mixed tender, manager discount approval, and one-line post-KDS adjustment need explicit business policy/implementation checks.
 5. **P2:** Full tablet/mobile/touchscreen measurement (tap counts, time-to-payment, modal visibility) remains a browser/device test.
 
