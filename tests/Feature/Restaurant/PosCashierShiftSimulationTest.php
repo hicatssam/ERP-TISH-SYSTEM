@@ -15,6 +15,11 @@ use App\Models\KitchenStation;
 use Illuminate\Support\Facades\Cache;
 use App\Models\PaymentMethod;
 use App\Models\CashSession;
+use App\Models\RestaurantTable;
+use App\Models\ProductVariant;
+use App\Models\ModifierGroup;
+use App\Models\Modifier;
+use App\Models\ProductModifierGroup;
 use App\Models\Product;
 use App\Models\RestaurantMenuItem;
 use App\Models\SalesChannel;
@@ -818,6 +823,153 @@ class PosCashierShiftSimulationTest extends TestCase
         $this->assertEquals(20, $session->fresh()->cash_received);
         $this->assertEquals(70, $session->fresh()->expected_cash);
         $this->assertEquals(0, $session->fresh()->variance);
+    }
+
+    #[Test]
+    public function pos_42_dine_in_sale_opens_table_session_with_guest_count(): void
+    {
+        $f = $this->fixture();
+        $table = RestaurantTable::query()->create([
+            'location_id' => $f['branch']->id, 'code' => 'T-05',
+            'name' => 'Table 05', 'capacity' => 4, 'is_active' => true,
+        ]);
+        $payload = $this->orderPayload($f, [
+            ['product_id' => $f['products'][0]->id, 'quantity' => 1],
+        ]);
+        $payload['service_type'] = 'dine_in';
+        $payload['restaurant_table_id'] = $table->id;
+        $payload['guest_count'] = 2;
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.store'), $payload)
+            ->assertCreated();
+        $order = Order::query()->sole();
+        $this->assertSame($table->id, $order->restaurant_table_id);
+        $this->assertEquals(2, $order->guest_count);
+        $this->assertNotNull($order->restaurant_table_session_id);
+        $this->assertTrue($table->fresh()->isOccupied());
+    }
+
+    #[Test]
+    public function pos_43_dine_in_without_table_is_rejected(): void
+    {
+        $f = $this->fixture();
+        $payload = $this->orderPayload($f, [
+            ['product_id' => $f['products'][0]->id, 'quantity' => 1],
+        ]);
+        $payload['service_type'] = 'dine_in';
+        $payload['guest_count'] = 2;
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.store'), $payload)
+            ->assertUnprocessable()->assertJsonValidationErrors('restaurant_table_id');
+        $this->assertDatabaseCount('orders', 0);
+    }
+
+    #[Test]
+    public function pos_44_table_from_other_branch_is_rejected_without_payment(): void
+    {
+        $f = $this->fixture();
+        $other = Location::query()->create([
+            'name' => 'Other restaurant', 'code' => 'SIM-TABLE-OTHER',
+            'type' => 'branch', 'is_active' => true,
+        ]);
+        $table = RestaurantTable::query()->create([
+            'location_id' => $other->id, 'code' => 'T-88',
+            'name' => 'Foreign table', 'capacity' => 4, 'is_active' => true,
+        ]);
+        $payload = $this->orderPayload($f, [
+            ['product_id' => $f['products'][0]->id, 'quantity' => 1],
+        ]);
+        $payload['service_type'] = 'dine_in';
+        $payload['restaurant_table_id'] = $table->id;
+        $payload['guest_count'] = 2;
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.store'), $payload)
+            ->assertUnprocessable()->assertJsonValidationErrors('restaurant_table_id');
+        $this->assertDatabaseCount('orders', 0);
+        $this->assertDatabaseCount('payments', 0);
+    }
+
+    #[Test]
+    public function pos_45_delivery_and_outdoor_orders_remain_distinct(): void
+    {
+        $f = $this->fixture();
+        foreach (['delivery', 'outdoor'] as $type) {
+            $payload = $this->orderPayload($f, [
+                ['product_id' => $f['products'][0]->id, 'quantity' => 1],
+            ]);
+            $payload['service_type'] = $type;
+            $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.store'), $payload)
+                ->assertCreated();
+        }
+        $this->assertDatabaseCount('orders', 2);
+        $this->assertSame(['delivery', 'outdoor'], Order::query()->orderBy('id')->get()
+            ->map(fn ($order) => $order->restaurant_service_type->value)->all());
+    }
+
+    #[Test]
+    public function pos_46_product_requiring_variant_rejects_unsized_order(): void
+    {
+        $f = $this->fixture();
+        $p = $f['products'][0];
+        $p->update(['product_type' => 'variant']);
+        ProductVariant::query()->create([
+            'product_id' => $p->id, 'name' => 'Large', 'name_ar' => 'كبير',
+            'sku' => 'SIM-VAR-L', 'selling_price' => 18, 'is_active' => true,
+        ]);
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.store'),
+            $this->orderPayload($f, [['product_id' => $p->id, 'quantity' => 1]])
+        )->assertUnprocessable()->assertJsonValidationErrors('items');
+        $this->assertDatabaseCount('orders', 0);
+    }
+
+    #[Test]
+    public function pos_47_variant_price_comes_from_database_not_modified_checkout(): void
+    {
+        $f = $this->fixture();
+        $p = $f['products'][0];
+        $p->update(['product_type' => 'variant']);
+        $variant = ProductVariant::query()->create([
+            'product_id' => $p->id, 'name' => 'Large', 'name_ar' => 'كبير',
+            'sku' => 'SIM-VAR-L', 'selling_price' => 18, 'is_active' => true,
+        ]);
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.store'),
+            $this->orderPayload($f, [[
+                'product_id' => $p->id, 'product_variant_id' => $variant->id,
+                'quantity' => 1, 'unit_price' => 0.01,
+            ]])
+        )->assertCreated();
+        $this->assertEquals(18, Order::query()->sole()->total_amount);
+        $this->assertSame($variant->id, Order::query()->sole()->items()->sole()->product_variant_id);
+    }
+
+    #[Test]
+    public function pos_48_required_modifier_is_enforced_and_price_is_snapshotted(): void
+    {
+        $f = $this->fixture();
+        $p = $f['products'][0];
+        $group = ModifierGroup::query()->create([
+            'code' => 'sim-sauce', 'name' => 'Sauce', 'name_ar' => 'صلصة',
+            'selection_type' => 'single', 'is_required' => true, 'is_active' => true,
+        ]);
+        $modifier = Modifier::query()->create([
+            'modifier_group_id' => $group->id, 'code' => 'sim-cheese',
+            'name' => 'Cheese', 'name_ar' => 'جبنة', 'price_delta' => 2,
+            'is_active' => true,
+        ]);
+        ProductModifierGroup::query()->create([
+            'product_id' => $p->id, 'modifier_group_id' => $group->id,
+            'is_active' => true,
+        ]);
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.store'),
+            $this->orderPayload($f, [['product_id' => $p->id, 'quantity' => 1]])
+        )->assertUnprocessable();
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.store'),
+            $this->orderPayload($f, [[
+                'product_id' => $p->id, 'quantity' => 1,
+                'modifiers' => [['modifier_id' => $modifier->id, 'quantity' => 1]],
+            ]])
+        )->assertCreated();
+        $order = Order::query()->sole();
+        $this->assertEquals(12, $order->total_amount);
+        $this->assertEquals(12, $order->invoice?->total_amount);
+        $this->assertSame(1, $order->items()->sole()->modifiers()->count());
     }
 
     #[Test]
