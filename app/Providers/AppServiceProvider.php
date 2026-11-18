@@ -111,6 +111,27 @@ class AppServiceProvider extends ServiceProvider
             }
         }
 
+        // Dispatch browser push after the database commits real order/KDS changes.
+        // Do not block HTTP requests with network delivery on a sync queue;
+        // the minute scheduler remains the fallback for that configuration.
+        $queueTishPush = static function (int $orderId): void {
+            if (config('queue.default') === 'sync') return;
+            \App\Jobs\SendTishOrderPush::dispatch($orderId)->afterCommit();
+        };
+        \App\Models\Order::saved(static function (\App\Models\Order $order) use ($queueTishPush): void {
+            if ($order->order_source === 'customer_menu' && $order->wasChanged('status')) {
+                $queueTishPush((int) $order->id);
+            }
+        });
+        \App\Models\KitchenTicket::saved(static function (\App\Models\KitchenTicket $ticket) use ($queueTishPush): void {
+            if ($ticket->wasRecentlyCreated || $ticket->wasChanged('status')) {
+                $order = $ticket->order()->first();
+                if ($order && $order->order_source === 'customer_menu') {
+                    $queueTishPush((int) $order->id);
+                }
+            }
+        });
+
         Gate::policy(ReportSchedule::class, ReportSchedulePolicy::class);
         Paginator::defaultView('pagination.custom');
 

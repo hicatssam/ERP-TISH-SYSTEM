@@ -1,6 +1,11 @@
 <?php
 
 return [
+    'tish_push' => [
+        'public_key' => env('TISH_VAPID_PUBLIC_KEY'),
+        'private_key' => env('TISH_VAPID_PRIVATE_KEY'),
+        'subject' => env('TISH_VAPID_SUBJECT'),
+    ],
 
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
@@ -43,3 +48,4 @@ return [
     ],
 
 ];
+// Configure in the production environment; never commit VAPID private keys.

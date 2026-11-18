@@ -352,6 +352,7 @@
             <div class="notice show" id="statusDescription"></div>
             <div class="customer-alert-controls">
                 <button type="button" id="enableOrderAlerts"><i class="fa-solid fa-bell"></i> تفعيل صوت وإشعارات الطلب</button>
+                <button type="button" id="disableOrderPush" hidden>إيقاف إشعارات الخلفية لهذا الطلب</button>
                 <small id="alertPermissionHint" aria-live="polite">ستصلك التنبيهات أثناء فتح صفحة الطلب.</small>
             </div>
             <div class="customer-status-alert" id="customerStatusAlert" role="status" aria-live="polite"></div>
@@ -456,6 +457,49 @@
         let lastNotifiedMessage = null;
         let alertsEnabled = sessionStorage.getItem(alertKey) === 'enabled';
         let audioContext = null;
+        const pushKeyUrl = @json(route('customer-menu.push.public-key'));
+        const pushSaveUrl = @json(route('customer-menu.push.save', $order->public_token));
+        const pushDeleteUrl = @json(route('customer-menu.push.delete', $order->public_token));
+        const csrfToken = @json(csrf_token());
+        const pushEnabledKey = 'tish-push:' + url;
+        let pushSubscribed = localStorage.getItem(pushEnabledKey) === 'yes';
+        let pushErrorMessage = '';
+        const disablePushButton = document.getElementById('disableOrderPush');
+        function base64UrlToBytes(base64) {
+            const binary = atob(base64.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - base64.length % 4) % 4));
+            return Uint8Array.from(binary, char => char.charCodeAt(0));
+        }
+        async function enableTishBackgroundPush() {
+            if (!('serviceWorker' in navigator) || !('PushManager' in window) || !window.isSecureContext) {
+                throw new Error('هذا الجهاز لا يدعم إشعارات الخلفية على هذه الصفحة.');
+            }
+            const configResponse = await fetch(pushKeyUrl, {cache:'no-store', credentials:'same-origin'});
+            if (!configResponse.ok) throw new Error('تعذر قراءة إعدادات إشعارات الخلفية.');
+            const config = await configResponse.json();
+            if (!config.enabled || !config.public_key) throw new Error('إشعارات الخلفية تحتاج إعداد مفاتيح VAPID على السيرفر.');
+            if (!('Notification' in window)) throw new Error('إشعارات النظام غير مدعومة على هذا الجهاز.');
+            if (Notification.permission !== 'granted') {
+                const permission = await Notification.requestPermission();
+                if (permission !== 'granted') throw new Error('لم يتم منح إذن الإشعارات.');
+            }
+            const registration = await navigator.serviceWorker.register('/sw.js', {scope:'/'});
+            const ready = await navigator.serviceWorker.ready;
+            const subscribed = await ready.pushManager.getSubscription();
+            const subscription = subscribed || await ready.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: base64UrlToBytes(config.public_key)
+            });
+            const json = subscription.toJSON();
+            const response = await fetch(pushSaveUrl, {
+                method:'POST', credentials:'same-origin',
+                headers:{'Content-Type':'application/json', Accept:'application/json', 'X-CSRF-TOKEN':csrfToken},
+                body:JSON.stringify({endpoint:json.endpoint, keys:json.keys})
+            });
+            if (!response.ok) throw new Error('تعذر حفظ اشتراك الجهاز في السيرفر.');
+            pushSubscribed = true;
+            localStorage.setItem(pushEnabledKey, 'yes');
+            refreshAlertsHint();
+        }
 
         const tishOverlay = document.getElementById('tishStatusOverlay');
         const tishMini = document.getElementById('tishStatusMini');
@@ -463,6 +507,35 @@
         const tishPopupDescription = document.getElementById('tishPopupDescription');
         const tishPopupEta = document.getElementById('tishPopupEta');
         let lastPopupState = '';
+        let tishDeadlineMs = null;
+        let tishClockOffsetMs = 0;
+        let tishTimerDone = false;
+        const tishTimeFormat = seconds => {
+            const minutes = Math.floor(seconds / 60);
+            return String(minutes).padStart(2, '0') + ':' + String(seconds % 60).padStart(2, '0');
+        };
+        function renderTishCountdown() {
+            if (!tishDeadlineMs) return;
+            const state = String(window.tishLatestTracking?.state || '').toLowerCase();
+            if (['ready', 'completed', 'cancelled', 'canceled'].includes(state)) return;
+            const remaining = Math.max(0, Math.ceil((tishDeadlineMs - (Date.now() - tishClockOffsetMs)) / 1000));
+            const label = remaining ? '⏱️ الوقت التقديري المتبقي: ' + tishTimeFormat(remaining)
+                : '⏱️ انتهى الوقت التقديري، ننتظر تحديث المطبخ';
+            const mainEta = document.getElementById('eta');
+            mainEta.textContent = label;
+            mainEta.classList.add('show');
+            tishPopupEta.textContent = label;
+            if (!remaining && !tishTimerDone) tishTimerDone = true;
+        }
+        setInterval(renderTishCountdown, 1000);
+        function setTishDeadline(data) {
+            const serverNow = Date.parse(data.server_time || '');
+            if (Number.isFinite(serverNow)) tishClockOffsetMs = Date.now() - serverNow;
+            const date = typeof data.estimated_ready_at === 'string'
+                ? Date.parse(data.estimated_ready_at) : NaN;
+            tishDeadlineMs = Number.isFinite(date) ? date : null;
+            if (tishDeadlineMs) renderTishCountdown();
+        }
         function closeTishPopup() {
             tishOverlay.classList.remove('is-open');
             tishOverlay.setAttribute('aria-hidden','true');
@@ -483,6 +556,7 @@
                 ? '' : (Number.isFinite(minutes) && minutes > 0
                     ? '⏱️ الوقت التقديري: حوالي ' + minutes + ' دقيقة (غير مضمون)'
                     : 'بانتظار تحديث وقت التحضير من المطعم');
+            if (tishDeadlineMs) renderTishCountdown();
             tishOverlay.classList.add('is-open');
             tishOverlay.setAttribute('aria-hidden','false');
             tishMini.classList.remove('is-visible');
@@ -500,6 +574,38 @@
         tishOverlay?.addEventListener('click',event => {
             if (event.target === tishOverlay) closeTishPopup();
         });
+
+        // An original, synthesized smash sizzle; no external audio assets.
+        function playTishSmash() {
+            if (!alertsEnabled) return;
+            try {
+                const Ctx = window.AudioContext || window.webkitAudioContext;
+                if (!Ctx) return;
+                audioContext = audioContext || new Ctx();
+                if (audioContext.state !== 'running') return;
+                const now = audioContext.currentTime;
+                const duration = .34;
+                const buffer = audioContext.createBuffer(1, Math.ceil(audioContext.sampleRate * duration), audioContext.sampleRate);
+                const channel = buffer.getChannelData(0);
+                for (let i = 0; i < channel.length; i++) {
+                    const t = i / audioContext.sampleRate;
+                    channel[i] = (Math.random() * 2 - 1) * Math.exp(-t * 13);
+                }
+                const noise = audioContext.createBufferSource();
+                noise.buffer = buffer;
+                const filter = audioContext.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(1300, now);
+                filter.frequency.exponentialRampToValueAtTime(240, now + duration);
+                const gain = audioContext.createGain();
+                gain.gain.setValueAtTime(.0001, now);
+                gain.gain.exponentialRampToValueAtTime(.34, now + .015);
+                gain.gain.exponentialRampToValueAtTime(.0001, now + duration);
+                noise.connect(filter).connect(gain).connect(audioContext.destination);
+                noise.start(now);
+                noise.stop(now + duration);
+            } catch (error) { console.warn('TISH smash unavailable:', error); }
+        }
 
         function playOrderChime() {
             if (!alertsEnabled) return;
@@ -527,11 +633,12 @@
         function refreshAlertsHint() {
             if (!alertsButton || !alertsHint) return;
             alertsButton.textContent = alertsEnabled ? '🔔 إشعارات الطلب مفعّلة' : '🔔 تفعيل صوت وإشعارات الطلب';
-            alertsHint.textContent = alertsEnabled
+            if (disablePushButton) disablePushButton.hidden = !pushSubscribed;
+            alertsHint.textContent = pushErrorMessage || (alertsEnabled
                 ? ('Notification' in window && Notification.permission === 'granted'
-                    ? 'الصوت وإشعارات الجهاز مفعّلان أثناء فتح الصفحة.'
+                    ? (pushSubscribed ? 'الصوت وإشعارات الخلفية مفعّلان على هذا الجهاز.' : 'الصوت مفعّل. إشعارات الخلفية تحتاج إعدادًا إضافيًا.')
                     : 'الصوت مفعّل. إشعارات الجهاز تحتاج إذن المتصفح.')
-                : 'فعّل التنبيهات لتسمع صوتًا عند تغيّر حالة الطلب.';
+                : 'فعّل التنبيهات لتسمع صوتًا عند تغيّر حالة الطلب.');
         }
 
         alertsButton?.addEventListener('click', async () => {
@@ -546,6 +653,31 @@
             } catch (error) { console.warn('Audio could not start:', error); }
             if ('Notification' in window && Notification.permission === 'default' && window.isSecureContext) {
                 try { await Notification.requestPermission(); } catch (error) {}
+            }
+            pushErrorMessage = '';
+            try {
+                await enableTishBackgroundPush();
+            } catch (error) {
+                pushErrorMessage = String(error.message || error);
+            }
+            refreshAlertsHint();
+        });
+        disablePushButton?.addEventListener('click', async () => {
+            try {
+                const subscription = await (await navigator.serviceWorker.ready).pushManager.getSubscription();
+                if (subscription) {
+                    const response = await fetch(pushDeleteUrl, {
+                        method:'DELETE', credentials:'same-origin',
+                        headers:{'Content-Type':'application/json', Accept:'application/json', 'X-CSRF-TOKEN':csrfToken},
+                        body:JSON.stringify({endpoint:subscription.endpoint})
+                    });
+                    if (!response.ok) throw new Error('تعذر إلغاء اشتراك هذا الطلب.');
+                }
+                pushSubscribed = false;
+                localStorage.removeItem(pushEnabledKey);
+                pushErrorMessage = '';
+            } catch (error) {
+                pushErrorMessage = String(error.message || error);
             }
             refreshAlertsHint();
         });
@@ -575,9 +707,18 @@
             alertBox.textContent = title + (message ? ' — ' + menuF('رسالة من الفرع: {message}', {message}) : '');
             alertBox.classList.add('show');
             if (alertsEnabled) {
-                playOrderChime();
+                if (state === 'preparing') {
+                    // localStorage allows tabs to deduplicate audible transition.
+                    const soundKey = 'tish-smash:' + url + ':' + (data.event_at || state);
+                    if (localStorage.getItem(soundKey) !== 'played') {
+                        localStorage.setItem(soundKey, 'played');
+                        playTishSmash();
+                    }
+                } else {
+                    playOrderChime();
+                }
                 if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
-                if ('Notification' in window && Notification.permission === 'granted') {
+                if (!pushSubscribed && 'Notification' in window && Notification.permission === 'granted') {
                     try {
                         const notification = new Notification(title, {
                             body: menuT(message || data.description || 'تم تحديث حالة طلبك.'),
@@ -591,6 +732,7 @@
 
         function updateTracking(data) {
             window.tishLatestTracking = data;
+            setTishDeadline(data);
             document.getElementById('tishStatusMiniText').textContent = data.label || 'متابعة الطلب';
             // The backend already computes the correct step (1=received,
             // 2=accepted, 3=preparing, 4=ready/completed) from the real
@@ -645,8 +787,16 @@
 
             const minutes = Number(data.estimated_ready_minutes);
             const showEta = !cancelled && Number.isFinite(minutes) && minutes > 0;
-            eta.textContent = showEta ? '⏱️ ' + menuF('الوقت المتوقع لتجهيز طلبك: حوالي {minutes} دقيقة', {minutes}) : '';
-            eta.classList.toggle('show', showEta);
+            if (!tishDeadlineMs) {
+                eta.textContent = showEta ? '⏱️ ' + menuF('الوقت المتوقع لتجهيز طلبك: حوالي {minutes} دقيقة', {minutes}) : '';
+                eta.classList.toggle('show', showEta);
+            } else if (cancelled || ['ready', 'completed'].includes(state)) {
+                eta.textContent = '';
+                eta.classList.remove('show');
+                tishPopupEta.textContent = '';
+            } else {
+                renderTishCountdown();
+            }
 
             notifyStatusChange(data);
         }
