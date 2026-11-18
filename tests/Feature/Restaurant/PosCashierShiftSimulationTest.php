@@ -10,6 +10,9 @@ use App\Models\Location;
 use App\Models\LocationProduct;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\Module;
+use App\Models\KitchenStation;
+use Illuminate\Support\Facades\Cache;
 use App\Models\PaymentMethod;
 use App\Models\Product;
 use App\Models\RestaurantMenuItem;
@@ -530,6 +533,102 @@ class PosCashierShiftSimulationTest extends TestCase
         $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.store'), $payload)
             ->assertUnprocessable()->assertJsonValidationErrors('customer_id');
         $this->assertDatabaseCount('orders', 0);
+    }
+
+    /**
+     * Enable real KDS ticket creation on the test branch; no external station.
+     */
+    private function kitchenFixture(array $f): void
+    {
+        Module::query()->firstOrCreate(['code' => 'kitchen'], [
+            'name' => 'Kitchen', 'type' => 'industry', 'is_active' => true,
+        ]);
+        Cache::forget('modules:registry:v1');
+        KitchenStation::query()->create([
+            'location_id' => $f['branch']->id, 'name' => 'Main kitchen',
+            'code' => 'MAIN', 'is_default' => true, 'is_active' => true,
+        ]);
+    }
+
+    #[Test]
+    public function pos_30_kitchen_ticket_is_idempotent_for_one_confirmed_order(): void
+    {
+        $f = $this->fixture();
+        $this->kitchenFixture($f);
+        $payload = $this->orderPayload($f, [[
+            'product_id' => $f['products'][0]->id, 'quantity' => 2,
+        ]]);
+        $payload['pos_action'] = 'kot_print';
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.store'), $payload)
+            ->assertCreated()->assertJsonPath('kitchen_dispatched', true);
+        $order = Order::query()->sole();
+        $this->assertSame(1, $order->kitchenTickets()->count());
+
+        app(\App\Services\Kitchen\KitchenTicketService::class)
+            ->dispatchConfirmedOrder($order, $f['cashier']);
+        $this->assertSame(1, $order->kitchenTickets()->count());
+        $this->assertSame(1, $order->kitchenTickets()->first()->items()->count());
+        $this->assertEquals(38, Inventory::query()
+            ->where('product_id', $f['products'][0]->id)->sole()->quantity);
+    }
+
+    #[Test]
+    public function pos_31_kitchen_queued_order_rejects_quantity_edit_without_financial_changes(): void
+    {
+        $f = $this->fixture();
+        $this->kitchenFixture($f);
+        $payload = $this->orderPayload($f, [[
+            'product_id' => $f['products'][0]->id, 'quantity' => 1,
+        ]]);
+        $payload['pos_action'] = 'kot_print';
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.store'), $payload)
+            ->assertCreated();
+        $order = Order::query()->sole();
+        $item = $order->items()->sole();
+        $this->assertSame('queued', $order->kitchenTickets()->sole()->statusValue());
+
+        try {
+            app(\App\Services\Orders\OrderService::class)->updateOrder($order, [
+                'payment_arrangement' => 'pay_on_pickup',
+                'items' => [['id' => $item->id, 'quantity' => 2]],
+            ], $f['cashier']);
+            $this->fail('Changing a kitchen-dispatched quantity must be rejected.');
+        } catch (\Illuminate\Validation\ValidationException $exception) {
+            $this->assertArrayHasKey('items', $exception->errors());
+        }
+        $this->assertEquals(1, $order->fresh()->items()->sole()->quantity);
+        $this->assertEquals(10, $order->fresh()->invoice?->total_amount);
+        $this->assertEquals(39, Inventory::query()
+            ->where('product_id', $f['products'][0]->id)->sole()->quantity);
+    }
+
+    #[Test]
+    public function pos_32_kitchen_queued_order_rejects_note_change_without_changing_ticket(): void
+    {
+        $f = $this->fixture();
+        $this->kitchenFixture($f);
+        $payload = $this->orderPayload($f, [[
+            'product_id' => $f['products'][0]->id, 'quantity' => 1,
+            'kitchen_notes' => 'No onion',
+        ]]);
+        $payload['pos_action'] = 'kot_print';
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.store'), $payload)
+            ->assertCreated();
+        $order = Order::query()->sole();
+        $item = $order->items()->sole();
+
+        try {
+            app(\App\Services\Orders\OrderService::class)->updateOrder($order, [
+                'payment_arrangement' => 'pay_on_pickup',
+                'items' => [['id' => $item->id, 'quantity' => 1, 'kitchen_notes' => 'Extra onion']],
+            ], $f['cashier']);
+            $this->fail('Kitchen notes must not change after dispatch.');
+        } catch (\Illuminate\Validation\ValidationException $exception) {
+            $this->assertArrayHasKey('items', $exception->errors());
+        }
+        $this->assertSame('No onion', $item->fresh()->kitchen_notes);
+        $this->assertEquals(10, $order->fresh()->total_amount);
+        $this->assertSame(1, $order->kitchenTickets()->count());
     }
 
     #[Test]
