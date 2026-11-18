@@ -1,0 +1,170 @@
+/* TISH public menu: one consistent header on cart, product, favorites,
+   checkout, product catalog, order history and order tracking.
+   Navigation destinations are authored in the shared Blade partial.
+   Fixed physical LTR composition is intentional for both language variants. */
+body.tish-paper .cm-unified-header {
+ box-sizing:border-box;
+ direction:ltr!important;
+ display:grid!important;
+ grid-template-columns:minmax(0,1fr) 68px!important;
+ align-items:center!important;
+ column-gap:12px!important;
+ width:100%!important;
+ min-height:106px!important;
+ padding:17px 0 9px!important;
+ margin:0!important;
+ position:relative;
+ z-index:10;
+}
+body.tish-paper .cm-unified-header-brand {
+ display:flex!important;
+ flex-direction:row!important;
+ direction:ltr!important;
+ align-items:center!important;
+ gap:10px!important;
+ min-width:0!important;
+ color:var(--tish-paper-ink,#252525)!important;
+ text-decoration:none!important;
+}
+body.tish-paper .cm-unified-header-logo {
+ display:block!important;
+ flex:0 0 62px!important;
+ width:62px!important;
+ height:62px!important;
+ max-width:62px!important;
+ max-height:62px!important;
+ padding:0!important;
+ margin:0!important;
+ object-fit:contain!important;
+ border:0!important;
+ border-radius:50%!important;
+ background:transparent!important;
+ box-shadow:none!important;
+}
+body.tish-paper .cm-unified-header-brand-copy {
+ display:block!important;
+ flex:1 1 auto!important;
+ min-width:0!important;
+ overflow:hidden!important;
+ text-align:left!important;
+}
+body.tish-paper .cm-unified-header-brand-copy strong,
+body.tish-paper .cm-unified-header-brand-copy small {
+ display:block!important;
+ max-width:100%!important;
+ overflow:hidden!important;
+ text-overflow:ellipsis!important;
+ white-space:nowrap!important;
+ direction:auto;
+}
+body.tish-paper .cm-unified-header-brand-copy strong {
+ font-size:clamp(12px,3.6vw,16px)!important;
+ line-height:1.35!important;
+ font-weight:900!important;
+}
+body.tish-paper .cm-unified-header-brand-copy small {
+ font-size:clamp(10px,2.75vw,12px)!important;
+ line-height:1.4!important;
+ color:var(--tish-paper-muted,#62584f)!important;
+ margin-top:3px!important;
+ font-weight:700!important;
+}
+body.tish-paper .cm-unified-header-actions {
+ direction:ltr!important;
+ width:68px!important;
+ min-width:68px!important;
+ display:grid!important;
+ grid-template-rows:35px 44px!important;
+ gap:5px!important;
+ align-content:center!important;
+ justify-items:end!important;
+ align-items:center!important;
+}
+body.tish-paper .cm-unified-header-actions .cm-language-switch {
+ grid-row:1!important;
+ grid-column:1!important;
+ position:static!important;
+ inset:auto!important;
+ display:inline-flex!important;
+ align-items:center!important;
+ justify-content:center!important;
+ min-width:64px!important;
+ width:auto!important;
+ max-width:68px!important;
+ min-height:34px!important;
+ height:34px!important;
+ padding:5px 8px!important;
+ margin:0!important;
+ border:0!important;
+ border-radius:4px!important;
+ background:#f4e3cb url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;
+ color:var(--tish-paper-ink,#252525)!important;
+ box-shadow:none!important;
+ text-align:center!important;
+ font:900 11px/1.1 Cairo,Tajawal,Arial,sans-serif!important;
+ white-space:nowrap!important;
+ cursor:pointer!important;
+}
+body.tish-paper .cm-unified-header-actions .cm-unified-header-back {
+ grid-row:2!important;
+ grid-column:1!important;
+ position:static!important;
+ inset:auto!important;
+ justify-self:end!important;
+ display:grid!important;
+ place-items:center!important;
+ flex:0 0 44px!important;
+ width:44px!important;
+ height:44px!important;
+ min-width:44px!important;
+ min-height:44px!important;
+ margin:0 7px 0 0!important;
+ padding:10px!important;
+ color:var(--tish-paper-red,#a91f17)!important;
+ border:0!important;
+ border-radius:0!important;
+ background:transparent url('../../tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;
+ box-shadow:none!important;
+ filter:drop-shadow(0 3px 2px #4d2f2026)!important;
+ font-size:17px!important;
+ text-decoration:none!important;
+ transform:none!important;
+}
+body.tish-paper .cm-unified-header-actions .cm-unified-header-back i {
+ display:block!important;
+ transform:none!important;
+}
+body.tish-paper .cm-unified-header-actions :is(a,button):focus-visible {
+ outline:3px solid var(--tish-paper-red,#a91f17)!important;
+ outline-offset:3px!important;
+}
+body.tish-paper .cm-unified-header-outer {
+ padding:0!important;
+ margin:0!important;
+ min-height:0!important;
+}
+body.tish-paper .cm-unified-header-outer .wrap {
+ height:auto!important;
+}
+body.tish-paper .cm-subpage-heading {
+ padding:3px 0 9px;
+ margin:0;
+ direction:inherit;
+}
+body.tish-paper .cm-subpage-heading h1 {
+ margin:0!important;
+ font-size:clamp(19px,5vw,26px)!important;
+ line-height:1.4!important;
+ color:var(--tish-paper-ink,#252525)!important;
+ font-weight:900!important;
+}
+@media(max-width:390px){
+ body.tish-paper .cm-unified-header {grid-template-columns:minmax(0,1fr) 62px!important;gap:6px!important;min-height:100px!important}
+ body.tish-paper .cm-unified-header-logo {flex-basis:52px!important;width:52px!important;height:52px!important;max-width:52px!important;max-height:52px!important}
+ body.tish-paper .cm-unified-header-actions {width:62px!important;min-width:62px!important}
+ body.tish-paper .cm-unified-header-actions .cm-language-switch {max-width:62px!important;min-width:59px!important;font-size:10px!important}
+ body.tish-paper .cm-unified-header-brand {gap:7px!important}
+}
+@media print{
+ body.tish-paper .cm-unified-header-actions {display:none!important}
+}

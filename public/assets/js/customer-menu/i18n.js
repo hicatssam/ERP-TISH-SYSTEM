@@ -274,7 +274,8 @@
      document.title = document.title.replace(/^تتبع\s+/, 'Track ');
      updateText(document.body);
    }
-   const host = document.querySelector('body.reference-home .tish-drive-hero-actions')
+   const host = document.querySelector('[data-cm-language-host]')
+     || document.querySelector('body.reference-home .tish-drive-hero-actions')
      || document.querySelector('.reference-actions,.page-head,.branch-brand') || document.body;
    const button = document.createElement('button');
    button.type = 'button';
