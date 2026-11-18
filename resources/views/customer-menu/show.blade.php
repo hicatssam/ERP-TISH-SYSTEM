@@ -435,7 +435,7 @@ body.tish-paper #intro .intro-enter:focus-visible{
        Keep cart/favorites as real links and preserve their badge IDs for JS sync. --}}
   <div class="tish-drive-firstfold" aria-label="{{ $branding['name'] }}">
    <img class="tish-drive-hero-art"
-        src="{{ asset('assets/tish-paper/brand/tish-drive-hero.png') }}"
+        src="{{ asset('assets/tish-paper/brand/tish-drive-hero-clean.svg') }}"
         alt="{{ $branding['name'] }} — Hear it. Feel it."
         width="630" height="360" fetchpriority="high">
    {{-- Preserve admin-editable brand identity for assistive technologies and
