@@ -388,7 +388,7 @@ body.tish-paper #intro .intro-enter:focus-visible{
 </script>
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-menu-cinematic.css') }}">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-drive-ui-fixes-v1.css') }}?v=1">
-<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-drive-home-hero-v1.css') }}?v=1">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-drive-home-hero-v1.css') }}?v=2">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-menu-responsive-polish-v1.css') }}?v=4">
 </head>
 <body class="crisp-customer-menu reference-home tish-paper">
