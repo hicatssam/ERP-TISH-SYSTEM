@@ -636,14 +636,22 @@ public function confirmOrder(Order $order, User $user): Order
                     ->whereIn('status', ['confirmed', 'corrected', 'refunded'])
                     ->get()->sum(fn ($payment) => max(0, (float) $payment->amount - (float) ($payment->refunded_amount ?? 0)));
                 $paid = max($paid, (float) ($order->invoice?->paid_amount ?? 0));
-                if ($paid > (float) $subtotal + 0.004) {
-                    throw ValidationException::withMessages(['items' => 'الإجمالي الجديد أقل من المدفوع المؤكد. سوِّ فرق الدفع أولًا.']);
+                // Reprice with the original manual + channel discount snapshot.
+                // Resetting total_amount to subtotal silently drops discounts.
+                $order->update(['subtotal' => $subtotal]);
+                if ($order->sales_channel_id) {
+                    $this->salesChannelService->apply(
+                        $order,
+                        (int) $order->sales_channel_id,
+                        (string) ($order->discount_type ?? 'none'),
+                        $order->discount_value ?? 0,
+                    );
+                } else {
+                    $order->update(['total_amount' => $subtotal]);
                 }
-
-                $order->update([
-                    'subtotal'     => $subtotal,
-                    'total_amount' => $subtotal,
-                ]);
+                if ($paid > (float) $order->total_amount + 0.004) {
+                    throw ValidationException::withMessages(['items' => 'الإجمالي بعد الخصومات أقل من المدفوع المؤكد. سوِّ فرق الدفع أولًا.']);
+                }
 
                 if (! $isConfirmed && $order->payments()->exists()) {
                     $pending = $order->payments()->where('status', 'pending_verification')->exists();
