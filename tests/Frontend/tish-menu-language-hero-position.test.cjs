@@ -14,14 +14,20 @@ test('TISH home language toggle lives inside same hero control layer as favorite
     assert.match(layout, /class="tish-drive-hero-actions"/);
 });
 
-test('language selector stacks above favorites and remains clickable', () => {
+test('red favorites sits above language with no black counter or language shadow', () => {
     const language = hero.match(/\.tish-drive-hero-actions \.cm-language-switch\{([^}]+)\}/);
-    const favorites = hero.match(/\.tish-drive-hero-actions \.tish-drive-hero-fav\{\s*top:([^;]+);/);
+    const favorites = hero.match(/\.tish-drive-hero-actions \.tish-drive-hero-fav\{([^}]+)\}/g)?.at(-1);
     assert.ok(language, 'Language position must be scoped to TISH hero');
-    assert.match(language[1], /top:2%!important/);
+    assert.ok(favorites, 'Favorites must be scoped to TISH hero');
+    assert.match(favorites, /top:2%!important/);
+    assert.match(language[1], /top:calc\(2% \+ clamp\(44px,8\.5vw,57px\)\)!important/);
     assert.match(language[1], /pointer-events:auto/);
-    assert.ok(favorites, 'Favorites must be offset below language selector');
-    assert.match(favorites[1], /calc\(2% \+ 43px\)/);
+    assert.match(language[1], /background-image:none!important/);
+    assert.match(language[1], /box-shadow:none!important/);
+    assert.match(language[1], /filter:none!important/);
+    assert.match(hero, /\.tish-drive-hero-fav \.badge\{\s*display:none!important/);
+    assert.match(hero, /\.cm-language-switch::before,/);
+    assert.match(hero, /\.cm-language-switch::after\{\s*display:none!important/);
 });
 
 test('language switching remains cookie and URL based', () => {
