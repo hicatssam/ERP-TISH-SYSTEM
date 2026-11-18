@@ -75,5 +75,8 @@ jobs:
       - name: MySQL — confirmed order and cashier regressions
         run: timeout 300 php artisan test tests/Feature/OrderUpdateInventoryGuardTest.php tests/Feature/Restaurant/RestaurantPosNonCashDetailsValidationTest.php --stop-on-failure
 
+      - name: MySQL — complete POS cashier lifecycle (isolated transactions)
+        run: timeout 300 php artisan test tests/Feature/Restaurant/PosCashierShiftSimulationTest.php tests/Feature/Restaurant/RestaurantPosCatalogTest.php --stop-on-failure
+
       - name: MySQL — payroll integration regressions
         run: timeout 300 php artisan test tests/Feature/Payroll --stop-on-failure
