@@ -112,11 +112,11 @@ function fixture(int $stock): array
         'quantity' => $stock, 'reserved_quantity' => 0, 'unit_cost' => 4,
     ]);
     $channel = SalesChannel::query()->create([
-        'name' => 'QA-Counter', 'slug' => 'qa-race-'.strtolower($suffix),
+        'name' => 'QA-Counter-'.$suffix, 'slug' => 'qa-race-'.strtolower($suffix),
         'type' => 'direct', 'is_active' => true,
     ]);
     $method = PaymentMethod::query()->create([
-        'name' => 'QA-Wallet', 'name_ar' => 'محفظة اختبار',
+        'name' => 'QA-Wallet-'.$suffix, 'name_ar' => 'محفظة اختبار',
         'code' => 'QA-RACE-'.$suffix,
         'type' => 'electronic_wallet', 'is_active' => true,
         'requires_verification' => false,
