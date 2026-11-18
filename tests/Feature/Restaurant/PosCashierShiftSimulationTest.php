@@ -973,6 +973,38 @@ class PosCashierShiftSimulationTest extends TestCase
     }
 
     #[Test]
+    public function pos_49_ten_customers_five_kitchen_tickets_and_five_immediate_payments_balance(): void
+    {
+        // Sequential peak-hour workload: real transactions on an isolated DB,
+        // not a latency benchmark or simultaneous browser traffic simulation.
+        $f = $this->fixture(50);
+        $this->kitchenFixture($f);
+        $productId = $f['products'][0]->id;
+
+        foreach (range(1, 10) as $customer) {
+            $payload = $this->orderPayload($f, [
+                ['product_id' => $productId, 'quantity' => 1],
+            ]);
+            if ($customer <= 5) {
+                $payload['pos_action'] = 'kot_print';
+            }
+            $this->actingAs($f['cashier'])->postJson(
+                route('restaurant.pos.orders.store'), $payload
+            )->assertCreated();
+        }
+
+        $this->assertDatabaseCount('orders', 10);
+        $this->assertDatabaseCount('order_items', 10);
+        $this->assertDatabaseCount('invoices', 10);
+        $this->assertDatabaseCount('kitchen_tickets', 10);
+        $this->assertDatabaseCount('payments', 5);
+        $this->assertEquals(40, Inventory::query()
+            ->where('location_id', $f['branch']->id)
+            ->where('product_id', $productId)->sole()->quantity);
+        $this->assertEquals(50, Payment::query()->sum('amount'));
+    }
+
+    #[Test]
     public function pos_09_unauthorized_cashier_cannot_create_paid_order(): void
     {
         $f = $this->fixture();
