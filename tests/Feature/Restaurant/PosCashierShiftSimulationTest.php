@@ -632,6 +632,100 @@ class PosCashierShiftSimulationTest extends TestCase
     }
 
     #[Test]
+    public function pos_33_cashier_without_refund_permission_cannot_reverse_a_payment(): void
+    {
+        $f = $this->fixture();
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.store'),
+            $this->orderPayload($f, [['product_id' => $f['products'][0]->id, 'quantity' => 1]])
+        )->assertCreated();
+
+        $payment = Payment::query()->sole();
+        $this->actingAs($f['cashier'])->post(route('payments.refund', $payment), [
+            'amount' => 3,
+            'payment_method_id' => $f['method']->id,
+            'reason' => 'Refund unauthorized test',
+        ])->assertForbidden();
+        $this->assertDatabaseCount('refunds', 0);
+        $this->assertEquals(10, $payment->fresh()->amount);
+    }
+
+    #[Test]
+    public function pos_34_partial_refund_preserves_original_payment_and_updates_invoice(): void
+    {
+        $f = $this->fixture();
+        $f['cashier']->givePermissionTo(Permission::findOrCreate('payments.refund', 'web'));
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.store'),
+            $this->orderPayload($f, [['product_id' => $f['products'][0]->id, 'quantity' => 1]])
+        )->assertCreated();
+        $order = Order::query()->sole();
+        $payment = $order->payments()->sole();
+
+        $this->actingAs($f['cashier'])->post(route('payments.refund', $payment), [
+            'amount' => 4,
+            'payment_method_id' => $f['method']->id,
+            'reason' => 'Partial refund for test',
+        ])->assertRedirect();
+
+        $this->assertEquals(10, $payment->fresh()->amount);
+        $this->assertEquals(4, $payment->refunds()->sum('amount'));
+        $this->assertSame('confirmed', $payment->fresh()->statusValue());
+        $this->assertEquals(6, $order->fresh()->invoice?->paid_amount);
+    }
+
+    #[Test]
+    public function pos_35_second_refund_above_remaining_balance_is_rejected(): void
+    {
+        $f = $this->fixture();
+        $f['cashier']->givePermissionTo(Permission::findOrCreate('payments.refund', 'web'));
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.store'),
+            $this->orderPayload($f, [['product_id' => $f['products'][0]->id, 'quantity' => 1]])
+        )->assertCreated();
+        $payment = Payment::query()->sole();
+
+        $this->actingAs($f['cashier'])->post(route('payments.refund', $payment), [
+            'amount' => 6,
+            'payment_method_id' => $f['method']->id,
+            'reason' => 'First partial refund',
+        ])->assertRedirect();
+        $this->actingAs($f['cashier'])->post(route('payments.refund', $payment), [
+            'amount' => 5,
+            'payment_method_id' => $f['method']->id,
+            'reason' => 'Invalid overrefund attempt',
+        ])->assertSessionHasErrors('amount');
+
+        $this->assertEquals(6, $payment->refunds()->sum('amount'));
+        $this->assertDatabaseCount('refunds', 1);
+    }
+
+    #[Test]
+    public function pos_36_full_refund_allows_order_cancellation_and_restores_stock(): void
+    {
+        $f = $this->fixture(5);
+        $f['cashier']->givePermissionTo(Permission::findOrCreate('payments.refund', 'web'));
+        $p = $f['products'][0];
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.store'),
+            $this->orderPayload($f, [['product_id' => $p->id, 'quantity' => 1]])
+        )->assertCreated();
+        $order = Order::query()->sole();
+        $payment = $order->payments()->sole();
+
+        $this->actingAs($f['cashier'])->post(route('payments.refund', $payment), [
+            'amount' => 10,
+            'payment_method_id' => $f['method']->id,
+            'reason' => 'Full refund before cancellation',
+        ])->assertRedirect();
+        $this->assertSame('refunded', $payment->fresh()->statusValue());
+
+        app(\App\Services\Orders\OrderService::class)
+            ->cancelOrder($order, 'Customer asked to cancel', $f['cashier']);
+        $this->assertSame('cancelled', $order->fresh()->statusValue());
+        $this->assertEquals(5, Inventory::query()->where('product_id', $p->id)->sole()->quantity);
+        $this->assertSame('cancelled', $order->fresh()->invoice->statusValue());
+        $this->assertDatabaseCount('refunds', 1);
+        $this->assertDatabaseCount('payments', 1);
+    }
+
+    #[Test]
     public function pos_09_unauthorized_cashier_cannot_create_paid_order(): void
     {
         $f = $this->fixture();
