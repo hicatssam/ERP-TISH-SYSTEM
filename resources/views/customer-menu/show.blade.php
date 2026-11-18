@@ -291,84 +291,85 @@ body.tish-paper.reference-home #bannerTrack > .banner-slide[data-banner-active]{
 <style>
 /* Prevent an already-dismissed intro from flashing during navigation. */
 
-/* Explicit user-gesture sound control for browser autoplay restrictions. */
-#intro.tish-reel-intro .tish-intro-sound-toggle:not([hidden]){
- position:absolute;
- z-index:8;
- top:calc(16px + env(safe-area-inset-top,0px));
- inset-inline-end:16px;
- display:inline-flex;
- align-items:center;
- justify-content:center;
- gap:9px;
- min-height:44px;
- max-width:calc(100% - 32px);
- padding:10px 15px;
- background:#f5e4cd url('{{ asset('assets/tish-paper/paper/category-ivory.webp') }}') center/100% 100% no-repeat;
- color:#a91f17;
- border:0;
- border-radius:5px;
- box-shadow:0 5px 11px #1f110e66;
- font:900 .85rem Tajawal,Cairo,Arial,sans-serif;
- cursor:pointer;
-}
-#intro.tish-reel-intro .tish-intro-sound-toggle:focus-visible{
- outline:3px solid #a91f17;outline-offset:3px;
-}
-#intro.tish-reel-intro .tish-intro-sound-toggle i{font-size:1.1rem}
-
 html.cm-skip-menu-intro #intro{display:none!important}
 html.cm-intro-open{overflow:hidden}
 body.tish-paper #intro.tish-reel-intro{overflow:hidden;background:#f5e4cd;overscroll-behavior:contain}
 #intro.tish-reel-intro::before{display:none}
 #intro .intro-reel{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center bottom}
-#intro .intro-enter{
- min-height:44px;border:0;font:inherit;font-weight:900;
-}
-#intro .intro-enter{
- width:var(--intro-order-size);height:var(--intro-order-size);padding:12px;
- border-radius:50%;font-size:clamp(.9rem,3.8vw,1.2rem);line-height:1.2;color:#8a1914;
- background:url('{{ asset('assets/tish-paper/paper/logo-disc.webp') }}') center/100% 100% no-repeat;
-}
+/* The CTA is an actual button, composited over the booth window.
+   Keep the paper shape independent of the video, for every viewport. */
 #intro.tish-reel-intro{
- --intro-order-size:clamp(76px,22vw,104px);
+ --intro-order-x:65%;
+ --intro-order-y:59%;
+ --intro-order-width:clamp(110px,35vw,154px);
 }
-#intro.tish-reel-intro.has-reel-frame .intro-box{
- position:absolute;left:var(--intro-order-x,58%);top:var(--intro-order-y,82%);
- width:var(--intro-order-size);max-width:none;padding:0;text-align:center;
- transform:translate(-50%,calc(-100% - 6px));
-}
-#intro .intro-enter{
+#intro.tish-reel-intro .intro-box{
+ position:absolute;
+ z-index:8;
+ left:var(--intro-order-x);
+ top:var(--intro-order-y);
+ width:var(--intro-order-width);
+ max-width:none;
  margin:0;
- transform-origin:center 80%;
- filter:drop-shadow(0 5px 4px #35110c66);
+ padding:0;
+ text-align:center;
+ transform:translate(-50%,-50%);
+ pointer-events:none;
 }
-body.tish-paper #intro .intro-enter:focus{
- outline:none!important;
+#intro.tish-reel-intro .intro-enter{
+ box-sizing:border-box;
+ position:relative;
+ display:inline-flex;
+ justify-content:center;
+ align-items:center;
+ width:100%;
+ height:auto;
+ min-height:54px;
+ padding:13px 17px;
+ margin:0;
+ border:0;
+ border-radius:0;
+ background:#f5e4cd url('{{ asset('assets/tish-paper/paper/category-ivory.webp') }}') center/100% 100% no-repeat;
+ color:#a91f17;
+ font:900 clamp(15px,4vw,20px)/1.25 Tajawal,Cairo,Arial,sans-serif;
+ text-align:center;
+ cursor:pointer;
+ pointer-events:auto;
+ box-shadow:none;
+ filter:drop-shadow(0 5px 4px #2b120d4d);
+ clip-path:polygon(0 8%,8% 5%,13% 0,22% 4%,30% 1%,39% 5%,48% 0,58% 4%,69% 1%,78% 5%,87% 1%,96% 5%,100% 13%,96% 24%,100% 35%,96% 46%,100% 59%,96% 70%,99% 81%,93% 96%,83% 93%,73% 100%,62% 95%,50% 99%,40% 95%,29% 100%,19% 94%,8% 98%,1% 90%,5% 79%,1% 67%,5% 55%,0 44%,4% 32%);
+ transform-origin:center;
 }
-body.tish-paper #intro .intro-enter:focus-visible{
- filter:drop-shadow(0 0 2px #fff8ed) drop-shadow(0 0 5px #fff8ed) drop-shadow(0 5px 4px #35110c66);
+#intro.tish-reel-intro .intro-enter[hidden]{display:none!important}
+#intro.tish-reel-intro .intro-enter:hover{
+ filter:drop-shadow(0 8px 6px #2b120d66);
+}
+body.tish-paper #intro.tish-reel-intro .intro-enter:focus-visible{
+ outline:3px solid #a91f17;
+ outline-offset:4px;
 }
 @media(prefers-reduced-motion:no-preference){
- #intro:not(.hide) .intro-enter:not([hidden]){
-  animation:tish-order-button-unfold 390ms cubic-bezier(.22,1,.36,1) both,
-            tish-order-button-nudge 1.65s ease-in-out 440ms 3;
+ #intro.tish-reel-intro:not(.hide) .intro-enter:not([hidden]){
+  animation:tish-paper-cta-appear 450ms cubic-bezier(.2,1,.3,1) both,
+            tish-paper-cta-breathe 2.5s ease-in-out 450ms infinite;
  }
- #intro:not(.hide) .intro-enter:not([hidden]):active{
-  animation:none;
-  transform:scale(.96);
+ #intro.tish-reel-intro .intro-enter:active{
+  animation:none!important;
+  transform:scale(.97);
  }
 }
-@keyframes tish-order-button-unfold{
- 0%{opacity:0;transform:perspective(520px) translateY(18px) rotateX(42deg) scale(.68,.45)}
- 72%{opacity:1;transform:perspective(520px) translateY(-3px) rotateX(-5deg) scale(1.035,1.04)}
- 100%{opacity:1;transform:none}
+@keyframes tish-paper-cta-appear{
+ 0%{opacity:0;transform:translateY(13px) rotate(-3deg) scale(.85)}
+ 70%{opacity:1;transform:translateY(-3px) rotate(1deg) scale(1.04)}
+ 100%{opacity:1;transform:translateY(0) rotate(0) scale(1)}
 }
-@keyframes tish-order-button-nudge{
- 0%,35%,100%{transform:none}
- 7%{transform:translateX(-4px) rotate(-3deg) scale(1.035)}
- 14%{transform:translateX(4px) rotate(3deg) scale(1.035)}
- 22%{transform:translateX(-2px) rotate(-2deg) scale(1.02)}
+@keyframes tish-paper-cta-breathe{
+ 0%,100%{transform:translateY(0) rotate(-.8deg)}
+ 50%{transform:translateY(-4px) rotate(.8deg)}
+}
+@media(max-width:420px){
+ #intro.tish-reel-intro{--intro-order-width:clamp(108px,35vw,136px)}
+ #intro.tish-reel-intro .intro-enter{min-height:51px;padding:12px 13px}
 }
 @media(prefers-reduced-motion:reduce){#intro.tish-reel-intro{transition:none}}
 
@@ -409,14 +410,8 @@ body.tish-paper #intro .intro-enter:focus-visible{
       reel.src = reel.dataset.src;
   }
  </script>
- <button type="button" id="introSoundToggle" class="tish-intro-sound-toggle"
-         aria-label="{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Turn on video sound' : 'تشغيل صوت الفيديو' }}"
-         aria-pressed="false" hidden>
-   <i class="fa-solid fa-volume-high" aria-hidden="true"></i>
-   <span>{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Turn sound on' : 'تشغيل الصوت' }}</span>
- </button>
  <div class="intro-box">
-  <button class="intro-enter" id="introEnter" type="button" hidden>{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Order now' : 'اطلب الآن' }}</button>
+  <button class="intro-enter intro-enter--paper" id="introEnter" type="button" hidden>{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Order now' : 'اطلب الآن' }}</button>
  </div>
 </div>
 @endif
@@ -863,39 +858,6 @@ body.tish-paper #intro .intro-enter:focus-visible{
         } else {
             const reel = document.getElementById('introReel');
             const enter = document.getElementById('introEnter');
-            const soundToggle = document.getElementById('introSoundToggle');
-            const englishIntro = @json(\App\Support\CustomerMenuLanguage::isEnglish());
-            let soundEnabledByUser = false;
-            function syncSoundToggle() {
-                if (!soundToggle || dismissed) return;
-                soundToggle.hidden = false;
-                const audible = !reel.muted && !reel.paused;
-                soundToggle.setAttribute('aria-pressed', String(audible));
-                soundToggle.querySelector('i').className = audible ? 'fa-solid fa-volume-xmark' : 'fa-solid fa-volume-high';
-                soundToggle.querySelector('span').textContent = audible
-                    ? (englishIntro ? 'Mute sound' : 'كتم الصوت')
-                    : (englishIntro ? 'Turn sound on' : 'تشغيل الصوت');
-                soundToggle.setAttribute('aria-label', soundToggle.querySelector('span').textContent);
-            }
-            soundToggle?.addEventListener('click', () => {
-                if (!reel.muted && !reel.paused) {
-                    reel.muted = true;
-                    soundEnabledByUser = false;
-                    syncSoundToggle();
-                    return;
-                }
-                // This click is the necessary user gesture for audible playback.
-                // Restart so the customer can actually hear the reel from the beginning.
-                reel.muted = false;
-                reel.volume = 1;
-                try { reel.currentTime = 0; } catch (_) { /* metadata not ready */ }
-                soundEnabledByUser = true;
-                reel.play().then(syncSoundToggle).catch(() => {
-                    reel.muted = true;
-                    soundEnabledByUser = false;
-                    syncSoundToggle();
-                });
-            });
             let startupTimeout;
             let revealDeadline;
             let revealed = false;
@@ -905,20 +867,23 @@ body.tish-paper #intro .intro-enter:focus-visible{
             const orderButtonCue = 6.2;
 
             function alignOrderButton() {
-                if (!reel.videoWidth || !reel.clientWidth || !reel.clientHeight) return;
+                if (!reel.videoWidth || !reel.videoHeight || !reel.clientWidth || !reel.clientHeight) return;
 
-                // Anchor to the upper edge of “Feel it” in the source video.
-                // The video uses object-fit:cover and object-position:center bottom.
+                // Match the stained-glass pane, above “Hear it / Feel it”;
+                // object-fit:cover with object-position:center bottom may crop edges.
                 const scale = Math.max(reel.clientWidth / reel.videoWidth, reel.clientHeight / reel.videoHeight);
-                const width = reel.videoWidth * scale;
-                const height = reel.videoHeight * scale;
-                const halfButton = enter.offsetWidth / 2;
-                const x = (reel.clientWidth - width) / 2 + width * .58;
-                const y = reel.clientHeight - height * .18;
-                const inset = halfButton + 8;
-
-                intro.style.setProperty('--intro-order-x', Math.max(inset, Math.min(reel.clientWidth - inset, x)) + 'px');
-                intro.style.setProperty('--intro-order-y', Math.max(2 * halfButton + 14, Math.min(reel.clientHeight - 8, y)) + 'px');
+                const fittedWidth = reel.videoWidth * scale;
+                const fittedHeight = reel.videoHeight * scale;
+                const preferredX = (reel.clientWidth - fittedWidth) / 2 + fittedWidth * .66;
+                const preferredY = reel.clientHeight - fittedHeight + fittedHeight * .59;
+                const halfWidth = enter.offsetWidth / 2;
+                const halfHeight = enter.offsetHeight / 2;
+                const insetX = halfWidth + 10;
+                const insetY = halfHeight + 12;
+                intro.style.setProperty('--intro-order-x',
+                    Math.max(insetX, Math.min(reel.clientWidth - insetX, preferredX)) + 'px');
+                intro.style.setProperty('--intro-order-y',
+                    Math.max(insetY, Math.min(reel.clientHeight - insetY, preferredY)) + 'px');
             }
 
             function revealOrderButton() {
@@ -933,7 +898,6 @@ body.tish-paper #intro .intro-enter:focus-visible{
 
             document.documentElement.classList.add('cm-intro-open');
             enter.addEventListener('click', () => {
-                soundToggle.hidden = true;
                 dismissed = true;
                 frameObserver?.disconnect();
                 hideIntro();
@@ -944,7 +908,6 @@ body.tish-paper #intro .intro-enter:focus-visible{
             } else {
                 reel.addEventListener('playing', () => {
                     window.clearTimeout(startupTimeout);
-                    syncSoundToggle();
                     intro.classList.add('has-reel-frame');
                     alignOrderButton();
                 });
@@ -975,19 +938,16 @@ body.tish-paper #intro .intro-enter:focus-visible{
                 }, {once:true});
                 reel.hidden = false;
                 reel.muted = true;
-                syncSoundToggle();
                 if (!reel.src) reel.src = reel.dataset.src;
                 startupTimeout = window.setTimeout(revealOrderButton, 3000);
                 revealDeadline = window.setTimeout(revealOrderButton, 8500);
-                // Browsers commonly block autoplay with audio. Start muted and
-                // expose a real tap-to-enable-sound action instead of silent failure.
+                // Muted autoplay avoids exposing a separate sound button.
                 reel.play().catch(() => {
                     if (dismissed) return;
                     if (reel.error) {
                         revealOrderButton();
                         return;
                     }
-                    syncSoundToggle();
                     revealOrderButton();
                 });
             }
