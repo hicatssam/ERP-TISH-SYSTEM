@@ -219,6 +219,32 @@ class PosCashierShiftSimulationTest extends TestCase
     }
 
     #[Test]
+    public function pos_10_quantity_edit_preserves_channel_discount_and_invoice_total(): void
+    {
+        $f = $this->fixture();
+        $f['channel']->update(['discount_type' => 'percentage', 'discount_value' => 10]);
+        $p = $f['products'][0];
+        $this->actingAs($f['cashier'])->postJson(
+            route('restaurant.pos.orders.store'),
+            $this->orderPayload($f, [['product_id' => $p->id, 'quantity' => 1]])
+        )->assertCreated();
+
+        $order = Order::query()->sole();
+        $this->assertEquals(9, $order->total_amount);
+        $item = $order->items()->sole();
+        app(\App\Services\Orders\OrderService::class)->updateOrder($order, [
+            'payment_arrangement' => 'pay_now',
+            'items' => [['id' => $item->id, 'quantity' => 2]],
+        ], $f['cashier']);
+
+        $fresh = $order->fresh(['invoice', 'items']);
+        $this->assertEquals(20, $fresh->subtotal);
+        $this->assertEquals(18, $fresh->total_amount);
+        $this->assertEquals(18, $fresh->invoice?->total_amount);
+        $this->assertEquals(2, $fresh->items->first()->quantity);
+    }
+
+    #[Test]
     public function pos_09_unauthorized_cashier_cannot_create_paid_order(): void
     {
         $f = $this->fixture();
