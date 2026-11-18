@@ -37,7 +37,7 @@ class TishCustomerNavigationPolishTest extends TestCase
         $home = file_get_contents(resource_path('views/customer-menu/show.blade.php'));
         $nav = file_get_contents(resource_path('views/customer-menu/partials/bottom-nav.blade.php'));
 
-        $this->assertStringContainsString("asset('assets/tish-paper/brand/tish-drive-hero.png')", $home);
+        $this->assertStringContainsString("asset('assets/tish-paper/brand/tish-drive-hero-clean.svg')", $home);
         $this->assertStringContainsString('id="searchInput"', $home);
         $this->assertStringContainsString('id="categories"', $home);
         $this->assertStringContainsString('id="openFullMenu"', $home);
