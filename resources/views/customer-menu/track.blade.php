@@ -291,16 +291,9 @@
             </div>
         </div>
     @endif
-    <header class="topbar">
-        <div class="wrap topin">
-            <a class="brand" href="{{ route('customer-menu.show',$order->location->code) }}">
-                <img src="{{ asset('assets/tish-paper/brand/logo-disc.webp') }}" alt="{{ $brandName }}">
-                <span>
-                    <b>{{ $brandName }}</b>
-                    <small>{{ $order->location->name }}</small>
-                </span>
-            </a>
-            <a class="back" href="{{ route('customer-menu.my-orders',$order->location->code) }}">طلباتي ←</a>
+    <header class="topbar cm-unified-header-outer">
+        <div class="wrap">
+            @include('customer-menu.partials.unified-header', ['backUrl' => route('customer-menu.my-orders',$order->location->code)])
         </div>
     </header>
 
