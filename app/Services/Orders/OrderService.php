@@ -40,7 +40,9 @@ class OrderService
 
   public function createOrder(array $data, User $user, bool $autoConfirm = false): Order
 {
-    $order = DB::transaction(function () use ($data, $user, $autoConfirm) {
+    // A restaurant checkout already owns an outer atomic transaction.
+    // Avoid creating a nested MySQL savepoint in the hot cashier path.
+    $createOrder = function () use ($data, $user, $autoConfirm) {
         $prefix   = SystemSetting::get('order_number_prefix', 'ORD');
         $orderNum = $this->documentNumbers->next('sales_order', $prefix);
 
@@ -283,9 +285,11 @@ $this->salesChannelService->apply(
         }
 
         return $order->fresh(['items', 'invoice']);
-    });
+    };
 
-   
+    $order = DB::transactionLevel() > 0
+        ? $createOrder()
+        : DB::transaction($createOrder, 3);
 
     OrderCreated::dispatch($order->fresh(), $user);
 
