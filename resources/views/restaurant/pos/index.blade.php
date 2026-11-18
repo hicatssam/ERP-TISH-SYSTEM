@@ -4011,7 +4011,7 @@ function validatePosCheckoutConfirmation(response, data) {
 function safePosPrintNavigation(printWindow, url) {
     if (!printWindow) return false;
     if (!url) {
-        printWindow.close();
+        try { printWindow.close(); } catch (_) {}
         return false;
     }
     try {
