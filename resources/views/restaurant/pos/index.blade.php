@@ -3993,9 +3993,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
    let rbSubmitting = false;
+   let rbCheckoutSucceeded = false;
 
 async function submitOrder(action) {
-    if (rbSubmitting) {
+    if (rbSubmitting || rbCheckoutSucceeded) {
         return;
     }
 
@@ -4212,6 +4213,7 @@ async function submitOrder(action) {
 
         localStorage.removeItem(draftKey);
         sessionStorage.removeItem(posAttemptKey);
+        rbCheckoutSucceeded = true;
 
         if (
             action === 'bill_print'
@@ -4260,11 +4262,11 @@ async function submitOrder(action) {
         );
 
     } finally {
-        rbSubmitting = false;
+        rbSubmitting = rbCheckoutSucceeded;
 
         buttons.forEach(button => {
             if (button) {
-                button.disabled = false;
+                button.disabled = rbCheckoutSucceeded;
             }
         });
 
