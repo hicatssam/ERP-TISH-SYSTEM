@@ -139,7 +139,7 @@ class RestaurantOrderService
             );
 
             return $order;
-        });
+        }, 3);
         } catch (QueryException $error) {
             // Unique request-token index wins any concurrent duplicate race.
             if ($token === '' || ! ($existing = $replay())) throw $error;
