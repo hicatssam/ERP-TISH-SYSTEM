@@ -125,6 +125,7 @@
         @csrf
         <input type="hidden" name="location_id" value="{{ $location->id }}">
         <input type="hidden" name="pos_action" id="rbPosAction" value="bill_payment">
+        <input type="hidden" name="pos_request_token" id="rbPosRequestToken">
 
         <div class="rb-pos-shell">
             {{-- =====================================================
@@ -2859,6 +2860,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const draftKey = `restaurant_pos_draft_${locationId}`;
+    const posAttemptKey = `tish_pos_attempt_${cashierUserId}_${locationId}`;
+    const posRequestTokenInput = document.getElementById('rbPosRequestToken');
+    function checkoutFingerprint() {
+        return JSON.stringify(Array.from(new FormData(form).entries())
+            .filter(([key]) => key !== '_token' && key !== 'pos_request_token')
+            .map(([key, value]) => [key, value instanceof File
+                ? [value.name, value.size, value.lastModified] : String(value)]));
+    }
+    function checkoutRequestToken() {
+        const fingerprint = checkoutFingerprint();
+        let attempt = null;
+        try { attempt = JSON.parse(sessionStorage.getItem(posAttemptKey) || 'null'); } catch (_) {}
+        if (!attempt || attempt.fingerprint !== fingerprint) {
+            const random = window.crypto?.randomUUID?.();
+            if (!random) {
+                throw new Error('المتصفح لا يدعم توليد رمز طلب آمن. افتح النظام عبر HTTPS أو localhost.');
+            }
+            attempt = {fingerprint, token: random};
+            sessionStorage.setItem(posAttemptKey, JSON.stringify(attempt));
+        }
+        posRequestTokenInput.value = attempt.token;
+    }
 
     function escapeHtml(value) {
         const div = document.createElement('div');
@@ -3513,6 +3536,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         cart.clear();
+        sessionStorage.removeItem(posAttemptKey);
+        posRequestTokenInput.value = '';
         renderCart();
         productSearch.value = '';
         activeCategory = '__all__';
@@ -3968,9 +3993,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
    let rbSubmitting = false;
+   let rbCheckoutSucceeded = false;
 
 async function submitOrder(action) {
-    if (rbSubmitting) {
+    if (rbSubmitting || rbCheckoutSucceeded) {
         return;
     }
 
@@ -3997,6 +4023,10 @@ async function submitOrder(action) {
     }
 
     syncHiddenItems();
+    try { checkoutRequestToken(); } catch (error) {
+        statusMessage(String(error.message || error), 'error');
+        return;
+    }
 
     rbSubmitting = true;
 
@@ -4182,6 +4212,8 @@ async function submitOrder(action) {
         }
 
         localStorage.removeItem(draftKey);
+        sessionStorage.removeItem(posAttemptKey);
+        rbCheckoutSucceeded = true;
 
         if (
             action === 'bill_print'
@@ -4230,11 +4262,11 @@ async function submitOrder(action) {
         );
 
     } finally {
-        rbSubmitting = false;
+        rbSubmitting = rbCheckoutSucceeded;
 
         buttons.forEach(button => {
             if (button) {
-                button.disabled = false;
+                button.disabled = rbCheckoutSucceeded;
             }
         });
 

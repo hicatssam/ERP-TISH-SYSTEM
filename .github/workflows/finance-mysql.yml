@@ -63,6 +63,9 @@ jobs:
       - name: MySQL — verify full production-style schema migrations
         run: timeout 150 php artisan migrate --force --no-ansi -v
 
+      - name: MySQL — two-process POS duplicate and last-stock races
+        run: timeout 120 php scripts/qa/pos-concurrency.php
+
       - name: MySQL — test runner smoke
         run: timeout 120 php artisan test tests/Feature/Finance/AccountingBooksTest.php --filter=test_new_invoice_and_confirmed_cash_collection_post_once_into_the_same_balanced_ledger --stop-on-failure
 
@@ -74,6 +77,9 @@ jobs:
 
       - name: MySQL — confirmed order and cashier regressions
         run: timeout 300 php artisan test tests/Feature/OrderUpdateInventoryGuardTest.php tests/Feature/Restaurant/RestaurantPosNonCashDetailsValidationTest.php --stop-on-failure
+
+      - name: MySQL — complete POS cashier lifecycle (isolated transactions)
+        run: timeout 300 php artisan test tests/Feature/Restaurant/PosCashierShiftSimulationTest.php tests/Feature/Restaurant/RestaurantPosCatalogTest.php --stop-on-failure
 
       - name: MySQL — payroll integration regressions
         run: timeout 300 php artisan test tests/Feature/Payroll --stop-on-failure

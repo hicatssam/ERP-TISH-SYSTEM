@@ -40,7 +40,9 @@ class OrderService
 
   public function createOrder(array $data, User $user, bool $autoConfirm = false): Order
 {
-    $order = DB::transaction(function () use ($data, $user, $autoConfirm) {
+    // A restaurant checkout already owns an outer atomic transaction.
+    // Avoid creating a nested MySQL savepoint in the hot cashier path.
+    $createOrder = function () use ($data, $user, $autoConfirm) {
         $prefix   = SystemSetting::get('order_number_prefix', 'ORD');
         $orderNum = $this->documentNumbers->next('sales_order', $prefix);
 
@@ -283,9 +285,11 @@ $this->salesChannelService->apply(
         }
 
         return $order->fresh(['items', 'invoice']);
-    });
+    };
 
-   
+    $order = DB::transactionLevel() > 0
+        ? $createOrder()
+        : DB::transaction($createOrder, 3);
 
     OrderCreated::dispatch($order->fresh(), $user);
 
@@ -526,14 +530,22 @@ public function confirmOrder(Order $order, User $user): Order
             $newQtyMap[(int) $row['id']] = (float) $row['quantity'];
         }
 
-        $this->kitchenTicketService->assertOrderItemChangesAllowed(
-            $order,
-            $data['items'] ?? []
-        );
-
         return DB::transaction(function () use ($order, $data, $user, $isConfirmed, $newQtyMap, $newItems) {
             $order = Order::query()->lockForUpdate()->findOrFail($order->id);
             $order->load(['items.product', 'items.modifiers']);
+
+            // Check *inside* the order lock: concurrent KDS dispatch also locks
+            // this order, so a cashier can never validate an outdated kitchen state.
+            $currentConfirmed = $order->statusValue() === 'confirmed';
+            if ($currentConfirmed !== $isConfirmed || ! in_array($order->statusValue(), ['draft', 'confirmed'], true)) {
+                throw ValidationException::withMessages([
+                    'order' => 'حالة الطلب تغيرت أثناء التعديل. حدّث الصفحة وأعد المحاولة.',
+                ]);
+            }
+            $this->kitchenTicketService->assertOrderItemChangesAllowed(
+                $order,
+                $data['items'] ?? []
+            );
             // ── Inventory sync for confirmed orders ───────────────────────────
             // Runs before OrderItem quantities change, using the frozen stock plan.
             if ($isConfirmed && ! empty($newQtyMap)) {
@@ -636,14 +648,22 @@ public function confirmOrder(Order $order, User $user): Order
                     ->whereIn('status', ['confirmed', 'corrected', 'refunded'])
                     ->get()->sum(fn ($payment) => max(0, (float) $payment->amount - (float) ($payment->refunded_amount ?? 0)));
                 $paid = max($paid, (float) ($order->invoice?->paid_amount ?? 0));
-                if ($paid > (float) $subtotal + 0.004) {
-                    throw ValidationException::withMessages(['items' => 'الإجمالي الجديد أقل من المدفوع المؤكد. سوِّ فرق الدفع أولًا.']);
+                // Reprice with the original manual + channel discount snapshot.
+                // Resetting total_amount to subtotal silently drops discounts.
+                $order->update(['subtotal' => $subtotal]);
+                if ($order->sales_channel_id) {
+                    $this->salesChannelService->apply(
+                        $order,
+                        (int) $order->sales_channel_id,
+                        (string) ($order->discount_type ?? 'none'),
+                        $order->discount_value ?? 0,
+                    );
+                } else {
+                    $order->update(['total_amount' => $subtotal]);
                 }
-
-                $order->update([
-                    'subtotal'     => $subtotal,
-                    'total_amount' => $subtotal,
-                ]);
+                if ($paid > (float) $order->total_amount + 0.004) {
+                    throw ValidationException::withMessages(['items' => 'الإجمالي بعد الخصومات أقل من المدفوع المؤكد. سوِّ فرق الدفع أولًا.']);
+                }
 
                 if (! $isConfirmed && $order->payments()->exists()) {
                     $pending = $order->payments()->where('status', 'pending_verification')->exists();

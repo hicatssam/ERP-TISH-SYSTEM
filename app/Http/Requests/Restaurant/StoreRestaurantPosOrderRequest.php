@@ -23,6 +23,7 @@ class StoreRestaurantPosOrderRequest extends FormRequest
     {
         return [
             'pos_action' => ['nullable', Rule::in(['kot_print', 'bill_payment', 'bill_print'])],
+            'pos_request_token' => ['nullable', 'uuid'],
             'location_id' => ['nullable', 'integer', 'exists:locations,id'],
             'service_type' => [
                 'required',
