@@ -1015,7 +1015,7 @@ class PosCashierShiftSimulationTest extends TestCase
         $card = PaymentMethod::query()->create([
             'name' => 'Simulation card', 'name_ar' => 'بطاقة اختبار',
             'code' => 'sim-card-' . Str::random(8),
-            'type' => 'card', 'is_active' => true,
+            'type' => 'card_pos', 'is_active' => true,
             'requires_verification' => false,
             'requires_reference' => false,
         ]);
