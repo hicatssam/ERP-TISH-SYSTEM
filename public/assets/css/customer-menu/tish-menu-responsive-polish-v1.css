@@ -198,3 +198,20 @@ body.tish-paper.reference-home .reference-masthead .tish-drive-firstfold{
   body.tish-paper.reference-home .menu-area{padding-top:0!important}
   body.tish-paper.reference-home .reference-masthead{padding-top:0!important}
 }
+
+/* Only the mobile hero bleeds beyond the centered content gutters. */
+@media(max-width:600px){
+  body.tish-paper.reference-home .reference-masthead{
+    overflow:visible;
+  }
+  body.tish-paper.reference-home .reference-masthead .tish-drive-firstfold{
+    width:100vw;
+    max-width:none;
+    margin-inline:calc(50% - 50vw);
+  }
+  body.tish-paper.reference-home .reference-masthead .tish-drive-hero-art{
+    display:block;
+    width:100%;
+    height:auto;
+  }
+}
