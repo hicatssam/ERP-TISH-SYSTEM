@@ -3995,6 +3995,35 @@ document.addEventListener('DOMContentLoaded', () => {
    let rbSubmitting = false;
    let rbCheckoutSucceeded = false;
 
+function validatePosCheckoutConfirmation(response, data) {
+    // A 2xx status with a proxy/HTML/truncated response is ambiguous.
+    // Never rotate the retry UUID or tell the cashier the sale succeeded
+    // unless the API confirms the persisted order identity.
+    if (response.ok && (
+        !data || data.ok !== true
+        || !Number.isSafeInteger(Number(data.order_id))
+        || Number(data.order_id) <= 0
+    )) {
+        throw new Error('لم يصل تأكيد حفظ الطلب من السيرفر. افحص الطلبات ثم أعد المحاولة بنفس العملية.');
+    }
+}
+
+function safePosPrintNavigation(printWindow, url) {
+    if (!printWindow) return false;
+    if (!url) {
+        try { printWindow.close(); } catch (_) {}
+        return false;
+    }
+    try {
+        printWindow.location.href = url;
+        return true;
+    } catch (error) {
+        console.warn('POS receipt preview unavailable after saved checkout:', error);
+        try { printWindow.close(); } catch (_) {}
+        return false;
+    }
+}
+
 async function submitOrder(action) {
     if (rbSubmitting || rbCheckoutSucceeded) {
         return;
@@ -4170,6 +4199,8 @@ async function submitOrder(action) {
             data = null;
         }
 
+        validatePosCheckoutConfirmation(response, data);
+
         if (!response.ok) {
             printWindow?.close();
 
@@ -4215,31 +4246,21 @@ async function submitOrder(action) {
         sessionStorage.removeItem(posAttemptKey);
         rbCheckoutSucceeded = true;
 
-        if (
-            action === 'bill_print'
-            && printWindow
-        ) {
-            if (data?.invoice_print_url) {
-                printWindow.location.href =
-                    data.invoice_print_url;
-            } else {
-                printWindow.close();
-            }
-        }
-
-        if (
-            action === 'kot_print'
-            && printWindow
-            && data?.kitchen_dispatched
-        ) {
-            printWindow.location.href = data.kitchen_print_url;
-        }
+        // Printing is a separate action from checkout: a blocked popup or
+        // printer problem must NEVER misreport a committed sale as a failure.
+        const printRequested = action === 'bill_print' || action === 'kot_print';
+        const printUrl = action === 'bill_print'
+            ? data?.invoice_print_url
+            : (data?.kitchen_dispatched ? data?.kitchen_print_url : null);
+        const previewOpened = printRequested
+            ? safePosPrintNavigation(printWindow, printUrl)
+            : false;
 
         statusMessage(
             (data?.message || 'تم تنفيذ الطلب بنجاح.')
-                + ((action === 'bill_print' || action === 'kot_print') && !printWindow
-                    ? ' تعذرت الطباعة لأن المتصفح منع النافذة المنبثقة؛ افتح الطلب للطباعة مجددًا.'
-                    : ''),
+            + (printRequested && !previewOpened
+                ? ' تم حفظ الطلب، لكن تعذرت معاينة الطباعة. افتح الطلب المسجل وأعد الطباعة، ولا تعِد تسجيل البيع.'
+                : ''),
             'success'
         );
 

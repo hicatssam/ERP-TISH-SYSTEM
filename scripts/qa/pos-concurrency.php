@@ -23,6 +23,12 @@ use App\Models\Product;
 use App\Models\RestaurantMenuItem;
 use App\Models\SalesChannel;
 use App\Models\User;
+use App\Models\Module;
+use App\Models\KitchenStation;
+use App\Models\KitchenTicket;
+use App\Services\Kitchen\KitchenTicketService;
+use App\Services\Orders\OrderService;
+use Illuminate\Support\Facades\Cache;
 use App\Services\Restaurant\RestaurantOrderService;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Str;
@@ -72,6 +78,35 @@ if (($argv[1] ?? null) === '--worker') {
     try {
         $order = app(RestaurantOrderService::class)->createPosOrder($payload, $actor);
         echo json_encode(['status' => 'success', 'order_id' => $order->id], JSON_THROW_ON_ERROR)."\n";
+        exit(0);
+    } catch (Illuminate\Validation\ValidationException $exception) {
+        echo json_encode(['status' => 'rejected', 'errors' => $exception->errors()], JSON_THROW_ON_ERROR)."\n";
+        exit(0);
+    } catch (Throwable $exception) {
+        fwrite(STDERR, $exception::class.': '.$exception->getMessage()."\n".$exception->getTraceAsString()."\n");
+        exit(1);
+    }
+}
+
+if (($argv[1] ?? null) === '--worker-kds') {
+    $args = json_decode(base64_decode((string) ($argv[2] ?? '')), true, flags: JSON_THROW_ON_ERROR);
+    $actor = User::query()->findOrFail((int) $args['user']);
+    while (microtime(true) < (float) $args['ready_at']) {
+        usleep(1000);
+    }
+    try {
+        if ($args['kind'] === 'kitchen') {
+            $ticket = KitchenTicket::query()->findOrFail((int) $args['ticket_id']);
+            app(KitchenTicketService::class)->start($ticket, $actor);
+            echo json_encode(['status' => 'success', 'action' => 'kitchen_started'], JSON_THROW_ON_ERROR)."\n";
+        } else {
+            $order = Order::query()->findOrFail((int) $args['order_id']);
+            app(OrderService::class)->updateOrder($order, [
+                'payment_arrangement' => 'pay_now',
+                'items' => [['id' => (int) $args['item_id'], 'quantity' => 2]],
+            ], $actor);
+            echo json_encode(['status' => 'success', 'action' => 'cashier_changed_quantity'], JSON_THROW_ON_ERROR)."\n";
+        }
         exit(0);
     } catch (Illuminate\Validation\ValidationException $exception) {
         echo json_encode(['status' => 'rejected', 'errors' => $exception->errors()], JSON_THROW_ON_ERROR)."\n";
@@ -196,3 +231,61 @@ if ($locationOrders->count() !== 1
     throw new RuntimeException('Last-unit race left duplicate orders, invalid payment or corrupted stock.');
 }
 echo "PASS POS-RACE-02: two competing cashiers, one last unit, no oversell\n";
+
+
+// Case 3: kitchen status changes exactly while the cashier tries to edit.
+// Both workers use independent MySQL connections. The kitchen starts, the
+// cashier is rejected, and payment/invoice/stock remain unchanged.
+$c = fixture(5);
+Module::query()->firstOrCreate(['code' => 'kitchen'], [
+    'name' => 'Kitchen', 'type' => 'industry', 'is_active' => true,
+]);
+Cache::forget('modules:registry:v1');
+KitchenStation::query()->create([
+    'location_id' => $c['location'], 'name' => 'QA kitchen',
+    'code' => 'QA-MAIN-'.Str::random(6), 'is_default' => true, 'is_active' => true,
+]);
+$actor = User::query()->findOrFail((int) $c['user']);
+$kdsOrder = app(RestaurantOrderService::class)->createPosOrder(
+    scenarioPayload($c, (string) Str::uuid()), $actor
+);
+app(KitchenTicketService::class)->dispatchConfirmedOrder($kdsOrder, $actor);
+$ticket = $kdsOrder->kitchenTickets()->sole();
+$item = $kdsOrder->items()->sole();
+$startAt = microtime(true) + 2.0;
+$kdsTasks = [
+    ['kind' => 'kitchen'],
+    ['kind' => 'cashier'],
+];
+$workers = [];
+foreach ($kdsTasks as $task) {
+    $args = base64_encode(json_encode([
+        ...$c, ...$task, 'order_id' => $kdsOrder->id,
+        'ticket_id' => $ticket->id, 'item_id' => $item->id,
+        'ready_at' => $startAt,
+    ], JSON_THROW_ON_ERROR));
+    $worker = new Process([PHP_BINARY, __FILE__, '--worker-kds', $args]);
+    $worker->setTimeout(80);
+    $worker->start();
+    $workers[] = $worker;
+}
+$results = [];
+foreach ($workers as $worker) {
+    $worker->wait();
+    if (! $worker->isSuccessful()) {
+        throw new RuntimeException('KDS/checkout edit race failed: '.$worker->getExitCode().' '.$worker->getErrorOutput());
+    }
+    $results[] = json_decode(trim($worker->getOutput()), true, flags: JSON_THROW_ON_ERROR);
+}
+if (($results[0]['status'] ?? null) !== 'success'
+    || ($results[1]['status'] ?? null) !== 'rejected'
+    || $ticket->fresh()->statusValue() !== 'preparing'
+    || (float) $item->fresh()->quantity !== 1.0
+    || (float) $kdsOrder->fresh()->total_amount !== 10.0
+    || (float) $kdsOrder->fresh()->invoice?->total_amount !== 10.0
+    || $kdsOrder->payments()->count() !== 1
+    || (float) Inventory::query()->where('location_id', $c['location'])
+        ->where('product_id', $c['product'])->sole()->quantity !== 4.0) {
+    throw new RuntimeException('KDS-vs-POS race caused inconsistent state: '.json_encode($results));
+}
+echo "PASS POS-RACE-03: kitchen starts while cashier edits; edit denied and financial state preserved\n";
