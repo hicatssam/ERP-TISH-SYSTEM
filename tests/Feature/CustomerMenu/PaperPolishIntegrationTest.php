@@ -48,7 +48,10 @@ class PaperPolishIntegrationTest extends TestCase
         $this->assertStringContainsString('localUrl(item.url)', $orders);
         $this->assertStringContainsString('data-order-index=', $orders);
         $this->assertStringContainsString('orderStatus', $orders);
-        $this->assertStringContainsString('tish-paper-page-arrow', $orders);
+        $header = file_get_contents(resource_path('views/customer-menu/partials/unified-header.blade.php'));
+        $this->assertStringContainsString("partials.unified-header", $orders);
+        $this->assertStringContainsString('tish-paper-page-arrow', $header);
+        $this->assertStringContainsString('data-cm-language-host', $header);
         $this->assertStringContainsString('body.tish-paper.cm-my-orders', $css);
         $this->assertStringContainsString('availability-green.webp', $css);
         $this->assertStringContainsString('background.webp', $css);
