@@ -32,6 +32,13 @@ require dirname(__DIR__, 2).'/vendor/autoload.php';
 $app = require dirname(__DIR__, 2).'/bootstrap/app.php';
 $app->make(Kernel::class)->bootstrap();
 
+// Laravel's global CLI exception renderer can print an error while preserving
+// a zero shell exit code. Make race failures fail GitHub Actions explicitly.
+set_exception_handler(static function (Throwable $exception): never {
+    fwrite(STDERR, $exception::class.': '.$exception->getMessage()."\n".$exception->getTraceAsString()."\n");
+    exit(1);
+});
+
 $db = (string) config('database.connections.mysql.database');
 if (config('database.default') !== 'mysql'
     || ! str_ends_with($db, '_test')
@@ -70,7 +77,7 @@ if (($argv[1] ?? null) === '--worker') {
         echo json_encode(['status' => 'rejected', 'errors' => $exception->errors()], JSON_THROW_ON_ERROR)."\n";
         exit(0);
     } catch (Throwable $exception) {
-        fwrite(STDERR, $exception::class.': '.$exception->getMessage()."\n");
+        fwrite(STDERR, $exception::class.': '.$exception->getMessage()."\n".$exception->getTraceAsString()."\n");
         exit(1);
     }
 }
