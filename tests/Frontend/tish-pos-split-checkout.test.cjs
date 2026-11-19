@@ -74,3 +74,18 @@ test('server enforces immediate two-entry mixed payment and atomic full settleme
  assert.match(service,/app\(PaymentService::class\)->recordPayment/);
  assert.match(controller,/foreach \(\(\$data\['split_payments'\] \?\? \[\]\) as \$index => \$part\)/);
 });
+
+test('POS quick customer supports full details, individual default, company fields and authorized credit', () => {
+ assert.match(view, /id="rbQuickCustomerType"/);
+ assert.match(view, /<option value="individual" selected>فرد<\/option>/);
+ for (const field of ['rbQuickCustomerSecondaryPhone','rbQuickCustomerContactPerson',
+    'rbQuickCustomerTaxNumber','rbQuickCustomerAddress','rbQuickCustomerNotes',
+    'rbQuickCustomerScope','rbQuickCustomerAllowCredit','rbQuickCustomerCreditLimit',
+    'rbQuickCustomerBillingCycle','rbQuickCustomerPaymentTerms']) {
+    assert.ok(view.includes('id="' + field + '"'), field);
+ }
+ assert.match(view, /quickCustomerType.value = 'individual'/);
+ assert.match(view, /syncQuickCustomerFields\(\)/);
+ assert.match(view, /customer_type: quickCustomerType.value/);
+ assert.match(view, /customerSelect.value = String\(customer.id\)/);
+});
