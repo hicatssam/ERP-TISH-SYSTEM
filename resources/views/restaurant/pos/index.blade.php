@@ -805,6 +805,30 @@
         </div>
     </div>
     </main>
+<div class="rb-modal" id="rbQueuedCancelModal" hidden aria-hidden="true">
+    <div class="rb-modal-backdrop" data-close-queued-cancel></div>
+    <div class="rb-modal-dialog rb-draft-preview-dialog" role="dialog" aria-modal="true"
+         aria-labelledby="rbQueuedCancelTitle">
+        <div class="rb-modal-head">
+            <h2 id="rbQueuedCancelTitle">إلغاء عنصر قبل التحضير</h2>
+            <button type="button" class="rb-modal-close" data-close-queued-cancel aria-label="إغلاق">×</button>
+        </div>
+        <div class="rb-modal-body">
+            <p>هذه العملية متاحة للمدير المخوّل فقط، قبل بدء تحضير العنصر ومن دون تحصيل سابق.
+               تُحدّث فاتورة الطلب وتذكرة المطبخ والمخزون ضمن عملية واحدة.</p>
+            <label for="rbQueuedCancelItem">اختر العنصر</label>
+            <select id="rbQueuedCancelItem" class="rb-control"></select>
+            <label for="rbQueuedCancelReason">سبب الإلغاء (إلزامي)</label>
+            <textarea id="rbQueuedCancelReason" class="rb-control" rows="2"
+                      minlength="8" maxlength="500" placeholder="مثل: الزبون ألغى هذا العنصر قبل تحضيره"></textarea>
+            <p id="rbQueuedCancelError" role="alert" hidden></p>
+        </div>
+        <div class="rb-modal-foot">
+            <button type="button" class="rb-btn rb-btn-light" data-close-queued-cancel>رجوع</button>
+            <button type="button" class="rb-btn rb-btn-primary" id="rbQueuedCancelConfirm">إلغاء العنصر</button>
+        </div>
+    </div>
+</div>
 <div class="rb-modal" id="rbDraftPreviewModal" hidden aria-hidden="true">
     <div class="rb-modal-backdrop" data-close-draft-preview></div>
     <div class="rb-modal-dialog rb-draft-preview-dialog" role="dialog" aria-modal="true"
@@ -903,6 +927,12 @@
                         <span aria-hidden="true">🖨</span> إعادة طباعة الفاتورة
                     </a>
                 @endif
+                @if($statusValue === 'confirmed' && $order->kitchenTickets->isNotEmpty())
+                    @can('cancel', $order)
+                        <button type="button" class="rb-queued-cancel-trigger"
+                                data-queued-cancel-order="{{ $order->id }}">إلغاء عنصر قبل التحضير</button>
+                    @endcan
+                @endif
                 </div>
             @empty
                 <div class="rb-drawer-empty">لا توجد طلبات حديثة.</div>
@@ -922,6 +952,11 @@
 .rb-pos .rb-payment-method-warning a{font-weight:800;text-decoration:underline}
 .rb-drawer .rb-reprint-link{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;margin:5px 0 10px;padding:8px 12px;border:1px solid var(--rb-border);border-radius:8px;background:var(--rb-soft);color:var(--rb-text);font-weight:800;text-decoration:none}
 .rb-drawer .rb-reprint-link:hover{color:var(--rb-orange);border-color:var(--rb-orange)}
+.rb-drawer .rb-queued-cancel-trigger{display:block;width:100%;min-height:44px;margin:5px 0 10px;padding:9px 12px;border:1px solid var(--rb-border);border-radius:8px;background:var(--rb-soft);color:var(--rb-text);font-weight:800;text-align:center;cursor:pointer}
+.rb-drawer .rb-queued-cancel-trigger:hover{border-color:var(--rb-orange);color:var(--rb-orange)}
+.rb-pos #rbQueuedCancelModal .rb-modal-body{display:grid;gap:10px}
+.rb-pos #rbQueuedCancelModal #rbQueuedCancelError{color:var(--rb-danger);font-weight:800}
+.rb-pos #rbQueuedCancelModal #rbQueuedCancelError[hidden]{display:none!important}
 /* POS split-payment controls: readable and touch-friendly at checkout. */
 .rb-pos .rb-split-toggle,.rb-pos .rb-split-confirm{display:flex;align-items:center;gap:10px;line-height:1.5;cursor:pointer}
 .rb-pos .rb-split-toggle input,.rb-pos .rb-split-confirm input{width:19px;height:19px;accent-color:#ad201c;flex-shrink:0}
@@ -2775,6 +2810,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const qrOrdersUrl = @json(route('restaurant.pos.qr-orders'));
     const draftOrdersUrl = @json(route('restaurant.pos.drafts'));
     const receiptSearchUrl = @json(route('restaurant.pos.receipt-search'));
+    const queuedLinesUrlPattern = @json(route('restaurant.pos.orders.queued-lines', ['order' => '__ORDER__']));
+    const queuedCancelUrlPattern = @json(route('restaurant.pos.orders.cancel-queued-line', ['order' => '__ORDER__']));
     const cartAvailabilityUrl = @json(route('restaurant.pos.cart-availability'));
     const draftEditUrlPattern = @json(route('restaurant.pos.drafts.items.update', ['order' => '__ORDER__']));
     const draftCancelUrlPattern = @json(route('restaurant.pos.drafts.cancel', ['order' => '__ORDER__']));
@@ -3124,6 +3161,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const serverOrdersTitle = document.getElementById('rbServerOrdersTitle');
     const serverOrdersList = document.getElementById('rbServerOrdersList');
     const recentOrdersMarkup = serverOrdersList.innerHTML;
+    const queuedCancelModal = document.getElementById('rbQueuedCancelModal');
+    const queuedCancelSelect = document.getElementById('rbQueuedCancelItem');
+    const queuedCancelReason = document.getElementById('rbQueuedCancelReason');
+    const queuedCancelError = document.getElementById('rbQueuedCancelError');
+    const queuedCancelConfirm = document.getElementById('rbQueuedCancelConfirm');
+    let queuedCancelOrderId = null;
+    let queuedCancelPending = false;
     async function checkCartAvailability() {
         const ids = [...new Set([...cart.values()].map(item => Number(item.product_id || item.id)).filter(Boolean))];
         if (!ids.length) return true;
@@ -5273,6 +5317,100 @@ async function submitOrder(action) {
     // -----------------------------
     // Drawer / existing orders
     // -----------------------------
+    async function openQueuedCancel(orderId) {
+        queuedCancelOrderId = orderId;
+        queuedCancelPending = false;
+        queuedCancelReason.value = '';
+        queuedCancelConfirm.textContent = 'إلغاء العنصر';
+        queuedCancelConfirm.disabled = true;
+        queuedCancelError.hidden = false;
+        queuedCancelError.textContent = 'جار تحميل حالة المطبخ...';
+        queuedCancelSelect.replaceChildren();
+        closeDrawer();
+        queuedCancelModal.hidden = false;
+        queuedCancelModal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        try {
+            const url = new URL(queuedLinesUrlPattern.replace('__ORDER__', String(orderId)), window.location.origin);
+            const response = await fetch(url, {headers:{Accept:'application/json'},credentials:'same-origin'});
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || 'تعذر التحقق من الطلب.');
+            if (queuedCancelOrderId !== orderId) return;
+            document.getElementById('rbQueuedCancelTitle').textContent = 'إلغاء عنصر — ' + data.number;
+            (data.items || []).forEach(item => {
+                const option = document.createElement('option');
+                option.value = String(item.id);
+                option.disabled = !item.eligible;
+                option.textContent = item.name + ' × ' + item.quantity + ' — ' + item.status;
+                queuedCancelSelect.appendChild(option);
+            });
+            const available = [...queuedCancelSelect.options].find(option => !option.disabled);
+            if (available) {
+                queuedCancelSelect.value = available.value;
+                queuedCancelConfirm.disabled = false;
+                queuedCancelError.hidden = true;
+            } else {
+                queuedCancelError.textContent = 'لا توجد عناصر يمكن إلغاؤها قبل التحضير، أو أن الطلب مرتبط بدفعة. راجع المدير والمطبخ.';
+            }
+        } catch (error) {
+            if (queuedCancelOrderId === orderId) queuedCancelError.textContent = error.message || 'تعذر تحميل حالة المطبخ.';
+        }
+    }
+    function closeQueuedCancel() {
+        queuedCancelOrderId = null;
+        queuedCancelPending = false;
+        queuedCancelModal.hidden = true;
+        queuedCancelModal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+    }
+    queuedCancelModal.querySelectorAll('[data-close-queued-cancel]').forEach(button =>
+        button.addEventListener('click', closeQueuedCancel));
+    queuedCancelSelect.addEventListener('change', () => {
+        queuedCancelPending = false;
+        queuedCancelConfirm.textContent = 'إلغاء العنصر';
+    });
+    queuedCancelReason.addEventListener('input', () => {
+        queuedCancelPending = false;
+        queuedCancelConfirm.textContent = 'إلغاء العنصر';
+    });
+    queuedCancelConfirm.addEventListener('click', async () => {
+        if (!queuedCancelOrderId || queuedCancelConfirm.disabled || !queuedCancelSelect.value) return;
+        const reason = queuedCancelReason.value.trim();
+        if (reason.length < 8) {
+            queuedCancelError.textContent = 'اكتب سبب الإلغاء بثمانية أحرف على الأقل.';
+            queuedCancelError.hidden = false;
+            return;
+        }
+        if (!queuedCancelPending) {
+            queuedCancelPending = true;
+            queuedCancelConfirm.textContent = 'تأكيد إلغاء العنصر';
+            queuedCancelError.textContent = 'تأكيد نهائي: ستُحدّث الفاتورة والمطبخ والمخزون. اضغط الزر مرة ثانية.';
+            queuedCancelError.hidden = false;
+            return;
+        }
+        queuedCancelConfirm.disabled = true;
+        try {
+            const response = await fetch(queuedCancelUrlPattern.replace('__ORDER__', String(queuedCancelOrderId)), {
+                method:'POST',
+                headers:{Accept:'application/json','Content-Type':'application/json',
+                    'X-CSRF-TOKEN': form.querySelector('[name="_token"]').value},
+                credentials:'same-origin',
+                body:JSON.stringify({order_item_id:Number(queuedCancelSelect.value),cancellation_reason:reason}),
+            });
+            const data = await response.json();
+            if (!response.ok || !data.ok)
+                throw new Error(Object.values(data.errors || {}).flat()[0] || data.message || 'تعذر إلغاء العنصر.');
+            closeQueuedCancel();
+            statusMessage('تم إلغاء العنصر وتحديث الطلب والمطبخ والمحاسبة.', 'success');
+            window.location.assign(cashierPosUrl);
+        } catch (error) {
+            queuedCancelError.textContent = error.message || 'تعذر تأكيد الإلغاء؛ تحقق من حالة الطلب.';
+            queuedCancelError.hidden = false;
+            queuedCancelConfirm.disabled = false;
+            queuedCancelPending = false;
+            queuedCancelConfirm.textContent = 'إلغاء العنصر';
+        }
+    });
     qrOrdersBtn.addEventListener('click', () => openDrawer('qr'));
     draftListBtn.addEventListener('click', () => openDrawer('draft'));
     receiptsBtn.addEventListener('click', () => openDrawer('receipts'));
@@ -5300,6 +5438,11 @@ async function submitOrder(action) {
         } else filterServerOrders();
     });
     serverOrdersList.addEventListener('click', event => {
+        const queued = event.target.closest('[data-queued-cancel-order]');
+        if (queued) {
+            openQueuedCancel(Number(queued.dataset.queuedCancelOrder));
+            return;
+        }
         const more = event.target.closest('[data-qr-more]');
         if (more) loadQrOrders(Number(more.dataset.qrMore));
         const draftMore = event.target.closest('[data-draft-more]');
@@ -5402,6 +5545,10 @@ async function submitOrder(action) {
     // -----------------------------
     document.addEventListener('keydown', event => {
         if (event.key === 'Escape') {
+            if (!queuedCancelModal.hidden) {
+                closeQueuedCancel();
+                return;
+            }
             if (!draftPreviewModal.hidden) {
                 closeDraftPreview();
                 return;
