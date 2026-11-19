@@ -218,3 +218,12 @@ test('POS permits privileged cancellation of a queued unpaid KDS line without le
  assert.match(view, /option\.disabled = !item\.eligible/);
  assert.doesNotMatch(view, /window\.confirm\(/);
 });
+
+test('POS checks recipe ingredient shortages before any new checkout POST', () => {
+ assert.match(view, /items\[' \+ index \+ '\]\[product_id\]/);
+ assert.match(view, /items\[' \+ index \+ '\]\[quantity\]/);
+ assert.match(view, /Array\.isArray\(data\.ingredient_shortages\)/);
+ assert.match(view, /مكونات غير متوفرة أو وصفات غير مكتملة/);
+ assert.match(view, /لم يتم إرسال الطلب أو تسجيل دفع/);
+ assert.match(view, /await checkCartAvailability\(\)/);
+});
