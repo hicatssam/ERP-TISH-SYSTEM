@@ -4633,8 +4633,12 @@ document.addEventListener('DOMContentLoaded', () => {
         senderPhoneGroup.hidden = !isNonCash;
         senderAccountGroup.hidden = !isNonCash;
         proofGroup.hidden = !requiresProof;
-        manualReceiptGroup.hidden = !isNonCash || requiresProof;
-        manualReceipt.required = isNonCash && !requiresProof;
+        // Only immediate non-cash collections need cashier confirmation.
+        // Verification-required transfers stay pending for separate review.
+        const cashierConfirmable = isNonCash && !methodRequiresVerification
+            && arrangement !== 'pending_verification';
+        manualReceiptGroup.hidden = !cashierConfirmable;
+        manualReceipt.required = cashierConfirmable;
 
         if (referenceInput) {
             referenceInput.required = requiresReference;
