@@ -26,6 +26,7 @@ class NativeReportController extends Controller
     public function export(Request $request, string $report, string $format)
     {
         $meta = app(ReportCatalog::class)->native()[$report] ?? null;
+        abort_unless(\App\Support\ActivityModules::reportAllowed($report), 404);
         abort_unless($meta && in_array($format, ['xlsx', 'pdf', 'print'], true), 404);
         abort_unless(app(ReportCatalog::class)->allowed($request->user(), $meta), 403);
         $sections = $this->sections($request, $report);
