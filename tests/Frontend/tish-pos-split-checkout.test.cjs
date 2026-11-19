@@ -139,7 +139,7 @@ test('POS stage B draft cancellation requests a reason and never directly erases
 });
 
 test('POS stage B cancels one draft item only before kitchen without emptying the order', () => {
- assert.match(view, /data\.draftRemove = String\(item\.id\)/);
+ assert.match(view, /remove\.dataset\.draftRemove = String\(item\.id\)/);
  assert.match(view, /const removedIds = activeServerDraft\.items/);
  assert.match(view, /remove_item_ids: removedIds/);
  assert.match(view, /if \(!items\.length\)/);
