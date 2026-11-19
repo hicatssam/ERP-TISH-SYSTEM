@@ -109,6 +109,107 @@ class PosCashierShiftSimulationTest extends TestCase
         ];
     }
 
+    private function mixedPayload(array $f, float $firstAmount = 4, float $secondAmount = 6): array
+    {
+        $cashMethod = PaymentMethod::query()->create([
+            'name' => 'Cash split test', 'name_ar' => 'نقد اختبار',
+            'code' => 'cash-' . Str::random(8), 'type' => 'cash',
+            'is_active' => true, 'requires_verification' => false,
+        ]);
+        $payload = $this->orderPayload($f, [
+            ['product_id' => $f['products'][0]->id, 'quantity' => 1],
+        ]);
+        unset($payload['payment_method_id'], $payload['reference_number'],
+            $payload['payment_received_confirmed']);
+        $payload['split_payments'] = [
+            [
+                'payment_method_id' => $cashMethod->id,
+                'amount' => $firstAmount,
+            ],
+            [
+                'payment_method_id' => $f['method']->id,
+                'amount' => $secondAmount,
+                'reference_number' => 'MIXED-'.Str::random(7),
+                'payment_received_confirmed' => 1,
+            ],
+        ];
+        return $payload;
+    }
+
+    #[Test]
+    public function pos_51_split_tender_cash_and_wallet_are_atomic_and_replay_is_idempotent(): void
+    {
+        $f = $this->fixture();
+        $payload = $this->mixedPayload($f);
+        $first = $this->actingAs($f['cashier'])
+            ->postJson(route('restaurant.pos.orders.store'), $payload)
+            ->assertCreated()->assertJsonPath('status', 'confirmed');
+        $second = $this->actingAs($f['cashier'])
+            ->postJson(route('restaurant.pos.orders.store'), $payload)
+            ->assertCreated();
+
+        $order = Order::query()->sole();
+        $this->assertEquals($order->id, $first->json('order_id'));
+        $this->assertEquals($order->id, $second->json('order_id'));
+        $this->assertDatabaseCount('payments', 2);
+        $this->assertEquals(10, $order->payments()->sum('amount'));
+        $this->assertEquals(10, $order->fresh()->invoice?->paid_amount);
+        $this->assertSame('paid', ($order->fresh()->payment_status?->value ?? (string) $order->fresh()->payment_status));
+        $this->assertEquals(39, Inventory::query()
+            ->where('product_id', $f['products'][0]->id)->sole()->quantity);
+        $this->assertDatabaseCount('invoices', 1);
+    }
+
+    #[Test]
+    public function pos_52_split_tender_total_mismatch_rolls_back_order_invoice_stock_and_payment(): void
+    {
+        $f = $this->fixture();
+        $payload = $this->mixedPayload($f, 4, 5);
+        $this->actingAs($f['cashier'])
+            ->postJson(route('restaurant.pos.orders.store'), $payload)
+            ->assertUnprocessable()->assertJsonValidationErrors('split_payments');
+
+        $this->assertDatabaseCount('orders', 0);
+        $this->assertDatabaseCount('payments', 0);
+        $this->assertDatabaseCount('invoices', 0);
+        $this->assertEquals(40, Inventory::query()
+            ->where('product_id', $f['products'][0]->id)->sole()->quantity);
+    }
+
+    #[Test]
+    public function pos_53_split_tender_requires_receipt_confirmation_and_unique_methods(): void
+    {
+        $f = $this->fixture();
+        $payload = $this->mixedPayload($f);
+        unset($payload['split_payments'][1]['payment_received_confirmed']);
+        $this->actingAs($f['cashier'])
+            ->postJson(route('restaurant.pos.orders.store'), $payload)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('split_payments.1.payment_received_confirmed');
+        $payload['split_payments'][1]['payment_received_confirmed'] = 1;
+        $payload['split_payments'][1]['payment_method_id'] =
+            $payload['split_payments'][0]['payment_method_id'];
+        $this->actingAs($f['cashier'])
+            ->postJson(route('restaurant.pos.orders.store'), $payload)
+            ->assertUnprocessable()->assertJsonValidationErrors('split_payments');
+        $this->assertDatabaseCount('orders', 0);
+    }
+
+    #[Test]
+    public function pos_54_split_tender_rejects_ineligible_method_without_partial_commit(): void
+    {
+        $f = $this->fixture();
+        $payload = $this->mixedPayload($f);
+        PaymentMethod::query()->findOrFail($payload['split_payments'][1]['payment_method_id'])
+            ->update(['requires_verification' => true]);
+        $this->actingAs($f['cashier'])
+            ->postJson(route('restaurant.pos.orders.store'), $payload)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('split_payments.1.payment_method_id');
+        $this->assertDatabaseCount('orders', 0);
+        $this->assertDatabaseCount('payments', 0);
+    }
+
     #[Test]
     public function pos_01_single_burger_creates_one_paid_order_invoice_and_stock_movement(): void
     {

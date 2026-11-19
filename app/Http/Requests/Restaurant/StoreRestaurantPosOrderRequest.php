@@ -44,6 +44,11 @@ class StoreRestaurantPosOrderRequest extends FormRequest
             ],
             'payment_method_id' => ['nullable', 'integer', 'exists:payment_methods,id'],
             'paid_amount' => ['nullable', 'numeric', 'min:0'],
+            'split_payments' => ['nullable', 'array', 'size:2'],
+            'split_payments.*.payment_method_id' => ['required_with:split_payments', 'integer', 'exists:payment_methods,id'],
+            'split_payments.*.amount' => ['required_with:split_payments', 'numeric', 'gt:0'],
+            'split_payments.*.reference_number' => ['nullable', 'string', 'max:100'],
+            'split_payments.*.payment_received_confirmed' => ['nullable', 'boolean'],
             'reference_number' => ['nullable', 'string', 'max:100'],
             'sender_name' => ['nullable', 'string', 'max:150'],
             'sender_phone' => ['nullable', 'string', 'max:50'],
@@ -76,6 +81,7 @@ class StoreRestaurantPosOrderRequest extends FormRequest
                 'paid_amount' => null,
                 'reference_number' => null,
                 'payment_received_confirmed' => null,
+                'split_payments' => null,
             ]);
         }
     }
@@ -126,7 +132,43 @@ class StoreRestaurantPosOrderRequest extends FormRequest
                 );
             }
 
-            if (! $noImmediatePayment && ! $this->filled('payment_method_id')) {
+            $split = $this->input('split_payments');
+            $hasSplit = is_array($split) && count($split) > 0;
+            if ($hasSplit) {
+                if ($arrangement !== PaymentArrangement::PayNow->value
+                    || $this->input('pos_action') === 'kot_print') {
+                    $validator->errors()->add('split_payments', 'الدفع المختلط متاح للدفع الفوري فقط.');
+                }
+                if (count($split) === 2 && (string) data_get($split, '0.payment_method_id')
+                    === (string) data_get($split, '1.payment_method_id')) {
+                    $validator->errors()->add('split_payments',
+                        'اختر طريقتي دفع مختلفتين، أو استخدم الدفع العادي.');
+                }
+                if ($this->filled('payment_method_id') || $this->filled('paid_amount')) {
+                    $validator->errors()->add('split_payments', 'لا تجمع الدفع المختلط مع بيانات دفع فردي.');
+                }
+                foreach ($split as $index => $row) {
+                    if (! is_array($row)) continue;
+                    $methodId = (int) ($row['payment_method_id'] ?? 0);
+                    $method = PaymentMethod::query()->active()->find($methodId);
+                    if (! $method || $method->requires_verification) {
+                        $validator->errors()->add("split_payments.$index.payment_method_id",
+                            'طريقة الدفع غير مفعلة أو تحتاج تحققًا منفصلًا، ولا تصلح للدفع المختلط الفوري.');
+                        continue;
+                    }
+                    if ((string) $method->type !== 'cash' || $method->requires_reference) {
+                        if (mb_strlen(trim((string) ($row['reference_number'] ?? ''))) < 1) {
+                            $validator->errors()->add("split_payments.$index.reference_number",
+                                'رقم العملية مطلوب للدفع غير النقدي.');
+                        }
+                        if (empty($row['payment_received_confirmed'])) {
+                            $validator->errors()->add("split_payments.$index.payment_received_confirmed",
+                                'يجب تأكيد وصول المبلغ غير النقدي.');
+                        }
+                    }
+                }
+            }
+            if (! $hasSplit && ! $noImmediatePayment && ! $this->filled('payment_method_id')) {
                 $validator->errors()->add(
                     'payment_method_id',
                     'طريقة الدفع مطلوبة لهذا النوع من الدفع.'
@@ -166,7 +208,7 @@ class StoreRestaurantPosOrderRequest extends FormRequest
                 }
             }
 
-            if ($this->filled('payment_method_id') && ! $noImmediatePayment) {
+            if (! $hasSplit && $this->filled('payment_method_id') && ! $noImmediatePayment) {
                 $method = PaymentMethod::query()
                     ->active()
                     ->find($this->integer('payment_method_id'));
