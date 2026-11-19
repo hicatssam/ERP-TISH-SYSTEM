@@ -445,6 +445,49 @@
                             </select>
                         </div>
 
+                        {{-- Two-tender immediate checkout: both amounts are posted atomically. --}}
+                        <div class="rb-field rb-field-wide" id="rbSplitTenderOption">
+                            <label class="rb-split-toggle" for="rbSplitTenderToggle">
+                                <input type="checkbox" id="rbSplitTenderToggle">
+                                <span>تقسيم الدفع بين نقد وبطاقة / طريقتين</span>
+                            </label>
+                        </div>
+                        <div class="rb-field rb-field-wide rb-split-tenders" id="rbSplitTenderPanel" hidden>
+                            <strong>الدفع المختلط — مجموع الدفعتين يجب أن يساوي إجمالي الطلب</strong>
+                            <div class="rb-split-grid">
+                                @for($i=0;$i<2;$i++)
+                                    <fieldset class="rb-split-part">
+                                        <legend>الدفعة {{ $i + 1 }}</legend>
+                                        <label for="rbSplitMethod{{ $i }}">طريقة الدفع</label>
+                                        <select id="rbSplitMethod{{ $i }}" data-split-method
+                                                name="split_payments[{{ $i }}][payment_method_id]" class="rb-control" disabled>
+                                            <option value="">اختر الطريقة</option>
+                                            @foreach($paymentMethods as $method)
+                                                @if(!$method->requires_verification)
+                                                    <option value="{{ $method->id }}"
+                                                            data-type="{{ $method->type }}"
+                                                            data-reference="{{ $method->requires_reference ? '1':'0' }}">
+                                                        {{ $method->name_ar ?: $method->name }}
+                                                    </option>
+                                                @endif
+                                            @endforeach
+                                        </select>
+                                        <label for="rbSplitAmount{{ $i }}">المبلغ (₪)</label>
+                                        <input id="rbSplitAmount{{ $i }}" data-split-amount type="number" min="0.01" step="0.01"
+                                               name="split_payments[{{ $i }}][amount]" class="rb-control" disabled>
+                                        <label for="rbSplitRef{{ $i }}">رقم العملية (لغير النقد)</label>
+                                        <input id="rbSplitRef{{ $i }}" data-split-reference type="text" maxlength="100"
+                                               name="split_payments[{{ $i }}][reference_number]" class="rb-control" disabled>
+                                        <label class="rb-split-confirm"><input data-split-confirm type="checkbox" value="1"
+                                               name="split_payments[{{ $i }}][payment_received_confirmed]" disabled>
+                                            تم التأكد من تحصيل الدفعة غير النقدية
+                                        </label>
+                                    </fieldset>
+                                @endfor
+                            </div>
+                            <strong id="rbSplitTenderBalance" aria-live="polite"></strong>
+                        </div>
+
                         <div class="rb-field" id="rbPaidAmountGroup" hidden>
                             <label>المبلغ المدفوع</label>
                             <input
@@ -2598,6 +2641,31 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     syncDiscountReason();
 
+    const splitTenderToggle = document.getElementById('rbSplitTenderToggle');
+    const splitTenderOption = document.getElementById('rbSplitTenderOption');
+    const splitTenderPanel = document.getElementById('rbSplitTenderPanel');
+    const splitTenderBalance = document.getElementById('rbSplitTenderBalance');
+    const splitMethods = [...form.querySelectorAll('[data-split-method]')];
+    const splitAmounts = [...form.querySelectorAll('[data-split-amount]')];
+    const splitReferences = [...form.querySelectorAll('[data-split-reference]')];
+    const splitConfirmations = [...form.querySelectorAll('[data-split-confirm]')];
+    const splitMode = () => splitTenderToggle.checked && paymentArrangement.value === 'pay_now';
+    function renderSplitTender() {
+        if (!splitMode()) return;
+        const cents = Math.round(getTotals().total * 100);
+        const collected = splitAmounts.reduce((sum, field) => sum + Math.round(Number(field.value || 0) * 100), 0);
+        splitTenderBalance.textContent = 'الإجمالي ' + money(cents / 100)
+            + ' — الموزع ' + money(collected / 100)
+            + ' — المتبقي ' + money((cents - collected) / 100);
+        splitTenderBalance.style.color = cents === collected ? '#167044' : '#aa1d19';
+    }
+    splitTenderToggle.addEventListener('change', syncPayment);
+    [...splitMethods, ...splitAmounts, ...splitReferences, ...splitConfirmations]
+        .forEach(field => {
+            field.addEventListener('input', renderSplitTender);
+            field.addEventListener('change', renderSplitTender);
+        });
+
     const paymentArrangement = document.getElementById('rbPaymentArrangement');
     const paymentMethod = document.getElementById('rbPaymentMethod');
     const paymentMethodGroup = document.getElementById('rbPaymentMethodGroup');
@@ -3440,6 +3508,7 @@ document.addEventListener('DOMContentLoaded', () => {
         channelDiscountEl.textContent = money(totals.channelDiscount);
         grandTotalEl.textContent = money(totals.total);
         checkoutTotalEl.textContent = money(totals.total);
+        renderSplitTender();
         cartCount.textContent = cart.size;
     }
 
@@ -3574,7 +3643,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function syncPayment() {
         const arrangement = paymentArrangement.value;
+        splitTenderOption.hidden = arrangement !== 'pay_now';
+        const splitActive = splitMode();
+        splitTenderPanel.hidden = !splitActive;
+        splitMethods.forEach((field, i) => {
+            field.disabled = !splitActive;
+            splitAmounts[i].disabled = !splitActive;
+            splitReferences[i].disabled = !splitActive;
+            splitConfirmations[i].disabled = !splitActive;
+            field.required = splitActive;
+            splitAmounts[i].required = splitActive;
+            const option = field.options[field.selectedIndex];
+            const nonCash = splitActive && !!field.value && option?.dataset.type !== 'cash';
+            splitReferences[i].required = nonCash || (splitActive && option?.dataset.reference === '1');
+            splitConfirmations[i].required = nonCash;
+        });
+        if (splitActive) {
+            paymentMethod.disabled = true;
+            form.querySelector('[name="paid_amount"]').disabled = true;
+            paymentMethodGroup.hidden = true;
+            paymentMethod.required = false;
+            paidAmountGroup.hidden = true;
+            referenceGroup.hidden = true;
+            senderNameGroup.hidden = true;
+            senderPhoneGroup.hidden = true;
+            senderAccountGroup.hidden = true;
+            proofGroup.hidden = true;
+            manualReceiptGroup.hidden = true;
+            manualReceipt.required = false;
+            referenceInput.required = false;
+            proofInput.required = false;
+            renderSplitTender();
+            clearCheckoutError();
+            return;
+        }
 
+        paymentMethod.disabled = false;
+        form.querySelector('[name="paid_amount"]').disabled = false;
         const noImmediate = [
             'pay_on_pickup',
             'on_account'
@@ -3698,6 +3803,28 @@ document.addEventListener('DOMContentLoaded', () => {
             return false;
         }
 
+        if (splitMode()) {
+            const cents = Math.round(getTotals().total * 100);
+            const pieces = splitAmounts.map(field => Math.round(Number(field.value || 0) * 100));
+            if (pieces.some(value => !Number.isSafeInteger(value) || value <= 0)
+                || pieces.reduce((sum,value) => sum + value, 0) !== cents
+                || splitMethods.some(field => !field.value)
+                || splitMethods[0].value === splitMethods[1].value) {
+                showCheckoutError('اختر طريقتين مختلفتين ووزع الإجمالي بدقة دون زيادة أو نقص.', 'split_payments');
+                return false;
+            }
+            for (let i = 0; i < 2; i++) {
+                const option = splitMethods[i].options[splitMethods[i].selectedIndex];
+                if (option?.dataset.type !== 'cash'
+                    && (!splitReferences[i].value.trim() || !splitConfirmations[i].checked)) {
+                    showCheckoutError('كل دفعة غير نقدية تحتاج رقم عملية وتأكيد التحصيل.', 'split_payments');
+                    return false;
+                }
+            }
+            clearCheckoutError();
+            return true;
+        }
+
         if (
             paymentMethod.required
             && !paymentMethod.value
@@ -3776,6 +3903,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 customer_id: simpleField('customer_id'),
                 sales_channel_id: simpleField('sales_channel_id'),
                 payment_arrangement: paymentArrangement.value,
+            split_tender_enabled: splitTenderToggle.checked,
+            split_payments: splitMode() ? splitMethods.map((field, i) => ({
+                payment_method_id: field.value,
+                amount: splitAmounts[i].value,
+                reference_number: splitReferences[i].value,
+                payment_received_confirmed: splitConfirmations[i].checked,
+            })) : [],
                 payment_method_id: paymentMethod.value,
                 paid_amount: simpleField('paid_amount'),
                 discount_type: discountType.value,
