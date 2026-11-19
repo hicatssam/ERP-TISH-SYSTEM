@@ -113,3 +113,15 @@ test('POS does not silently expose empty payment-method dropdowns as valid split
  assert.match(view, /لا توجد طريقتا دفع مختلط متاحتان/);
  assert.match(view, /paymentMethod\.options\.length <= 1/);
 });
+
+test('POS stage B edits only unpaid server drafts in the popup without creating a second order', () => {
+ assert.match(view, /id="rbDraftPreviewSave"/);
+ assert.match(view, /const draftEditUrlPattern = @json/);
+ assert.match(view, /draftPreviewSave\.hidden = kind !== 'server' \|\| !draft\.editable/);
+ assert.match(view, /draftPreviewSave\.addEventListener\('click', async/);
+ assert.match(view, /method: 'PATCH'/);
+ assert.match(view, /'X-CSRF-TOKEN'/);
+ assert.match(view, /data-draft-quantity/);
+ assert.match(view, /data-draft-notes/);
+ assert.match(view, /if \(!activeServerDraft\?\.editable \|\| draftPreviewSave\.disabled\) return/);
+});
