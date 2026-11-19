@@ -232,3 +232,12 @@ test('POS manager availability popup is explicit, permission-scoped and refreshe
  assert.match(view, /loadCatalog\(1, false, true\)/);
  assert.match(view, /manageAvailabilityBtn\?\.addEventListener\('click'/);
 });
+
+test('POS checks recipe ingredient shortages before any new checkout POST', () => {
+ assert.match(view, /items\[' \+ index \+ '\]\[product_id\]/);
+ assert.match(view, /items\[' \+ index \+ '\]\[quantity\]/);
+ assert.match(view, /Array\.isArray\(data\.ingredient_shortages\)/);
+ assert.match(view, /مكونات غير متوفرة أو وصفات غير مكتملة/);
+ assert.match(view, /لم يتم إرسال الطلب أو تسجيل دفع/);
+ assert.match(view, /await checkCartAvailability\(\)/);
+});

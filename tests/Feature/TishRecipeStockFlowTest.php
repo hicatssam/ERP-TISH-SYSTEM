@@ -97,6 +97,35 @@ class TishRecipeStockFlowTest extends TestCase
         }
     }
 
+    public function test_pos_cart_preview_reports_exhausted_bun_before_checkout_without_stock_or_order_writes(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $branch = Location::query()->where('code', 'B01')->firstOrFail();
+        $admin = User::query()->where('username', 'admin')->firstOrFail();
+        $burger = Product::query()->where('sku', 'BRG-BEEF-CLASSIC')->firstOrFail();
+        $bun = Product::query()->where('sku', 'BRG-ING-BUN')->firstOrFail();
+
+        Inventory::query()->where('location_id', $branch->id)
+            ->where('product_id', $bun->id)->update(['quantity' => 0, 'reserved_quantity' => 0]);
+        $orderCountBefore = Order::query()->count();
+
+        $response = $this->actingAs($admin)->getJson(route('restaurant.pos.cart-availability', [
+            'location_id' => $branch->id,
+            'ids' => [$burger->id],
+            'items' => [['product_id' => $burger->id, 'quantity' => 3]],
+        ]))->assertOk()
+            ->assertJsonCount(0, 'unavailable_ids');
+
+        $this->assertNotEmpty($response->json('ingredient_shortages'));
+        $this->assertContains(
+            $bun->name_ar ?: $bun->name,
+            collect($response->json('ingredient_shortages'))->pluck('ingredient')->all()
+        );
+        $this->assertSame($orderCountBefore, Order::query()->count());
+        $this->assertEquals(0, Inventory::query()->where('location_id', $branch->id)
+            ->where('product_id', $bun->id)->value('quantity'));
+    }
+
     public function test_confirm_then_cancel_unpaid_burger_order_deducts_and_restores_its_exact_ingredients(): void
     {
         $this->seed(DatabaseSeeder::class);

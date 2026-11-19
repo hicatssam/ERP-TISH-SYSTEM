@@ -693,6 +693,10 @@ class RestaurantPosController extends Controller
         $data = $request->validate([
             'ids' => ['required', 'array', 'min:1', 'max:100'],
             'ids.*' => ['required', 'integer', 'distinct', 'min:1'],
+            'items' => ['sometimes', 'array', 'min:1', 'max:100'],
+            'items.*.product_id' => ['required', 'integer', 'min:1'],
+            'items.*.product_variant_id' => ['nullable', 'integer', 'min:1'],
+            'items.*.quantity' => ['required', 'numeric', 'min:0.001', 'max:10000'],
         ]);
         $location = $this->context->resolveLocation(
             $request->user(),
@@ -702,9 +706,80 @@ class RestaurantPosController extends Controller
         $available = $this->catalog->byIds($location->id, $ids)
             ->pluck('id')->map(fn ($id) => (int) $id)->all();
 
+        // Advisory ingredient check for the exact selected product/variant
+        // quantities. No reservations or stock writes. The order service
+        // remains the authoritative atomic check, including modifiers.
+        $shortages = [];
+        if (! empty($data['items'])) {
+            $demand = [];
+            $sources = [];
+            foreach ($data['items'] as $item) {
+                $productId = (int) $item['product_id'];
+                if (! in_array($productId, $available, true)) continue;
+                $menuItem = \App\Models\RestaurantMenuItem::query()
+                    ->where('location_id', $location->id)
+                    ->where('product_id', $productId)->first();
+                $mode = $menuItem?->inventory_mode ?: 'auto';
+                if ($mode === 'product') continue;
+
+                $base = \App\Models\Recipe::query()
+                    ->where('product_id', $productId)->approved()->active();
+                $variantId = (int) ($item['product_variant_id'] ?? 0);
+                $recipe = $variantId
+                    ? (clone $base)->where('product_variant_id', $variantId)
+                        ->orderByDesc('version')->first()
+                    : null;
+                $recipe ??= (clone $base)->whereNull('product_variant_id')
+                    ->orderByDesc('version')->first();
+                if (! $recipe || $recipe->items()->count() === 0) {
+                    if ($mode === 'recipe') $shortages[] = [
+                        'product_id' => $productId,
+                        'ingredient' => 'لا توجد وصفة فعالة لهذا الصنف',
+                    ];
+                    continue;
+                }
+                $yield = (float) $recipe->yield_quantity;
+                if ($yield <= 0) {
+                    $shortages[] = [
+                        'product_id' => $productId,
+                        'ingredient' => 'كمية إنتاج الوصفة غير صالحة',
+                    ];
+                    continue;
+                }
+                $factor = (float) $item['quantity'] / $yield;
+                foreach ($recipe->items as $ingredient) {
+                    $required = max(0, $ingredient->effectiveQuantity($factor));
+                    if ($required <= 0) continue;
+                    $ingredientId = (int) $ingredient->ingredient_product_id;
+                    $demand[$ingredientId] = ($demand[$ingredientId] ?? 0) + $required;
+                    $sources[$ingredientId][$productId] = true;
+                }
+            }
+
+            if ($demand) {
+                $stock = \App\Models\Inventory::query()
+                    ->where('location_id', $location->id)
+                    ->whereIn('product_id', array_keys($demand))->get()->keyBy('product_id');
+                $names = \App\Models\Product::query()
+                    ->whereIn('id', array_keys($demand))->get()->keyBy('id');
+                foreach ($demand as $ingredientId => $required) {
+                    $availableQty = (float) ($stock->get($ingredientId)?->available_quantity ?? 0);
+                    if ($availableQty + 0.000001 < round($required, 3)) {
+                        $shortages[] = [
+                            'product_ids' => array_keys($sources[$ingredientId]),
+                            'ingredient' => $names->get($ingredientId)?->name_ar
+                                ?: $names->get($ingredientId)?->name
+                                ?: ('#'.$ingredientId),
+                        ];
+                    }
+                }
+            }
+        }
+
         return response()->json([
             'available_ids' => $available,
             'unavailable_ids' => array_values(array_diff($ids, $available)),
+            'ingredient_shortages' => $shortages,
         ]);
     }
 
