@@ -332,3 +332,47 @@ if (count($parallelResults) !== 10
 }
 echo "PASS POS-RACE-04: ten simultaneous POS checkouts, ten invoices and payments, exact stock\n";
 
+
+
+// Cases 5-6: kitchen marks ready / serves at the exact moment cashier attempts
+// an invalid post-dispatch quantity change. Independent MySQL connections.
+foreach ([
+    ['transition' => 'markReady', 'expected' => 'ready', 'label' => 'POS-RACE-05'],
+    ['transition' => 'serve', 'expected' => 'served', 'label' => 'POS-RACE-06'],
+] as $stage) {
+    $launch = microtime(true) + 2.0;
+    $workers = [];
+    foreach ([
+        ['kind' => 'kitchen', 'transition' => $stage['transition']],
+        ['kind' => 'cashier'],
+    ] as $task) {
+        $args = base64_encode(json_encode([
+            ...$c, ...$task, 'order_id' => $kdsOrder->id,
+            'ticket_id' => $ticket->id, 'item_id' => $item->id,
+            'ready_at' => $launch,
+        ], JSON_THROW_ON_ERROR));
+        $worker = new Process([PHP_BINARY, __FILE__, '--worker-kds', $args]);
+        $worker->setTimeout(80);
+        $worker->start();
+        $workers[] = $worker;
+    }
+    $results = [];
+    foreach ($workers as $worker) {
+        $worker->wait();
+        if (! $worker->isSuccessful()) {
+            throw new RuntimeException($stage['label'].' worker error: '.$worker->getErrorOutput());
+        }
+        $results[] = json_decode(trim($worker->getOutput()), true, flags: JSON_THROW_ON_ERROR);
+    }
+    if (($results[0]['status'] ?? '') !== 'success'
+        || ($results[1]['status'] ?? '') !== 'rejected'
+        || $ticket->fresh()->statusValue() !== $stage['expected']
+        || (float) $item->fresh()->quantity !== 1.0
+        || $kdsOrder->payments()->count() !== 1
+        || (float) $kdsOrder->fresh()->invoice?->total_amount !== 10.0
+        || (float) Inventory::query()->where('location_id', $c['location'])
+            ->where('product_id', $c['product'])->sole()->quantity !== 4.0) {
+        throw new RuntimeException($stage['label'].' invalid financial/KDS state: '.json_encode($results));
+    }
+    echo 'PASS '.$stage['label'].': concurrent '.$stage['transition'].' vs cashier edit, immutable stock/financial records'."\n";
+}
