@@ -292,6 +292,27 @@ class RestaurantOrderService
                     'source' => 'restaurant_pos',
                 ],
             );
+            if ($locked->kitchenTickets()->exists()) {
+                // Notify kitchen operators after the database commit; never
+                // generate a second preparation ticket or adjust inventory.
+                $fromName = RestaurantTable::query()->whereKey($oldTableId)->value('name') ?: ('طاولة #' . $oldTableId);
+                $toName = $destination->displayName();
+                $orderId = (int) $locked->id;
+                DB::afterCommit(function () use ($orderId, $fromName, $toName, $actor): void {
+                    $changedOrder = Order::query()->find($orderId);
+                    if (! $changedOrder) return;
+                    \App\Services\Notifications\NotificationDispatcher::notifyByPermissions(
+                        new \App\Notifications\RestaurantOrderTableTransferredNotification(
+                            $changedOrder, $fromName, $toName
+                        ),
+                        ['kds.view', 'kitchen.view'],
+                        (int) $changedOrder->location_id,
+                        [],
+                        (int) $actor->id
+                    );
+                });
+            }
+
             return $locked->fresh(['restaurantTable.area', 'restaurantTableSession']);
         }, 3);
     }
