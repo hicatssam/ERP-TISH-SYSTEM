@@ -104,3 +104,12 @@ test('POS stays on cashier screen after checkout and previews local/server draft
  assert.match(view, /draftPreviewModal\.hidden = false/);
  assert.match(view, /draftRequest \|\| drawerMode !== 'draft'/);
 });
+
+test('POS does not silently expose empty payment-method dropdowns as valid split checkout', () => {
+ assert.match(view, /paymentMethods->isEmpty\(\)/);
+ assert.match(view, /eligibleSplitMethods->count\(\) < 2/);
+ assert.match(view, /id="rbSplitTenderToggle" @disabled/);
+ assert.match(view, /لا توجد طرق دفع نشطة ومتاحة/);
+ assert.match(view, /لا توجد طريقتا دفع مختلط متاحتان/);
+ assert.match(view, /paymentMethod\.options\.length <= 1/);
+});
