@@ -97,7 +97,11 @@ if (($argv[1] ?? null) === '--worker-kds') {
     try {
         if ($args['kind'] === 'kitchen') {
             $ticket = KitchenTicket::query()->findOrFail((int) $args['ticket_id']);
-            app(KitchenTicketService::class)->start($ticket, $actor);
+            $transition = (string) ($args['transition'] ?? 'start');
+            if (! in_array($transition, ['start', 'markReady', 'serve'], true)) {
+                throw new RuntimeException('Unsupported kitchen transition in QA worker.');
+            }
+            app(KitchenTicketService::class)->{$transition}($ticket, $actor);
             echo json_encode(['status' => 'success', 'action' => 'kitchen_started'], JSON_THROW_ON_ERROR)."\n";
         } else {
             $order = Order::query()->findOrFail((int) $args['order_id']);
@@ -289,3 +293,42 @@ if (($results[0]['status'] ?? null) !== 'success'
     throw new RuntimeException('KDS-vs-POS race caused inconsistent state: '.json_encode($results));
 }
 echo "PASS POS-RACE-03: kitchen starts while cashier edits; edit denied and financial state preserved\n";
+
+// Case 4: ten real independent processes compete for sufficient stock.
+// Every unique checkout must survive; no lost charges or duplicate invoices.
+$d = fixture(25);
+$launch = microtime(true) + 2.0;
+$parallelWorkers = [];
+$parallelTokens = [];
+for ($i = 0; $i < 10; $i++) {
+    $token = (string) Str::uuid();
+    $parallelTokens[] = $token;
+    $args = base64_encode(json_encode([
+        ...$d, 'token' => $token, 'ready_at' => $launch,
+    ], JSON_THROW_ON_ERROR));
+    $worker = new Process([PHP_BINARY, __FILE__, '--worker', $args]);
+    $worker->setTimeout(100);
+    $worker->start();
+    $parallelWorkers[] = $worker;
+}
+$parallelResults = [];
+foreach ($parallelWorkers as $worker) {
+    $worker->wait();
+    if (! $worker->isSuccessful()) {
+        throw new RuntimeException('Ten-client load failed: '.$worker->getExitCode().' '.$worker->getErrorOutput());
+    }
+    $parallelResults[] = json_decode(trim($worker->getOutput()), true, flags: JSON_THROW_ON_ERROR);
+}
+$orders = Order::query()->where('location_id', $d['location'])->get();
+if (count($parallelResults) !== 10
+    || count(array_filter($parallelResults, static fn($r) => ($r['status'] ?? '') === 'success')) !== 10
+    || $orders->count() !== 10
+    || $orders->pluck('public_request_token')->unique()->count() !== 10
+    || (int) $orders->sum(fn($order) => $order->payments()->count()) !== 10
+    || (int) $orders->sum(fn($order) => $order->invoice()->count()) !== 10
+    || (float) Inventory::query()->where('location_id', $d['location'])
+        ->where('product_id', $d['product'])->sole()->quantity !== 15.0) {
+    throw new RuntimeException('Ten-client parallel totals or inventory inconsistent: '.json_encode($parallelResults));
+}
+echo "PASS POS-RACE-04: ten simultaneous POS checkouts, ten invoices and payments, exact stock\n";
+
