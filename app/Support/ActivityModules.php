@@ -81,6 +81,29 @@ final class ActivityModules
         return ! self::scoped() || ! $code || app(\App\Services\ModuleService::class)->isEnabled($code);
     }
 
+    /**
+     * Restrict report endpoints as well as report links. A restaurant must
+     * never expose sweets or cake-specific reports, even if a stale module
+     * flag or legacy permission survives a profile migration.
+     */
+    public static function reportAllowed(string $type): bool
+    {
+        $profile = (string) SystemSetting::get('business_profile_code', 'bakery_sweets');
+
+        if (in_array($profile, ['restaurant', 'cafe'], true)
+            && in_array($type, [
+                'cake-orders', 'cake-production', 'showroom-cake',
+                'showroom-sweets', 'tomorrow-preparation', 'showroom-daily',
+            ], true)) {
+            return false;
+        }
+
+        $module = self::reportModule($type);
+
+        return ! self::scoped() || ! $module
+            || app(\App\Services\ModuleService::class)->isEnabled($module);
+    }
+
     public static function reportModule(string $type): ?string
     {
         return match ($type) {
