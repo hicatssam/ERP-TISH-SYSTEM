@@ -135,6 +135,9 @@ class RestaurantPosController extends Controller
                 \Illuminate\Validation\Rule::exists('order_items', 'id')->where('order_id', $order->id)],
             'items.*.quantity' => ['required', 'numeric', 'min:0.001', 'max:10000'],
             'items.*.kitchen_notes' => ['nullable', 'string', 'max:500'],
+            'remove_item_ids' => ['nullable', 'array', 'max:100'],
+            'remove_item_ids.*' => ['required', 'integer', 'distinct',
+                \Illuminate\Validation\Rule::exists('order_items', 'id')->where('order_id', $order->id)],
         ]);
 
         $updated = \Illuminate\Support\Facades\DB::transaction(function () use ($order, $orders, $data, $request): Order {
@@ -149,9 +152,30 @@ class RestaurantPosController extends Controller
             }
             $existing = $locked->items()->pluck('id')->map(fn ($id) => (int) $id)->sort()->values()->all();
             $submitted = collect($data['items'])->pluck('id')->map(fn ($id) => (int) $id)->sort()->values()->all();
-            if ($existing !== $submitted) {
-                throw ValidationException::withMessages(['items' => 'يجب إرسال جميع عناصر المسودة دون حذف أو إضافة صامتة.']);
+            $removed = collect($data['remove_item_ids'] ?? [])->map(fn ($id) => (int) $id)->sort()->values()->all();
+            if (array_intersect($submitted, $removed)
+                || $existing !== collect(array_merge($submitted, $removed))->sort()->values()->all()) {
+                throw ValidationException::withMessages([
+                    'items' => 'عناصر التعديل أو الإلغاء لا تتطابق مع المسودة المحفوظة.',
+                ]);
             }
+
+            if ($removed) {
+                $lines = $locked->items()->whereIn('id', $removed)->get();
+                foreach ($lines as $line) {
+                    $line->modifiers()->delete();
+                    $line->delete();
+                }
+                \App\Services\ActivityLogger::log(
+                    userId: $request->user()->id,
+                    action: 'restaurant.pos.draft.items_cancelled',
+                    module: 'restaurant',
+                    recordType: 'orders',
+                    recordId: $locked->id,
+                    metadata: ['location_id' => $locked->location_id, 'removed_item_ids' => $removed],
+                );
+            }
+
             return $orders->updateOrder($locked, [
                 'customer_id' => $locked->customer_id,
                 'payment_arrangement' => $locked->payment_arrangement?->value ?? $locked->payment_arrangement,
