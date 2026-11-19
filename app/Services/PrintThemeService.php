@@ -192,6 +192,20 @@ class PrintThemeService
         ];
     }
 
+    /**
+     * Customer invoices use the active dashboard logo first. The shared
+     * print setting remains unchanged for other documents and kitchen slips.
+     */
+    public function customerInvoiceLogoSource(): ?string
+    {
+        return $this->imageSource([
+            SystemSetting::get('brand_logo'),
+            SystemSetting::get('brand_logo_small'),
+            SystemSetting::get('print_logo'),
+            SystemSetting::get('brand_report_logo'),
+        ]);
+    }
+
     public function paperCss(array $settings): string
     {
         return match ($settings['paper_size']) {
