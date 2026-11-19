@@ -743,6 +743,61 @@ class PosCashierShiftSimulationTest extends TestCase
     }
 
     #[Test]
+    public function pos_stage_b_unpaid_server_draft_edits_quantity_and_notes_without_payment(): void
+    {
+        $f = $this->fixture(20);
+        $order = Order::query()->create([
+            'order_number' => 'DRAFT-'.Str::random(8),
+            'location_id' => $f['branch']->id,
+            'created_by' => $f['cashier']->id,
+            'status' => 'draft',
+            'payment_status' => 'payment_pending',
+            'payment_arrangement' => 'pay_on_pickup',
+            'restaurant_service_type' => 'takeaway',
+            'subtotal' => 10, 'total_amount' => 10,
+        ]);
+        $item = $order->items()->create([
+            'product_id' => $f['products'][0]->id,
+            'product_name' => $f['products'][0]->name,
+            'unit_price' => 10, 'quantity' => 1,
+            'line_total' => 10,
+        ]);
+        $this->actingAs($f['cashier'])->getJson(route('restaurant.pos.drafts', [
+            'location_id' => $f['branch']->id,
+        ]))->assertOk()->assertJsonPath('orders.0.editable', true)
+            ->assertJsonPath('orders.0.items.0.id', $item->id);
+
+        $this->actingAs($f['cashier'])->patchJson(route('restaurant.pos.drafts.items.update', $order), [
+            'items' => [['id' => $item->id, 'quantity' => 2, 'kitchen_notes' => 'بدون بصل']],
+        ])->assertOk()->assertJsonPath('ok', true)->assertJsonPath('total', 20);
+
+        $this->assertEquals(2, $item->fresh()->quantity);
+        $this->assertSame('بدون بصل', $item->fresh()->kitchen_notes);
+        $this->assertDatabaseCount('payments', 0);
+        $this->assertDatabaseCount('invoices', 0);
+        $this->assertEquals(20, Inventory::query()->where('product_id', $f['products'][0]->id)->sole()->quantity);
+    }
+
+    #[Test]
+    public function pos_stage_b_rejects_paid_or_kitchen_dispatched_order_amendments(): void
+    {
+        $f = $this->fixture(20);
+        $this->kitchenFixture($f);
+        $payload = $this->orderPayload($f, [
+            ['product_id' => $f['products'][0]->id, 'quantity' => 1],
+        ]);
+        $payload['pos_action'] = 'kot_print';
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.store'), $payload)
+            ->assertCreated();
+        $order = Order::query()->sole();
+        $item = $order->items()->sole();
+        $this->actingAs($f['cashier'])->patchJson(route('restaurant.pos.drafts.items.update', $order), [
+            'items' => [['id' => $item->id, 'quantity' => 2]],
+        ])->assertUnprocessable()->assertJsonValidationErrors('order');
+        $this->assertEquals(1, $item->fresh()->quantity);
+    }
+
+    #[Test]
     public function pos_29_on_account_without_named_customer_is_rejected(): void
     {
         $f = $this->fixture();
