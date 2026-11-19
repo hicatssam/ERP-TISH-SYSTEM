@@ -3164,6 +3164,104 @@ body.rb-pos-mode {
  .rb-pos .rb-menu-view-btn{width:31px;height:31px}
 }
 
+
+/* TISH REFERENCE FINAL ALIGNMENT V3 — match the approved screenshot.
+   Keep all existing data bindings and POS financial workflows untouched. */
+@media(min-width:1281px){
+ .rb-pos .rb-pos-shell{grid-template-columns:minmax(0,1fr) clamp(460px,31%,520px)}
+ .rb-pos .rb-product-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:11px}
+ .rb-pos .rb-product-image{height:clamp(118px,9vw,155px)}
+ .rb-pos .rb-product-card{min-height:221px}
+}
+.rb-pos .rb-pos-header{background:linear-gradient(110deg,color-mix(in srgb,var(--rb-orange) 75%,#31090e),color-mix(in srgb,var(--rb-orange) 45%,#17090e) 49%,color-mix(in srgb,var(--rb-orange) 85%,#29070c))}
+.rb-pos .rb-pos-brand{flex-basis:clamp(95px,9vw,140px)}
+.rb-pos .rb-pos-heading{margin-inline:0;order:2}
+.rb-pos .rb-pos-live-context{order:1;margin-inline:auto;min-width:110px}
+.rb-pos .rb-pos-header{justify-content:space-between}
+.rb-pos .rb-pos-heading h1{font-size:clamp(21px,1.7vw,29px)}
+.rb-pos .rb-pos-quickbar{padding-block:11px}
+.rb-pos .rb-pos-header-actions #rbNewOrderBtn{order:-1}
+.rb-pos .rb-menu-location-pill{display:none}
+.rb-pos .rb-menu-panel-head{margin-bottom:12px;justify-content:space-between}
+.rb-pos .rb-menu-panel-head h2{margin:0;font-size:22px}
+.rb-pos .rb-menu-kicker{font-size:12px}
+.rb-pos .rb-product-info{padding:8px 10px 10px}
+.rb-pos .rb-product-name{font-size:13px;min-height:29px;line-height:1.45}
+.rb-pos .rb-product-description{display:none}
+.rb-pos .rb-product-bottom{margin-top:7px;padding-top:7px}
+.rb-pos .rb-product-plus{width:31px;height:31px;flex-basis:31px;border-radius:50%;font-size:19px}
+.rb-pos .rb-product-price{font-size:15px}
+.rb-pos .rb-product-card{border-radius:14px}
+.rb-pos .rb-product-image{border-radius:12px;margin:5px 5px 0;padding:3px;background:color-mix(in srgb,var(--rb-orange) 6%,var(--rb-white))}
+.rb-pos .rb-order-panel{height:calc(100dvh - 186px);max-height:calc(100dvh - 186px)}
+.rb-pos .rb-order-title-row{padding:13px 15px 9px}
+.rb-pos .rb-order-title-copy strong{font-size:16px}
+.rb-pos .rb-order-status-pill{font-size:12px}
+.rb-pos .rb-order-top-controls{padding:8px 15px}
+.rb-pos .rb-existing-search{height:42px}
+.rb-pos .rb-order-selects .rb-control{min-height:44px}
+.rb-pos .rb-cart-scroll{padding:0 15px;min-height:76px}
+.rb-pos .rb-cart-item{
+ display:grid;
+ grid-template-columns:minmax(0,1fr) auto;
+ column-gap:10px;
+ align-items:center;
+ padding:9px 0;
+ min-height:71px;
+ border-color:color-mix(in srgb,var(--rb-border) 75%,transparent);
+}
+.rb-pos .rb-cart-item-head{display:flex;align-items:center;flex-direction:row;gap:10px;min-width:0;direction:rtl}
+.rb-pos .rb-cart-item-name{flex:1;min-width:0;text-align:right;direction:rtl}
+.rb-pos .rb-cart-item-name strong{font-size:12px;line-height:1.5;text-align:right}
+.rb-pos .rb-cart-options{font-size:10px}
+.rb-pos .rb-cart-item-price-line{font-size:10px;justify-content:flex-start;margin-top:3px}
+.rb-pos .rb-cart-remove{flex:0 0 35px;width:35px;min-width:35px;height:35px;min-height:35px;border-radius:11px;order:3}
+.rb-pos .rb-cart-item-foot{margin:0;display:flex;gap:7px;align-items:center;flex-direction:column;justify-content:center}
+.rb-pos .rb-qty-control{gap:5px}
+.rb-pos .rb-cart-item .rb-qty-btn{width:35px;height:35px;min-width:35px;min-height:35px;font-size:18px;border-radius:10px}
+.rb-pos .rb-qty-value{min-width:19px;font-size:13px}
+.rb-pos .rb-cart-item .rb-add-note{min-height:25px;padding:2px 8px;border-radius:7px;font-size:10px}
+.rb-pos .rb-item-note-wrap{grid-column:1/-1;margin-top:6px}
+.rb-pos .rb-more-details{min-height:40px;margin-top:0}
+.rb-pos .rb-summary{padding:10px 15px}
+.rb-pos .rb-summary-row{font-size:12px}
+.rb-pos .rb-summary-total{padding:9px 12px}
+.rb-pos .rb-summary-total strong{font-size:25px}
+.rb-pos .rb-order-actions{
+ display:flex;
+ align-items:stretch;
+ justify-content:flex-start;
+ gap:10px;
+ padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));
+}
+.rb-pos .rb-order-actions .rb-action{flex:1 1 0;max-width:none;min-height:58px;min-width:0}
+.rb-pos .rb-order-actions .rb-action-payment{flex:1.55 1 0;max-width:none;order:-2}
+.rb-pos .rb-order-actions .rb-action-print{flex:1.1 1 0;order:-1}
+.rb-pos .rb-order-actions .rb-action-title{font-size:clamp(12px,1vw,16px)}
+.rb-pos .rb-order-actions .rb-action-subtitle{display:none}
+.rb-pos .rb-product-grid.rb-list-view{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(min-width:821px) and (max-width:1280px){
+ .rb-pos .rb-product-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .rb-pos .rb-cart-item{column-gap:6px}
+ .rb-pos .rb-cart-item .rb-qty-btn{width:32px;height:32px;min-height:32px;min-width:32px}
+ .rb-pos .rb-cart-remove{width:32px;height:32px;min-width:32px;min-height:32px}
+ .rb-pos .rb-product-grid.rb-list-view{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:820px){
+ .rb-pos .rb-product-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .rb-pos .rb-cart-item{grid-template-columns:minmax(0,1fr) auto}
+ .rb-pos .rb-order-panel{height:auto;max-height:none}
+ .rb-pos .rb-order-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));position:static;padding:10px}
+ .rb-pos .rb-order-actions .rb-action{width:100%}
+ .rb-pos .rb-product-grid.rb-list-view{grid-template-columns:1fr}
+}
+@media(max-width:560px){
+ .rb-pos .rb-product-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .rb-pos .rb-cart-item{grid-template-columns:minmax(0,1fr)}
+ .rb-pos .rb-cart-item-foot{flex-direction:row;justify-content:space-between;margin-top:6px}
+ .rb-pos .rb-order-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
 </style>
 
 <script>
