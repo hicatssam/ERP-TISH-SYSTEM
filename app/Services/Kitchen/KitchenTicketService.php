@@ -4,6 +4,9 @@ namespace App\Services\Kitchen;
 
 use App\Enums\KitchenTicketStatus;
 use App\Models\KitchenTicket;
+use App\Models\KitchenTicketItem;
+use App\Models\ActivityLog;
+use App\Services\Orders\OrderService;
 use App\Models\Order;
 use App\Models\SystemSetting;
 use App\Models\User;
@@ -268,6 +271,18 @@ class KitchenTicketService
                 && trim((string) ($incoming['kitchen_notes'] ?? ''))
                     !== trim((string) ($item->kitchen_notes ?? ''));
 
+            // An explicitly cancelled *queued* kitchen line can be reduced to
+            // zero through the approved POS cancellation transaction. All other
+            // KDS changes remain blocked to avoid silent ticket divergence.
+            $cancelledToZero = $quantityChanged && ! $notesChanged
+                && abs((float) ($incoming['quantity'] ?? -1)) < 0.000001
+                && $item->kitchenTicketItems()->exists()
+                && ! $item->kitchenTicketItems()
+                    ->where('status', '!=', KitchenTicketStatus::CANCELLED->value)->exists();
+            if ($cancelledToZero) {
+                continue;
+            }
+
             if ($quantityChanged || $notesChanged) {
                 throw ValidationException::withMessages([
                     'items' =>
@@ -433,6 +448,121 @@ class KitchenTicketService
         );
 
         return $ticket;
+    }
+
+    /**
+     * Cancel one not-yet-started KDS line with an unpaid invoice. Changes to
+     * KDS, frozen inventory, invoice/ledger and audit are one DB transaction.
+     * Paid or preparing orders require the separate financial/kitchen workflow.
+     */
+    public function cancelQueuedLine(
+        Order $order,
+        int $orderItemId,
+        string $reason,
+        User $actor,
+        OrderService $orders
+    ): Order {
+        return DB::transaction(function () use (
+            $order, $orderItemId, $reason, $actor, $orders
+        ): Order {
+            $locked = Order::query()->whereKey($order->id)
+                ->lockForUpdate()->firstOrFail();
+            if (! $locked->isRestaurantOrder() || $locked->statusValue() !== 'confirmed') {
+                throw ValidationException::withMessages([
+                    'order' => 'يمكن إلغاء عنصر المطبخ فقط من طلب مؤكد لم يُغلق.',
+                ]);
+            }
+            if ($locked->payments()->exists()
+                || (float) ($locked->invoice?->paid_amount ?? 0) > 0.004) {
+                throw ValidationException::withMessages([
+                    'order' => 'يوجد تحصيل مرتبط بالطلب. يجب تسوية المبلغ أولًا قبل إلغاء العنصر.',
+                ]);
+            }
+
+            $items = $locked->items()->orderBy('id')->lockForUpdate()->get();
+            $line = $items->firstWhere('id', $orderItemId);
+            if (! $line || (float) $line->quantity <= 0) {
+                throw ValidationException::withMessages(['order_item_id' => 'العنصر غير متاح للإلغاء.']);
+            }
+            if ($items->filter(fn ($item) => (float) $item->quantity > 0)->count() <= 1) {
+                throw ValidationException::withMessages([
+                    'order_item_id' => 'لا يمكن إلغاء آخر عنصر بهذه العملية؛ استخدم إلغاء الطلب كاملًا.',
+                ]);
+            }
+
+            $lines = KitchenTicketItem::query()
+                ->where('order_item_id', $orderItemId)
+                ->orderBy('id')->lockForUpdate()->get();
+            if ($lines->isEmpty()) {
+                throw ValidationException::withMessages([
+                    'order_item_id' => 'هذا العنصر لم يُرسل إلى محطة مطبخ.',
+                ]);
+            }
+            $tickets = KitchenTicket::query()
+                ->where('order_id', $locked->id)
+                ->whereIn('id', $lines->pluck('kitchen_ticket_id'))
+                ->orderBy('id')->lockForUpdate()->get();
+            if ($tickets->count() !== $lines->pluck('kitchen_ticket_id')->unique()->count()
+                || $tickets->contains(fn ($ticket) => $ticket->statusValue() !== KitchenTicketStatus::QUEUED->value)
+                || $lines->contains(fn ($item) => ($item->status instanceof \BackedEnum
+                    ? $item->status->value : (string) $item->status) !== KitchenTicketStatus::QUEUED->value)) {
+                throw ValidationException::withMessages([
+                    'order_item_id' => 'المطبخ بدأ التعامل مع هذا العنصر؛ يحتاج الأمر إلى مراجعة المسؤول.',
+                ]);
+            }
+
+            $now = now();
+            KitchenTicketItem::query()->whereIn('id', $lines->pluck('id'))->update([
+                'status' => KitchenTicketStatus::CANCELLED->value,
+                'cancelled_at' => $now,
+            ]);
+            foreach ($tickets as $ticket) {
+                $remaining = $ticket->items()->whereNotIn('status', [
+                    KitchenTicketStatus::CANCELLED->value,
+                    KitchenTicketStatus::SERVED->value,
+                ])->exists();
+                if (! $remaining) {
+                    $ticket->update([
+                        'status' => KitchenTicketStatus::CANCELLED->value,
+                        'cancelled_at' => $now,
+                        'cancelled_by' => $actor->id,
+                    ]);
+                }
+            }
+
+            $updated = $orders->updateOrder($locked, [
+                'customer_id' => $locked->customer_id,
+                'payment_arrangement' => $locked->payment_arrangement instanceof \BackedEnum
+                    ? $locked->payment_arrangement->value : $locked->payment_arrangement,
+                'notes' => $locked->notes,
+                'items' => $items->map(fn ($item): array => [
+                    'id' => $item->id,
+                    'quantity' => (int) $item->id === $orderItemId ? 0 : (float) $item->quantity,
+                    'kitchen_notes' => $item->kitchen_notes,
+                ])->all(),
+            ], $actor);
+
+            // This sensitive financial/KDS adjustment must fail atomically if
+            // an audit record cannot be persisted.
+            ActivityLog::query()->create([
+                'user_id' => $actor->id,
+                'action' => 'restaurant.pos.kitchen_line_cancelled',
+                'module' => 'restaurant',
+                'record_type' => 'orders',
+                'record_id' => $locked->id,
+                'old_values' => ['order_item_id' => $line->id, 'quantity' => (float) $line->quantity],
+                'new_values' => ['order_item_id' => $line->id, 'quantity' => 0],
+                'metadata' => [
+                    'location_id' => $locked->location_id,
+                    'reason' => $reason,
+                    'kitchen_ticket_ids' => $tickets->pluck('id')->all(),
+                    'previous_total' => (float) $order->total_amount,
+                    'new_total' => (float) $updated->total_amount,
+                ],
+                'created_at' => $now,
+            ]);
+            return $updated;
+        }, 3);
     }
 
     public function cancelForOrder(
