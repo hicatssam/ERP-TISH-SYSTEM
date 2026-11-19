@@ -3279,6 +3279,211 @@ body.rb-pos-mode {
 .rb-pos #rbSplitTenderOption input:disabled{cursor:not-allowed}
 .rb-pos #rbSplitTenderOption a{color:var(--rb-orange);font-weight:900}
 
+
+/* TISH POS MODAL DESIGN SYSTEM V1 — scoped to cashier, no workflow changes. */
+.rb-pos .rb-modal{
+    padding:clamp(10px,2vw,28px);
+    direction:rtl;
+}
+.rb-pos .rb-modal-backdrop{
+    background:rgba(27,14,24,.52);
+    -webkit-backdrop-filter:blur(5px);
+    backdrop-filter:blur(5px);
+}
+.rb-pos .rb-modal-dialog{
+    width:min(760px,calc(100vw - 28px));
+    max-height:min(89dvh,920px);
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    border:1px solid color-mix(in srgb,var(--rb-orange) 15%,#e6e1e4);
+    border-radius:22px;
+    background:var(--rb-white);
+    box-shadow:0 30px 90px rgba(24,5,15,.25),0 4px 16px rgba(24,5,15,.08);
+}
+.rb-pos .rb-modal-dialog.rb-confirm-dialog{width:min(470px,calc(100vw - 28px))}
+.rb-pos .rb-modal-dialog.rb-draft-preview-dialog{width:min(710px,calc(100vw - 28px))}
+.rb-pos .rb-modal-dialog.rb-quick-customer-dialog{width:min(790px,calc(100vw - 28px))}
+.rb-pos .rb-modal-head{
+    position:relative;
+    flex:0 0 auto;
+    min-height:76px;
+    padding:18px 24px;
+    flex-direction:row;
+    justify-content:space-between;
+    gap:15px;
+    border-bottom:1px solid color-mix(in srgb,var(--rb-orange) 13%,var(--rb-border));
+    background:linear-gradient(115deg,color-mix(in srgb,var(--rb-orange) 8%,#fff) 0%,#fff 63%);
+}
+.rb-pos .rb-modal-head:before{
+    content:"";
+    position:absolute;
+    right:0;
+    top:14px;
+    bottom:14px;
+    width:4px;
+    background:var(--rb-orange);
+    border-radius:4px 0 0 4px;
+}
+.rb-pos .rb-modal-head h2{
+    color:var(--rb-text);
+    font-size:clamp(17px,1.45vw,22px);
+    letter-spacing:-.025em;
+    font-weight:900;
+    line-height:1.5;
+}
+.rb-pos .rb-modal-head p{font-size:12px;line-height:1.7;margin-top:4px}
+.rb-pos .rb-modal-close{
+    width:39px;height:39px;flex:0 0 39px;
+    border:1px solid color-mix(in srgb,var(--rb-border) 85%,transparent);
+    border-radius:12px;
+    background:#fff;
+    color:var(--rb-muted);
+    font-size:23px;
+    line-height:1;
+    transition:background .16s ease,color .16s ease,border-color .16s ease;
+}
+.rb-pos .rb-modal-close:hover{background:color-mix(in srgb,var(--rb-orange) 8%,#fff);color:var(--rb-orange);border-color:var(--rb-orange)}
+.rb-pos .rb-modal-body{
+    flex:1 1 auto;
+    min-height:0;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    padding:20px 24px;
+    line-height:1.75;
+    scrollbar-width:thin;
+    scrollbar-color:color-mix(in srgb,var(--rb-orange) 25%,#ddd) transparent;
+}
+.rb-pos .rb-modal-grid{gap:15px}
+.rb-pos .rb-modal .rb-field label,
+.rb-pos .rb-modal label:not(.rb-split-toggle):not(.rb-split-confirm){
+    font-size:12px;
+    line-height:1.5;
+    font-weight:800;
+    color:var(--rb-text);
+}
+.rb-pos .rb-modal .rb-control,
+.rb-pos .rb-modal :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]),select,textarea){
+    border-radius:11px;
+    min-height:44px;
+    font-size:13px;
+    transition:border-color .16s ease,box-shadow .16s ease;
+}
+.rb-pos .rb-modal .rb-control:focus{
+    border-color:var(--rb-orange);
+    outline:0;
+    box-shadow:0 0 0 3px color-mix(in srgb,var(--rb-orange) 12%,transparent);
+}
+.rb-pos .rb-modal .rb-field-hint{font-size:11px;line-height:1.65;color:var(--rb-muted)}
+.rb-pos .rb-modal-foot{
+    flex:0 0 auto;
+    min-height:77px;
+    gap:10px;
+    padding:14px 24px;
+    border-top:1px solid color-mix(in srgb,var(--rb-border) 72%,transparent);
+    background:#fff;
+    box-shadow:0 -6px 24px rgba(26,15,20,.035);
+    flex-wrap:wrap;
+}
+.rb-pos .rb-modal-foot .rb-btn{
+    min-height:43px;
+    padding:9px 18px;
+    border-radius:11px;
+    font-weight:900;
+    font-size:13px;
+}
+.rb-pos .rb-modal-foot .rb-btn-primary{box-shadow:0 5px 13px color-mix(in srgb,var(--rb-orange) 18%,transparent)}
+.rb-pos .rb-modal-total strong{font-size:21px}
+.rb-pos .rb-modal-dialog .rb-split-part{
+    border-radius:13px;
+    border-color:color-mix(in srgb,var(--rb-border) 85%,transparent);
+    background:color-mix(in srgb,var(--rb-orange) 2%,#fff);
+}
+.rb-pos #rbDraftPreviewBody > p:first-child{
+    display:flex;
+    align-items:center;
+    margin:0 0 14px;
+    padding:10px 13px;
+    border:1px solid color-mix(in srgb,var(--rb-orange) 14%,var(--rb-border));
+    border-radius:12px;
+    background:color-mix(in srgb,var(--rb-orange) 5%,#fff);
+    color:var(--rb-text);
+    font-size:12px;
+    font-weight:800;
+}
+.rb-pos #rbDraftPreviewBody > p:not(:first-child){
+    padding:3px 0;
+    margin:6px 0;
+    color:var(--rb-text);
+    font-size:13px;
+}
+.rb-pos .rb-draft-preview-items{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    gap:9px;
+    margin:16px 0 4px;
+    padding:0;
+}
+.rb-pos .rb-draft-preview-items li{
+    position:relative;
+    display:block;
+    min-width:0;
+    margin:0;
+    padding:14px 17px;
+    border:1px solid color-mix(in srgb,var(--rb-border) 75%,transparent);
+    border-radius:13px;
+    background:#fff;
+    color:var(--rb-text);
+    font-size:14px;
+    font-weight:800;
+    line-height:1.65;
+    box-shadow:0 3px 12px rgba(24,5,15,.035);
+}
+.rb-pos .rb-draft-preview-items li:before{
+    content:"";
+    position:absolute;
+    right:0;top:12px;bottom:12px;
+    width:3px;border-radius:4px;
+    background:var(--rb-orange);
+}
+.rb-pos .rb-draft-preview-items li small{
+    display:block;
+    font-size:11px;
+    font-weight:500;
+    color:var(--rb-muted);
+    margin-top:4px;
+}
+.rb-pos .rb-draft-preview-items li .rb-control{margin-top:4px}
+.rb-pos #rbDraftCancelReasonGroup{
+    margin:0 24px 16px;
+    border-radius:12px;
+    background:color-mix(in srgb,var(--rb-orange) 5%,#fff);
+}
+.rb-pos #rbDraftCancelReasonGroup label{display:block;font-size:12px;font-weight:800;margin-bottom:6px}
+.rb-pos #rbDraftPreviewModal .rb-modal-foot{justify-content:flex-start}
+.rb-pos #rbDraftPreviewModal .rb-modal-foot [data-close-draft-preview]{margin-inline-start:auto}
+.rb-pos .rb-modal [hidden],.rb-pos .rb-modal-dialog [hidden]{display:none!important}
+@media(max-width:600px){
+ .rb-pos .rb-modal{padding:8px;align-items:end}
+ .rb-pos .rb-modal-dialog,
+ .rb-pos .rb-modal-dialog.rb-draft-preview-dialog,
+ .rb-pos .rb-modal-dialog.rb-quick-customer-dialog{
+    width:100%;
+    max-height:calc(100dvh - 16px - env(safe-area-inset-bottom,0px));
+    border-radius:18px 18px 12px 12px;
+ }
+ .rb-pos .rb-modal-head{min-height:66px;padding:13px 15px}
+ .rb-pos .rb-modal-body{padding:15px}
+ .rb-pos .rb-modal-grid,.rb-pos .rb-quick-customer-fields{grid-template-columns:1fr}
+ .rb-pos .rb-modal-foot{padding:12px 15px;gap:8px;flex-direction:row;align-items:stretch}
+ .rb-pos .rb-modal-foot .rb-btn{flex:1 1 135px;min-width:0}
+ .rb-pos #rbDraftPreviewBody>.rb-draft-preview-items{margin-top:12px}
+ .rb-pos #rbDraftCancelReasonGroup{margin:0 15px 12px}
+}
+@media(prefers-reduced-motion:reduce){
+ .rb-pos .rb-modal *{transition:none!important;animation:none!important}
+}
+
 </style>
 
 <script>
