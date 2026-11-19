@@ -4357,8 +4357,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 notes.setAttribute('aria-label', 'ملاحظات المطبخ');
                 notes.placeholder = 'ملاحظات المطبخ';
                 notes.className = 'rb-control';
+                const cancelLabel = document.createElement('label');
+                cancelLabel.style.cssText = 'display:flex;gap:6px;align-items:center;margin-top:8px';
+                const remove = document.createElement('input');
+                remove.type = 'checkbox';
+                remove.dataset.draftRemove = String(item.id);
+                cancelLabel.append(remove, document.createTextNode('إلغاء هذا العنصر قبل إرساله للمطبخ'));
+                remove.addEventListener('change', () => {
+                    quantity.disabled = notes.disabled = remove.checked;
+                    line.style.opacity = remove.checked ? '.55' : '1';
+                });
                 controls.append(quantity, notes);
-                line.appendChild(controls);
+                line.append(controls, cancelLabel);
             });
         }
         draftPreviewRestore.hidden = kind !== 'local';
@@ -5165,11 +5175,21 @@ async function submitOrder(action) {
     });
     draftPreviewSave.addEventListener('click', async () => {
         if (!activeServerDraft?.editable || draftPreviewSave.disabled) return;
-        const items = activeServerDraft.items.map(item => ({
-            id: item.id,
-            quantity: Number(draftPreviewBody.querySelector('[data-draft-quantity="' + item.id + '"]')?.value),
-            kitchen_notes: draftPreviewBody.querySelector('[data-draft-notes="' + item.id + '"]')?.value || '',
-        }));
+        const removedIds = activeServerDraft.items
+            .filter(item => draftPreviewBody.querySelector('[data-draft-remove="' + item.id + '"]')?.checked)
+            .map(item => item.id);
+        const items = activeServerDraft.items
+            .filter(item => !removedIds.includes(item.id))
+            .map(item => ({
+                id: item.id,
+                quantity: Number(draftPreviewBody.querySelector('[data-draft-quantity="' + item.id + '"]')?.value),
+                kitchen_notes: draftPreviewBody.querySelector('[data-draft-notes="' + item.id + '"]')?.value || '',
+            }));
+        if (!items.length) {
+            draftEditError.textContent = 'لا يمكن حذف جميع العناصر. لإلغاء الطلب بالكامل استخدم زر إلغاء الطلب.';
+            draftEditError.hidden = false;
+            return;
+        }
         if (items.some(item => !Number.isFinite(item.quantity) || item.quantity <= 0)) {
             draftEditError.textContent = 'يجب أن تكون جميع الكميات أكبر من صفر.';
             draftEditError.hidden = false;
@@ -5183,7 +5203,7 @@ async function submitOrder(action) {
                 headers: {'Accept':'application/json', 'Content-Type':'application/json',
                     'X-CSRF-TOKEN': form.querySelector('[name="_token"]').value},
                 credentials: 'same-origin',
-                body: JSON.stringify({items}),
+                body: JSON.stringify({items, remove_item_ids: removedIds}),
             });
             const data = await response.json();
             if (!response.ok || !data.ok) throw new Error(Object.values(data.errors || {}).flat()[0] || data.message || 'تعذر تحديث المسودة.');
