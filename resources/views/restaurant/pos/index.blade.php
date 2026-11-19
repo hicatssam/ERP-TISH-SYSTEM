@@ -771,6 +771,20 @@
 </aside>
 
 <style>
+/* POS split-payment controls: readable and touch-friendly at checkout. */
+.rb-pos .rb-split-toggle,.rb-pos .rb-split-confirm{display:flex;align-items:center;gap:10px;line-height:1.5;cursor:pointer}
+.rb-pos .rb-split-toggle input,.rb-pos .rb-split-confirm input{width:19px;height:19px;accent-color:#ad201c;flex-shrink:0}
+.rb-pos .rb-split-tenders{padding:14px;border:1px solid #d1b7a2;background:#fff8f0;border-radius:12px;display:block}
+.rb-pos .rb-split-tenders[hidden]{display:none!important}
+.rb-pos .rb-split-tenders>strong{display:block;margin:0 0 12px;color:#67251c}
+.rb-pos .rb-split-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.rb-pos .rb-split-part{min-width:0;border:1px solid #e2cec0;background:white;border-radius:10px;padding:12px;display:grid;gap:7px}
+.rb-pos .rb-split-part legend{font-weight:900;color:#8d261c;padding:0 5px}
+.rb-pos .rb-split-part label{font-weight:750;font-size:12px}
+.rb-pos #rbSplitTenderBalance{font-weight:900;margin-top:12px}
+@media(max-width:680px){.rb-pos .rb-split-grid{grid-template-columns:minmax(0,1fr)}}
+@media(prefers-reduced-motion:reduce){.rb-pos .rb-split-part{transition:none}}
+
 /* =========================================================
    RestroBit-inspired Restaurant POS
    Scope is fully isolated under .rb-pos to avoid breaking ERP UI.
@@ -3978,6 +3992,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        splitTenderToggle.checked = Boolean(fields.split_tender_enabled);
+        if (Array.isArray(fields.split_payments)) {
+            fields.split_payments.slice(0,2).forEach((part,i) => {
+                if (!splitMethods[i]) return;
+                splitMethods[i].value = String(part.payment_method_id || '');
+                splitAmounts[i].value = part.amount || '';
+                splitReferences[i].value = part.reference_number || '';
+                splitConfirmations[i].checked = Boolean(part.payment_received_confirmed);
+            });
+        }
         syncServiceType();
         syncPayment();
         renderCart();
