@@ -509,17 +509,31 @@
                         @endif
 
                         {{-- Two-tender immediate checkout: both amounts are posted atomically. --}}
+                        @php
+                            $eligibleSplitMethods = $paymentMethods->where('requires_verification', false);
+                            $splitTenderAvailable = $eligibleSplitMethods->count() >= 2;
+                        @endphp
                         <div class="rb-field rb-field-wide" id="rbSplitTenderOption">
                             <label class="rb-split-toggle" for="rbSplitTenderToggle">
-                                <input type="checkbox" id="rbSplitTenderToggle" @disabled($paymentMethods->where('requires_verification', false)->count() < 2)>
+                                <input type="checkbox" id="rbSplitTenderToggle"
+                                    @disabled(! $splitTenderAvailable)
+                                    aria-describedby="rbSplitTenderHelp">
                                 <span>تقسيم الدفع بين نقد وبطاقة / طريقتين</span>
                             </label>
+                            @if(! $splitTenderAvailable)
+                                <div id="rbSplitTenderHelp" class="rb-payment-method-warning" role="status">
+                                    الدفع المختلط غير متاح لهذا الفرع حاليًا: تحتاج إلى طريقتي دفع نشطتين ومتاحَتين للفرع
+                                    ولا تتطلبان تحققًا لاحقًا. المتاح الآن: {{ $eligibleSplitMethods->count() }}.
+                                    @can('payment_methods.view')
+                                        <a href="{{ route('payment-methods.index') }}" target="_blank" rel="noopener">فتح إدارة طرق الدفع</a>
+                                    @endcan
+                                </div>
+                            @else
+                                <small id="rbSplitTenderHelp" class="rb-split-hint">فعّل الخيار لتوزيع إجمالي الطلب على طريقتين مختلفتين.</small>
+                            @endif
                         </div>
                         <div class="rb-field rb-field-wide rb-split-tenders" id="rbSplitTenderPanel" hidden>
                             <strong>الدفع المختلط — مجموع الدفعتين يجب أن يساوي إجمالي الطلب</strong>
-                            @php
-                                $eligibleSplitMethods = $paymentMethods->where('requires_verification', false);
-                            @endphp
                             @if($eligibleSplitMethods->count() < 2)
                                 <p class="rb-payment-method-warning" role="alert">
                                     الدفع المختلط غير متاح: يلزم تفعيل طريقتين مختلفتين على الأقل لا تتطلبان تحققًا لاحقًا في هذا الفرع.
@@ -3262,6 +3276,12 @@ body.rb-pos-mode {
  .rb-pos .rb-order-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
+/* Split payment eligibility is visible even when the panel is locked. */
+.rb-pos #rbSplitTenderOption .rb-payment-method-warning{margin-top:9px;font-size:12px;line-height:1.75}
+.rb-pos #rbSplitTenderOption .rb-split-hint{display:block;margin-top:7px;color:var(--rb-muted);font-size:11px}
+.rb-pos #rbSplitTenderOption input:disabled{cursor:not-allowed}
+.rb-pos #rbSplitTenderOption a{color:var(--rb-orange);font-weight:900}
+
 </style>
 
 <script>
@@ -3395,7 +3415,10 @@ document.addEventListener('DOMContentLoaded', () => {
         splitTenderBalance.style.color = cents === collected ? '#167044' : '#aa1d19';
     }
     splitTenderToggle.addEventListener('change', syncPayment);
-    [...splitMethods, ...splitAmounts, ...splitReferences, ...splitConfirmations]
+    // Method choice changes required transfer/reference and confirmation fields.
+    // Recompute checkout form state, not just the split amount summary.
+    splitMethods.forEach(field => field.addEventListener('change', syncPayment));
+    [...splitAmounts, ...splitReferences, ...splitConfirmations]
         .forEach(field => {
             field.addEventListener('input', renderSplitTender);
             field.addEventListener('change', renderSplitTender);
