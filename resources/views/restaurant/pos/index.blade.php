@@ -528,6 +528,12 @@
                                       maxlength="300" minlength="8" rows="2"
                                       placeholder="مثال: تعويض الزبون عن تأخر تجهيز الطلب">{{ old('discount_reason') }}</textarea>
                             <small>يُسجل السبب باسم الموظف ورقم الطلب ضمن سجل العمليات.</small>
+                            <small id="rbSensitiveDiscountNotice" hidden role="alert"
+                                   style="color:#a51f17;font-weight:850">
+                                هذا الخصم يحتاج تنفيذ الطلب من حساب مدير مخوّل.
+                                الحد الحالي {{ (float) config('tish_pos.manager_discount_percentage', 10) }}% أو
+                                ₪{{ (float) config('tish_pos.manager_discount_fixed', 20) }} للخصم الثابت.
+                            </small>
                         </div>
 
                         <div class="rb-field rb-field-wide" id="rbReferenceGroup" hidden>
@@ -2643,11 +2649,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const discountValue = document.getElementById('rbDiscountValue');
     const discountReasonGroup = document.getElementById('rbDiscountReasonGroup');
     const discountReason = document.getElementById('rbDiscountReason');
+    const sensitiveDiscountNotice = document.getElementById('rbSensitiveDiscountNotice');
+    const sensitiveDiscountPercentage = @json((float) config('tish_pos.manager_discount_percentage', 10));
+    const sensitiveDiscountFixed = @json((float) config('tish_pos.manager_discount_fixed', 20));
+    const cashierCanApproveDiscount = @json((bool) (auth()->user()?->isAdmin() ||
+        auth()->user()?->hasRole('Branch Manager') ||
+        auth()->user()?->can('restaurant_pos.discount.approve')));
     function syncDiscountReason() {
         const needed = ['percentage', 'fixed'].includes(discountType.value)
             && Number(discountValue.value || 0) > 0;
         discountReasonGroup.hidden = !needed;
         discountReason.required = needed;
+        sensitiveDiscountNotice.hidden = !needed || cashierCanApproveDiscount
+            || !(discountType.value === 'percentage'
+                ? Number(discountValue.value) > sensitiveDiscountPercentage
+                : Number(discountValue.value) > sensitiveDiscountFixed);
     }
     [discountType, discountValue].forEach(field => {
         field?.addEventListener('input', syncDiscountReason);
