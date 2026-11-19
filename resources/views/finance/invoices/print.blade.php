@@ -221,6 +221,61 @@
  .ci-watermark{break-inside:avoid}
 }
 
+
+/* TISH MINIMAL ROUND PAYMENT SEAL V1
+   Based on approved circular ink seal: no logo or extra icon.
+   HTML/CSS keeps Arabic lettering renderable in browser and mPDF. */
+.ci-items-stage{position:relative;isolation:isolate}
+.ci-items-stage .ci-payment-seal{
+    position:absolute;z-index:3;
+    top:50%;left:50%;
+    width:245px;height:245px;
+    margin-top:-122px;margin-left:-122px;
+    pointer-events:none;
+    color:#dd1024;opacity:.66;
+    transform:rotate(-15deg);
+    -webkit-transform:rotate(-15deg);
+    direction:rtl;text-align:center;
+}
+.ci-payment-seal-paid{color:#078b20!important}
+.ci-payment-seal-unpaid{color:#df1428!important}
+.ci-payment-seal-pending{color:#ae7216!important}
+.ci-payment-seal-ring{
+    position:relative;
+    height:100%;width:100%;border:9px double currentColor;border-radius:50%;
+    padding:16px;
+}
+.ci-payment-seal-ring:before{
+    content:"";display:block;position:absolute;
+    inset:10px;border:4px dashed currentColor;border-radius:50%;
+}
+.ci-payment-seal-core{
+    position:relative;z-index:1;
+    height:100%;width:100%;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:10px;
+}
+.ci-payment-seal-rule{display:block;width:84%;height:6px;border-top:3px solid currentColor;border-bottom:2px solid currentColor}
+.ci-payment-seal-label{display:block;font-size:31pt;font-weight:900;line-height:1.35;white-space:nowrap;letter-spacing:0}
+.ci-payment-seal-unpaid .ci-payment-seal-label{font-size:26pt}
+.ci-payment-seal-pending .ci-payment-seal-label{font-size:21pt}
+@if($thermal)
+.ci-items-stage .ci-payment-seal{
+    width:112px;height:112px;margin-left:-56px;margin-top:-56px;
+    opacity:.25;
+}
+.ci-payment-seal-ring{border-width:4px;padding:7px}
+.ci-payment-seal-ring:before{inset:4px;border-width:2px}
+.ci-payment-seal-core{gap:3px}
+.ci-payment-seal-rule{height:3px;border-top-width:1px;border-bottom-width:1px}
+.ci-payment-seal-label{font-size:14pt}
+.ci-payment-seal-unpaid .ci-payment-seal-label{font-size:12pt}
+.ci-payment-seal-pending .ci-payment-seal-label{font-size:9pt}
+@endif
+@media print{
+ .ci-payment-seal{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+}
+
 </style>
 @endpush
 
@@ -317,8 +372,15 @@
         </tbody>
     </table>
 
-    <div class="ci-watermark {{ $stampClass }}" aria-label="حالة الدفع: {{ $stamp }}">
-        <div class="ci-watermark-inner">{{ $stamp }}</div>
+    {{-- Circular ink-style payment seal; determined only by real invoice status. --}}
+    <div class="ci-payment-seal ci-payment-seal-{{ $stampClass }}" aria-label="حالة الدفع: {{ $stamp }}">
+        <div class="ci-payment-seal-ring">
+            <div class="ci-payment-seal-core">
+                <span class="ci-payment-seal-rule" aria-hidden="true"></span>
+                <strong class="ci-payment-seal-label">{{ $stamp }}</strong>
+                <span class="ci-payment-seal-rule" aria-hidden="true"></span>
+            </div>
+        </div>
     </div>
     </div>
 
