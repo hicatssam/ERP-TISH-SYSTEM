@@ -89,6 +89,59 @@ class RestaurantPosController extends Controller
                 || $request->user()->can('invoices.view')), 403);
     }
 
+    /**
+     * Draft previews for the current POS branch, without leaving the cashier.
+     * This is read-only; a persisted draft must not be treated as a fresh cart
+     * or posted again with a new request token.
+     */
+    public function draftOrders(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $location = $this->context->resolveLocation(
+            $request->user(),
+            $request->integer('location_id') ?: null
+        );
+        $data = $request->validate([
+            'page' => ['nullable', 'integer', 'min:1'],
+            'q' => ['nullable', 'string', 'max:150'],
+        ]);
+
+        $query = Order::query()
+            ->where('location_id', $location->id)
+            ->whereNotNull('restaurant_service_type')
+            ->where('status', 'draft')
+            ->with(['customer:id,name', 'items:id,order_id,product_name,quantity,line_total,kitchen_notes']);
+
+        if (! empty($data['q'])) {
+            $search = trim($data['q']);
+            $query->where(function ($q) use ($search): void {
+                $q->where('order_number', 'like', "%{$search}%")
+                    ->orWhereHas('customer', fn ($customer) => $customer->where('name', 'like', "%{$search}%"));
+            });
+        }
+
+        $orders = $query->latest()->paginate(20);
+
+        return response()->json([
+            'orders' => $orders->getCollection()->map(fn (Order $order): array => [
+                'id' => $order->id,
+                'number' => $order->order_number,
+                'customer' => $order->customer?->name ?? 'عميل نقدي',
+                'total' => (float) $order->total_amount,
+                'status' => 'draft',
+                'items' => $order->items->map(fn ($item): array => [
+                    'name' => $item->product_name,
+                    'quantity' => (float) $item->quantity,
+                    'line_total' => (float) $item->line_total,
+                    'notes' => $item->kitchen_notes ?? '',
+                ])->all(),
+                'url' => $request->user()->can('orders.view')
+                    ? route('orders.show', $order)
+                    : null,
+            ])->all(),
+            'has_more' => $orders->hasMorePages(),
+        ]);
+    }
+
     public function index(Request $request)
     {
         $location = $this->context->resolveLocation(
