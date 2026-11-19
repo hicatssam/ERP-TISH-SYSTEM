@@ -173,5 +173,8 @@ test('POS UX quick cash only preselects configured cash and retains normal valid
  assert.match(view, /checkoutModal\.classList\.remove\('rb-quick-cash'\)/);
  assert.match(view, /\[data-quick-cash-optional\]/);
  assert.match(view, /!validatePaymentFields\(\)/);
- assert.doesNotMatch(view, /quickCashBtn\.addEventListener\('click',[\s\S]*?submitOrder\(/);
+ const start = view.indexOf("quickCashBtn.addEventListener('click'");
+ const end = view.indexOf("quickCashExpand.addEventListener('click'", start);
+ assert.ok(start >= 0 && end > start);
+ assert.doesNotMatch(view.slice(start, end), /submitOrder\(/);
 });
