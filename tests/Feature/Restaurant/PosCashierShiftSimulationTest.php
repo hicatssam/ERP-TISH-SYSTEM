@@ -1191,6 +1191,7 @@ class PosCashierShiftSimulationTest extends TestCase
     public function shift_f02_outstanding_orders_require_explicit_handover_acknowledgement(): void
     {
         $f = $this->fixture();
+        $this->kitchenFixture($f);
         $f['cashier']->givePermissionTo(Permission::findOrCreate('cash_sessions.manage', 'web'));
         $this->actingAs($f['cashier'])->post(route('cash-sessions.open'), [
             'opening_balance' => 50,
@@ -1255,6 +1256,8 @@ class PosCashierShiftSimulationTest extends TestCase
 
         $this->post(route('cash-sessions.close', $session), [
             'actual_cash' => 70,
+            'acknowledge_pending_orders' => 1,
+            'closing_note' => 'تم تسليم الطلب المؤكد إلى الوردية التالية',
         ])->assertRedirect();
         $this->assertEquals(20, $session->fresh()->cash_received);
         $this->assertEquals(70, $session->fresh()->expected_cash);
