@@ -28,6 +28,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 /**
@@ -208,6 +209,83 @@ class PosCashierShiftSimulationTest extends TestCase
             ->assertJsonValidationErrors('split_payments.1.payment_method_id');
         $this->assertDatabaseCount('orders', 0);
         $this->assertDatabaseCount('payments', 0);
+    }
+
+    #[Test]
+    public function pos_55_cashier_cannot_apply_over_limit_discount_or_bypass_via_service(): void
+    {
+        config(['tish_pos.manager_discount_percentage' => 10]);
+        $f = $this->fixture();
+        $payload = $this->orderPayload($f, [
+            ['product_id' => $f['products'][0]->id, 'quantity' => 1],
+        ]);
+        $payload['discount_type'] = 'percentage';
+        $payload['discount_value'] = 15;
+        $payload['discount_reason'] = 'Customer received delayed service';
+
+        $this->actingAs($f['cashier'])
+            ->postJson(route('restaurant.pos.orders.store'), $payload)
+            ->assertUnprocessable()->assertJsonValidationErrors('discount_value');
+        try {
+            app(\App\Services\Restaurant\RestaurantOrderService::class)
+                ->createPosOrder($payload, $f['cashier']);
+            $this->fail('The service must reject an unauthorized sensitive discount.');
+        } catch (\Illuminate\Validation\ValidationException $exception) {
+            $this->assertArrayHasKey('discount_value', $exception->errors());
+        }
+        $this->assertDatabaseCount('orders', 0);
+        $this->assertDatabaseCount('payments', 0);
+    }
+
+    #[Test]
+    public function pos_56_normal_discount_is_unchanged_and_branch_manager_can_authorize_sensitive_discount(): void
+    {
+        config(['tish_pos.manager_discount_percentage' => 10]);
+        $f = $this->fixture();
+        $normal = $this->orderPayload($f, [
+            ['product_id' => $f['products'][0]->id, 'quantity' => 1],
+        ]);
+        $normal['discount_type'] = 'percentage';
+        $normal['discount_value'] = 10;
+        $normal['discount_reason'] = 'Customer loyalty discount';
+        $this->actingAs($f['cashier'])
+            ->postJson(route('restaurant.pos.orders.store'), $normal)
+            ->assertCreated();
+        $this->assertEquals(9, Order::query()->sole()->total_amount);
+
+        $manager = Role::findOrCreate('Branch Manager', 'web');
+        $f['cashier']->assignRole($manager);
+        $large = $this->orderPayload($f, [
+            ['product_id' => $f['products'][1]->id, 'quantity' => 1],
+        ]);
+        $large['discount_type'] = 'percentage';
+        $large['discount_value'] = 20;
+        $large['discount_reason'] = 'Manager approved for customer';
+        $this->actingAs($f['cashier'])
+            ->postJson(route('restaurant.pos.orders.store'), $large)
+            ->assertCreated();
+        $this->assertDatabaseCount('orders', 2);
+        $order = Order::query()->latest('id')->firstOrFail();
+        $this->assertEquals(12, $order->total_amount);
+        $this->assertEquals(12, $order->payments()->sum('amount'));
+    }
+
+    #[Test]
+    public function pos_57_fixed_discount_above_threshold_requires_manager(): void
+    {
+        config(['tish_pos.manager_discount_fixed' => 20]);
+        $f = $this->fixture();
+        $payload = $this->orderPayload($f, array_map(
+            static fn($p) => ['product_id' => $p->id, 'quantity' => 1],
+            $f['products']
+        ));
+        $payload['discount_type'] = 'fixed';
+        $payload['discount_value'] = 21;
+        $payload['discount_reason'] = 'Manager-only large discount';
+        $this->actingAs($f['cashier'])
+            ->postJson(route('restaurant.pos.orders.store'), $payload)
+            ->assertUnprocessable()->assertJsonValidationErrors('discount_value');
+        $this->assertDatabaseCount('orders', 0);
     }
 
     #[Test]
