@@ -39,7 +39,7 @@ test('POS-NET-04: ambiguous fetch failure retains request token, preserves cashi
   const submit = view.slice(start,end);
   const failed = submit.slice(submit.indexOf('} catch (error) {',submit.indexOf('validatePosCheckoutConfirmation(response, data);')));
   assert.match(failed, /localStorage\.setItem\(draftKey, JSON\.stringify\(serializeDraft\(\)\)\)/);
-  assert.match(failed, /افحص الطلبات المسجلة أولًا/);
+  assert.match(failed, /افحص الطلبات قبل إعادة المحاولة/);
   assert.doesNotMatch(failed.slice(0,failed.indexOf('} finally {')), /sessionStorage\.removeItem\(posAttemptKey\)/);
 });
 test('POS-POWER-02: storage exceptions do not show false success for manual save', () => {
