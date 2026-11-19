@@ -779,6 +779,44 @@ class PosCashierShiftSimulationTest extends TestCase
     }
 
     #[Test]
+    public function pos_stage_b_unpaid_draft_can_cancel_one_line_without_new_payment(): void
+    {
+        $f = $this->fixture(20);
+        $order = Order::query()->create([
+            'order_number' => 'DRAFT-LINE-'.Str::random(8),
+            'location_id' => $f['branch']->id,
+            'created_by' => $f['cashier']->id,
+            'status' => 'draft', 'payment_status' => 'payment_pending',
+            'payment_arrangement' => 'pay_on_pickup',
+            'restaurant_service_type' => 'takeaway',
+            'subtotal' => 25, 'total_amount' => 25,
+        ]);
+        $burger = $order->items()->create([
+            'product_id' => $f['products'][0]->id, 'product_name' => 'Burger',
+            'unit_price' => 10, 'quantity' => 1, 'line_total' => 10,
+        ]);
+        $fries = $order->items()->create([
+            'product_id' => $f['products'][1]->id, 'product_name' => 'Fries',
+            'unit_price' => 15, 'quantity' => 1, 'line_total' => 15,
+        ]);
+        $this->actingAs($f['cashier'])->patchJson(route('restaurant.pos.drafts.items.update', $order), [
+            'items' => [['id' => $burger->id, 'quantity' => 1]],
+            'remove_item_ids' => [$fries->id],
+        ])->assertOk()->assertJsonPath('total', 10);
+        $this->assertDatabaseCount('order_items', 1);
+        $this->assertEquals(10, $order->fresh()->total_amount);
+        $this->assertDatabaseCount('payments', 0);
+        $this->assertDatabaseCount('invoices', 0);
+        $this->assertEquals(20, Inventory::query()->where('product_id', $f['products'][1]->id)->sole()->quantity);
+
+        $this->actingAs($f['cashier'])->patchJson(route('restaurant.pos.drafts.items.update', $order), [
+            'items' => [],
+            'remove_item_ids' => [$burger->id],
+        ])->assertUnprocessable();
+        $this->assertDatabaseCount('order_items', 1);
+    }
+
+    #[Test]
     public function pos_stage_b_manager_can_cancel_draft_with_reason_without_stock_or_payment_side_effects(): void
     {
         $f = $this->fixture(20);
