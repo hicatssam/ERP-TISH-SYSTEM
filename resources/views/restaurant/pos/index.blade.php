@@ -319,11 +319,13 @@
                     </div>
 
                     <div class="rb-order-actions">
-                        <button type="button" class="rb-action rb-action-kot" id="rbKotPrintBtn">
+                        <button type="button" class="rb-action rb-action-kot" id="rbKotPrintBtn"
+                                title="تأكيد الطلب وإرساله للمطبخ وطباعة تذكرة التحضير دون تحصيل المبلغ">
                             إرسال للمطبخ وطباعة (الدفع لاحقًا)
                         </button>
 
-                        <button type="button" class="rb-action rb-action-draft" id="rbSaveDraftBtn">
+                        <button type="button" class="rb-action rb-action-draft" id="rbSaveDraftBtn"
+                            title="حفظ المنتجات مؤقتًا على هذا الجهاز دون إنشاء طلب أو خصم مخزون">
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                                 <path d="M5 3h11l3 3v15H5z"></path>
                                 <path d="M8 8h8"></path>
@@ -331,12 +333,14 @@
                             حفظ مسودة على هذا الجهاز
                         </button>
 
-                        <button type="button" class="rb-action rb-action-payment" id="rbBillPaymentBtn">
+                        <button type="button" class="rb-action rb-action-payment" id="rbBillPaymentBtn"
+                            title="فتح الدفع مع دعم الدفع الآن أو لاحقًا حسب إعدادات الفرع">
                             الفاتورة والدفع
                         </button>
 
-                        <button type="button" class="rb-action rb-action-print" id="rbBillPrintBtn">
-                            الفاتورة والطباعة
+                        <button type="button" class="rb-action rb-action-print" id="rbBillPrintBtn"
+                            title="تحصيل المبلغ كاملًا ثم إصدار وطباعة فاتورة العميل">
+                            الدفع وطباعة الفاتورة
                         </button>
                     </div>
                 </div>
@@ -353,7 +357,7 @@
                 <div class="rb-modal-head">
                     <div>
                         <h2 id="rbCheckoutTitle">تفاصيل الطلب والدفع</h2>
-                        <p>كل الحقول هنا مرتبطة بطلب الكاشير الحالي.</p>
+                        <p id="rbCheckoutHint">كل الحقول هنا مرتبطة بطلب الكاشير الحالي.</p>
                     </div>
                     <button type="button" class="rb-modal-close" data-close-checkout>×</button>
                 </div>
@@ -3798,8 +3802,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function openCheckout(action = 'bill_payment') {
+        const printingInvoice = action === 'bill_print';
+        const payNowOption = [...paymentArrangement.options]
+            .find(option => option.value === 'pay_now');
+        if (printingInvoice && (!payNowOption || payNowOption.disabled)) {
+            statusMessage('الدفع الفوري غير متاح في إعدادات الفرع؛ لا يمكن إصدار فاتورة مدفوعة وطبعها.', 'error');
+            return;
+        }
+
         pendingAction = action;
         actionInput.value = action;
+        // Invoice printing must not accidentally inherit a deferred/partial
+        // arrangement from another checkout. Keep those choices for payment
+        // without printing, and enforce the same rule on the Laravel server.
+        [...paymentArrangement.options].forEach(option => {
+            option.disabled = printingInvoice && option.value !== 'pay_now';
+        });
+        if (printingInvoice) paymentArrangement.value = 'pay_now';
+        document.getElementById('rbCheckoutTitle').textContent = printingInvoice
+            ? 'دفع كامل وطباعة فاتورة العميل' : 'تفاصيل الطلب والدفع';
+        document.getElementById('rbCheckoutHint').textContent = printingInvoice
+            ? 'سيُحفظ الطلب ويُحصّل المبلغ كاملًا قبل طباعة الفاتورة. إذا أردت الدفع لاحقًا استخدم الفاتورة والدفع.'
+            : 'يمكنك الدفع الآن أو اختيار الدفع عند الاستلام وفق إعدادات الفرع.';
+        document.getElementById('rbCheckoutContinueBtn').textContent = printingInvoice
+            ? 'تأكيد الدفع وطباعة الفاتورة' : 'تأكيد الطلب والمتابعة';
         syncPayment();
         renderSummary();
         checkoutModal.hidden = false;
@@ -3808,6 +3834,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function closeCheckout() {
+        // Restore all branch-enabled payment arrangements when modal closes.
+        [...paymentArrangement.options].forEach(option => { option.disabled = false; });
         checkoutModal.hidden = true;
         checkoutModal.setAttribute('aria-hidden', 'true');
         document.body.style.overflow = '';
@@ -3830,6 +3858,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function validatePaymentFields() {
         syncPayment();
+
+        // Catch an invalid print + deferred payment combination before any
+        // network request. The request validator repeats this on the server.
+        if (pendingAction === 'bill_print' && paymentArrangement.value !== 'pay_now') {
+            showCheckoutError('طباعة فاتورة مدفوعة تتطلب اختيار الدفع الفوري الكامل.', 'payment_arrangement');
+            return false;
+        }
 
         const salesChannel = form.querySelector(
             '[name="sales_channel_id"]'
