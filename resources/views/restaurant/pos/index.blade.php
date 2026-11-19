@@ -919,8 +919,8 @@
 .rb-draft-preview-dialog [hidden]{display:none!important}
 .rb-pos .rb-payment-method-warning{padding:10px 12px;border:1px solid #e0ad87;border-radius:8px;background:#fff6e9;color:#793916;font-size:12px;line-height:1.7}
 .rb-pos .rb-payment-method-warning a{font-weight:800;text-decoration:underline}
-.rb-pos .rb-reprint-link{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;margin:5px 0 10px;padding:8px 12px;border:1px solid var(--rb-border);border-radius:8px;background:var(--rb-soft);color:var(--rb-text);font-weight:800;text-decoration:none}
-.rb-pos .rb-reprint-link:hover{color:var(--rb-orange);border-color:var(--rb-orange)}
+.rb-drawer .rb-reprint-link{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;margin:5px 0 10px;padding:8px 12px;border:1px solid var(--rb-border);border-radius:8px;background:var(--rb-soft);color:var(--rb-text);font-weight:800;text-decoration:none}
+.rb-drawer .rb-reprint-link:hover{color:var(--rb-orange);border-color:var(--rb-orange)}
 /* POS split-payment controls: readable and touch-friendly at checkout. */
 .rb-pos .rb-split-toggle,.rb-pos .rb-split-confirm{display:flex;align-items:center;gap:10px;line-height:1.5;cursor:pointer}
 .rb-pos .rb-split-toggle input,.rb-pos .rb-split-confirm input{width:19px;height:19px;accent-color:#ad201c;flex-shrink:0}
@@ -4556,7 +4556,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 matchesMode = (card.dataset.status || '') === 'draft';
             }
 
-            card.hidden = !(matchesQuery && matchesMode);
+            const wrapper = card.closest('.rb-server-order-wrapper') || card;
+            wrapper.hidden = !(matchesQuery && matchesMode);
         });
     }
 
