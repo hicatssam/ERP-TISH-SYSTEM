@@ -351,6 +351,17 @@
             </aside>
         </div>
 
+        {{-- On small touchscreens, show cart total and checkout without
+             scrolling through the entire product catalogue. --}}
+        <div class="rb-mobile-cart-bar" id="rbMobileCartBar" aria-label="ملخص السلة السريع">
+            <button type="button" id="rbMobileCartOpen" class="rb-mobile-cart-open">
+                <span><strong id="rbMobileCartCount">0</strong> عناصر في السلة</span>
+                <strong id="rbMobileCartTotal">₪0.00</strong>
+                <small>عرض السلة</small>
+            </button>
+            <button type="button" id="rbMobileCheckoutBtn" class="rb-mobile-checkout">تحصيل الدفع</button>
+        </div>
+
         {{-- =====================================================
              CHECKOUT / ORDER DETAILS MODAL
         ====================================================== --}}
@@ -362,6 +373,8 @@
                     <div>
                         <h2 id="rbCheckoutTitle">تفاصيل الطلب والدفع</h2>
                         <p id="rbCheckoutHint">كل الحقول هنا مرتبطة بطلب الكاشير الحالي.</p>
+                        <button type="button" id="rbQuickCashBtn" class="rb-quick-cash-btn">دفع نقدي سريع</button>
+                        <button type="button" id="rbQuickCashExpand" class="rb-quick-cash-expand" hidden>عرض بقية التفاصيل</button>
                     </div>
                     <button type="button" class="rb-modal-close" data-close-checkout>×</button>
                 </div>
@@ -531,7 +544,7 @@
                             >
                         </div>
 
-                        <div class="rb-field">
+                        <div class="rb-field" data-quick-cash-optional>
                             <label>نوع الخصم</label>
                             <select name="discount_type" id="rbDiscountType" class="rb-control">
                                 <option value="none">بدون خصم</option>
@@ -540,7 +553,7 @@
                             </select>
                         </div>
 
-                        <div class="rb-field">
+                        <div class="rb-field" data-quick-cash-optional>
                             <label>قيمة الخصم</label>
                             <input
                                 type="number"
@@ -636,7 +649,7 @@
                             <small class="rb-field-hint">يُسجَّل التحصيل باسم مستخدم الكاشير. عند الحاجة إلى مراجعة مستقلة فعّل طلب إثبات الدفع لهذه الطريقة من الإعدادات.</small>
                         </div>
 
-                        <div class="rb-field rb-field-wide">
+                        <div class="rb-field rb-field-wide" data-quick-cash-optional>
                             <label>ملاحظات عامة على الطلب</label>
                             <textarea
                                 name="notes"
@@ -2703,6 +2716,28 @@ body.rb-pos-mode {
 @media (max-width: 560px) {
     .rb-product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+/* Touch-first controls: avoid accidental adjacent quantity taps. */
+.rb-pos .rb-qty-btn {width:44px;height:44px;min-width:44px;min-height:44px;font-size:20px;border-radius:12px;touch-action:manipulation}
+.rb-pos .rb-qty-value {min-width:30px;font-size:15px}
+.rb-pos .rb-add-note {min-height:44px;padding:8px 12px;font-size:12px;touch-action:manipulation}
+.rb-pos .rb-cart-remove {min-width:44px;min-height:44px;display:grid;place-items:center;touch-action:manipulation}
+.rb-pos .rb-more-details {min-height:44px;font-size:12px}
+.rb-pos .rb-quick-cash-btn,.rb-pos .rb-quick-cash-expand{display:inline-flex;align-items:center;justify-content:center;min-height:44px;border:1px solid var(--rb-border);border-radius:9px;padding:8px 14px;margin-top:8px;background:var(--rb-orange-soft);color:var(--rb-text);font-weight:800;cursor:pointer}
+.rb-pos .rb-quick-cash-expand{background:var(--rb-white)}
+.rb-pos .rb-quick-cash-expand[hidden]{display:none!important}
+.rb-pos #rbCheckoutModal.rb-quick-cash [data-quick-cash-optional]{display:none!important}
+.rb-pos .rb-mobile-cart-bar{display:none}
+@media(max-width:820px){
+  .rb-pos .rb-mobile-cart-bar{position:fixed;bottom:0;left:0;right:0;z-index:2147481900;display:grid;grid-template-columns:minmax(0,1fr) minmax(128px,36%);gap:10px;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));background:var(--rb-white);border-top:1px solid var(--rb-border);box-shadow:0 -4px 18px rgba(0,0,0,.1);direction:rtl}
+  .rb-pos .rb-mobile-cart-bar button{min-height:52px;border-radius:10px;padding:6px 12px;touch-action:manipulation;font-weight:850}
+  .rb-pos .rb-mobile-cart-open{border:1px solid var(--rb-border);background:var(--rb-soft);color:var(--rb-text);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .rb-pos .rb-mobile-cart-open small{font-size:11px}
+  .rb-pos .rb-mobile-checkout{border:0;background:var(--rb-orange);color:#fff}
+  .rb-pos .rb-mobile-checkout:disabled{opacity:.5;cursor:not-allowed}
+  .rb-pos .rb-pos-workspace{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))}
+  .rb-pos .rb-order-panel{scroll-margin-top:10px}
+}
+@media(max-width:390px){.rb-pos .rb-mobile-cart-bar{grid-template-columns:minmax(0,1fr) 118px;gap:6px;padding-inline:8px}.rb-pos .rb-mobile-cart-open small{display:none}}
 </style>
 
 <script>
@@ -2854,6 +2889,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const checkoutModal = document.getElementById('rbCheckoutModal');
     const checkoutContinueBtn = document.getElementById('rbCheckoutContinueBtn');
+    const quickCashBtn = document.getElementById('rbQuickCashBtn');
+    const quickCashExpand = document.getElementById('rbQuickCashExpand');
     const customerSelect = document.getElementById('rbCustomerSelect');
     const quickCustomerModal = document.getElementById('rbQuickCustomerModal');
     const quickCustomerOpen = document.getElementById('rbQuickCustomerOpen');
@@ -3754,6 +3791,10 @@ document.addEventListener('DOMContentLoaded', () => {
         channelDiscountEl.textContent = money(totals.channelDiscount);
         grandTotalEl.textContent = money(totals.total);
         checkoutTotalEl.textContent = money(totals.total);
+        document.getElementById('rbMobileCartTotal').textContent = money(totals.total);
+        document.getElementById('rbMobileCartCount').textContent = [...cart.values()]
+            .reduce((sum, item) => sum + Number(item.quantity), 0);
+        document.getElementById('rbMobileCheckoutBtn').disabled = !cart.size;
         renderSplitTender();
         cartCount.textContent = cart.size;
     }
@@ -4010,6 +4051,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function openCheckout(action = 'bill_payment') {
+        checkoutModal.classList.remove('rb-quick-cash');
+        quickCashExpand.hidden = true;
         const printingInvoice = action === 'bill_print';
         const payNowOption = [...paymentArrangement.options]
             .find(option => option.value === 'pay_now');
@@ -4045,6 +4088,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Restore all branch-enabled payment arrangements when modal closes.
         [...paymentArrangement.options].forEach(option => { option.disabled = false; });
         checkoutModal.hidden = true;
+        checkoutModal.classList.remove('rb-quick-cash');
+        quickCashExpand.hidden = true;
         checkoutModal.setAttribute('aria-hidden', 'true');
         document.body.style.overflow = '';
     }
@@ -5071,6 +5116,37 @@ async function submitOrder(action) {
     openCheckoutBtn.addEventListener('click', () => openCheckout('bill_payment'));
     saveDraftBtn.addEventListener('click', saveLocalDraft);
     billPaymentBtn.addEventListener('click', () => openCheckout('bill_payment'));
+    document.getElementById('rbMobileCartOpen').addEventListener('click', () => {
+        document.querySelector('.rb-order-panel')?.scrollIntoView({behavior: 'smooth', block: 'start'});
+    });
+    document.getElementById('rbMobileCheckoutBtn').addEventListener('click', () => {
+        if (!cart.size) return;
+        openCheckout('bill_payment');
+    });
+    quickCashBtn.addEventListener('click', () => {
+        const payNow = [...paymentArrangement.options].find(option => option.value === 'pay_now' && !option.disabled);
+        const cash = [...paymentMethod.options].find(option => option.value && option.dataset.type === 'cash' && !option.disabled);
+        if (!payNow || !cash) {
+            showCheckoutError('الدفع النقدي الفوري غير مفعّل في إعدادات هذا الفرع.', 'payment_method_id');
+            return;
+        }
+        // Prefill valid branch configuration only. Never submit or record money
+        // without the cashier explicitly confirming the ordinary checkout.
+        paymentArrangement.value = 'pay_now';
+        splitTenderToggle.checked = false;
+        paymentMethod.value = cash.value;
+        syncPayment();
+        const discountAlreadyEntered = discountType.value !== 'none' && Number(discountValue.value || 0) > 0;
+        const notesAlreadyEntered = Boolean(form.querySelector('[name="notes"]')?.value?.trim());
+        const canCompact = !discountAlreadyEntered && !notesAlreadyEntered;
+        checkoutModal.classList.toggle('rb-quick-cash', canCompact);
+        quickCashExpand.hidden = !canCompact;
+        checkoutContinueBtn.focus();
+    });
+    quickCashExpand.addEventListener('click', () => {
+        checkoutModal.classList.remove('rb-quick-cash');
+        quickCashExpand.hidden = true;
+    });
     billPrintBtn.addEventListener('click', () => openCheckout('bill_print'));
     kotPrintBtn.addEventListener('click', () => submitOrder('kot_print'));
 
