@@ -487,6 +487,65 @@
        .invoice-party-box,.invoice-notes,.invoice-bottom-table,
        .invoice-party-table {break-inside:avoid;page-break-inside:avoid}
     }
+
+    /* TISH invoice polish V2: reference-style bold stamp and stacked details.
+       Scoped to invoices: no modifications to shared ERP reports or kitchen tickets. */
+    .invoice-detail-table {width:calc(100% - 20px);margin:0 10px;border-collapse:collapse;table-layout:fixed}
+    .invoice-detail-table tr {border-bottom:1px solid #ebebee}
+    .invoice-detail-table td {width:50%;padding:9px 6px 10px;vertical-align:top;text-align:right}
+    .invoice-detail-label {
+        display:block;margin-bottom:4px;color:#717681;font-size:7.5pt;
+        font-weight:700;line-height:1.4;direction:rtl;text-align:right
+    }
+    .invoice-detail-value,
+    .invoice-detail-value[dir="ltr"] {
+        display:block;color:#1f2937;font-size:9pt;font-weight:900;
+        line-height:1.5;text-align:right;unicode-bidi:plaintext;
+    }
+    .invoice-party-box {min-height:150px;border:1px solid #dedee2;border-radius:12px;background:#fff}
+    .invoice-party-label {
+        margin:0 0 12px;padding:9px 14px;color:#fff;
+        background:{{ $invoicePrintTheme['primary_color'] }};
+        font-size:11pt;font-weight:900;line-height:1.4
+    }
+    .invoice-party-name {padding:0 12px;font-size:12pt;font-weight:900;margin-bottom:8px;line-height:1.5}
+    .invoice-party-box>.print-muted {display:block;padding:3px 12px;color:#4b5563;font-size:8.5pt;line-height:1.7;text-align:right}
+    .invoice-payment-watermark {
+        position:absolute;top:39%;left:8%;width:84%;height:150px;z-index:3;
+        pointer-events:none;text-align:center;direction:rtl;
+        transform:rotate(-17deg);-webkit-transform:rotate(-17deg);opacity:.65
+    }
+    .invoice-payment-watermark-inner {
+        display:block;width:100%;height:100%;border:10px double currentColor;
+        border-radius:18px;padding:18px 6px;font-size:54pt;font-weight:900;
+        line-height:1.45;white-space:nowrap;letter-spacing:0;background:transparent
+    }
+    .invoice-watermark-paid {color:#19a84a}
+    .invoice-watermark-unpaid {color:#d91f2f}
+    .invoice-watermark-partial {color:#c48a14}
+    .invoice-watermark-paid .invoice-payment-watermark-inner,
+    .invoice-watermark-unpaid .invoice-payment-watermark-inner,
+    .invoice-watermark-partial .invoice-payment-watermark-inner {
+        color:inherit;border-color:currentColor
+    }
+    @if($invoiceForThermal)
+    .invoice-detail-table {width:calc(100% - 12px);margin:0 6px}
+    .invoice-detail-table td {padding:4px 3px 6px}
+    .invoice-detail-label {font-size:6.4pt;margin-bottom:2px}
+    .invoice-detail-value,.invoice-detail-value[dir="ltr"] {font-size:7pt}
+    .invoice-party-box {min-height:0;border-radius:3px}
+    .invoice-party-label {font-size:8pt;padding:5px 8px;margin-bottom:5px}
+    .invoice-party-name {font-size:9pt;padding:0 8px;margin-bottom:3px}
+    .invoice-party-box>.print-muted {font-size:7pt;padding:2px 8px}
+    .invoice-payment-watermark {top:33%;left:8%;width:84%;height:72px;opacity:.24}
+    .invoice-payment-watermark-inner {
+        font-size:20pt;border-width:4px;border-radius:10px;padding:10px 2px
+    }
+    @endif
+    @media print {
+        .invoice-payment-watermark{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+        .invoice-detail-table td{break-inside:avoid;page-break-inside:avoid}
+    }
 </style>
 @endpush
 
