@@ -52,6 +52,18 @@ test('four POS actions distinguish draft, unpaid kitchen print, payment and paid
  assert.match(view,/pendingAction === 'bill_print' && paymentArrangement.value !== 'pay_now'/);
  assert.match(view,/\[\.\.\.paymentArrangement.options\].forEach\(option => \{ option.disabled = false; \}\)/);
 });
+test('POS four action cards expose clear labels, icons, sublabels, and accessible mobile grid', () => {
+ assert.match(view,/<span class="rb-action-title">إرسال للمطبخ<\/span>/);
+ assert.match(view,/<small class="rb-action-subtitle">بدون دفع<\/small>/);
+ assert.match(view,/<span class="rb-action-title">حفظ مسودة<\/span>/);
+ assert.match(view,/<small class="rb-action-subtitle">استكمال لاحقًا<\/small>/);
+ assert.match(view,/<span class="rb-action-title">تحصيل الدفع<\/span>/);
+ assert.match(view,/<small class="rb-action-subtitle">نقدي \/ بطاقة \/ مختلط<\/small>/);
+ assert.match(view,/<span class="rb-action-title">إتمام وطباعة<\/span>/);
+ assert.match(view,/<small class="rb-action-subtitle">بعد التحقق من الدفع<\/small>/);
+ assert.match(view,/\.rb-action:focus-visible/);
+ assert.match(view,/\.rb-order-actions \{\s*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+});
 test('server enforces immediate two-entry mixed payment and atomic full settlement', () => {
  assert.match(request,/'split_payments' => \['nullable', 'array', 'size:2'\]/);
  assert.match(request,/PaymentArrangement::PayNow->value/);
