@@ -154,7 +154,7 @@ class PosCashierShiftSimulationTest extends TestCase
         $this->assertDatabaseCount('payments', 2);
         $this->assertEquals(10, $order->payments()->sum('amount'));
         $this->assertEquals(10, $order->fresh()->invoice?->paid_amount);
-        $this->assertSame('paid', $order->fresh()->paymentStatusValue());
+        $this->assertSame('paid', ($order->fresh()->payment_status?->value ?? (string) $order->fresh()->payment_status));
         $this->assertEquals(39, Inventory::query()
             ->where('product_id', $f['products'][0]->id)->sole()->quantity);
         $this->assertDatabaseCount('invoices', 1);
