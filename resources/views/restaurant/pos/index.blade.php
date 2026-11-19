@@ -2728,7 +2728,7 @@ body.rb-pos-mode {
 .rb-pos #rbCheckoutModal.rb-quick-cash [data-quick-cash-optional]{display:none!important}
 .rb-pos .rb-mobile-cart-bar{display:none}
 @media(max-width:820px){
-  .rb-pos .rb-mobile-cart-bar{position:fixed;bottom:0;left:0;right:0;z-index:2147481900;display:grid;grid-template-columns:minmax(0,1fr) minmax(128px,36%);gap:10px;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));background:var(--rb-white);border-top:1px solid var(--rb-border);box-shadow:0 -4px 18px rgba(0,0,0,.1);direction:rtl}
+  .rb-pos .rb-mobile-cart-bar{position:fixed;bottom:0;left:0;right:0;z-index:900;display:grid;grid-template-columns:minmax(0,1fr) minmax(128px,36%);gap:10px;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));background:var(--rb-white);border-top:1px solid var(--rb-border);box-shadow:0 -4px 18px rgba(0,0,0,.1);direction:rtl}
   .rb-pos .rb-mobile-cart-bar button{min-height:52px;border-radius:10px;padding:6px 12px;touch-action:manipulation;font-weight:850}
   .rb-pos .rb-mobile-cart-open{border:1px solid var(--rb-border);background:var(--rb-soft);color:var(--rb-text);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
   .rb-pos .rb-mobile-cart-open small{font-size:11px}
