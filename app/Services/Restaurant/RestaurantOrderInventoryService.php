@@ -6,6 +6,7 @@ use App\Enums\MovementReason;
 use App\Models\Inventory;
 use App\Models\Order;
 use App\Models\OrderInventoryConsumption;
+use App\Models\KitchenTicketItem;
 use App\Models\Product;
 use App\Models\RestaurantMenuItem;
 use App\Models\Recipe;
@@ -150,9 +151,10 @@ class RestaurantOrderInventoryService
                 3
             );
 
-            if ($newOrderQty <= 0) {
+            if ($newOrderQty < 0 || ($newOrderQty == 0.0
+                && ! $this->isCancelledKitchenLine($orderItemId))) {
                 throw ValidationException::withMessages([
-                    'items' => 'كمية صنف الطلب يجب أن تكون أكبر من صفر.',
+                    'items' => 'كمية صفر متاحة فقط لعنصر أُلغِي رسميًا من تذكرة المطبخ.',
                 ]);
             }
 
@@ -277,6 +279,7 @@ class RestaurantOrderInventoryService
             $order->loadMissing('items');
 
             foreach ($order->items as $item) {
+                if ((float) $item->quantity <= 0) continue;
                 $this->inventoryService->increase(
                     locationId: (int) $order->location_id,
                     productId: (int) $item->product_id,
@@ -295,6 +298,11 @@ class RestaurantOrderInventoryService
         }
 
         foreach ($consumptions as $consumption) {
+            // A previously cancelled kitchen line already returned its stock.
+            if ((float) $consumption->consumed_quantity <= 0) {
+                $consumption->update(['restored_at' => now()]);
+                continue;
+            }
             $this->inventoryService->increase(
                 locationId: (int) $order->location_id,
                 productId: (int) $consumption->stock_product_id,
@@ -315,6 +323,18 @@ class RestaurantOrderInventoryService
                 'restored_at' => now(),
             ]);
         }
+    }
+
+    /**
+     * Never grant ordinary updates permission to zero a sold item. The only
+     * exception is a separately audited KDS cancellation already committed
+     * inside the surrounding database transaction.
+     */
+    private function isCancelledKitchenLine(int $orderItemId): bool
+    {
+        $lines = KitchenTicketItem::query()->where('order_item_id', $orderItemId);
+        return (clone $lines)->where('status', 'cancelled')->exists()
+            && ! $lines->where('status', '!=', 'cancelled')->exists();
     }
 
     /**
@@ -685,9 +705,10 @@ class RestaurantOrderInventoryService
                 (float) $newQuantityByOrderItemId[(int) $item->id]
             );
 
-            if ($newQty <= 0) {
+            if ($newQty < 0 || ($newQty == 0.0
+                && ! $this->isCancelledKitchenLine((int) $item->id))) {
                 throw ValidationException::withMessages([
-                    'items' => 'كمية صنف الطلب يجب أن تكون أكبر من صفر.',
+                    'items' => 'كمية صفر متاحة فقط لعنصر أُلغِي رسميًا من تذكرة المطبخ.',
                 ]);
             }
 
