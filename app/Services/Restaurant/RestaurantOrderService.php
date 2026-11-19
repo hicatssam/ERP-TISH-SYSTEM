@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\ActivityLogger;
 use App\Services\Orders\OrderService;
 use App\Services\Payments\PaymentService;
+use App\Support\PosManagerDiscountGuard;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Arr;
@@ -25,6 +26,8 @@ class RestaurantOrderService
 
     public function createPosOrder(array $data, User $user): Order
     {
+        PosManagerDiscountGuard::assertAllowed($data, $user);
+
         $serviceType = RestaurantServiceType::from(
             (string) $data['service_type']
         );
