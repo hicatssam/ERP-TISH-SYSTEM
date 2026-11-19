@@ -27,6 +27,15 @@ test('checkout requires both different methods, exact cent balance and collected
  assert.match(view,/paymentMethod\.disabled = true/);
  assert.match(view,/splitTenderToggle\.checked = Boolean\(fields\.split_tender_enabled\)/);
 });
+test('cash split tenders hide and disable the noncash confirmation and reference controls', () => {
+ assert.match(view,/splitReferences\[i\]\.disabled = !needsReference/);
+ assert.match(view,/splitConfirmations\[i\]\.disabled = !nonCash/);
+ assert.match(view,/splitConfirmations\[i\]\.parentElement\.style\.display = nonCash/);
+});
+test('invoice and print cannot silently bypass immediate settlement', () => {
+ assert.match(request,/\$this->input\('pos_action'\) === 'bill_print'/);
+ assert.match(request,/\$arrangement !== PaymentArrangement::PayNow->value/);
+});
 test('server enforces immediate two-entry mixed payment and atomic full settlement', () => {
  assert.match(request,/'split_payments' => \['nullable', 'array', 'size:2'\]/);
  assert.match(request,/PaymentArrangement::PayNow->value/);
