@@ -218,3 +218,17 @@ test('POS permits privileged cancellation of a queued unpaid KDS line without le
  assert.match(view, /option\.disabled = !item\.eligible/);
  assert.doesNotMatch(view, /window\.confirm\(/);
 });
+
+test('POS manager availability popup is explicit, permission-scoped and refreshes catalog', () => {
+ assert.match(view, /@can\('restaurant_menu\.manage'\)/);
+ assert.match(view, /id="rbManageAvailabilityBtn"/);
+ assert.match(view, /id="rbMenuAvailabilityModal"/);
+ assert.match(view, /route\('restaurant\.pos\.menu-availability'\)/);
+ assert.match(view, /route\('restaurant\.pos\.menu-availability\.set'\)/);
+ assert.match(view, /async function searchManageAvailability\(\)/);
+ assert.match(view, /reason\.length < 8/);
+ assert.match(view, /is_available:!item\.available/);
+ assert.match(view, /sessionStorage\.removeItem\(catalogStorageKey\)/);
+ assert.match(view, /loadCatalog\(1, false, true\)/);
+ assert.match(view, /manageAvailabilityBtn\?\.addEventListener\('click'/);
+});
