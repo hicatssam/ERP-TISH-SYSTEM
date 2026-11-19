@@ -6,6 +6,7 @@ use App\Enums\PaymentArrangement;
 use App\Enums\RestaurantServiceType;
 use App\Models\PaymentMethod;
 use App\Models\SalesChannel;
+use App\Support\PosManagerDiscountGuard;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -278,6 +279,13 @@ class StoreRestaurantPosOrderRequest extends FormRequest
                     'discount_reason',
                     'يجب توضيح سبب الخصم اليدوي (ثمانية أحرف على الأقل).'
                 );
+            }
+
+            if (PosManagerDiscountGuard::requiresApproval($this->all())
+                && $this->user()
+                && ! PosManagerDiscountGuard::isManager($this->user())) {
+                $validator->errors()->add('discount_value',
+                    'الخصم يتجاوز حد الكاشير؛ يجب أن ينفّذ الموافقة مدير مخوّل بحسابه.');
             }
 
             if (
