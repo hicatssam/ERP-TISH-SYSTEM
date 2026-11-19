@@ -186,38 +186,121 @@ class RestaurantPosController extends Controller
      */
     public function quickStoreCustomer(Request $request): \Illuminate\Http\JsonResponse
     {
+        $user = $request->user();
         $location = $this->context->resolveLocation(
-            $request->user(),
+            $user,
             $request->integer('location_id') ?: null
         );
+        $canManageCentral = $user->isAdmin()
+            || $user->can('customers.view_all')
+            || $user->can('financial.global.view');
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:150'],
             'phone' => [
-                'required',
-                'string',
-                'max:20',
+                'required', 'string', 'max:20',
                 \Illuminate\Validation\Rule::unique('customers', 'phone')
                     ->where(fn ($query) => $query->where('location_id', $location->id)),
             ],
+            'customer_type' => ['sometimes', \Illuminate\Validation\Rule::in([
+                Customer::TYPE_INDIVIDUAL,
+                Customer::TYPE_INSTITUTION,
+                Customer::TYPE_COMPANY,
+                Customer::TYPE_GOVERNMENT,
+            ])],
+            'secondary_phone' => ['nullable', 'string', 'max:20'],
+            'contact_person' => ['nullable', 'string', 'max:150'],
+            'tax_number' => ['nullable', 'string', 'max:100'],
+            'address' => ['nullable', 'string', 'max:500'],
+            'notes' => ['nullable', 'string'],
+            'scope' => ['sometimes', \Illuminate\Validation\Rule::in([
+                Customer::SCOPE_BRANCH, Customer::SCOPE_SELECTED, Customer::SCOPE_GLOBAL,
+            ])],
+            'location_ids' => ['nullable', 'array'],
+            'location_ids.*' => [
+                'integer', 'distinct',
+                \Illuminate\Validation\Rule::exists('locations', 'id')->where('is_active', true),
+            ],
+            'allow_credit' => ['nullable', 'boolean'],
+            'credit_limit' => ['nullable', 'numeric', 'min:0'],
+            'billing_cycle' => ['sometimes', \Illuminate\Validation\Rule::in(['immediate', 'weekly', 'monthly'])],
+            'payment_terms_days' => ['sometimes', 'integer', 'min:0', 'max:365'],
         ]);
 
-        $customer = Customer::query()->create([
-            'location_id' => $location->id,
-            'customer_type' => Customer::TYPE_INDIVIDUAL,
-            'scope' => Customer::SCOPE_BRANCH,
-            'name' => $validated['name'],
-            'phone' => $validated['phone'],
-            'allow_credit' => false,
-            'billing_cycle' => 'immediate',
-            'payment_terms_days' => 0,
-        ]);
+        $type = $validated['customer_type'] ?? Customer::TYPE_INDIVIDUAL;
+        $scope = $validated['scope'] ?? Customer::SCOPE_BRANCH;
+        $creditRequested = (bool) ($validated['allow_credit'] ?? false);
+
+        // POS cashiers can create complete branch customer profiles but may
+        // not grant cross-branch access or credit without central permissions.
+        if (! $canManageCentral && ($scope !== Customer::SCOPE_BRANCH
+            || $creditRequested || ! empty($validated['location_ids'])
+            || array_key_exists('credit_limit', $validated)
+            || (($validated['billing_cycle'] ?? 'immediate') !== 'immediate')
+            || ((int) ($validated['payment_terms_days'] ?? 0) !== 0))) {
+            throw ValidationException::withMessages([
+                'scope' => 'إتاحة العميل لفروع أخرى أو تفعيل البيع الآجل تتطلب صلاحية إدارة العملاء المركزية.',
+            ]);
+        }
+
+        if ($scope !== Customer::SCOPE_BRANCH && $type === Customer::TYPE_INDIVIDUAL) {
+            throw ValidationException::withMessages([
+                'customer_type' => 'العميل المتاح لأكثر من فرع يجب أن يكون مؤسسة أو شركة أو جهة.',
+            ]);
+        }
+        if ($scope === Customer::SCOPE_SELECTED && empty($validated['location_ids'])) {
+            throw ValidationException::withMessages([
+                'location_ids' => 'اختر فرعًا واحدًا على الأقل للعميل متعدد الفروع.',
+            ]);
+        }
+
+        $customer = \Illuminate\Support\Facades\DB::transaction(function () use (
+            $validated, $location, $type, $scope, $creditRequested, $canManageCentral
+        ): Customer {
+            $credit = $canManageCentral && $creditRequested;
+            $customer = Customer::query()->create([
+                'location_id' => $location->id,
+                'customer_type' => $type,
+                'scope' => $scope,
+                'name' => $validated['name'],
+                'phone' => $validated['phone'],
+                'secondary_phone' => $validated['secondary_phone'] ?? null,
+                'contact_person' => $validated['contact_person'] ?? null,
+                'tax_number' => $validated['tax_number'] ?? null,
+                'address' => $validated['address'] ?? null,
+                'notes' => $validated['notes'] ?? null,
+                'allow_credit' => $credit,
+                'credit_limit' => $credit ? ($validated['credit_limit'] ?? null) : null,
+                'billing_cycle' => $credit ? ($validated['billing_cycle'] ?? 'immediate') : 'immediate',
+                'payment_terms_days' => $credit ? (int) ($validated['payment_terms_days'] ?? 0) : 0,
+            ]);
+
+            if ($scope === Customer::SCOPE_SELECTED) {
+                $ids = array_unique(array_merge(
+                    [$location->id], array_map('intval', $validated['location_ids'])
+                ));
+                $availableIds = \App\Models\Location::query()->branches()->active()
+                    ->whereIn('id', $ids)->pluck('id')->all();
+                if (count($availableIds) !== count($ids)) {
+                    throw ValidationException::withMessages([
+                        'location_ids' => 'أحد الفروع المحددة غير متاح.',
+                    ]);
+                }
+                $customer->locations()->sync(collect($availableIds)->mapWithKeys(
+                    fn ($id) => [(int) $id => ['is_active' => true]]
+                )->all());
+            }
+
+            return $customer;
+        });
 
         return response()->json([
             'customer' => [
                 'id' => $customer->id,
                 'name' => $customer->name,
                 'phone' => $customer->phone,
+                'customer_type' => $customer->customer_type,
+                'scope' => $customer->scope,
             ],
         ], 201);
     }
