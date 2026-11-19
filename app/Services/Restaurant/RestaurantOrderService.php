@@ -203,6 +203,99 @@ class RestaurantOrderService
         ]);
     }
 
+    /**
+     * Correct a single POS order's dining table without recreating it,
+     * charging again, or redispatching any kitchen items.
+     */
+    public function transferPosOrderTable(
+        Order $order,
+        RestaurantTable $destination,
+        User $actor,
+        string $reason,
+        bool $acceptOccupied = false
+    ): Order {
+        return DB::transaction(function () use ($order, $destination, $actor, $reason, $acceptOccupied): Order {
+            $locked = Order::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
+            if ($locked->order_source !== 'restaurant_pos'
+                || ($locked->restaurant_service_type?->value ?? $locked->restaurant_service_type) !== 'dine_in'
+                || ! in_array($locked->statusValue(), ['draft', 'confirmed'], true)) {
+                throw ValidationException::withMessages([
+                    'order' => 'نقل الطاولة متاح لطلبات الصالة النشطة من الكاشير فقط. الطلبات المكتملة تحتاج تصحيحًا إداريًا.',
+                ]);
+            }
+            if ((int) $locked->restaurant_table_id === (int) $destination->id) {
+                throw ValidationException::withMessages(['restaurant_table_id' => 'هذه هي الطاولة الحالية بالفعل.']);
+            }
+            if ((int) $destination->location_id !== (int) $locked->location_id || ! $destination->is_active) {
+                throw ValidationException::withMessages(['restaurant_table_id' => 'الطاولة الجديدة غير نشطة أو خارج الفرع.']);
+            }
+
+            // Lock both tables in a consistent order to prevent conflicting transfers.
+            $ids = [(int) $locked->restaurant_table_id, (int) $destination->id];
+            sort($ids, SORT_NUMERIC);
+            RestaurantTable::query()->whereIn('id', $ids)->orderBy('id')->lockForUpdate()->get();
+
+            $oldTableId = (int) $locked->restaurant_table_id;
+            $oldSessionId = $locked->restaurant_table_session_id;
+            $existing = $destination->activeSession()->lockForUpdate()->first();
+            if ($existing && ! $acceptOccupied) {
+                throw ValidationException::withMessages([
+                    'restaurant_table_id' => 'الطاولة الهدف مشغولة. يلزم تأكيد ضم الطلب إلى جلستها الحالية.',
+                ]);
+            }
+
+            [$newSession] = $this->tables->resolveForOrder(
+                $destination, $actor, max(1, (int) ($locked->guest_count ?: 1))
+            );
+            $locked->update([
+                'restaurant_table_id' => $destination->id,
+                'restaurant_table_session_id' => $newSession->id,
+            ]);
+
+            // Empty sessions automatically created for a mistaken table should
+            // not keep an unrelated empty table occupied.
+            if ($oldSessionId) {
+                $oldSession = \App\Models\RestaurantTableSession::query()
+                    ->whereKey($oldSessionId)->lockForUpdate()->first();
+                if ($oldSession && $oldSession->isOpen()
+                    && ! $oldSession->restaurant_dining_group_id
+                    && ! $oldSession->orders()->exists()) {
+                    $oldSession->update([
+                        'status' => 'closed',
+                        'closed_by' => $actor->id,
+                        'closed_at' => now(),
+                        'notes' => trim(($oldSession->notes ? $oldSession->notes . ' | ' : '')
+                            . 'إغلاق تلقائي بعد تصحيح طاولة الطلب ' . $locked->order_number),
+                    ]);
+                }
+            }
+
+            ActivityLogger::log(
+                userId: $actor->id,
+                action: 'restaurant.pos.order.table_transferred',
+                module: 'restaurant',
+                recordType: 'orders',
+                recordId: $locked->id,
+                oldValues: [
+                    'restaurant_table_id' => $oldTableId,
+                    'restaurant_table_session_id' => $oldSessionId,
+                ],
+                newValues: [
+                    'restaurant_table_id' => $destination->id,
+                    'restaurant_table_session_id' => $newSession->id,
+                ],
+                metadata: [
+                    'location_id' => $locked->location_id,
+                    'reason' => $reason,
+                    'destination_session_was_occupied' => (bool) $existing,
+                    'kitchen_ticket_count' => $locked->kitchenTickets()->count(),
+                    'source' => 'restaurant_pos',
+                ],
+            );
+            return $locked->fresh(['restaurantTable.area', 'restaurantTableSession']);
+        }, 3);
+    }
+
     private function requiresPaymentVerification(array $data): bool
     {
         if (($data['payment_arrangement'] ?? null) === 'pending_verification') {
