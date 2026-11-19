@@ -11,6 +11,9 @@
         auth()->user()?->employee?->full_name
         ?? auth()->user()?->display_name
         ?? 'المستخدم';
+    $cashierCanApproveDiscount = (bool) (auth()->user()?->isAdmin()
+        || auth()->user()?->hasRole('Branch Manager')
+        || auth()->user()?->can('restaurant_pos.discount.approve'));
 
     $oldServiceType = old('service_type', $selectedTableId ? 'dine_in' : 'takeaway');
     $allowedArrangementCodes = collect($paymentArrangements)->map(fn ($arrangement) => $arrangement->value)->all();
@@ -2652,9 +2655,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const sensitiveDiscountNotice = document.getElementById('rbSensitiveDiscountNotice');
     const sensitiveDiscountPercentage = @json((float) config('tish_pos.manager_discount_percentage', 10));
     const sensitiveDiscountFixed = @json((float) config('tish_pos.manager_discount_fixed', 20));
-    const cashierCanApproveDiscount = @json((bool) (auth()->user()?->isAdmin() ||
-        auth()->user()?->hasRole('Branch Manager') ||
-        auth()->user()?->can('restaurant_pos.discount.approve')));
+    const cashierCanApproveDiscount = @json($cashierCanApproveDiscount);
     function syncDiscountReason() {
         const needed = ['percentage', 'fixed'].includes(discountType.value)
             && Number(discountValue.value || 0) > 0;
