@@ -468,6 +468,30 @@ class RestaurantPosController extends Controller
         ], 201);
     }
 
+    /**
+     * Read-only current menu availability check for items already in the cart.
+     * A client-side result does not replace final transactional stock checks.
+     */
+    public function cartAvailability(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:100'],
+            'ids.*' => ['required', 'integer', 'distinct', 'min:1'],
+        ]);
+        $location = $this->context->resolveLocation(
+            $request->user(),
+            $request->integer('location_id') ?: null
+        );
+        $ids = array_map('intval', $data['ids']);
+        $available = $this->catalog->byIds($location->id, $ids)
+            ->pluck('id')->map(fn ($id) => (int) $id)->all();
+
+        return response()->json([
+            'available_ids' => $available,
+            'unavailable_ids' => array_values(array_diff($ids, $available)),
+        ]);
+    }
+
     public function catalog(Request $request)
     {
         $data = $request->validate([
