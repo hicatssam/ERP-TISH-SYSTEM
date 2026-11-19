@@ -801,10 +801,15 @@
         </div>
         <div class="rb-modal-body" id="rbDraftPreviewBody"></div>
         <p id="rbDraftEditError" role="alert" hidden style="color:#b42318;font-weight:750;padding:0 15px"></p>
+        <div id="rbDraftCancelReasonGroup" hidden style="padding:8px 16px">
+            <label for="rbDraftCancelReason">سبب إلغاء المسودة (إلزامي)</label>
+            <textarea id="rbDraftCancelReason" class="rb-control" rows="2" maxlength="500" placeholder="اكتب سبب الإلغاء بوضوح"></textarea>
+        </div>
         <div class="rb-modal-foot">
             <button type="button" class="rb-btn rb-btn-light" data-close-draft-preview>إغلاق</button>
             <button type="button" class="rb-btn rb-btn-primary" id="rbDraftPreviewRestore" hidden>استكمال المسودة</button>
             <button type="button" class="rb-btn rb-btn-primary" id="rbDraftPreviewSave" hidden>حفظ تعديلات المسودة</button>
+            <button type="button" class="rb-btn rb-btn-light" id="rbDraftPreviewCancel" hidden>إلغاء الطلب</button>
             <a class="rb-btn rb-btn-primary" id="rbDraftPreviewOpen" href="#" hidden>فتح الطلب المسجل</a>
         </div>
     </div>
@@ -2724,6 +2729,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const qrOrdersUrl = @json(route('restaurant.pos.qr-orders'));
     const draftOrdersUrl = @json(route('restaurant.pos.drafts'));
     const draftEditUrlPattern = @json(route('restaurant.pos.drafts.items.update', ['order' => '__ORDER__']));
+    const draftCancelUrlPattern = @json(route('restaurant.pos.drafts.cancel', ['order' => '__ORDER__']));
     const cashierPosUrl = @json(route('restaurant.pos.index', ['location_id' => $location->id]));
     @can('customers.create')
     const quickCustomerUrl = @json(route('restaurant.pos.customers.quick-store'));
@@ -3071,6 +3077,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const draftPreviewBody = document.getElementById('rbDraftPreviewBody');
     const draftPreviewRestore = document.getElementById('rbDraftPreviewRestore');
     const draftPreviewSave = document.getElementById('rbDraftPreviewSave');
+    const draftPreviewCancel = document.getElementById('rbDraftPreviewCancel');
+    const draftCancelReasonGroup = document.getElementById('rbDraftCancelReasonGroup');
+    const draftCancelReason = document.getElementById('rbDraftCancelReason');
     const draftEditError = document.getElementById('rbDraftEditError');
     let activeServerDraft = null;
     const draftPreviewOpen = document.getElementById('rbDraftPreviewOpen');
@@ -4306,6 +4315,7 @@ document.addEventListener('DOMContentLoaded', () => {
         activeServerDraft = kind === 'server' ? draft : null;
         draftEditError.hidden = true;
         draftEditError.textContent = '';
+        draftCancelReason.value = '';
         const items = Array.isArray(draft.items) ? draft.items : [];
         const total = kind === 'server' ? `<p><strong>الإجمالي:</strong> ${money(draft.total)}</p>` : '';
         const label = kind === 'server' ? 'طلب مسجل على الخادم (للعرض فقط)' : 'مسودة محفوظة على هذا الجهاز';
@@ -4320,6 +4330,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('rbDraftPreviewTitle').textContent =
             kind === 'server' ? 'تفاصيل الطلب المسودة' : 'معاينة المسودة المحلية';
         draftPreviewSave.hidden = kind !== 'server' || !draft.editable;
+        draftPreviewCancel.hidden = kind !== 'server' || !draft.cancelable;
+        draftCancelReasonGroup.hidden = draftPreviewCancel.hidden;
         if (kind === 'server' && draft.editable) {
             draftPreviewBody.querySelectorAll('.rb-draft-preview-items li').forEach((line, index) => {
                 const item = items[index];
@@ -5109,6 +5121,37 @@ async function submitOrder(action) {
     });
     draftPreviewModal.querySelectorAll('[data-close-draft-preview]').forEach(button =>
         button.addEventListener('click', closeDraftPreview));
+    draftPreviewCancel.addEventListener('click', async () => {
+        if (!activeServerDraft?.cancelable || draftPreviewCancel.disabled) return;
+        const reason = draftCancelReason.value.trim();
+        if (reason.length < 8) {
+            draftEditError.textContent = 'أدخل سبب الإلغاء بثمانية أحرف على الأقل.';
+            draftEditError.hidden = false;
+            return;
+        }
+        if (!window.confirm('تأكيد إلغاء هذه المسودة؟ لن يمكن استخدامها كطلب نشط.')) return;
+        draftPreviewCancel.disabled = true;
+        draftEditError.hidden = true;
+        try {
+            const response = await fetch(draftCancelUrlPattern.replace('__ORDER__', String(activeServerDraft.id)), {
+                method: 'POST',
+                headers: {'Accept':'application/json', 'Content-Type':'application/json',
+                    'X-CSRF-TOKEN': form.querySelector('[name="_token"]').value},
+                credentials: 'same-origin',
+                body: JSON.stringify({cancellation_reason: reason}),
+            });
+            const data = await response.json();
+            if (!response.ok || !data.ok) throw new Error(Object.values(data.errors || {}).flat()[0] || data.message || 'تعذر إلغاء الطلب.');
+            closeDraftPreview();
+            statusMessage('تم إلغاء المسودة مع تسجيل السبب.', 'success');
+            openDrawer('draft');
+        } catch (error) {
+            draftEditError.textContent = error.message || 'تعذر تأكيد الإلغاء.';
+            draftEditError.hidden = false;
+        } finally {
+            draftPreviewCancel.disabled = false;
+        }
+    });
     draftPreviewSave.addEventListener('click', async () => {
         if (!activeServerDraft?.editable || draftPreviewSave.disabled) return;
         const items = activeServerDraft.items.map(item => ({
