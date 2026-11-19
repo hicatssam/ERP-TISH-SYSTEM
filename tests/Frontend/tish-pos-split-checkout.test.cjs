@@ -178,3 +178,26 @@ test('POS UX quick cash only preselects configured cash and retains normal valid
  assert.ok(start >= 0 && end > start);
  assert.doesNotMatch(view.slice(start, end), /submitOrder\(/);
 });
+
+test('POS peak shift can search older receipts and reprint through authorized read-only route', () => {
+ assert.match(view, /id="rbReceiptsBtn"/);
+ assert.match(view, /route\('restaurant\.pos\.receipt-search'\)/);
+ assert.match(view, /route\('restaurant\.pos\.orders\.invoice-print', \$order\)/);
+ assert.match(view, /receiptsBtn\.addEventListener\('click', \(\) => openDrawer\('receipts'\)\)/);
+ assert.match(view, /async function loadReceiptSearch\(\)/);
+ assert.match(view, /mode === 'receipts'/);
+ assert.match(view, /card\.href = order\.print_url/);
+});
+test('POS preflights unavailable menu items but preserves retry tokens after ambiguous server completion', () => {
+ assert.match(view, /route\('restaurant\.pos\.cart-availability'\)/);
+ assert.match(view, /async function checkCartAvailability\(\)/);
+ assert.match(view, /data\.unavailable_ids\.length/);
+ assert.match(view, /hadMatchingCheckoutAttempt = saved\?\.fingerprint === checkoutFingerprint\(\)/);
+ assert.match(view, /if \(!hadMatchingCheckoutAttempt\) \{/);
+ assert.match(view, /await checkCartAvailability\(\)/);
+ assert.match(view, /sessionStorage\.removeItem\(posAttemptKey\)/);
+ const i = view.indexOf('async function submitOrder(action)');
+ const j = view.indexOf('const response = await fetch(\n            form.action', i);
+ const check = view.indexOf('await checkCartAvailability()', i);
+ assert.ok(i >= 0 && check > i && j > check, 'availability checked before order POST');
+});

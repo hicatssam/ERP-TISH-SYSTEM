@@ -40,7 +40,9 @@ test('POS-NET-03: failed request keeps the retry key; only confirmed success rem
                             view.indexOf('    // -----------------------------\n    // Product listeners', view.indexOf('async function submitOrder(action)')));
   assert.match(submit,/validatePosCheckoutConfirmation\(response, data\)/);
   const verifiedAt = submit.indexOf('validatePosCheckoutConfirmation(response, data)');
-  const rotateAt = submit.indexOf('sessionStorage.removeItem(posAttemptKey)');
+  // The pre-submit availability check may discard an unsubmitted token.
+  // A submitted checkout must retain its token until the server confirms.
+  const rotateAt = submit.lastIndexOf('sessionStorage.removeItem(posAttemptKey)');
   assert.ok(verifiedAt >= 0 && rotateAt > verifiedAt);
   assert.match(submit,/catch \(error\) \{[\s\S]*?افحص الطلبات قبل إعادة المحاولة/);
   assert.match(view,/attempt\.fingerprint !== fingerprint/);

@@ -86,6 +86,7 @@
                 </svg>
                 المسودات
             </button>
+            <button type="button" class="rb-btn rb-btn-light" id="rbReceiptsBtn">فواتير سابقة</button>
 
             
 
@@ -877,6 +878,7 @@
                     ));
                 @endphp
 
+                <div class="rb-server-order-wrapper">
                 <a
                     href="{{ route('orders.show', $order) }}"
                     class="rb-server-order-card"
@@ -895,6 +897,13 @@
                         <span>{{ $order->customer?->name ?? 'عميل نقدي' }}</span>
                     </div>
                 </a>
+                @if($order->invoice && ((int) $order->created_by === (int) auth()->id() || auth()->user()?->can('invoices.view')))
+                    <a class="rb-reprint-link" href="{{ route('restaurant.pos.orders.invoice-print', $order) }}"
+                       target="_blank" rel="noopener" aria-label="إعادة طباعة فاتورة الطلب {{ $order->order_number }}">
+                        <span aria-hidden="true">🖨</span> إعادة طباعة الفاتورة
+                    </a>
+                @endif
+                </div>
             @empty
                 <div class="rb-drawer-empty">لا توجد طلبات حديثة.</div>
             @endforelse
@@ -911,6 +920,8 @@
 .rb-draft-preview-dialog [hidden]{display:none!important}
 .rb-pos .rb-payment-method-warning{padding:10px 12px;border:1px solid #e0ad87;border-radius:8px;background:#fff6e9;color:#793916;font-size:12px;line-height:1.7}
 .rb-pos .rb-payment-method-warning a{font-weight:800;text-decoration:underline}
+.rb-drawer .rb-reprint-link{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;margin:5px 0 10px;padding:8px 12px;border:1px solid var(--rb-border);border-radius:8px;background:var(--rb-soft);color:var(--rb-text);font-weight:800;text-decoration:none}
+.rb-drawer .rb-reprint-link:hover{color:var(--rb-orange);border-color:var(--rb-orange)}
 /* POS split-payment controls: readable and touch-friendly at checkout. */
 .rb-pos .rb-split-toggle,.rb-pos .rb-split-confirm{display:flex;align-items:center;gap:10px;line-height:1.5;cursor:pointer}
 .rb-pos .rb-split-toggle input,.rb-pos .rb-split-confirm input{width:19px;height:19px;accent-color:#ad201c;flex-shrink:0}
@@ -2763,6 +2774,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const catalogUrl = @json(route('restaurant.pos.catalog'));
     const qrOrdersUrl = @json(route('restaurant.pos.qr-orders'));
     const draftOrdersUrl = @json(route('restaurant.pos.drafts'));
+    const receiptSearchUrl = @json(route('restaurant.pos.receipt-search'));
+    const cartAvailabilityUrl = @json(route('restaurant.pos.cart-availability'));
     const draftEditUrlPattern = @json(route('restaurant.pos.drafts.items.update', ['order' => '__ORDER__']));
     const draftCancelUrlPattern = @json(route('restaurant.pos.drafts.cancel', ['order' => '__ORDER__']));
     const cashierPosUrl = @json(route('restaurant.pos.index', ['location_id' => $location->id]));
@@ -3097,6 +3110,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const qrOrdersBtn = document.getElementById('rbQrOrdersBtn');
     const draftListBtn = document.getElementById('rbDraftListBtn');
+    const receiptsBtn = document.getElementById('rbReceiptsBtn');
     const existingOrderSearch = document.getElementById('rbExistingOrderSearch');
 
     const drawer = document.getElementById('rbOrdersDrawer');
@@ -3110,6 +3124,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const serverOrdersTitle = document.getElementById('rbServerOrdersTitle');
     const serverOrdersList = document.getElementById('rbServerOrdersList');
     const recentOrdersMarkup = serverOrdersList.innerHTML;
+    async function checkCartAvailability() {
+        const ids = [...new Set([...cart.values()].map(item => Number(item.product_id || item.id)).filter(Boolean))];
+        if (!ids.length) return true;
+        const url = new URL(cartAvailabilityUrl, window.location.origin);
+        url.searchParams.set('location_id', String(locationId));
+        ids.forEach(id => url.searchParams.append('ids[]', String(id)));
+        const response = await fetch(url, {headers: {'Accept': 'application/json'}, credentials: 'same-origin'});
+        if (!response.ok) throw new Error('تعذر فحص توفر الأصناف حاليًا. لم يتم إرسال الطلب؛ تحقق من الاتصال.');
+        const data = await response.json();
+        if (!Array.isArray(data.unavailable_ids)) throw new Error('تعذر التحقق من توفر الأصناف. لم يتم إرسال الطلب.');
+        if (data.unavailable_ids.length) {
+            const names = data.unavailable_ids.map(id => {
+                const product = productCache.get(Number(id));
+                return product?.name || ('#' + id);
+            });
+            throw new Error('هذه الأصناف لم تعد متاحة في منيو الفرع: ' + names.join('، ') + '. حدّث المنيو أو احذفها من السلة.');
+        }
+        return true;
+    }
     const draftPreviewModal = document.getElementById('rbDraftPreviewModal');
     const draftPreviewBody = document.getElementById('rbDraftPreviewBody');
     const draftPreviewRestore = document.getElementById('rbDraftPreviewRestore');
@@ -3123,6 +3156,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const draftPreviewOpen = document.getElementById('rbDraftPreviewOpen');
     let draftRequest = 0;
     let draftSearchTimer;
+    let receiptSearchTimer;
+    let receiptRequest = 0;
     let currentDraftPreview = null;
     let qrRequest = 0;
     let qrSearchTimer;
@@ -4526,7 +4561,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 matchesMode = (card.dataset.status || '') === 'draft';
             }
 
-            card.hidden = !(matchesQuery && matchesMode);
+            const wrapper = card.closest('.rb-server-order-wrapper') || card;
+            wrapper.hidden = !(matchesQuery && matchesMode);
         });
     }
 
@@ -4571,11 +4607,49 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    async function loadReceiptSearch() {
+        const request = ++receiptRequest;
+        serverOrdersList.innerHTML = '<div class="rb-drawer-empty">جار البحث في الفواتير...</div>';
+        const url = new URL(receiptSearchUrl, window.location.origin);
+        url.searchParams.set('location_id', String(locationId));
+        if (drawerSearchInput.value.trim()) url.searchParams.set('q', drawerSearchInput.value.trim());
+        try {
+            const response = await fetch(url, {headers: {Accept: 'application/json'}, credentials: 'same-origin'});
+            if (!response.ok) throw new Error('تعذر البحث');
+            const data = await response.json();
+            if (request !== receiptRequest || drawerMode !== 'receipts') return;
+            serverOrdersList.replaceChildren();
+            (data.orders || []).forEach(order => {
+                const card = document.createElement('a');
+                card.href = order.print_url;
+                card.target = '_blank';
+                card.rel = 'noopener';
+                card.className = 'rb-server-order-card';
+                card.innerHTML = `<div class="rb-server-order-top"><strong>${escapeHtml(order.number)}</strong><span>فاتورة</span></div>
+                    <div class="rb-server-order-meta"><span>${escapeHtml(order.invoice_number || '')}</span><span>إعادة الطباعة</span></div>`;
+                serverOrdersList.appendChild(card);
+            });
+            if (!serverOrdersList.children.length)
+                serverOrdersList.innerHTML = '<div class="rb-drawer-empty">لا توجد فواتير مطابقة ضمن صلاحياتك في هذا الفرع.</div>';
+        } catch (_) {
+            if (request === receiptRequest && drawerMode === 'receipts')
+                serverOrdersList.innerHTML = '<div class="rb-drawer-empty">تعذر تحميل الفواتير. تحقق من الاتصال ثم أعد البحث.</div>';
+        }
+    }
+
     function openDrawer(mode = 'all', query = '') {
         drawerMode = mode;
         drawerSearchInput.value = query || '';
 
-        if (mode === 'qr') {
+        if (mode === 'receipts') {
+            qrRequest++;
+            draftRequest++;
+            drawerTitle.textContent = 'البحث عن فاتورة سابقة';
+            drawerSubtitle.textContent = 'إعادة الطباعة دون إنشاء طلب أو تحصيل جديد';
+            serverOrdersTitle.textContent = 'الفواتير المتاحة';
+            localDraftSection.hidden = true;
+            loadReceiptSearch();
+        } else if (mode === 'qr') {
             drawerTitle.textContent = 'طلبات QR';
             drawerSubtitle.textContent = 'طلبات منيو العميل في هذا الفرع';
             serverOrdersTitle.textContent = 'طلبات QR';
@@ -4598,7 +4672,7 @@ document.addEventListener('DOMContentLoaded', () => {
             localDraftSection.hidden = true;
         }
 
-        if (mode !== 'qr') filterServerOrders();
+        if (mode !== 'qr' && mode !== 'receipts') filterServerOrders();
         drawer.classList.add('is-open');
         drawer.setAttribute('aria-hidden', 'false');
         drawerBackdrop.hidden = false;
@@ -4684,6 +4758,13 @@ async function submitOrder(action) {
     }
 
     syncHiddenItems();
+    // A retry after an ambiguous server response MUST reach the original
+    // idempotency token even if the last item sold out meanwhile.
+    let hadMatchingCheckoutAttempt = false;
+    try {
+        const saved = JSON.parse(sessionStorage.getItem(posAttemptKey) || 'null');
+        hadMatchingCheckoutAttempt = saved?.fingerprint === checkoutFingerprint();
+    } catch (_) {}
     try { checkoutRequestToken(); } catch (error) {
         statusMessage(String(error.message || error), 'error');
         return;
@@ -4821,6 +4902,17 @@ async function submitOrder(action) {
     }
 
     try {
+        // Check active branch menu before committing. The server still
+        // revalidates availability and stock atomically during checkout.
+        if (!hadMatchingCheckoutAttempt) {
+            try {
+                await checkCartAvailability();
+            } catch (error) {
+                // No sale was submitted: a future attempt must check again.
+                sessionStorage.removeItem(posAttemptKey);
+                throw error;
+            }
+        }
         const response = await fetch(
             form.action,
             {
@@ -5183,6 +5275,7 @@ async function submitOrder(action) {
     // -----------------------------
     qrOrdersBtn.addEventListener('click', () => openDrawer('qr'));
     draftListBtn.addEventListener('click', () => openDrawer('draft'));
+    receiptsBtn.addEventListener('click', () => openDrawer('receipts'));
 
     existingOrderSearch.addEventListener('keydown', event => {
         if (event.key !== 'Enter') return;
@@ -5195,7 +5288,10 @@ async function submitOrder(action) {
     });
 
     drawerSearchInput.addEventListener('input', () => {
-        if (drawerMode === 'draft') {
+        if (drawerMode === 'receipts') {
+            clearTimeout(receiptSearchTimer);
+            receiptSearchTimer = setTimeout(loadReceiptSearch, 250);
+        } else if (drawerMode === 'draft') {
             clearTimeout(draftSearchTimer);
             draftSearchTimer = setTimeout(() => loadServerDrafts(), 250);
         } else if (drawerMode === 'qr') {

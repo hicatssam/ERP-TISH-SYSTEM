@@ -113,6 +113,11 @@ Route::middleware([
                 [RestaurantPosController::class, 'catalog']
             )->name('pos.catalog');
 
+            Route::get('/pos/cart-availability', [RestaurantPosController::class, 'cartAvailability'])
+                ->name('pos.cart-availability');
+            Route::get('/pos/receipt-search', [RestaurantPosController::class, 'receiptSearch'])
+                ->name('pos.receipt-search');
+
             Route::post('/pos/customers/quick', [RestaurantPosController::class, 'quickStoreCustomer'])
                 ->name('pos.customers.quick-store')
                 ->middleware('can:customers.create');
