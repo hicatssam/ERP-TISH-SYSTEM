@@ -100,6 +100,39 @@ class RestaurantPosCatalogTest extends TestCase
     }
 
     #[Test]
+    public function empty_payment_configuration_shows_actionable_warning_without_inventing_methods(): void
+    {
+        $branch = $this->branch('NO-PAY');
+        $cashier = $this->cashier($branch);
+
+        $this->actingAs($cashier)->get(route('restaurant.pos.index', ['location_id' => $branch->id]))
+            ->assertOk()
+            ->assertSee('لا توجد طرق دفع نشطة ومتاحة لفرع')
+            ->assertSee('الدفع المختلط غير متاح')
+            ->assertSee('id="rbSplitTenderToggle" disabled', false);
+
+        $this->assertDatabaseCount('payment_methods', 0);
+    }
+
+    #[Test]
+    public function payment_configuration_with_only_one_immediate_method_disables_split_but_keeps_cash(): void
+    {
+        $branch = $this->branch('ONE-PAY');
+        $cashier = $this->cashier($branch);
+        PaymentMethod::query()->create([
+            'name' => 'Cash only', 'name_ar' => 'نقدي',
+            'code' => 'cash-only-pos', 'type' => 'cash', 'is_active' => true,
+            'requires_verification' => false,
+        ]);
+
+        $this->actingAs($cashier)->get(route('restaurant.pos.index', ['location_id' => $branch->id]))
+            ->assertOk()
+            ->assertSee('نقدي')
+            ->assertSee('الدفع المختلط غير متاح')
+            ->assertSee('id="rbSplitTenderToggle" disabled', false);
+    }
+
+    #[Test]
     public function cashier_only_sees_branch_payment_methods_and_cannot_submit_another_branch_method(): void
     {
         $branch = $this->branch('PAY-A');
