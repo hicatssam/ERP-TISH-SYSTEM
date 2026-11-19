@@ -7,11 +7,11 @@
 
     $sourceOrder = $sourceOrder ?? $order ?? null;
     $sourceOrder?->loadMissing(['restaurantTable', 'customer', 'salesChannel', 'payments.paymentMethod']);
-    $invoice->loadMissing(['location', 'customer', 'issuedBy.employee', 'items.product', 'currency']);
+    $invoice->loadMissing(['location', 'customer', 'issuedBy.employee', 'items.product']);
     $issueTime = $invoice->issued_at ?? $invoice->created_at;
     $invoiceNumber = $invoice->invoice_number ?? ('INV-' . $invoice->id);
     $currencySymbol = $invoice->currency?->symbol ?: ($theme['currency_symbol'] ?? '₪');
-    $customerName = $invoice->customer?->name ?? $sourceOrder?->customer?->name ?? $sourceOrder?->guest_name ?: 'عميل نقدي';
+    $customerName = ($invoice->customer?->name ?? $sourceOrder?->customer?->name ?? $sourceOrder?->guest_name) ?: 'عميل نقدي';
     $customerPhone = $invoice->customer?->phone ?? $sourceOrder?->customer?->phone ?? $sourceOrder?->guest_phone;
     $serviceCode = $sourceOrder?->restaurant_service_type;
     $serviceCode = $serviceCode instanceof \BackedEnum ? $serviceCode->value : (string) $serviceCode;
@@ -81,14 +81,14 @@
 .ci-side-left{text-align:left;direction:ltr}
 .ci-side-right{text-align:right}
 .ci-contact-line{display:block;overflow-wrap:anywhere}
-.ci-contact-line b{color:var(--ci-accent);padding:0 3px}
-.ci-stripe{height:4px;background:var(--ci-accent);margin:0 0 13px}
+.ci-contact-line b{color:{{ $accent }};padding:0 3px}
+.ci-stripe{height:4px;background:{{ $accent }};margin:0 0 13px}
 .ci-ribbon-wrap{text-align:center;margin:0 auto 19px}
-.ci-ribbon{display:inline-block;width:57%;padding:8px 18px 12px;border-radius:12px;background:var(--ci-accent);color:#fff;font-size:25pt;font-weight:900;line-height:1.25;text-align:center}
+.ci-ribbon{display:inline-block;width:57%;padding:8px 18px 12px;border-radius:12px;background:{{ $accent }};color:#fff;font-size:25pt;font-weight:900;line-height:1.25;text-align:center}
 .ci-blocks{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:10px 0;margin:0 0 23px}
 .ci-blocks>tbody>tr>td{width:50%;vertical-align:top;padding:0}
 .ci-panel{border:1px solid #c5c5c5;border-radius:9px;overflow:hidden;min-height:170px}
-.ci-panel-title{padding:7px 11px;background:var(--ci-accent);color:#fff;font-size:12pt;font-weight:900;text-align:right}
+.ci-panel-title{padding:7px 11px;background:{{ $accent }};color:#fff;font-size:12pt;font-weight:900;text-align:right}
 .ci-info-table{width:100%;border-collapse:collapse}
 .ci-info-table td{padding:7px 10px;border-bottom:1px solid #d8d8d8;font-size:9.1pt;vertical-align:top;text-align:right;overflow-wrap:anywhere}
 .ci-info-table tr:last-child td{border-bottom:none}
@@ -97,7 +97,7 @@
 .ci-info-value[dir=ltr]{direction:ltr;unicode-bidi:embed}
 .ci-products{width:100%;border-collapse:collapse;table-layout:fixed}
 .ci-products thead{display:table-header-group}
-.ci-products th{background:var(--ci-accent);color:#fff;font-size:9.6pt;font-weight:900;padding:10px 6px;border:1px solid #fff;text-align:center}
+.ci-products th{background:{{ $accent }};color:#fff;font-size:9.6pt;font-weight:900;padding:10px 6px;border:1px solid #fff;text-align:center}
 .ci-products td{padding:10px 7px;border:1px solid #d6d6d6;text-align:center;font-size:9pt;vertical-align:middle}
 .ci-products tr{page-break-inside:avoid}
 .ci-products tr:nth-child(even) td{background:#fafafa}
@@ -105,25 +105,25 @@
 .ci-products .ci-num{width:7%}
 .ci-products .ci-qty{width:12%}
 .ci-products .ci-money{direction:ltr;white-space:nowrap;font-weight:800}
-.ci-money b{color:var(--ci-accent)}
+.ci-money b{color:{{ $accent }}}
 .ci-bottom{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:10px 0;margin-top:24px}
 .ci-bottom>tbody>tr>td{width:50%;padding:0;vertical-align:top}
 .ci-notes{border:1px solid #cecece;border-radius:8px;min-height:140px;overflow:hidden}
-.ci-notes-title{background:var(--ci-accent);color:#fff;padding:8px 12px;font-size:12pt;font-weight:900}
+.ci-notes-title{background:{{ $accent }};color:#fff;padding:8px 12px;font-size:12pt;font-weight:900}
 .ci-notes-body{padding:11px;font-size:10pt}
 .ci-totals{width:100%;border:1px solid #d6d6d6;border-collapse:collapse}
 .ci-totals td{padding:9px;border-bottom:1px solid #ddd;font-size:9.5pt;font-weight:800}
 .ci-totals td:last-child{text-align:left;direction:ltr;white-space:nowrap}
-.ci-totals .ci-final td{background:var(--ci-accent);color:#fff;font-size:13pt;font-weight:900;padding:11px}
-.ci-footer{margin-top:26px;padding:12px 0 6px;border-top:3px solid var(--ci-accent);font-size:9pt;font-weight:800;text-align:center}
-.ci-footer-brand{font-size:10pt;font-weight:900;color:var(--ci-accent)}
+.ci-totals .ci-final td{background:{{ $accent }};color:#fff;font-size:13pt;font-weight:900;padding:11px}
+.ci-footer{margin-top:26px;padding:12px 0 6px;border-top:3px solid {{ $accent }};font-size:9pt;font-weight:800;text-align:center}
+.ci-footer-brand{font-size:10pt;font-weight:900;color:{{ $accent }}}
 .ci-footer-en{font-size:8pt;letter-spacing:.07em;direction:ltr}
 .ci-watermark{position:absolute;z-index:5;top:335px;left:5%;width:90%;height:245px;pointer-events:none;text-align:center;transform:rotate(-17deg);-webkit-transform:rotate(-17deg)}
 .ci-watermark-inner{display:block;width:100%;height:100%;border:10px double currentColor;border-radius:18px;padding:36px 4px;box-sizing:border-box;font-size:65pt;line-height:1.4;font-weight:900;white-space:nowrap;text-shadow:1px 2px currentColor}
 .ci-watermark.paid{color:rgba(5,170,20,.83)}
 .ci-watermark.unpaid{color:rgba(223,0,26,.84)}
 .ci-watermark.pending{color:rgba(196,132,0,.75)}
-.ci-page{--ci-accent:{{ $accent }}}
+
 @if($thermal)
 .ci-header td{display:block;width:100%;padding:2px;text-align:center!important}
 .ci-logo{max-height:53px;max-width:86px}
