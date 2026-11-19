@@ -81,6 +81,7 @@ class StoreRestaurantPosOrderRequest extends FormRequest
                 'paid_amount' => null,
                 'reference_number' => null,
                 'payment_received_confirmed' => null,
+                'split_payments' => null,
             ]);
         }
     }
@@ -137,6 +138,11 @@ class StoreRestaurantPosOrderRequest extends FormRequest
                 if ($arrangement !== PaymentArrangement::PayNow->value
                     || $this->input('pos_action') === 'kot_print') {
                     $validator->errors()->add('split_payments', 'الدفع المختلط متاح للدفع الفوري فقط.');
+                }
+                if (count($split) === 2 && (string) data_get($split, '0.payment_method_id')
+                    === (string) data_get($split, '1.payment_method_id')) {
+                    $validator->errors()->add('split_payments',
+                        'اختر طريقتي دفع مختلفتين، أو استخدم الدفع العادي.');
                 }
                 if ($this->filled('payment_method_id') || $this->filled('paid_amount')) {
                     $validator->errors()->add('split_payments', 'لا تجمع الدفع المختلط مع بيانات دفع فردي.');
