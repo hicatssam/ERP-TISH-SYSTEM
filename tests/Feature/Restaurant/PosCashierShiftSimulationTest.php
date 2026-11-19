@@ -1248,7 +1248,7 @@ class PosCashierShiftSimulationTest extends TestCase
             // Same request repeated due to a slow response must not double-charge.
             if ($index === 6) {
                 $this->actingAs($cashier)->postJson(route('restaurant.pos.orders.store'), $payload)
-                    ->assertOk()
+                    ->assertCreated()
                     ->assertJsonPath('order_id', $result->json('order_id'));
             }
         }
