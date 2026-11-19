@@ -21,7 +21,7 @@ test('POS-SHIFT-01: drafts on a shared terminal are isolated by cashier and bran
 });
 test('POS-SHIFT-02: old shared branch drafts are never silently adopted by a second cashier', () => {
   assert.doesNotMatch(view, /localStorage\.getItem\(\x60restaurant_pos_draft_\$\{locationId\}\x60\)/);
-  assert.match(view, /const raw = localStorage\.getItem\(draftKey\)/);
+  assert.match(view, /raw = localStorage\.getItem\(draftKey\)/);
   assert.match(view, /function restoreLocalDraft\(\)/);
   assert.match(view, /loadProductsByIds\(draft\.items\.map/);
 });
