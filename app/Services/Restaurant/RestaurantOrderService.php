@@ -9,6 +9,7 @@ use App\Models\RestaurantTable;
 use App\Models\User;
 use App\Services\ActivityLogger;
 use App\Services\Orders\OrderService;
+use App\Services\Payments\PaymentService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Arr;
@@ -108,11 +109,44 @@ class RestaurantOrderService
 
             $requiresVerification = $this->requiresPaymentVerification($payload);
 
+            $splitPayments = $data['split_payments'] ?? [];
+            if ($splitPayments) {
+                // Create the confirmed order WITHOUT an initial single-method
+                // collection. All two tender entries are in this same transaction.
+                unset($payload['payment_method_id'], $payload['paid_amount']);
+            }
             $order = $this->orders->createOrder(
                 $payload,
                 $user,
                 ! $requiresVerification
             );
+
+            if ($splitPayments) {
+                $expectedCents = (int) round((float) $order->total_amount * 100);
+                $actualCents = array_sum(array_map(
+                    static fn ($part): int => (int) round((float) $part['amount'] * 100),
+                    $splitPayments
+                ));
+                if ($expectedCents <= 0 || $actualCents !== $expectedCents) {
+                    throw ValidationException::withMessages([
+                        'split_payments' => sprintf(
+                            'يجب أن يساوي مجموع الدفع المختلط إجمالي الطلب: ₪%.2f.',
+                            $expectedCents / 100
+                        ),
+                    ]);
+                }
+
+                foreach ($splitPayments as $part) {
+                    app(PaymentService::class)->recordPayment([
+                        'order_type' => 'order',
+                        'order_id' => $order->id,
+                        'payment_method_id' => (int) $part['payment_method_id'],
+                        'amount' => (int) round((float) $part['amount'] * 100) / 100,
+                        'reference_number' => $part['reference_number'] ?? null,
+                    ], $user);
+                }
+                $order->refresh();
+            }
 
             ActivityLogger::log(
                 userId: $user->id,
@@ -135,6 +169,7 @@ class RestaurantOrderService
                     'manual_discount_type' => $payload['discount_type'] ?? 'none',
                     'manual_discount_value' => $payload['discount_value'] ?? 0,
                     'manual_discount_reason' => $payload['discount_reason'] ?? null,
+                    'split_tender_count' => count($splitPayments),
                 ],
             );
 
@@ -171,6 +206,9 @@ class RestaurantOrderService
             return true;
         }
 
+        if (! empty($data['split_payments'])) {
+            return false; // only fully confirmed non-verification tenders are supported
+        }
         if (empty($data['payment_method_id'])) {
             return false;
         }
