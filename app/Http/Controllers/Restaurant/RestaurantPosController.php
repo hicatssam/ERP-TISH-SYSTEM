@@ -361,6 +361,23 @@ class RestaurantPosController extends Controller
             }
         }
 
+        // Split-tender methods must each be enabled for this branch. A method
+        // from a different branch must never bypass the standard POS guard.
+        foreach (($data['split_payments'] ?? []) as $index => $part) {
+            $method = PaymentMethod::query()->active()
+                ->find($part['payment_method_id'] ?? null);
+            if (! $method || $method->requires_verification
+                || ($method->locationPaymentMethods()->exists()
+                    && ! $method->locationPaymentMethods()
+                        ->where('location_id', $location->id)
+                        ->where('is_active', true)->exists())) {
+                throw ValidationException::withMessages([
+                    "split_payments.$index.payment_method_id" =>
+                        'طريقة الدفع غير متاحة لهذا الفرع أو تحتاج تحققًا منفصلًا.',
+                ]);
+            }
+        }
+
         if (! empty($data['customer_id'])) {
             $customerAllowed = Customer::query()
                 ->availableAt($location->id)
