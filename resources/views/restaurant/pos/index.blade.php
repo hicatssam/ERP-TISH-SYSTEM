@@ -4201,6 +4201,17 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
+    // Saving a cart locally is never a payment confirmation or a server order.
+    function preserveUnfinishedCart() {
+        if (!cart.size || rbCheckoutSucceeded) return false;
+        try {
+            localStorage.setItem(draftKey, JSON.stringify(serializeDraft()));
+            return true;
+        } catch (_) {
+            return false;
+        }
+    }
+
     function saveLocalDraft() {
         if (!cart.size) {
             statusMessage('لا يوجد طلب لحفظه كمسودة.', 'error');
@@ -4498,6 +4509,16 @@ document.addEventListener('DOMContentLoaded', () => {
    let rbSubmitting = false;
    let rbCheckoutSucceeded = false;
 
+   // Emergency recovery when a cashier closes/reloads the tab in a rush.
+   // This uses the existing cashier- and branch-scoped draft key.
+   window.addEventListener('pagehide', preserveUnfinishedCart);
+   window.addEventListener('beforeunload', event => {
+       if (!cart.size || rbCheckoutSucceeded) return;
+       preserveUnfinishedCart();
+       event.preventDefault();
+       event.returnValue = '';
+   });
+
 function validatePosCheckoutConfirmation(response, data) {
     // A 2xx status with a proxy/HTML/truncated response is ambiguous.
     // Never rotate the retry UUID or tell the cashier the sale succeeded
@@ -4561,6 +4582,20 @@ async function submitOrder(action) {
     }
 
     rbSubmitting = true;
+    // Warn about a slow request; never send a second checkout automatically.
+    const slowCheckoutNotice = window.setTimeout(() => {
+        if (!rbSubmitting || rbCheckoutSucceeded) return;
+        preserveUnfinishedCart();
+        const overlay = document.getElementById('rbPosSavingOverlay');
+        if (overlay && !document.getElementById('rbPosSlowNotice')) {
+            const message = document.createElement('p');
+            message.id = 'rbPosSlowNotice';
+            message.setAttribute('role', 'status');
+            message.style.cssText = 'color:#fff;font-size:12px;margin:12px 0 0;max-width:320px;line-height:1.7';
+            message.textContent = 'استجابة السيرفر متأخرة. لا تغلق الشاشة ولا تضغط دفع مرة ثانية. الطلب قيد التحقق.';
+            overlay.firstElementChild?.appendChild(message);
+        }
+    }, 12000);
 
     const buttons = [
         billPaymentBtn,
@@ -4797,6 +4832,7 @@ async function submitOrder(action) {
         );
 
     } finally {
+        window.clearTimeout(slowCheckoutNotice);
         rbSubmitting = rbCheckoutSucceeded;
 
         buttons.forEach(button => {
