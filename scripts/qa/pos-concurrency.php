@@ -297,6 +297,13 @@ echo "PASS POS-RACE-03: kitchen starts while cashier edits; edit denied and fina
 // Case 4: ten real independent processes compete for sufficient stock.
 // Every unique checkout must survive; no lost charges or duplicate invoices.
 $d = fixture(25);
+// The kitchen module was enabled in Case 3. A new test branch also needs its
+// own routing station or KDS will correctly refuse every checkout.
+KitchenStation::query()->create([
+    'location_id' => $d['location'], 'name' => 'QA parallel kitchen',
+    'code' => 'QA-LOAD-'.Str::random(6),
+    'is_default' => true, 'is_active' => true,
+]);
 $launch = microtime(true) + 2.0;
 $parallelWorkers = [];
 $parallelTokens = [];
