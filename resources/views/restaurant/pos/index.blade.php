@@ -7,6 +7,14 @@
 @php
     $selectedTableId = (int) old('restaurant_table_id', request('table_id', 0));
 
+    // Use the same configured branding sources as layouts.app; do not hardcode TISH assets.
+    $posBrandLogoUrl = \\App\\Models\\SystemSetting::assetUrl('brand_logo')
+        ?: \\App\\Models\\SystemSetting::assetUrl('brand_logo_small')
+        ?: (is_file(public_path('assets/images/logo.png')) ? asset('assets/images/logo.png') : null);
+    $posBrandName = trim((string) \\App\\Models\\SystemSetting::get('brand_name_ar', ''))
+        ?: trim((string) \\App\\Models\\SystemSetting::get('brand_name', ''))
+        ?: 'نظام الإدارة';
+
     $cashierName =
         auth()->user()?->employee?->full_name
         ?? auth()->user()?->display_name
@@ -43,10 +51,10 @@
     {{-- Client branding is sourced from the same settings as the ERP layout. --}}
     <div class="rb-pos-header">
         <div class="rb-pos-brand">
-            @if($brandLogoUrl ?? null)
-                <img class="rb-pos-brand-logo" src="{{ $brandLogoUrl }}" alt="{{ $brandName ?? 'شعار النظام' }}">
+            @if($posBrandLogoUrl)
+                <img class="rb-pos-brand-logo" src="{{ $posBrandLogoUrl }}" alt="{{ $posBrandName }}">
             @else
-                <span class="rb-pos-brand-fallback">{{ $brandName ?? 'نظام الإدارة' }}</span>
+                <span class="rb-pos-brand-fallback">{{ $posBrandName }}</span>
             @endif
         </div>
         <div class="rb-pos-heading">
