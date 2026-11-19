@@ -877,6 +877,7 @@
                     ));
                 @endphp
 
+                <div class="rb-server-order-wrapper">
                 <a
                     href="{{ route('orders.show', $order) }}"
                     class="rb-server-order-card"
@@ -895,6 +896,13 @@
                         <span>{{ $order->customer?->name ?? 'عميل نقدي' }}</span>
                     </div>
                 </a>
+                @if($order->invoice && ((int) $order->created_by === (int) auth()->id() || auth()->user()?->can('invoices.view')))
+                    <a class="rb-reprint-link" href="{{ route('restaurant.pos.orders.invoice-print', $order) }}"
+                       target="_blank" rel="noopener" aria-label="إعادة طباعة فاتورة الطلب {{ $order->order_number }}">
+                        <span aria-hidden="true">🖨</span> إعادة طباعة الفاتورة
+                    </a>
+                @endif
+                </div>
             @empty
                 <div class="rb-drawer-empty">لا توجد طلبات حديثة.</div>
             @endforelse
@@ -911,6 +919,8 @@
 .rb-draft-preview-dialog [hidden]{display:none!important}
 .rb-pos .rb-payment-method-warning{padding:10px 12px;border:1px solid #e0ad87;border-radius:8px;background:#fff6e9;color:#793916;font-size:12px;line-height:1.7}
 .rb-pos .rb-payment-method-warning a{font-weight:800;text-decoration:underline}
+.rb-pos .rb-reprint-link{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;margin:5px 0 10px;padding:8px 12px;border:1px solid var(--rb-border);border-radius:8px;background:var(--rb-soft);color:var(--rb-text);font-weight:800;text-decoration:none}
+.rb-pos .rb-reprint-link:hover{color:var(--rb-orange);border-color:var(--rb-orange)}
 /* POS split-payment controls: readable and touch-friendly at checkout. */
 .rb-pos .rb-split-toggle,.rb-pos .rb-split-confirm{display:flex;align-items:center;gap:10px;line-height:1.5;cursor:pointer}
 .rb-pos .rb-split-toggle input,.rb-pos .rb-split-confirm input{width:19px;height:19px;accent-color:#ad201c;flex-shrink:0}
@@ -2763,6 +2773,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const catalogUrl = @json(route('restaurant.pos.catalog'));
     const qrOrdersUrl = @json(route('restaurant.pos.qr-orders'));
     const draftOrdersUrl = @json(route('restaurant.pos.drafts'));
+    const cartAvailabilityUrl = @json(route('restaurant.pos.cart-availability'));
     const draftEditUrlPattern = @json(route('restaurant.pos.drafts.items.update', ['order' => '__ORDER__']));
     const draftCancelUrlPattern = @json(route('restaurant.pos.drafts.cancel', ['order' => '__ORDER__']));
     const cashierPosUrl = @json(route('restaurant.pos.index', ['location_id' => $location->id]));
@@ -3110,6 +3121,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const serverOrdersTitle = document.getElementById('rbServerOrdersTitle');
     const serverOrdersList = document.getElementById('rbServerOrdersList');
     const recentOrdersMarkup = serverOrdersList.innerHTML;
+    async function checkCartAvailability() {
+        const ids = [...new Set([...cart.values()].map(item => Number(item.product_id || item.id)).filter(Boolean))];
+        if (!ids.length) return true;
+        const url = new URL(cartAvailabilityUrl, window.location.origin);
+        url.searchParams.set('location_id', String(locationId));
+        ids.forEach(id => url.searchParams.append('ids[]', String(id)));
+        const response = await fetch(url, {headers: {'Accept': 'application/json'}, credentials: 'same-origin'});
+        if (!response.ok) throw new Error('تعذر فحص توفر الأصناف حاليًا. لم يتم إرسال الطلب؛ تحقق من الاتصال.');
+        const data = await response.json();
+        if (!Array.isArray(data.unavailable_ids)) throw new Error('تعذر التحقق من توفر الأصناف. لم يتم إرسال الطلب.');
+        if (data.unavailable_ids.length) {
+            const names = data.unavailable_ids.map(id => {
+                const product = productCache.get(Number(id));
+                return product?.name || ('#' + id);
+            });
+            throw new Error('هذه الأصناف لم تعد متاحة في منيو الفرع: ' + names.join('، ') + '. حدّث المنيو أو احذفها من السلة.');
+        }
+        return true;
+    }
     const draftPreviewModal = document.getElementById('rbDraftPreviewModal');
     const draftPreviewBody = document.getElementById('rbDraftPreviewBody');
     const draftPreviewRestore = document.getElementById('rbDraftPreviewRestore');
@@ -4821,6 +4851,9 @@ async function submitOrder(action) {
     }
 
     try {
+        // Check active branch menu before committing. The server still
+        // revalidates availability and stock atomically during checkout.
+        await checkCartAvailability();
         const response = await fetch(
             form.action,
             {
