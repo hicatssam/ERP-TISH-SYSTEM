@@ -3692,7 +3692,6 @@ document.addEventListener('DOMContentLoaded', () => {
             // also cannot submit stale values from a previously selected method.
             splitReferences[i].disabled = !needsReference;
             splitReferences[i].required = needsReference;
-            splitReferences[i].closest('label')?.removeAttribute('hidden');
             splitConfirmations[i].disabled = !nonCash;
             splitConfirmations[i].required = nonCash;
             splitConfirmations[i].parentElement.style.display = nonCash ? '' : 'none';
