@@ -107,6 +107,7 @@ class TishRecipeStockFlowTest extends TestCase
 
         Inventory::query()->where('location_id', $branch->id)
             ->where('product_id', $bun->id)->update(['quantity' => 0, 'reserved_quantity' => 0]);
+        $orderCountBefore = Order::query()->count();
 
         $response = $this->actingAs($admin)->getJson(route('restaurant.pos.cart-availability', [
             'location_id' => $branch->id,
@@ -120,7 +121,7 @@ class TishRecipeStockFlowTest extends TestCase
             $bun->name_ar ?: $bun->name,
             collect($response->json('ingredient_shortages'))->pluck('ingredient')->all()
         );
-        $this->assertDatabaseCount('orders', 0);
+        $this->assertSame($orderCountBefore, Order::query()->count());
         $this->assertEquals(0, Inventory::query()->where('location_id', $branch->id)
             ->where('product_id', $bun->id)->value('quantity'));
     }
