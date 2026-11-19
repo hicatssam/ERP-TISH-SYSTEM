@@ -3683,14 +3683,19 @@ document.addEventListener('DOMContentLoaded', () => {
         splitMethods.forEach((field, i) => {
             field.disabled = !splitActive;
             splitAmounts[i].disabled = !splitActive;
-            splitReferences[i].disabled = !splitActive;
-            splitConfirmations[i].disabled = !splitActive;
             field.required = splitActive;
             splitAmounts[i].required = splitActive;
             const option = field.options[field.selectedIndex];
             const nonCash = splitActive && !!field.value && option?.dataset.type !== 'cash';
-            splitReferences[i].required = nonCash || (splitActive && option?.dataset.reference === '1');
+            const needsReference = nonCash || (splitActive && option?.dataset.reference === '1');
+            // Cash collections never ask for a transfer receipt. Disabled inputs
+            // also cannot submit stale values from a previously selected method.
+            splitReferences[i].disabled = !needsReference;
+            splitReferences[i].required = needsReference;
+            splitReferences[i].closest('label')?.removeAttribute('hidden');
+            splitConfirmations[i].disabled = !nonCash;
             splitConfirmations[i].required = nonCash;
+            splitConfirmations[i].parentElement.style.display = nonCash ? '' : 'none';
         });
         if (splitActive) {
             paymentMethod.disabled = true;
