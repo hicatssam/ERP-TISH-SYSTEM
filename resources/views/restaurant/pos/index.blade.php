@@ -3082,6 +3082,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const draftCancelReason = document.getElementById('rbDraftCancelReason');
     const draftEditError = document.getElementById('rbDraftEditError');
     let activeServerDraft = null;
+    let pendingDraftCancellation = false;
     const draftPreviewOpen = document.getElementById('rbDraftPreviewOpen');
     let draftRequest = 0;
     let draftSearchTimer;
@@ -4316,6 +4317,8 @@ document.addEventListener('DOMContentLoaded', () => {
         draftEditError.hidden = true;
         draftEditError.textContent = '';
         draftCancelReason.value = '';
+        pendingDraftCancellation = false;
+        draftPreviewCancel.textContent = 'إلغاء الطلب';
         const items = Array.isArray(draft.items) ? draft.items : [];
         const total = kind === 'server' ? `<p><strong>الإجمالي:</strong> ${money(draft.total)}</p>` : '';
         const label = kind === 'server' ? 'طلب مسجل على الخادم (للعرض فقط)' : 'مسودة محفوظة على هذا الجهاز';
@@ -4372,6 +4375,7 @@ document.addEventListener('DOMContentLoaded', () => {
         draftPreviewModal.setAttribute('aria-hidden', 'true');
         currentDraftPreview = null;
         activeServerDraft = null;
+        pendingDraftCancellation = false;
         document.body.style.overflow = '';
     }
 
@@ -5129,7 +5133,14 @@ async function submitOrder(action) {
             draftEditError.hidden = false;
             return;
         }
-        if (!window.confirm('تأكيد إلغاء هذه المسودة؟ لن يمكن استخدامها كطلب نشط.')) return;
+        if (!pendingDraftCancellation) {
+            pendingDraftCancellation = true;
+            draftPreviewCancel.textContent = 'تأكيد إلغاء المسودة';
+            draftEditError.textContent = 'تأكيد نهائي: سيتم إلغاء المسودة وتوثيق السبب. اضغط تأكيد الإلغاء مرة ثانية.';
+            draftEditError.hidden = false;
+            draftPreviewCancel.focus();
+            return;
+        }
         draftPreviewCancel.disabled = true;
         draftEditError.hidden = true;
         try {
