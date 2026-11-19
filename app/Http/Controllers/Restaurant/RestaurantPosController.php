@@ -64,6 +64,40 @@ class RestaurantPosController extends Controller
         ]);
     }
 
+    public function transferTable(Request $request, Order $order): \Illuminate\Http\JsonResponse
+    {
+        $location = $this->context->resolveLocation($request->user(), (int) $order->location_id);
+        abort_unless($order->isRestaurantOrder()
+            && $order->order_source === 'restaurant_pos'
+            && (int) $order->location_id === (int) $location->id
+            && ((int) $order->created_by === (int) $request->user()->id
+                || $request->user()->can('orders.update')), 403);
+
+        $validated = $request->validate([
+            'restaurant_table_id' => ['required', 'integer', 'exists:restaurant_tables,id'],
+            'reason' => ['required', 'string', 'min:8', 'max:300'],
+            'accept_occupied' => ['sometimes', 'boolean'],
+        ]);
+        $target = RestaurantTable::query()
+            ->where('location_id', $location->id)
+            ->whereKey($validated['restaurant_table_id'])->firstOrFail();
+
+        $updated = $this->restaurantOrders->transferPosOrderTable(
+            $order,
+            $target,
+            $request->user(),
+            trim($validated['reason']),
+            (bool) ($validated['accept_occupied'] ?? false)
+        );
+        return response()->json([
+            'ok' => true,
+            'order_id' => $updated->id,
+            'table_id' => $updated->restaurant_table_id,
+            'table_name' => $updated->restaurantTable?->displayName(),
+            'order_number' => $updated->order_number,
+        ]);
+    }
+
     public function printInvoice(Request $request, Order $order, InvoiceController $invoices)
     {
         $this->authorizePosPrint($request, $order);
