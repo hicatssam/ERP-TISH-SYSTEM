@@ -1139,6 +1139,87 @@ class PosCashierShiftSimulationTest extends TestCase
     }
 
     #[Test]
+    public function shift_f01_overage_requires_explanation_and_records_audit_trail(): void
+    {
+        $f = $this->fixture();
+        $f['cashier']->givePermissionTo(Permission::findOrCreate('cash_sessions.manage', 'web'));
+        $this->actingAs($f['cashier'])->post(route('cash-sessions.open'), [
+            'opening_balance' => 40,
+        ])->assertRedirect();
+        $session = CashSession::query()->sole();
+
+        $this->post(route('cash-sessions.close', $session), [
+            'actual_cash' => 45,
+        ])->assertSessionHasErrors('closing_note');
+        $this->assertTrue($session->fresh()->isOpen());
+
+        $this->post(route('cash-sessions.close', $session), [
+            'actual_cash' => 45,
+            'closing_note' => 'زيادة نقدية بعد مراجعة الصندوق',
+        ])->assertRedirect();
+        $this->assertSame('closed', $session->fresh()->status->value);
+        $this->assertEquals(5, $session->fresh()->variance);
+        $this->assertDatabaseHas('activity_logs', [
+            'record_type' => 'cash_sessions',
+            'record_id' => $session->id,
+            'action' => 'cash_session.closed',
+        ]);
+    }
+
+    #[Test]
+    public function shift_f03_printed_report_requires_closed_session_and_access(): void
+    {
+        $f = $this->fixture();
+        $f['cashier']->givePermissionTo(Permission::findOrCreate('cash_sessions.manage', 'web'));
+        $this->actingAs($f['cashier'])->post(route('cash-sessions.open'), [
+            'opening_balance' => 25,
+        ])->assertRedirect();
+        $session = CashSession::query()->sole();
+
+        $this->get(route('cash-sessions.report', $session))->assertNotFound();
+        $this->post(route('cash-sessions.close', $session), [
+            'actual_cash' => 25,
+        ])->assertRedirect();
+        $this->get(route('cash-sessions.report', $session))
+            ->assertOk()
+            ->assertSee('تقرير إغلاق وردية الكاشير')
+            ->assertSee('25.00');
+        $this->assertSame('closed', $session->fresh()->status->value);
+    }
+
+    #[Test]
+    public function shift_f02_outstanding_orders_require_explicit_handover_acknowledgement(): void
+    {
+        $f = $this->fixture();
+        $this->kitchenFixture($f);
+        $f['cashier']->givePermissionTo(Permission::findOrCreate('cash_sessions.manage', 'web'));
+        $this->actingAs($f['cashier'])->post(route('cash-sessions.open'), [
+            'opening_balance' => 50,
+        ])->assertRedirect();
+        $session = CashSession::query()->sole();
+
+        $payload = $this->orderPayload($f, [
+            ['product_id' => $f['products'][0]->id, 'quantity' => 1],
+        ]);
+        $payload['pos_action'] = 'kot_print';
+        $this->postJson(route('restaurant.pos.orders.store'), $payload)->assertCreated();
+
+        $this->post(route('cash-sessions.close', $session), [
+            'actual_cash' => 50,
+        ])->assertSessionHasErrors('acknowledge_pending_orders');
+        $this->assertTrue($session->fresh()->isOpen());
+
+        $this->post(route('cash-sessions.close', $session), [
+            'actual_cash' => 50,
+            'acknowledge_pending_orders' => 1,
+            'closing_note' => 'تسليم الطلب للمناوبة التالية',
+        ])->assertRedirect();
+        $this->assertSame('closed', $session->fresh()->status->value);
+        $this->assertDatabaseCount('orders', 1);
+        $this->assertEquals(50, $session->fresh()->expected_cash);
+    }
+
+    #[Test]
     public function pos_40_wallet_payment_does_not_inflate_physical_cash_shift(): void
     {
         $f = $this->fixture();
@@ -1175,6 +1256,8 @@ class PosCashierShiftSimulationTest extends TestCase
 
         $this->post(route('cash-sessions.close', $session), [
             'actual_cash' => 70,
+            'acknowledge_pending_orders' => 1,
+            'closing_note' => 'تم تسليم الطلب المؤكد إلى الوردية التالية',
         ])->assertRedirect();
         $this->assertEquals(20, $session->fresh()->cash_received);
         $this->assertEquals(70, $session->fresh()->expected_cash);
