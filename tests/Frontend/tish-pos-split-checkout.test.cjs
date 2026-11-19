@@ -201,3 +201,20 @@ test('POS preflights unavailable menu items but preserves retry tokens after amb
  const check = view.indexOf('await checkCartAvailability()', i);
  assert.ok(i >= 0 && check > i && j > check, 'availability checked before order POST');
 });
+
+test('POS permits privileged cancellation of a queued unpaid KDS line without leaving cashier', () => {
+ assert.match(view, /id="rbQueuedCancelModal"/);
+ assert.match(view, /id="rbQueuedCancelItem"/);
+ assert.match(view, /id="rbQueuedCancelReason"/);
+ assert.match(view, /data-queued-cancel-order/);
+ assert.match(view, /route\('restaurant\.pos\.orders\.queued-lines'/);
+ assert.match(view, /route\('restaurant\.pos\.orders\.cancel-queued-line'/);
+ assert.match(view, /async function openQueuedCancel\(orderId\)/);
+ assert.match(view, /queuedCancelPending = true/);
+ assert.match(view, /queuedCancelConfirm\.textContent = 'تأكيد إلغاء العنصر'/);
+ assert.match(view, /method:'POST'/);
+ assert.match(view, /body:JSON\.stringify\(\{order_item_id:Number\(queuedCancelSelect\.value\),cancellation_reason:reason\}\)/);
+ assert.match(view, /data\.items \|\| \[\]/);
+ assert.match(view, /option\.disabled = !item\.eligible/);
+ assert.doesNotMatch(view, /window\.confirm\(/);
+});
