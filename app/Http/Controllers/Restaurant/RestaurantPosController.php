@@ -90,6 +90,34 @@ class RestaurantPosController extends Controller
     }
 
     /**
+     * Explicit cancellation with a documented reason and the existing
+     * accounting/inventory/kitchen compensation service.
+     */
+    public function cancelDraft(
+        Request $request, Order $order, \App\Services\Orders\OrderService $orders
+    ): \Illuminate\Http\JsonResponse {
+        $location = $this->context->resolveLocation($request->user(), (int) $order->location_id);
+        abort_unless($order->isRestaurantOrder()
+            && (int) $order->location_id === (int) $location->id, 403);
+        $this->authorize('cancel', $order);
+        $data = $request->validate([
+            'cancellation_reason' => ['required', 'string', 'min:8', 'max:500'],
+        ]);
+        if ($order->statusValue() !== 'draft') {
+            throw ValidationException::withMessages([
+                'order' => 'إلغاء الطلبات المرسلة للمطبخ يحتاج إجراءات الإلغاء المخصصة لها.',
+            ]);
+        }
+        $cancelled = $orders->cancelOrder($order, $data['cancellation_reason'], $request->user());
+
+        return response()->json([
+            'ok' => true,
+            'order_id' => $cancelled->id,
+            'status' => $cancelled->statusValue(),
+        ]);
+    }
+
+    /**
      * POS stage B: update only unpaid, unsent drafts. Keep the row lock
      * throughout the permission/status check and nested order update.
      */
@@ -179,6 +207,7 @@ class RestaurantPosController extends Controller
                 'customer' => $order->customer?->name ?? 'عميل نقدي',
                 'total' => (float) $order->total_amount,
                 'status' => 'draft',
+                'cancelable' => ($request->user()->can('cancel', $order) && $order->statusValue() === 'draft'),
                 'editable' => ($order->payments->isEmpty()
                     && $order->kitchenTickets->isEmpty()
                     && $order->invoice === null
