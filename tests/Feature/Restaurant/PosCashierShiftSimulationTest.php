@@ -707,6 +707,42 @@ class PosCashierShiftSimulationTest extends TestCase
     }
 
     #[Test]
+    public function pos_drafts_endpoint_lists_only_current_branch_drafts_with_details(): void
+    {
+        $f = $this->fixture(20);
+        $f['method']->update(['requires_verification' => true]);
+        $payload = $this->orderPayload($f, [
+            ['product_id' => $f['products'][0]->id, 'quantity' => 1],
+        ]);
+        $payload['payment_arrangement'] = 'pending_verification';
+        $payload['payment_proof'] = \Illuminate\Http\UploadedFile::fake()->image('pending.png');
+
+        $this->actingAs($f['cashier'])->post(route('restaurant.pos.orders.store'), $payload, [
+            'Accept' => 'application/json',
+        ])->assertCreated()->assertJsonPath('status', 'draft');
+
+        $draft = Order::query()->sole();
+        $this->actingAs($f['cashier'])->getJson(route('restaurant.pos.drafts', [
+            'location_id' => $f['branch']->id,
+        ]))->assertOk()
+            ->assertJsonCount(1, 'orders')
+            ->assertJsonPath('orders.0.id', $draft->id)
+            ->assertJsonPath('orders.0.status', 'draft')
+            ->assertJsonPath('orders.0.items.0.name', $f['products'][0]->name);
+
+        $this->actingAs($f['cashier'])->getJson(route('restaurant.pos.drafts', [
+            'location_id' => $f['branch']->id, 'q' => 'nonexistent-order-xyz',
+        ]))->assertOk()->assertJsonCount(0, 'orders');
+
+        $other = Location::query()->create([
+            'name' => 'Other branch', 'code' => 'DRAFTOTHER', 'type' => 'branch', 'is_active' => true,
+        ]);
+        $this->actingAs($f['cashier'])->getJson(route('restaurant.pos.drafts', [
+            'location_id' => $other->id,
+        ]))->assertForbidden();
+    }
+
+    #[Test]
     public function pos_29_on_account_without_named_customer_is_rejected(): void
     {
         $f = $this->fixture();
