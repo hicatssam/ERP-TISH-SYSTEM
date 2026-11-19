@@ -846,6 +846,7 @@ Route::post(
             Route::get('cash-sessions', [CashSessionController::class, 'index'])->name('cash-sessions.index');
             Route::post('cash-sessions', [CashSessionController::class, 'open'])->name('cash-sessions.open');
             Route::post('cash-sessions/{cashSession}/close', [CashSessionController::class, 'close'])->name('cash-sessions.close');
+            Route::get('cash-sessions/{cashSession}/report', [CashSessionController::class, 'report'])->name('cash-sessions.report');
         });
 
         // Branch treasury reconciliation is separate from an employee's cashier shift.
