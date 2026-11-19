@@ -456,15 +456,35 @@
                             </select>
                         </div>
 
+                        @if($paymentMethods->isEmpty())
+                            <div class="rb-field rb-field-wide rb-payment-method-warning" role="alert">
+                                لا توجد طرق دفع نشطة ومتاحة لفرع {{ $location->name }}. يجب تفعيل طريقة دفع وربطها بالفرع قبل التحصيل.
+                                @can('payment_methods.view')
+                                    <a href="{{ route('payment-methods.index') }}" target="_blank" rel="noopener">إدارة طرق الدفع</a>
+                                @endcan
+                            </div>
+                        @endif
+
                         {{-- Two-tender immediate checkout: both amounts are posted atomically. --}}
                         <div class="rb-field rb-field-wide" id="rbSplitTenderOption">
                             <label class="rb-split-toggle" for="rbSplitTenderToggle">
-                                <input type="checkbox" id="rbSplitTenderToggle">
+                                <input type="checkbox" id="rbSplitTenderToggle" @disabled($paymentMethods->where('requires_verification', false)->count() < 2)>
                                 <span>تقسيم الدفع بين نقد وبطاقة / طريقتين</span>
                             </label>
                         </div>
                         <div class="rb-field rb-field-wide rb-split-tenders" id="rbSplitTenderPanel" hidden>
                             <strong>الدفع المختلط — مجموع الدفعتين يجب أن يساوي إجمالي الطلب</strong>
+                            @php
+                                $eligibleSplitMethods = $paymentMethods->where('requires_verification', false);
+                            @endphp
+                            @if($eligibleSplitMethods->count() < 2)
+                                <p class="rb-payment-method-warning" role="alert">
+                                    الدفع المختلط غير متاح: يلزم تفعيل طريقتين مختلفتين على الأقل لا تتطلبان تحققًا لاحقًا في هذا الفرع.
+                                    @can('payment_methods.view')
+                                        <a href="{{ route('payment-methods.index') }}" target="_blank" rel="noopener">مراجعة طرق الدفع</a>
+                                    @endcan
+                                </p>
+                            @endif
                             <div class="rb-split-grid">
                                 @for($i=0;$i<2;$i++)
                                     <fieldset class="rb-split-part">
@@ -473,7 +493,7 @@
                                         <select id="rbSplitMethod{{ $i }}" data-split-method
                                                 name="split_payments[{{ $i }}][payment_method_id]" class="rb-control" disabled>
                                             <option value="">اختر الطريقة</option>
-                                            @foreach($paymentMethods as $method)
+                                            @foreach($eligibleSplitMethods as $method)
                                                 @if(!$method->requires_verification)
                                                     <option value="{{ $method->id }}"
                                                             data-type="{{ $method->type }}"
@@ -869,6 +889,8 @@
 .rb-draft-preview-items li{padding:10px;border:1px solid var(--rb-border);border-radius:8px}
 .rb-draft-preview-dialog .rb-modal-body{max-height:65dvh;overflow:auto}
 .rb-draft-preview-dialog [hidden]{display:none!important}
+.rb-pos .rb-payment-method-warning{padding:10px 12px;border:1px solid #e0ad87;border-radius:8px;background:#fff6e9;color:#793916;font-size:12px;line-height:1.7}
+.rb-pos .rb-payment-method-warning a{font-weight:800;text-decoration:underline}
 /* POS split-payment controls: readable and touch-friendly at checkout. */
 .rb-pos .rb-split-toggle,.rb-pos .rb-split-confirm{display:flex;align-items:center;gap:10px;line-height:1.5;cursor:pointer}
 .rb-pos .rb-split-toggle input,.rb-pos .rb-split-confirm input{width:19px;height:19px;accent-color:#ad201c;flex-shrink:0}
@@ -4028,6 +4050,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function validatePaymentFields() {
         syncPayment();
+
+        if (splitMode() && splitMethods.some(field => field.options.length <= 1)) {
+            showCheckoutError('لا توجد طريقتا دفع مختلط متاحتان لهذا الفرع. راجع إعدادات طرق الدفع.', 'split_payments');
+            return false;
+        }
+        if (!splitMode() && paymentMethod.required && paymentMethod.options.length <= 1) {
+            showCheckoutError('لا توجد طريقة دفع نشطة لهذا الفرع. اطلب من المدير تفعيل طرق الدفع.', 'payment_method_id');
+            return false;
+        }
 
         // Catch an invalid print + deferred payment combination before any
         // network request. The request validator repeats this on the server.
