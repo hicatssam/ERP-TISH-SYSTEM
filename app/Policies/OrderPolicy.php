@@ -75,7 +75,8 @@ class OrderPolicy
             return true;
         }
 
-        return $user->hasPermissionTo('orders.cancel')
+        // A missing optional permission must deny safely rather than trigger HTTP 500.
+        return $user->checkPermissionTo('orders.cancel', 'web')
             && $this->belongsToUserLocation($user, $order);
     }
 
