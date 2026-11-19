@@ -179,6 +179,16 @@ class CashSessionController extends Controller
 
         return back()->with('success', 'تم إغلاق جلسة الكاشير.');
     }
+    public function report(CashSession $cashSession): \Illuminate\View\View
+    {
+        $this->authorize('view', $cashSession);
+        abort_unless(! $cashSession->isOpen(), 404, 'تقرير الإغلاق متاح فقط للورديات المغلقة.');
+
+        return view('finance.cash-sessions.report', [
+            'session' => $cashSession->load(['employee', 'location', 'closedBy']),
+        ]);
+    }
+
     private function pendingOrderCount(CashSession $session, ?int $cashierUserId = null): int
     {
         $cashierUserId ??= (int) DB::table('users')
