@@ -1,7 +1,14 @@
 @php
-    $invoicePrintTheme = app(
-        \App\Services\PrintThemeService::class
-    )->settings();
+    $invoicePrintService = app(\App\Services\PrintThemeService::class);
+    $invoicePrintTheme = $invoicePrintService->settings();
+    // Use the actual dashboard branding on customer invoices, preserving
+    // other documents' independently configured print-logo preferences.
+    $customerInvoiceLogo = $invoicePrintService->customerInvoiceLogoSource();
+    if ($customerInvoiceLogo) {
+        $printThemeOverrides = array_replace($printThemeOverrides ?? [], [
+            'logo_src' => $customerInvoiceLogo,
+        ]);
+    }
     $invoicePrintTheme = array_replace(
         $invoicePrintTheme,
         array_intersect_key(
@@ -12,6 +19,17 @@
 
     $publicOrder = $order ?? null;
     $sourceOrder = $sourceOrder ?? $publicOrder;
+    $invoiceServiceType = $sourceOrder?->restaurant_service_type;
+    $invoiceServiceCode = $invoiceServiceType instanceof \BackedEnum
+        ? (string) $invoiceServiceType->value : (string) ($invoiceServiceType ?? '');
+    $invoiceServiceLabel = match ($invoiceServiceCode) {
+        'dine_in' => 'داخل المطعم',
+        'takeaway' => 'سفري',
+        'delivery' => 'توصيل',
+        default => null,
+    };
+    $invoiceTableName = $sourceOrder?->restaurantTable?->displayName();
+    $invoiceForThermal = ($invoicePrintTheme['paper_size'] ?? 'A4') === '80mm';
     $paymentMethod = (string) ($invoice->payment_method ?? '');
     $paymentMethodLabel = match ($paymentMethod) {
         'cash' => 'نقدي',
@@ -58,15 +76,20 @@
 
     // The stamp is purely visual: use the invoice's existing payment status.
     // Keep the original status badges, rows, totals and their coordinates intact.
+    $invoicePaymentPending = $sourceOrder?->payment_arrangement;
+    $invoicePaymentPending = $invoicePaymentPending instanceof \BackedEnum
+        ? (string) $invoicePaymentPending->value : (string) ($invoicePaymentPending ?? '');
+    $invoiceIsPendingVerification = $invoicePaymentPending === 'pending_verification'
+        && $paymentStatusValue !== 'paid';
     $paymentStampClass = match ($paymentStatusValue) {
         'paid' => 'invoice-watermark-paid',
         'partially_paid', 'partial' => 'invoice-watermark-partial',
-        default => 'invoice-watermark-unpaid',
+        default => $invoiceIsPendingVerification ? 'invoice-watermark-partial' : 'invoice-watermark-unpaid',
     };
     $paymentStampLabel = match ($paymentStatusValue) {
         'paid' => 'مدفوعة',
         'partially_paid', 'partial' => 'مدفوعة جزئيًا',
-        default => 'غير مدفوعة',
+        default => $invoiceIsPendingVerification ? 'بانتظار التحقق' : 'غير مدفوعة',
     };
 
     $paymentStatusClass = match ($paymentStatusValue) {
@@ -329,10 +352,146 @@
         font-size: 7.5pt;
         line-height: 1.65;
     }
+
+    /* TISH Customer Invoice 2026 — real ERP identity, print/PDF-safe styling.
+       The 80mm variant intentionally uses a simpler thermal composition. */
+    .invoice-brand-ribbon {
+        width: 62%;
+        margin: 3px auto 17px;
+        padding: 7px 18px 9px;
+        border-radius: 13px;
+        background: {{ $invoicePrintTheme['primary_color'] }};
+        color: #fff;
+        text-align: center;
+        font-size: 20pt;
+        font-weight: 900;
+        line-height: 1.35;
+        page-break-inside: avoid;
+    }
+    .print-header-table {border-bottom:0!important;margin-bottom:9px!important}
+    .print-logo {max-width:170px;max-height:86px}
+    .print-business-name {font-size:16pt;font-weight:900}
+    .print-document-title {font-size:20pt;font-weight:900}
+    .invoice-party-table {border-spacing:10px 0;border-collapse:separate;margin:8px 0 18px}
+    .invoice-party-table > tbody > tr > td {padding:0;vertical-align:top}
+    .invoice-party-box {
+        padding:0 0 10px;
+        min-height:145px;
+        border:1px solid #d7d7d7;
+        border-radius:12px;
+        overflow:hidden;
+        background:#fff;
+    }
+    .invoice-party-label {
+        margin:0 0 11px;
+        padding:8px 12px;
+        color:#fff;
+        background: {{ $invoicePrintTheme['primary_color'] }};
+        font-size:11pt;
+        font-weight:900;
+    }
+    .invoice-party-name {padding:0 12px;font-size:12pt}
+    .invoice-party-box > .print-muted {padding:2px 12px}
+    .invoice-detail-table {width:calc(100% - 20px);margin:0 10px}
+    .invoice-detail-table tr {border-bottom:1px solid #e6e7e8}
+    .invoice-detail-table td {padding:5px 4px}
+    .invoice-detail-label {color:#686c76;font-size:7.5pt}
+    .invoice-detail-value {font-size:8.5pt}
+    .print-section-title {
+        font-size:11pt;
+        margin:0 0 7px;
+        padding:5px 0;
+        color: {{ $invoicePrintTheme['secondary_color'] }};
+        border-bottom:2px solid {{ $invoicePrintTheme['primary_color'] }};
+    }
+    .invoice-items {border-radius:8px;border-collapse:collapse;overflow:hidden}
+    .invoice-items th {
+        background: {{ $invoicePrintTheme['primary_color'] }}!important;
+        color:#fff!important;
+        font-size:9pt;
+        padding:10px 6px;
+    }
+    .invoice-items td {font-size:8.7pt;padding:10px 6px}
+    .invoice-items .description {font-weight:800}
+    .invoice-items .invoice-item-number {width:6%;text-align:center;font-weight:900}
+    .invoice-bottom-table {margin-top:21px;border-collapse:separate;border-spacing:10px 0}
+    .invoice-bottom-table > tbody > tr > td {padding:0;vertical-align:top}
+    .invoice-notes-column {width:50%}
+    .invoice-totals-column {width:50%}
+    .invoice-notes {border:1px solid #d7d7d7;border-radius:10px;min-height:155px;padding:0 12px 12px;overflow:hidden}
+    .invoice-note-title {
+        background: {{ $invoicePrintTheme['primary_color'] }};
+        color:#fff;
+        font-size:10.5pt;
+        font-weight:900;
+        padding:8px 12px;
+        margin:0 -12px 14px;
+    }
+    .invoice-thanks {font-size:8pt;margin-top:15px}
+    .invoice-bottom-table .print-total-box {width:100%;border-radius:10px;overflow:hidden}
+    .invoice-bottom-table .print-total-box td {font-size:8.5pt;padding:9px 11px}
+    .invoice-bottom-table .print-total-box .grand td {font-size:12pt;padding:11px}
+    .invoice-payment-watermark {
+        top:43%;left:10%;width:80%;height:130px;
+        transform:rotate(-17deg);
+        -webkit-transform:rotate(-17deg);
+        opacity:.20;
+        z-index:2;
+    }
+    .invoice-payment-watermark-inner {
+        border:8px double currentColor;
+        font-size:43pt;
+        border-radius:15px;
+        padding:17px 3px;
+        line-height:1.5;
+    }
+    .invoice-watermark-paid {color:#168744}
+    .invoice-watermark-unpaid {color:#c52036}
+    .invoice-watermark-partial {color:#9b6814}
+    .invoice-watermark-paid .invoice-payment-watermark-inner,
+    .invoice-watermark-unpaid .invoice-payment-watermark-inner,
+    .invoice-watermark-partial .invoice-payment-watermark-inner {border-color:currentColor;color:inherit}
+    @if($invoiceForThermal)
+    .invoice-brand-ribbon{width:100%;border-radius:0;font-size:13pt;margin:0 0 8px;padding:5px}
+    .print-header-table{margin-bottom:5px!important}
+    .print-logo{max-height:46px;max-width:72px}
+    .print-business-name{font-size:10pt}
+    .invoice-party-table,.invoice-bottom-table{border-spacing:0;margin:8px 0}
+    .invoice-party-table > tbody > tr > td,.invoice-bottom-table > tbody > tr > td{
+        display:block;width:100%;padding:0 0 8px
+    }
+    .invoice-party-box{min-height:0;border-radius:3px;padding-bottom:6px}
+    .invoice-party-label{font-size:8pt;padding:5px 8px;margin-bottom:5px}
+    .invoice-party-name{font-size:9pt;padding:0 8px}
+    .invoice-detail-table{width:calc(100% - 12px);margin:0 6px}
+    .invoice-detail-table td{padding:3px 2px}
+    .invoice-detail-label{font-size:6.4pt}
+    .invoice-detail-value{font-size:7pt}
+    .invoice-items th,.invoice-items td{font-size:6.1pt;padding:5px 2px}
+    .invoice-items .qty{width:10%}
+    .invoice-items .price,.invoice-items .total{width:22%}
+    .invoice-items .invoice-item-number{width:6%}
+    .invoice-notes{min-height:0;border-radius:3px}
+    .invoice-note-title{font-size:8pt}
+    .invoice-bottom-table .print-total-box td{font-size:7pt;padding:5px}
+    .invoice-bottom-table .print-total-box .grand td{font-size:8pt}
+    .invoice-payment-watermark{top:34%;left:8%;width:85%;height:75px;opacity:.14}
+    .invoice-payment-watermark-inner{font-size:18pt;border-width:4px;padding:10px 2px}
+    @endif
+    @media print {
+       .invoice-brand-ribbon,.invoice-party-label,.invoice-note-title,
+       .invoice-items th,.invoice-bottom-table .print-total-box .grand td {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+       }
+       .invoice-party-box,.invoice-notes,.invoice-bottom-table,
+       .invoice-party-table {break-inside:avoid;page-break-inside:avoid}
+    }
 </style>
 @endpush
 
 @section('print_content')
+    <div class="invoice-brand-ribbon" aria-hidden="true">فاتورة بيع</div>
     <div class="invoice-payment-watermark {{ $paymentStampClass }}" aria-label="حالة السداد: {{ $paymentStampLabel }}">
         <div class="invoice-payment-watermark-inner">{{ $paymentStampLabel }}</div>
     </div>
@@ -356,12 +515,19 @@
             <td>
                 <div class="invoice-party-box">
                     <div class="invoice-party-label">
-                        بيانات العميل
+                        <span aria-hidden="true">♙</span> بيانات العميل
                     </div>
 
                     <div class="invoice-party-name">
                         {{ $customerName }}
                     </div>
+
+                    @if($invoiceServiceLabel)
+                        <div class="print-muted">نوع الطلب: <strong>{{ $invoiceServiceLabel }}</strong></div>
+                    @endif
+                    @if($invoiceTableName)
+                        <div class="print-muted">رقم الطاولة: <strong>{{ $invoiceTableName }}</strong></div>
+                    @endif
 
                     @if($customerPhone)
                         <div class="print-muted">
@@ -390,7 +556,7 @@
             <td>
                 <div class="invoice-party-box">
                     <div class="invoice-party-label">
-                        تفاصيل الفاتورة
+                        <span aria-hidden="true">▤</span> بيانات الفاتورة
                     </div>
 
                     <table
@@ -398,6 +564,16 @@
                         cellpadding="0"
                         cellspacing="0"
                     >
+                        <tr>
+                            <td>
+                                <span class="invoice-detail-label">رقم الفاتورة</span>
+                                <span class="invoice-detail-value" dir="ltr">{{ $documentNumber }}</span>
+                            </td>
+                            <td>
+                                <span class="invoice-detail-label">تاريخ الفاتورة</span>
+                                <span class="invoice-detail-value" dir="ltr">{{ $issuedAt?->format('Y-m-d') }}</span>
+                            </td>
+                        </tr>
                         @if($sourceOrder)
                             <tr>
                                 <td>
@@ -516,7 +692,7 @@
 
     <div class="print-section">
         <div class="print-section-title">
-            تفاصيل المنتجات
+            تفاصيل الأصناف
         </div>
 
         <table
@@ -526,7 +702,8 @@
         >
             <thead>
                 <tr>
-                    <th class="description">الوصف</th>
+                    <th class="invoice-item-number">#</th>
+                    <th class="description">الصنف</th>
                     <th class="qty">الكمية</th>
                     <th class="price">سعر الوحدة</th>
                     <th class="total">الإجمالي</th>
@@ -536,6 +713,7 @@
             <tbody>
                 @forelse($invoiceRows as $item)
                     <tr>
+                        <td class="invoice-item-number">{{ $loop->iteration }}</td>
                         <td class="description">
                             {{ $item['description'] }}
                         </td>
@@ -572,7 +750,7 @@
                 @empty
                     <tr>
                         <td
-                            colspan="4"
+                            colspan="5"
                             class="print-empty"
                         >
                             لا توجد عناصر في هذه الفاتورة.
