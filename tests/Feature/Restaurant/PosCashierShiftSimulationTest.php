@@ -1167,6 +1167,27 @@ class PosCashierShiftSimulationTest extends TestCase
     }
 
     #[Test]
+    public function shift_f03_printed_report_requires_closed_session_and_access(): void
+    {
+        $f = $this->fixture();
+        $f['cashier']->givePermissionTo(Permission::findOrCreate('cash_sessions.manage', 'web'));
+        $this->actingAs($f['cashier'])->post(route('cash-sessions.open'), [
+            'opening_balance' => 25,
+        ])->assertRedirect();
+        $session = CashSession::query()->sole();
+
+        $this->get(route('cash-sessions.report', $session))->assertNotFound();
+        $this->post(route('cash-sessions.close', $session), [
+            'actual_cash' => 25,
+        ])->assertRedirect();
+        $this->get(route('cash-sessions.report', $session))
+            ->assertOk()
+            ->assertSee('تقرير إغلاق وردية الكاشير')
+            ->assertSee('25.00');
+        $this->assertSame('closed', $session->fresh()->status->value);
+    }
+
+    #[Test]
     public function shift_f02_outstanding_orders_require_explicit_handover_acknowledgement(): void
     {
         $f = $this->fixture();
