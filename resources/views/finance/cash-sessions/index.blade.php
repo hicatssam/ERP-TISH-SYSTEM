@@ -34,8 +34,18 @@
                 @csrf 
                 <input type="hidden" name="_modal" value="cash-close-dialog">
                 <div style="display:grid;gap:1rem">
+                    @if($pendingOrders > 0)
+                    <div class="alert alert-banner alert-banner-warning" role="alert">
+                        لديك {{ $pendingOrders }} طلب معلق من ورديتك. يرجى التأكد من تسليمه للكاشير التالي أو توثيق المتابعة قبل إغلاق الصندوق.
+                    </div>
+                    <label class="form-label" style="display:flex;gap:8px;align-items:flex-start">
+                        <input type="checkbox" name="acknowledge_pending_orders" value="1"
+                            @checked(old('acknowledge_pending_orders')) required>
+                        أؤكد مراجعة الطلبات المعلقة وتوثيق تسليمها للوردية التالية
+                    </label>
+                    @endif
                     <div class="form-group"><label class="form-label">النقد الفعلي عند الإغلاق (₪) *</label><input type="number" name="actual_cash" class="form-input" min="0" step="0.01" value="{{ old('_modal') === 'cash-close-dialog' ? old('actual_cash') : '' }}" required></div>
-                    <div class="form-group"><label class="form-label">ملاحظات</label><textarea name="closing_note" class="form-textarea">{{ old('_modal') === 'cash-close-dialog' ? old('closing_note') : '' }}</textarea></div>
+                    <div class="form-group"><label class="form-label">ملاحظة الإغلاق (إلزامية إذا ظهر عجز أو زيادة)</label><textarea name="closing_note" class="form-textarea">{{ old('_modal') === 'cash-close-dialog' ? old('closing_note') : '' }}</textarea></div>
                     <div style="display:flex;gap:.75rem"><button class="btn btn-gold" type="submit">إغلاق الجلسة</button><button type="button" class="btn btn-ghost" data-close-dialog>إلغاء</button></div>
                 </div>
             </form>
