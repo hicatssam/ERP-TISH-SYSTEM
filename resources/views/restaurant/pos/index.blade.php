@@ -3484,6 +3484,203 @@ body.rb-pos-mode {
  .rb-pos .rb-modal *{transition:none!important;animation:none!important}
 }
 
+
+/* TISH POS UNIFIED DRAWER DESIGN V2
+   Shared, responsive drawer presentation for invoices, drafts, QR, and orders.
+   Changes visual behavior only; retains existing actions and server data. */
+.rb-drawer{
+    width:min(470px,96vw);
+    border-left:1px solid color-mix(in srgb,var(--rb-orange) 16%,var(--rb-border));
+    background:var(--rb-white);
+    box-shadow:-30px 0 90px rgba(27,9,19,.22);
+    transition:transform .22s cubic-bezier(.2,.8,.2,1);
+}
+.rb-drawer-backdrop{
+    background:rgba(27,14,24,.50);
+    -webkit-backdrop-filter:blur(5px);
+    backdrop-filter:blur(5px);
+}
+.rb-drawer-head{
+    position:relative;
+    align-items:center;
+    flex:0 0 auto;
+    min-height:94px;
+    padding:21px 23px;
+    gap:16px;
+    background:linear-gradient(115deg,color-mix(in srgb,var(--rb-orange) 8%,#fff),#fff 68%);
+    border-bottom:1px solid color-mix(in srgb,var(--rb-orange) 13%,var(--rb-border));
+}
+.rb-drawer-head:before{
+    content:"";
+    position:absolute;right:0;top:20px;bottom:20px;
+    width:4px;border-radius:4px 0 0 4px;background:var(--rb-orange);
+}
+.rb-drawer-head h3{font-size:clamp(18px,1.4vw,22px);line-height:1.5;letter-spacing:-.02em;color:var(--rb-text)}
+.rb-drawer-head p{font-size:12px;line-height:1.6;margin-top:5px;max-width:340px}
+.rb-drawer-head button{
+    flex:0 0 39px;
+    width:39px;height:39px;
+    border:1px solid color-mix(in srgb,var(--rb-border) 80%,transparent);
+    border-radius:12px;background:#fff;
+    color:var(--rb-muted);font-size:22px;
+    transition:background .16s ease,color .16s ease,border-color .16s ease;
+}
+.rb-drawer-head button:hover{
+    color:var(--rb-orange);
+    border-color:var(--rb-orange);
+    background:color-mix(in srgb,var(--rb-orange) 8%,#fff);
+}
+.rb-drawer-search{
+    padding:16px 20px;
+    flex:0 0 auto;
+    border-bottom:1px solid color-mix(in srgb,var(--rb-border) 68%,transparent);
+    background:#fff;
+}
+.rb-drawer-search .rb-search{
+    display:flex;
+    align-items:center;
+    min-height:46px;
+    padding:0 12px;
+    border:1px solid color-mix(in srgb,var(--rb-border) 90%,transparent);
+    border-radius:12px;
+    background:color-mix(in srgb,var(--rb-orange) 2%,#fff);
+    transition:border-color .16s ease,box-shadow .16s ease;
+}
+.rb-drawer-search .rb-search:focus-within{
+    border-color:var(--rb-orange);
+    box-shadow:0 0 0 3px color-mix(in srgb,var(--rb-orange) 11%,transparent);
+}
+.rb-drawer-search .rb-search input{
+    border:0;outline:0;box-shadow:none;background:transparent;
+    min-height:44px;width:100%;font-size:13px;
+}
+.rb-drawer-section{
+    padding:16px 20px 6px;
+    min-width:0;
+    background:var(--rb-white);
+}
+.rb-drawer-section:last-child{
+    flex:1 1 auto;min-height:0;overflow-y:auto;
+    overscroll-behavior:contain;scrollbar-width:thin;
+    scrollbar-color:color-mix(in srgb,var(--rb-orange) 20%,#ddd) transparent;
+    padding-bottom:22px;
+}
+.rb-drawer-section-title{
+    font-size:13px;
+    font-weight:900;
+    color:var(--rb-text);
+    margin:0 0 12px;
+    line-height:1.5;
+}
+.rb-server-order-wrapper{
+    min-width:0;
+    margin-bottom:11px;
+    border:1px solid color-mix(in srgb,var(--rb-border) 82%,transparent);
+    border-radius:15px;
+    overflow:hidden;
+    background:#fff;
+    box-shadow:0 3px 13px rgba(31,10,22,.035);
+}
+.rb-server-order-card,.rb-local-draft-card{
+    display:block;
+    min-width:0;
+    margin:0 0 10px;
+    padding:15px 16px;
+    border:1px solid color-mix(in srgb,var(--rb-border) 76%,transparent);
+    border-radius:14px;
+    background:#fff;
+    box-shadow:0 3px 13px rgba(31,10,22,.035);
+    color:var(--rb-text);
+    text-decoration:none;
+    transition:box-shadow .17s ease,border-color .17s ease,transform .17s ease;
+}
+.rb-server-order-wrapper>.rb-server-order-card{
+    margin:0;border:0;border-radius:0;box-shadow:none;
+}
+.rb-server-order-card:hover,.rb-local-draft-card:hover{
+    transform:translateY(-1px);
+    border-color:color-mix(in srgb,var(--rb-orange) 45%,var(--rb-border));
+    box-shadow:0 7px 18px rgba(31,10,22,.075);
+}
+.rb-server-order-card:focus-visible,.rb-local-draft-card:focus-visible{
+    outline:2px solid var(--rb-orange);outline-offset:2px;
+}
+.rb-server-order-top,.rb-local-draft-top{gap:12px;align-items:center}
+.rb-server-order-top strong,.rb-local-draft-top strong{
+    font-size:14px;font-weight:900;line-height:1.5;
+    overflow-wrap:anywhere;
+}
+.rb-server-order-top span,.rb-local-draft-top span{
+    border:1px solid color-mix(in srgb,var(--rb-orange) 11%,transparent);
+    border-radius:8px;
+    padding:5px 9px;
+    background:color-mix(in srgb,var(--rb-orange) 5%,#fff);
+    color:var(--rb-muted);
+    font-size:10px;
+    white-space:nowrap;
+}
+.rb-server-order-meta,.rb-local-draft-meta{
+    margin-top:9px;
+    gap:7px 12px;
+    line-height:1.7;
+    font-size:11px;
+    color:var(--rb-muted);
+}
+.rb-server-order-meta span,.rb-local-draft-meta span{overflow-wrap:anywhere}
+.rb-drawer .rb-reprint-link,
+.rb-drawer .rb-queued-cancel-trigger{
+    min-height:42px;
+    margin:0 12px 10px;
+    padding:9px 12px;
+    display:flex;align-items:center;justify-content:center;
+    border-radius:10px;
+    font-size:12px;
+    box-shadow:none;
+}
+.rb-drawer .rb-reprint-link{
+    color:var(--rb-orange);
+    background:color-mix(in srgb,var(--rb-orange) 6%,#fff);
+}
+.rb-drawer .rb-queued-cancel-trigger{
+    border-color:color-mix(in srgb,var(--rb-danger) 25%,var(--rb-border));
+    color:var(--rb-danger);
+    background:color-mix(in srgb,var(--rb-danger) 5%,#fff);
+}
+.rb-qr-order-items{margin:10px 0 0;padding:10px 15px 0 0;font-size:12px;line-height:1.8}
+.rb-qr-order-open{font-size:12px;font-weight:900}
+.rb-local-draft-actions{gap:8px;margin-top:12px;flex-wrap:wrap}
+.rb-local-draft-actions button,.rb-drawer .rb-load-more{
+    min-height:40px;padding:8px 13px;
+    border-radius:10px;font-size:12px;font-weight:850;
+    cursor:pointer;
+}
+.rb-drawer .rb-load-more{
+    display:block;width:100%;margin:12px 0;
+    border:1px solid var(--rb-border);
+    background:var(--rb-soft);color:var(--rb-text);
+}
+.rb-drawer-empty{
+    margin:12px 0;
+    padding:25px 16px;
+    border:1px dashed color-mix(in srgb,var(--rb-border) 85%,transparent);
+    border-radius:14px;
+    background:color-mix(in srgb,var(--rb-bg) 45%,#fff);
+    font-size:13px;line-height:1.7;
+}
+@media(max-width:600px){
+    .rb-drawer{width:min(100vw,470px);max-width:100vw}
+    .rb-drawer-head{min-height:77px;padding:14px 16px}
+    .rb-drawer-head:before{top:15px;bottom:15px}
+    .rb-drawer-head h3{font-size:18px}
+    .rb-drawer-search{padding:12px 14px}
+    .rb-drawer-section{padding:13px 14px 4px}
+    .rb-server-order-card,.rb-local-draft-card{padding:13px}
+    .rb-server-order-meta,.rb-local-draft-meta{font-size:11px}
+}
+@media(prefers-reduced-motion:reduce){
+    .rb-drawer,.rb-drawer *{transition:none!important}
+}
+
 </style>
 
 <script>
