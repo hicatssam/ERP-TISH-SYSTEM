@@ -29,6 +29,7 @@ test('checkout requires both different methods, exact cent balance and collected
 });
 test('cash split tenders hide and disable the noncash confirmation and reference controls', () => {
  assert.match(view,/splitReferences\[i\]\.disabled = !needsReference/);
+ assert.match(view,/splitReferences\[i\]\.style\.display = needsReference/);
  assert.match(view,/splitConfirmations\[i\]\.disabled = !nonCash/);
  assert.match(view,/splitConfirmations\[i\]\.parentElement\.style\.display = nonCash/);
 });
