@@ -470,6 +470,46 @@ class RestaurantPosController extends Controller
     }
 
     /**
+     * Search older saved receipts without needing access to the orders page.
+     * The print endpoint independently enforces these branch/user rules.
+     */
+    public function receiptSearch(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $data = $request->validate([
+            'q' => ['nullable', 'string', 'max:150'],
+        ]);
+        $location = $this->context->resolveLocation(
+            $request->user(), $request->integer('location_id') ?: null
+        );
+        $query = Order::query()
+            ->where('location_id', $location->id)
+            ->whereNotNull('restaurant_service_type')
+            ->whereHas('invoice');
+        if (! $request->user()->can('invoices.view')) {
+            $query->where('created_by', $request->user()->id);
+        }
+        $term = trim((string) ($data['q'] ?? ''));
+        if ($term !== '') {
+            $query->where(function ($query) use ($term): void {
+                $query->where('order_number', 'like', "%{$term}%")
+                    ->orWhereHas('invoice', fn ($invoice) => $invoice
+                        ->where('invoice_number', 'like', "%{$term}%"));
+            });
+        }
+        $orders = $query->with('invoice:id,order_id,invoice_number')
+            ->latest('id')->limit(20)->get();
+
+        return response()->json([
+            'orders' => $orders->map(fn (Order $order): array => [
+                'id' => $order->id,
+                'number' => $order->order_number,
+                'invoice_number' => $order->invoice?->invoice_number,
+                'print_url' => route('restaurant.pos.orders.invoice-print', $order),
+            ])->all(),
+        ]);
+    }
+
+    /**
      * Read-only current menu availability check for items already in the cart.
      * A client-side result does not replace final transactional stock checks.
      */
