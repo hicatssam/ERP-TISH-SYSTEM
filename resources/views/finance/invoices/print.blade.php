@@ -29,6 +29,21 @@
         : ($arrangement === 'pending_verification' ? 'بانتظار التحقق' : 'غير مدفوعة')));
     $stampClass = ! $invoice->isActive() ? 'unpaid'
         : ($status === 'paid' ? 'paid' : ($status === 'partially_paid' || $arrangement === 'pending_verification' ? 'pending' : 'unpaid'));
+    // Actual approved PNG seals, stored in public/assets/print/stamps.
+    // Data URIs guarantee the same local image is usable by browser printing
+    // and mPDF without requiring an externally accessible host.
+    $sealFileName = $invoice->isActive() && $status === 'paid'
+        ? 'paid-circular.png'
+        : ($invoice->isActive() && $status === 'unpaid' && $arrangement !== 'pending_verification'
+            ? 'unpaid-circular.png'
+            : null);
+    $sealFilePath = $sealFileName
+        ? public_path('assets/print/stamps/' . $sealFileName)
+        : null;
+    $sealImageSrc = $sealFilePath && is_file($sealFilePath)
+        ? 'data:image/png;base64,' . base64_encode(file_get_contents($sealFilePath))
+        : null;
+
     $invoiceLines = $invoice->items->map(fn ($item) => [
         'name' => $item->description ?: ($item->product?->name_ar ?: $item->product?->name ?: 'صنف'),
         'quantity' => (float) $item->quantity, 'unit' => (float) $item->unit_price,
@@ -222,60 +237,40 @@
 }
 
 
-/* TISH MINIMAL ROUND PAYMENT SEAL V1
-   Based on approved circular ink seal: no logo or extra icon.
-   HTML/CSS keeps Arabic lettering renderable in browser and mPDF. */
+/* TISH APPROVED PNG CIRCULAR SEALS V2 — literal approved ink artwork. */
 .ci-items-stage{position:relative;isolation:isolate}
-.ci-items-stage .ci-payment-seal{
+.ci-payment-image{
+    position:absolute;z-index:3;top:50%;left:50%;
+    width:290px;height:290px;margin-left:-145px;margin-top:-145px;
+    pointer-events:none;text-align:center;direction:rtl;
+    transform:rotate(-14deg);-webkit-transform:rotate(-14deg);
+}
+.ci-payment-image img{
+    width:100%;max-width:100%;height:auto;
+    display:block;opacity:.7;
+}
+.ci-payment-fallback{
     position:absolute;z-index:3;
-    top:50%;left:50%;
-    width:245px;height:245px;
-    margin-top:-122px;margin-left:-122px;
-    pointer-events:none;
-    color:#dd1024;opacity:.66;
-    transform:rotate(-15deg);
-    -webkit-transform:rotate(-15deg);
-    direction:rtl;text-align:center;
+    top:50%;left:50%;width:250px;margin-left:-125px;margin-top:-26px;
+    padding:9px;border:4px double #a46b12;border-radius:12px;
+    text-align:center;color:#a46b12;font-size:23px;font-weight:900;
+    opacity:.55;pointer-events:none;
+    transform:rotate(-14deg);-webkit-transform:rotate(-14deg);
 }
-.ci-payment-seal-paid{color:#078b20!important}
-.ci-payment-seal-unpaid{color:#df1428!important}
-.ci-payment-seal-pending{color:#ae7216!important}
-.ci-payment-seal-ring{
-    position:relative;
-    height:100%;width:100%;border:9px double currentColor;border-radius:50%;
-    padding:16px;
-}
-.ci-payment-seal-ring:before{
-    content:"";display:block;position:absolute;
-    inset:10px;border:4px dashed currentColor;border-radius:50%;
-}
-.ci-payment-seal-core{
-    position:relative;z-index:1;
-    height:100%;width:100%;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;
-    gap:10px;
-}
-.ci-payment-seal-rule{display:block;width:84%;height:6px;border-top:3px solid currentColor;border-bottom:2px solid currentColor}
-.ci-payment-seal-label{display:block;font-size:31pt;font-weight:900;line-height:1.35;white-space:nowrap;letter-spacing:0}
-.ci-payment-seal-unpaid .ci-payment-seal-label{font-size:26pt}
-.ci-payment-seal-pending .ci-payment-seal-label{font-size:21pt}
+.ci-payment-fallback-unpaid{color:#c81b28;border-color:#c81b28}
 @if($thermal)
-.ci-items-stage .ci-payment-seal{
-    width:112px;height:112px;margin-left:-56px;margin-top:-56px;
-    opacity:.25;
+.ci-payment-image{
+    width:116px;height:116px;margin-left:-58px;margin-top:-58px;
 }
-.ci-payment-seal-ring{border-width:4px;padding:7px}
-.ci-payment-seal-ring:before{inset:4px;border-width:2px}
-.ci-payment-seal-core{gap:3px}
-.ci-payment-seal-rule{height:3px;border-top-width:1px;border-bottom-width:1px}
-.ci-payment-seal-label{font-size:14pt}
-.ci-payment-seal-unpaid .ci-payment-seal-label{font-size:12pt}
-.ci-payment-seal-pending .ci-payment-seal-label{font-size:9pt}
+.ci-payment-image img{opacity:.24}
+.ci-payment-fallback{
+    width:115px;margin-left:-58px;font-size:11px;opacity:.3;
+    border-width:2px;padding:5px;
+}
 @endif
 @media print{
- .ci-payment-seal{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+    .ci-payment-image img{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
-
 </style>
 @endpush
 
@@ -373,15 +368,15 @@
     </table>
 
     {{-- Circular ink-style payment seal; determined only by real invoice status. --}}
-    <div class="ci-payment-seal ci-payment-seal-{{ $stampClass }}" aria-label="حالة الدفع: {{ $stamp }}">
-        <div class="ci-payment-seal-ring">
-            <div class="ci-payment-seal-core">
-                <span class="ci-payment-seal-rule" aria-hidden="true"></span>
-                <strong class="ci-payment-seal-label">{{ $stamp }}</strong>
-                <span class="ci-payment-seal-rule" aria-hidden="true"></span>
-            </div>
+    @if($sealImageSrc)
+        <div class="ci-payment-image ci-payment-image-{{ $stampClass }}" aria-label="حالة الدفع: {{ $stamp }}">
+            <img src="{{ $sealImageSrc }}" alt="{{ $stamp }}">
         </div>
-    </div>
+    @else
+        <div class="ci-payment-fallback ci-payment-fallback-{{ $stampClass }}" aria-label="حالة الدفع: {{ $stamp }}">
+            {{ $stamp }}
+        </div>
+    @endif
     </div>
 
     <table class="ci-bottom"><tr>
