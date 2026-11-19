@@ -313,6 +313,7 @@ class RestaurantPosController extends Controller
                 'restaurantTable.area',
                 'customer',
                 'invoice',
+                'kitchenTickets',
             ])
             ->latest()
             ->limit(8)
