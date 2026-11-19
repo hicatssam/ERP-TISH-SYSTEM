@@ -4715,6 +4715,13 @@ async function submitOrder(action) {
     }
 
     syncHiddenItems();
+    // A retry after an ambiguous server response MUST reach the original
+    // idempotency token even if the last item sold out meanwhile.
+    let hadMatchingCheckoutAttempt = false;
+    try {
+        const saved = JSON.parse(sessionStorage.getItem(posAttemptKey) || 'null');
+        hadMatchingCheckoutAttempt = saved?.fingerprint === checkoutFingerprint();
+    } catch (_) {}
     try { checkoutRequestToken(); } catch (error) {
         statusMessage(String(error.message || error), 'error');
         return;
@@ -4854,7 +4861,15 @@ async function submitOrder(action) {
     try {
         // Check active branch menu before committing. The server still
         // revalidates availability and stock atomically during checkout.
-        await checkCartAvailability();
+        if (!hadMatchingCheckoutAttempt) {
+            try {
+                await checkCartAvailability();
+            } catch (error) {
+                // No sale was submitted: a future attempt must check again.
+                sessionStorage.removeItem(posAttemptKey);
+                throw error;
+            }
+        }
         const response = await fetch(
             form.action,
             {
