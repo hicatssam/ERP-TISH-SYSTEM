@@ -771,6 +771,23 @@
         </div>
     </div>
     </main>
+<div class="rb-modal" id="rbDraftPreviewModal" hidden aria-hidden="true">
+    <div class="rb-modal-backdrop" data-close-draft-preview></div>
+    <div class="rb-modal-dialog rb-draft-preview-dialog" role="dialog" aria-modal="true"
+         aria-labelledby="rbDraftPreviewTitle">
+        <div class="rb-modal-head">
+            <h2 id="rbDraftPreviewTitle">تفاصيل المسودة</h2>
+            <button type="button" class="rb-modal-close" data-close-draft-preview aria-label="إغلاق">×</button>
+        </div>
+        <div class="rb-modal-body" id="rbDraftPreviewBody"></div>
+        <div class="rb-modal-foot">
+            <button type="button" class="rb-btn rb-btn-light" data-close-draft-preview>إغلاق</button>
+            <button type="button" class="rb-btn rb-btn-primary" id="rbDraftPreviewRestore" hidden>استكمال المسودة</button>
+            <a class="rb-btn rb-btn-primary" id="rbDraftPreviewOpen" href="#" hidden>فتح الطلب المسجل</a>
+        </div>
+    </div>
+</div>
+
 </div>
 
 {{-- =========================================================
@@ -845,22 +862,6 @@
     </div>
 </aside>
 
-<div class="rb-modal" id="rbDraftPreviewModal" hidden aria-hidden="true">
-    <div class="rb-modal-backdrop" data-close-draft-preview></div>
-    <div class="rb-modal-dialog rb-draft-preview-dialog" role="dialog" aria-modal="true"
-         aria-labelledby="rbDraftPreviewTitle">
-        <div class="rb-modal-head">
-            <h2 id="rbDraftPreviewTitle">تفاصيل المسودة</h2>
-            <button type="button" class="rb-modal-close" data-close-draft-preview aria-label="إغلاق">×</button>
-        </div>
-        <div class="rb-modal-body" id="rbDraftPreviewBody"></div>
-        <div class="rb-modal-foot">
-            <button type="button" class="rb-btn rb-btn-light" data-close-draft-preview>إغلاق</button>
-            <button type="button" class="rb-btn rb-btn-primary" id="rbDraftPreviewRestore" hidden>استكمال المسودة</button>
-            <a class="rb-btn rb-btn-primary" id="rbDraftPreviewOpen" href="#" hidden>فتح الطلب المسجل</a>
-        </div>
-    </div>
-</div>
 
 <style>
 .rb-draft-preview-dialog{width:min(660px,96vw)}
