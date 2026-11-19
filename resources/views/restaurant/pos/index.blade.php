@@ -468,7 +468,7 @@
                         {{-- Two-tender immediate checkout: both amounts are posted atomically. --}}
                         <div class="rb-field rb-field-wide" id="rbSplitTenderOption">
                             <label class="rb-split-toggle" for="rbSplitTenderToggle">
-                                <input type="checkbox" id="rbSplitTenderToggle">
+                                <input type="checkbox" id="rbSplitTenderToggle" @disabled($paymentMethods->where('requires_verification', false)->count() < 2)>
                                 <span>تقسيم الدفع بين نقد وبطاقة / طريقتين</span>
                             </label>
                         </div>
