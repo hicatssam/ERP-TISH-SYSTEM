@@ -2958,7 +2958,10 @@ document.addEventListener('DOMContentLoaded', () => {
             .trim();
     }
 
-    const draftKey = `restaurant_pos_draft_${locationId}`;
+    // Never expose a saved cashier draft to a different signed-in user on a
+    // shared terminal. Legacy branch-only drafts are intentionally not imported.
+    const draftKey = `restaurant_pos_draft_v3_${cashierUserId}_${locationId}`;
+    try { localStorage.removeItem(`restaurant_pos_draft_${locationId}`); } catch (_) {}
     const posAttemptKey = `tish_pos_attempt_${cashierUserId}_${locationId}`;
     const posRequestTokenInput = document.getElementById('rbPosRequestToken');
     function checkoutFingerprint() {
@@ -3961,13 +3964,19 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        localStorage.setItem(draftKey, JSON.stringify(serializeDraft()));
-        statusMessage('تم حفظ المسودة على هذا الجهاز.');
+        try {
+            localStorage.setItem(draftKey, JSON.stringify(serializeDraft()));
+        } catch (error) {
+            statusMessage('تعذر حفظ المسودة على الجهاز. لا تغلق الصفحة حتى تحفظ تفاصيل الطلب بطريقة آمنة.', 'error');
+            return;
+        }
+        statusMessage('تم حفظ المسودة لهذا الكاشير على هذا الجهاز.');
         renderLocalDraftCard();
     }
 
     function loadLocalDraft() {
-        const raw = localStorage.getItem(draftKey);
+        let raw;
+        try { raw = localStorage.getItem(draftKey); } catch (_) { return null; }
         if (!raw) return null;
 
         try {
@@ -4453,8 +4462,17 @@ async function submitOrder(action) {
             error
         );
 
+        // A dropped response may follow a successfully committed checkout.
+        // Keep the original request UUID; save the current cart so the same
+        // signed-in cashier can restore it after reloading the terminal.
+        if (cart.size) {
+            try {
+                localStorage.setItem(draftKey, JSON.stringify(serializeDraft()));
+                renderLocalDraftCard();
+            } catch (_) { /* Storage may be blocked by the browser. */ }
+        }
         statusMessage(
-            'تعذر الاتصال بالسيرفر. افحص الطلبات قبل إعادة المحاولة حتى لا يتم تسجيل الطلب مرتين.'
+            'تعذر تأكيد اتصال السيرفر. احتفظنا بمسودة الطلب لهذا الكاشير إن سمح المتصفح. افحص الطلبات قبل إعادة المحاولة؛ إذا لم يُسجل البيع فأعد المحاولة بنفس التفاصيل دون تغييرها.'
         );
 
     } finally {
