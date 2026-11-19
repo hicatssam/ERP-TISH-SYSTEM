@@ -129,6 +129,8 @@ Route::middleware([
                 ->name('pos.drafts');
             Route::patch('/pos/drafts/{order}/items', [RestaurantPosController::class, 'updateDraftItems'])
                 ->name('pos.drafts.items.update');
+            Route::post('/pos/drafts/{order}/cancel', [RestaurantPosController::class, 'cancelDraft'])
+                ->name('pos.drafts.cancel');
 
             Route::get('/pos/orders/{order}/invoice-print', [RestaurantPosController::class, 'printInvoice'])
                 ->name('pos.orders.invoice-print');
