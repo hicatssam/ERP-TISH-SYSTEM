@@ -86,6 +86,7 @@
                 </svg>
                 المسودات
             </button>
+            <button type="button" class="rb-btn rb-btn-light" id="rbReceiptsBtn">فواتير سابقة</button>
 
             
 
@@ -2773,6 +2774,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const catalogUrl = @json(route('restaurant.pos.catalog'));
     const qrOrdersUrl = @json(route('restaurant.pos.qr-orders'));
     const draftOrdersUrl = @json(route('restaurant.pos.drafts'));
+    const receiptSearchUrl = @json(route('restaurant.pos.receipt-search'));
     const cartAvailabilityUrl = @json(route('restaurant.pos.cart-availability'));
     const draftEditUrlPattern = @json(route('restaurant.pos.drafts.items.update', ['order' => '__ORDER__']));
     const draftCancelUrlPattern = @json(route('restaurant.pos.drafts.cancel', ['order' => '__ORDER__']));
@@ -3108,6 +3110,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const qrOrdersBtn = document.getElementById('rbQrOrdersBtn');
     const draftListBtn = document.getElementById('rbDraftListBtn');
+    const receiptsBtn = document.getElementById('rbReceiptsBtn');
     const existingOrderSearch = document.getElementById('rbExistingOrderSearch');
 
     const drawer = document.getElementById('rbOrdersDrawer');
@@ -3153,6 +3156,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const draftPreviewOpen = document.getElementById('rbDraftPreviewOpen');
     let draftRequest = 0;
     let draftSearchTimer;
+    let receiptSearchTimer;
+    let receiptRequest = 0;
     let currentDraftPreview = null;
     let qrRequest = 0;
     let qrSearchTimer;
@@ -4602,11 +4607,49 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    async function loadReceiptSearch() {
+        const request = ++receiptRequest;
+        serverOrdersList.innerHTML = '<div class="rb-drawer-empty">جار البحث في الفواتير...</div>';
+        const url = new URL(receiptSearchUrl, window.location.origin);
+        url.searchParams.set('location_id', String(locationId));
+        if (drawerSearchInput.value.trim()) url.searchParams.set('q', drawerSearchInput.value.trim());
+        try {
+            const response = await fetch(url, {headers: {Accept: 'application/json'}, credentials: 'same-origin'});
+            if (!response.ok) throw new Error('تعذر البحث');
+            const data = await response.json();
+            if (request !== receiptRequest || drawerMode !== 'receipts') return;
+            serverOrdersList.replaceChildren();
+            (data.orders || []).forEach(order => {
+                const card = document.createElement('a');
+                card.href = order.print_url;
+                card.target = '_blank';
+                card.rel = 'noopener';
+                card.className = 'rb-server-order-card';
+                card.innerHTML = `<div class="rb-server-order-top"><strong>${escapeHtml(order.number)}</strong><span>فاتورة</span></div>
+                    <div class="rb-server-order-meta"><span>${escapeHtml(order.invoice_number || '')}</span><span>إعادة الطباعة</span></div>`;
+                serverOrdersList.appendChild(card);
+            });
+            if (!serverOrdersList.children.length)
+                serverOrdersList.innerHTML = '<div class="rb-drawer-empty">لا توجد فواتير مطابقة ضمن صلاحياتك في هذا الفرع.</div>';
+        } catch (_) {
+            if (request === receiptRequest && drawerMode === 'receipts')
+                serverOrdersList.innerHTML = '<div class="rb-drawer-empty">تعذر تحميل الفواتير. تحقق من الاتصال ثم أعد البحث.</div>';
+        }
+    }
+
     function openDrawer(mode = 'all', query = '') {
         drawerMode = mode;
         drawerSearchInput.value = query || '';
 
-        if (mode === 'qr') {
+        if (mode === 'receipts') {
+            qrRequest++;
+            draftRequest++;
+            drawerTitle.textContent = 'البحث عن فاتورة سابقة';
+            drawerSubtitle.textContent = 'إعادة الطباعة دون إنشاء طلب أو تحصيل جديد';
+            serverOrdersTitle.textContent = 'الفواتير المتاحة';
+            localDraftSection.hidden = true;
+            loadReceiptSearch();
+        } else if (mode === 'qr') {
             drawerTitle.textContent = 'طلبات QR';
             drawerSubtitle.textContent = 'طلبات منيو العميل في هذا الفرع';
             serverOrdersTitle.textContent = 'طلبات QR';
@@ -4629,7 +4672,7 @@ document.addEventListener('DOMContentLoaded', () => {
             localDraftSection.hidden = true;
         }
 
-        if (mode !== 'qr') filterServerOrders();
+        if (mode !== 'qr' && mode !== 'receipts') filterServerOrders();
         drawer.classList.add('is-open');
         drawer.setAttribute('aria-hidden', 'false');
         drawerBackdrop.hidden = false;
@@ -5232,6 +5275,7 @@ async function submitOrder(action) {
     // -----------------------------
     qrOrdersBtn.addEventListener('click', () => openDrawer('qr'));
     draftListBtn.addEventListener('click', () => openDrawer('draft'));
+    receiptsBtn.addEventListener('click', () => openDrawer('receipts'));
 
     existingOrderSearch.addEventListener('keydown', event => {
         if (event.key !== 'Enter') return;
@@ -5244,7 +5288,10 @@ async function submitOrder(action) {
     });
 
     drawerSearchInput.addEventListener('input', () => {
-        if (drawerMode === 'draft') {
+        if (drawerMode === 'receipts') {
+            clearTimeout(receiptSearchTimer);
+            receiptSearchTimer = setTimeout(loadReceiptSearch, 250);
+        } else if (drawerMode === 'draft') {
             clearTimeout(draftSearchTimer);
             draftSearchTimer = setTimeout(() => loadServerDrafts(), 250);
         } else if (drawerMode === 'qr') {
