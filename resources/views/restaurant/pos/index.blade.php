@@ -3219,6 +3219,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const url = new URL(cartAvailabilityUrl, window.location.origin);
         url.searchParams.set('location_id', String(locationId));
         ids.forEach(id => url.searchParams.append('ids[]', String(id)));
+        [...cart.values()].forEach((item, index) => {
+            url.searchParams.set('items[' + index + '][product_id]', String(item.product_id || item.id));
+            if (item.variant_id) url.searchParams.set('items[' + index + '][product_variant_id]', String(item.variant_id));
+            url.searchParams.set('items[' + index + '][quantity]', String(item.quantity));
+        });
         const response = await fetch(url, {headers: {'Accept': 'application/json'}, credentials: 'same-origin'});
         if (!response.ok) throw new Error('تعذر فحص توفر الأصناف حاليًا. لم يتم إرسال الطلب؛ تحقق من الاتصال.');
         const data = await response.json();
@@ -3229,6 +3234,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 return product?.name || ('#' + id);
             });
             throw new Error('هذه الأصناف لم تعد متاحة في منيو الفرع: ' + names.join('، ') + '. حدّث المنيو أو احذفها من السلة.');
+        }
+        if (Array.isArray(data.ingredient_shortages) && data.ingredient_shortages.length) {
+            const ingredients = [...new Set(data.ingredient_shortages.map(row => row.ingredient))];
+            throw new Error('مكونات غير متوفرة أو وصفات غير مكتملة: ' + ingredients.join('، ') +
+                '. راجع المخزون أو اطلب من المسؤول تعطيل الصنف. لم يتم إرسال الطلب أو تسجيل دفع.');
         }
         return true;
     }
