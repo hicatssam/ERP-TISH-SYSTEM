@@ -191,7 +191,7 @@ function showLockedTable() {
             service.value = 'dine_in';
             selectCheckoutTable(selected);
         }
-        hint.textContent = 'تم تثبيت ' + selected.textContent.replace(/\\s+/g, ' ').trim()
+        hint.textContent = 'تم تثبيت ' + selected.textContent.replace(/\s+/g, ' ').trim()
             + ' لهذا الطلب. إذا كان الرقم غير صحيح، اطلب التصحيح من الكاشير.';
         hint.hidden = false;
     } else {
