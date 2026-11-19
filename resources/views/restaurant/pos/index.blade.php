@@ -8,11 +8,11 @@
     $selectedTableId = (int) old('restaurant_table_id', request('table_id', 0));
 
     // Use the same configured branding sources as layouts.app; do not hardcode TISH assets.
-    $posBrandLogoUrl = \\App\\Models\\SystemSetting::assetUrl('brand_logo')
-        ?: \\App\\Models\\SystemSetting::assetUrl('brand_logo_small')
+    $posBrandLogoUrl = \App\Models\SystemSetting::assetUrl('brand_logo')
+        ?: \App\Models\SystemSetting::assetUrl('brand_logo_small')
         ?: (is_file(public_path('assets/images/logo.png')) ? asset('assets/images/logo.png') : null);
-    $posBrandName = trim((string) \\App\\Models\\SystemSetting::get('brand_name_ar', ''))
-        ?: trim((string) \\App\\Models\\SystemSetting::get('brand_name', ''))
+    $posBrandName = trim((string) \App\Models\SystemSetting::get('system_name', ''))
+        ?: trim((string) \App\Models\SystemSetting::get('system_name_en', ''))
         ?: 'نظام الإدارة';
 
     $cashierName =
