@@ -466,6 +466,8 @@ class ReportController extends Controller
 
     private function validateFilters(Request $request, string $type): void
     {
+        abort_unless(\App\Support\ActivityModules::reportAllowed($type), 404,
+            'هذا التقرير غير متاح لنشاط المطعم الحالي.');
         $filters = [
             'date_from' => $request->input('date_from') ?: $this->defaultDateFrom($type),
             'date_to' => $request->input('date_to') ?: $this->defaultDateTo($type),
