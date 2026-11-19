@@ -35,6 +35,69 @@ class RestaurantPosCatalogTest extends TestCase
     use RefreshDatabase;
 
     #[Test]
+    public function manager_can_stop_and_restore_branch_menu_with_reason_and_mandatory_audit(): void
+    {
+        $branch = $this->branch('MANAGER-AV');
+        $cashier = $this->cashier($branch);
+        $cashier->givePermissionTo(Permission::findOrCreate('restaurant_menu.manage', 'web'));
+        $product = $this->product($this->category(), 'BREAD-SHORTAGE');
+        $this->onMenu($branch, $product, 1);
+        $this->atBranch($branch, $product, true);
+        $endpoint = route('restaurant.pos.menu-availability.set');
+
+        $this->actingAs($cashier)->getJson(route('restaurant.pos.menu-availability', [
+            'location_id' => $branch->id, 'q' => 'BREAD-SHORTAGE',
+        ]))->assertOk()->assertJsonPath('products.0.available', true);
+
+        $this->postJson($endpoint, [
+            'location_id' => $branch->id, 'product_id' => $product->id,
+            'is_available' => false, 'reason' => 'نفاد خبز البرغر في المطبخ',
+        ])->assertOk()->assertJsonPath('is_available', false);
+
+        $this->assertDatabaseHas('location_products', [
+            'location_id' => $branch->id, 'product_id' => $product->id, 'is_available' => 0,
+        ]);
+        $this->assertDatabaseHas('activity_logs', [
+            'action' => 'restaurant.pos.menu_availability_changed', 'record_type' => 'location_products',
+        ]);
+        $this->getJson(route('restaurant.pos.cart-availability', [
+            'location_id' => $branch->id, 'ids' => [$product->id],
+        ]))->assertOk()->assertJsonPath('unavailable_ids.0', $product->id);
+
+        // An identical replay does not create another audit change.
+        $this->postJson($endpoint, [
+            'location_id' => $branch->id, 'product_id' => $product->id,
+            'is_available' => false, 'reason' => 'نفاد خبز البرغر في المطبخ',
+        ])->assertOk();
+        $this->assertDatabaseCount('activity_logs', 1);
+
+        $this->postJson($endpoint, [
+            'location_id' => $branch->id, 'product_id' => $product->id,
+            'is_available' => true, 'reason' => 'وصل الخبز إلى المطبخ مجددًا',
+        ])->assertOk()->assertJsonPath('is_available', true);
+        $this->assertDatabaseCount('activity_logs', 2);
+        $this->assertDatabaseCount('orders', 0);
+    }
+
+    #[Test]
+    public function cashier_without_menu_manage_cannot_change_availability(): void
+    {
+        $branch = $this->branch('CASHIER-AV');
+        $cashier = $this->cashier($branch);
+        $product = $this->product($this->category(), 'NO-AUTH-AV');
+        $this->onMenu($branch, $product, 1);
+        $this->atBranch($branch, $product, true);
+        $this->actingAs($cashier)->postJson(route('restaurant.pos.menu-availability.set'), [
+            'location_id' => $branch->id, 'product_id' => $product->id,
+            'is_available' => false, 'reason' => 'غير مصرح لهذا المستخدم',
+        ])->assertForbidden();
+        $this->assertDatabaseHas('location_products', [
+            'location_id' => $branch->id, 'product_id' => $product->id, 'is_available' => 1,
+        ]);
+        $this->assertDatabaseCount('activity_logs', 0);
+    }
+
+    #[Test]
     public function cart_availability_checks_live_branch_menu_without_creating_orders(): void
     {
         $branch = $this->branch('AVAILCHECK');

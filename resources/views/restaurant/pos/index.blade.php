@@ -87,6 +87,9 @@
                 المسودات
             </button>
             <button type="button" class="rb-btn rb-btn-light" id="rbReceiptsBtn">فواتير سابقة</button>
+            @can('restaurant_menu.manage')
+                <button type="button" class="rb-btn rb-btn-light" id="rbManageAvailabilityBtn">توفر الأصناف</button>
+            @endcan
 
             
 
@@ -805,6 +808,29 @@
         </div>
     </div>
     </main>
+@can('restaurant_menu.manage')
+<div class="rb-modal" id="rbMenuAvailabilityModal" hidden aria-hidden="true">
+    <div class="rb-modal-backdrop" data-close-menu-availability></div>
+    <div class="rb-modal-dialog rb-draft-preview-dialog" role="dialog" aria-modal="true" aria-labelledby="rbMenuAvailabilityTitle">
+        <div class="rb-modal-head">
+            <h2 id="rbMenuAvailabilityTitle">توفر أصناف الفرع</h2>
+            <button type="button" class="rb-modal-close" data-close-menu-availability aria-label="إغلاق">×</button>
+        </div>
+        <div class="rb-modal-body">
+            <p>عند نفاد مكوّن، أوقف الأصناف المتأثرة إلى أن يعود متوفرًا. هذا لا يغيّر كمية المخزون.</p>
+            <label for="rbMenuAvailabilitySearch">البحث عن صنف</label>
+            <input id="rbMenuAvailabilitySearch" type="search" class="rb-control" maxlength="100" placeholder="اسم المنتج أو الرمز">
+            <div id="rbMenuAvailabilityResults" aria-live="polite"></div>
+            <label for="rbMenuAvailabilityReason">سبب التغيير</label>
+            <textarea id="rbMenuAvailabilityReason" rows="2" minlength="8" maxlength="500" class="rb-control" placeholder="مثل: نفاد خبز البرغر في المطبخ"></textarea>
+            <p id="rbMenuAvailabilityError" role="alert" hidden></p>
+        </div>
+        <div class="rb-modal-foot">
+            <button type="button" class="rb-btn rb-btn-light" data-close-menu-availability>إغلاق</button>
+        </div>
+    </div>
+</div>
+@endcan
 <div class="rb-modal" id="rbQueuedCancelModal" hidden aria-hidden="true">
     <div class="rb-modal-backdrop" data-close-queued-cancel></div>
     <div class="rb-modal-dialog rb-draft-preview-dialog" role="dialog" aria-modal="true"
@@ -957,6 +983,12 @@
 .rb-pos #rbQueuedCancelModal .rb-modal-body{display:grid;gap:10px}
 .rb-pos #rbQueuedCancelModal #rbQueuedCancelError{color:var(--rb-danger);font-weight:800}
 .rb-pos #rbQueuedCancelModal #rbQueuedCancelError[hidden]{display:none!important}
+.rb-pos #rbMenuAvailabilityModal .rb-modal-body{display:grid;gap:10px;max-height:65dvh;overflow:auto}
+.rb-pos #rbMenuAvailabilityResults{display:grid;gap:8px}
+.rb-pos .rb-availability-entry{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border:1px solid var(--rb-border);border-radius:8px}
+.rb-pos .rb-availability-entry button{min-height:44px;min-width:95px;border:1px solid var(--rb-border);border-radius:8px;background:var(--rb-orange-soft);cursor:pointer;font-weight:850}
+.rb-pos #rbMenuAvailabilityError{color:var(--rb-danger);font-weight:800}
+.rb-pos #rbMenuAvailabilityError[hidden]{display:none!important}
 /* POS split-payment controls: readable and touch-friendly at checkout. */
 .rb-pos .rb-split-toggle,.rb-pos .rb-split-confirm{display:flex;align-items:center;gap:10px;line-height:1.5;cursor:pointer}
 .rb-pos .rb-split-toggle input,.rb-pos .rb-split-confirm input{width:19px;height:19px;accent-color:#ad201c;flex-shrink:0}
@@ -2810,6 +2842,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const qrOrdersUrl = @json(route('restaurant.pos.qr-orders'));
     const draftOrdersUrl = @json(route('restaurant.pos.drafts'));
     const receiptSearchUrl = @json(route('restaurant.pos.receipt-search'));
+    const managerAvailabilityUrl = @json(auth()->user()?->can('restaurant_menu.manage')
+        ? route('restaurant.pos.menu-availability') : null);
+    const managerAvailabilitySetUrl = @json(auth()->user()?->can('restaurant_menu.manage')
+        ? route('restaurant.pos.menu-availability.set') : null);
     const queuedLinesUrlPattern = @json(route('restaurant.pos.orders.queued-lines', ['order' => '__ORDER__']));
     const queuedCancelUrlPattern = @json(route('restaurant.pos.orders.cancel-queued-line', ['order' => '__ORDER__']));
     const cartAvailabilityUrl = @json(route('restaurant.pos.cart-availability'));
@@ -3148,6 +3184,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const qrOrdersBtn = document.getElementById('rbQrOrdersBtn');
     const draftListBtn = document.getElementById('rbDraftListBtn');
     const receiptsBtn = document.getElementById('rbReceiptsBtn');
+    const manageAvailabilityBtn = document.getElementById('rbManageAvailabilityBtn');
+    const menuAvailabilityModal = document.getElementById('rbMenuAvailabilityModal');
+    const menuAvailabilitySearch = document.getElementById('rbMenuAvailabilitySearch');
+    const menuAvailabilityResults = document.getElementById('rbMenuAvailabilityResults');
+    const menuAvailabilityReason = document.getElementById('rbMenuAvailabilityReason');
+    const menuAvailabilityError = document.getElementById('rbMenuAvailabilityError');
+    let availabilitySearchTimer = null;
+    let availabilityRequest = 0;
+    let availabilityBusy = false;
     const existingOrderSearch = document.getElementById('rbExistingOrderSearch');
 
     const drawer = document.getElementById('rbOrdersDrawer');
@@ -5414,6 +5459,96 @@ async function submitOrder(action) {
     qrOrdersBtn.addEventListener('click', () => openDrawer('qr'));
     draftListBtn.addEventListener('click', () => openDrawer('draft'));
     receiptsBtn.addEventListener('click', () => openDrawer('receipts'));
+    async function searchManageAvailability() {
+        if (!menuAvailabilityModal || menuAvailabilityModal.hidden) return;
+        const current = ++availabilityRequest;
+        menuAvailabilityResults.textContent = 'جار تحميل الأصناف...';
+        const url = new URL(managerAvailabilityUrl, window.location.origin);
+        url.searchParams.set('location_id', String(locationId));
+        url.searchParams.set('q', menuAvailabilitySearch.value.trim());
+        try {
+            const response = await fetch(url, {headers:{Accept:'application/json'},credentials:'same-origin'});
+            if (!response.ok) throw new Error('تعذر تحميل توفر الأصناف.');
+            const data = await response.json();
+            if (current !== availabilityRequest || menuAvailabilityModal.hidden) return;
+            menuAvailabilityResults.replaceChildren();
+            (data.products || []).forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'rb-availability-entry';
+                const label = document.createElement('span');
+                label.textContent = item.name + (item.available ? ' — متاح' : ' — متوقف');
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.textContent = item.available ? 'إيقاف' : 'إعادة إتاحة';
+                button.addEventListener('click', async () => {
+                    if (availabilityBusy) return;
+                    const reason = menuAvailabilityReason.value.trim();
+                    if (reason.length < 8) {
+                        menuAvailabilityError.textContent = 'اكتب سبب التغيير بثمانية أحرف على الأقل.';
+                        menuAvailabilityError.hidden = false;
+                        return;
+                    }
+                    availabilityBusy = true;
+                    button.disabled = true;
+                    menuAvailabilityError.hidden = true;
+                    try {
+                        const updated = await fetch(managerAvailabilitySetUrl, {
+                            method:'POST',
+                            headers:{Accept:'application/json','Content-Type':'application/json',
+                                'X-CSRF-TOKEN':form.querySelector('[name="_token"]').value},
+                            credentials:'same-origin',
+                            body:JSON.stringify({location_id:locationId,product_id:item.id,
+                                is_available:!item.available,reason}),
+                        });
+                        const result = await updated.json();
+                        if (!updated.ok || !result.ok) throw new Error(
+                            Object.values(result.errors || {}).flat()[0] || result.message || 'تعذر تحديث الصنف.');
+                        menuAvailabilityReason.value = '';
+                        try {sessionStorage.removeItem(catalogStorageKey);} catch (_) {}
+                        completeCatalog = false;
+                        allProducts = [];
+                        loadCatalog(1, false, true);
+                        await searchManageAvailability();
+                        statusMessage(result.message, 'success');
+                    } catch (error) {
+                        menuAvailabilityError.textContent = error.message || 'تعذر تحديث توفر الصنف.';
+                        menuAvailabilityError.hidden = false;
+                    } finally {
+                        availabilityBusy = false;
+                        button.disabled = false;
+                    }
+                });
+                row.append(label, button);
+                menuAvailabilityResults.appendChild(row);
+            });
+            if (!menuAvailabilityResults.children.length)
+                menuAvailabilityResults.textContent = 'لا توجد أصناف مطابقة.';
+        } catch (error) {
+            if (current === availabilityRequest)
+                menuAvailabilityResults.textContent = error.message || 'تعذر البحث.';
+        }
+    }
+    manageAvailabilityBtn?.addEventListener('click', () => {
+        if (!menuAvailabilityModal) return;
+        menuAvailabilityReason.value = '';
+        menuAvailabilityError.hidden = true;
+        menuAvailabilityModal.hidden = false;
+        menuAvailabilityModal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        searchManageAvailability();
+        menuAvailabilitySearch.focus();
+    });
+    menuAvailabilityModal?.querySelectorAll('[data-close-menu-availability]').forEach(button =>
+        button.addEventListener('click', () => {
+            menuAvailabilityModal.hidden = true;
+            menuAvailabilityModal.setAttribute('aria-hidden', 'true');
+            availabilityRequest++;
+            document.body.style.overflow = '';
+        }));
+    menuAvailabilitySearch?.addEventListener('input', () => {
+        clearTimeout(availabilitySearchTimer);
+        availabilitySearchTimer = setTimeout(searchManageAvailability, 250);
+    });
 
     existingOrderSearch.addEventListener('keydown', event => {
         if (event.key !== 'Enter') return;
@@ -5545,6 +5680,10 @@ async function submitOrder(action) {
     // -----------------------------
     document.addEventListener('keydown', event => {
         if (event.key === 'Escape') {
+            if (menuAvailabilityModal && !menuAvailabilityModal.hidden) {
+                menuAvailabilityModal.querySelector('[data-close-menu-availability]')?.click();
+                return;
+            }
             if (!queuedCancelModal.hidden) {
                 closeQueuedCancel();
                 return;
