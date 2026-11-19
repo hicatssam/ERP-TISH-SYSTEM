@@ -65,7 +65,10 @@
                 <td>₪{{ number_format($s->cash_received ?? 0, 2) }}</td>
                 <td>{{ $s->closed_at?->format('Y-m-d H:i') ?? '—' }}</td>
                 <td @if($s->variance && $s->variance != 0) style="color:{{ $s->variance > 0 ? 'var(--success)' : 'var(--error)' }};font-weight:700" @endif>{{ $s->variance !== null ? (($s->variance >= 0 ? '+' : '') . number_format($s->variance, 2)) : '—' }}</td>
-                <td><span class="badge {{ $s->status === 'open' ? 'badge-active' : 'badge-inactive' }}">{{ $s->status === 'open' ? 'مفتوحة' : 'مغلقة' }}</span></td>
+                <td><span class="badge {{ $s->status === 'open' ? 'badge-active' : 'badge-inactive' }}">{{ $s->status === 'open' ? 'مفتوحة' : 'مغلقة' }}</span>
+                    @if(! $s->isOpen())
+                        <a class="btn btn-ghost btn-sm" href="{{ route('cash-sessions.report', $s) }}" target="_blank" rel="noopener">تقرير الإغلاق</a>
+                    @endif</td>
             </tr>
         @empty
             <tr><td colspan="8"><div class="empty-state-sm">لا توجد جلسات.</div></td></tr>
