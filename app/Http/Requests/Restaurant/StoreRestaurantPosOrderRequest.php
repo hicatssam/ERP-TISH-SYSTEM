@@ -212,12 +212,9 @@ class StoreRestaurantPosOrderRequest extends FormRequest
                     );
                 }
 
-                if (! $this->hasFile('payment_proof')) {
-                    $validator->errors()->add(
-                        'payment_proof',
-                        'إثبات الدفع مطلوب للدفعة بانتظار التحقق.'
-                    );
-                }
+                // Cashier-entered transfers are linked to the POS order and
+                // creator; documentary proof is not required at this terminal.
+                // The pending-verification workflow still applies.
             }
 
             if (! $hasSplit && $this->filled('payment_method_id') && ! $noImmediatePayment) {
@@ -256,15 +253,8 @@ class StoreRestaurantPosOrderRequest extends FormRequest
                         );
                     }
 
-                    if (
-                        $method->requires_verification
-                        && ! $this->hasFile('payment_proof')
-                    ) {
-                        $validator->errors()->add(
-                            'payment_proof',
-                            'إثبات الدفع مطلوب لطريقة الدفع المحددة.'
-                        );
-                    }
+                    // An uploaded receipt is not mandatory for POS cashier entries.
+                    // Verification-enabled methods remain pending until reviewed.
                 }
             }
 
