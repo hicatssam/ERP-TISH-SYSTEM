@@ -46,3 +46,23 @@ test('POS-POWER-02: storage exceptions do not show false success for manual save
   assert.match(view, /تعذر حفظ المسودة على الجهاز/);
   assert.match(view, /try \{ raw = localStorage\.getItem\(draftKey\); \} catch \(_\) \{ return null; \}/);
 });
+
+test('POS-PEAK-01: closing a cashier tab saves unfinished cart without submitting a sale', () => {
+  assert.match(view, /function preserveUnfinishedCart\(\)/);
+  assert.match(view, /if \(!cart\.size \|\| rbCheckoutSucceeded\) return false/);
+  assert.match(view, /window\.addEventListener\('pagehide', preserveUnfinishedCart\)/);
+  assert.match(view, /window\.addEventListener\('beforeunload', event =>/);
+  assert.match(view, /event\.preventDefault\(\)/);
+  assert.match(view, /localStorage\.setItem\(draftKey, JSON\.stringify\(serializeDraft\(\)\)\)/);
+});
+test('POS-PEAK-02: slow server gives guidance and never automatically retries a payment', () => {
+  const start = view.indexOf('async function submitOrder(action)');
+  const end = view.indexOf('    // -----------------------------\n    // Product listeners',start);
+  assert.ok(start > 0 && end > start);
+  const submit = view.slice(start,end);
+  assert.match(submit, /const slowCheckoutNotice = window\.setTimeout/);
+  assert.match(submit, /لا تغلق الشاشة ولا تضغط دفع مرة ثانية/);
+  assert.match(submit, /window\.clearTimeout\(slowCheckoutNotice\)/);
+  assert.equal((submit.match(/await fetch\(/g)||[]).length,1);
+  assert.match(submit, /if \(rbSubmitting \|\| rbCheckoutSucceeded\)/);
+});
