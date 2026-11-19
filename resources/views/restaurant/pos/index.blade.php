@@ -277,6 +277,7 @@
                             @endforeach
                         </select>
                     </div>
+                    <small id="rbTableChoiceHint" class="rb-table-choice-hint">اختَر الطاولة مرة واحدة لهذا الطلب؛ للتصحيح بعد حفظه استخدم «نقل الطلب».</small>
                     <a id="rbTableSessionAccountLink" class="rb-btn rb-btn-light" href="#" target="_blank" rel="noopener" hidden>كشف حساب الجلسة الحالية</a>
                 </div>
 
@@ -892,6 +893,45 @@
         </div>
     </div>
 </div>
+<div class="rb-modal" id="rbTableTransferModal" hidden aria-hidden="true">
+    <div class="rb-modal-backdrop" data-close-table-transfer></div>
+    <div class="rb-modal-dialog rb-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="rbTableTransferTitle">
+        <div class="rb-modal-head">
+            <h2 id="rbTableTransferTitle">نقل الطلب إلى طاولة أخرى</h2>
+            <button type="button" class="rb-modal-close" data-close-table-transfer aria-label="إغلاق">×</button>
+        </div>
+        <div class="rb-modal-body">
+            <p id="rbTableTransferContext"></p>
+            <div class="rb-field">
+                <label for="rbTransferTableSelect">الطاولة الصحيحة</label>
+                <select id="rbTransferTableSelect" class="rb-control" required>
+                    <option value="">اختر الطاولة</option>
+                    @foreach($tables as $table)
+                        <option value="{{ $table->id }}" data-occupied="{{ $table->activeSession ? '1' : '0' }}">
+                            {{ $table->displayName() }}{{ $table->activeSession ? ' — مشغولة' : '' }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="rb-field">
+                <label for="rbTransferReason">سبب النقل</label>
+                <textarea id="rbTransferReason" class="rb-control" rows="2" minlength="8" maxlength="300"
+                    placeholder="مثلًا: تم اختيار طاولة 3 بدل طاولة 4 بالخطأ"></textarea>
+            </div>
+            <label class="rb-transfer-occupied">
+                <input type="checkbox" id="rbTransferOccupied">
+                تأكيد ضم الطلب إلى جلسة الطاولة المشغولة (إن كانت مشغولة)
+            </label>
+            <p class="rb-transfer-advice">لن يُعاد إرسال الطلب للمطبخ، ولن تُسجل دفعة جديدة. سيتم توثيق النقل باسم الكاشير.</p>
+            <p id="rbTransferError" class="rb-transfer-error" role="alert" hidden></p>
+        </div>
+        <div class="rb-modal-foot">
+            <button type="button" class="rb-btn rb-btn-light" data-close-table-transfer>رجوع</button>
+            <button type="button" class="rb-btn rb-btn-primary" id="rbTransferConfirm">تأكيد نقل الطلب</button>
+        </div>
+    </div>
+</div>
+
 <div class="rb-modal" id="rbDraftPreviewModal" hidden aria-hidden="true">
     <div class="rb-modal-backdrop" data-close-draft-preview></div>
     <div class="rb-modal-dialog rb-draft-preview-dialog" role="dialog" aria-modal="true"
@@ -984,6 +1024,17 @@
                         <span>{{ $order->customer?->name ?? 'عميل نقدي' }}</span>
                     </div>
                 </a>
+                @if($order->order_source === 'restaurant_pos'
+                    && $order->restaurant_table_id
+                    && in_array($statusValue, ['draft', 'confirmed'], true)
+                    && ((int) $order->created_by === (int) auth()->id() || auth()->user()?->can('orders.update')))
+                    <button type="button" class="rb-table-transfer-trigger"
+                        data-transfer-order="{{ $order->id }}"
+                        data-transfer-number="{{ $order->order_number }}"
+                        data-transfer-table="{{ $order->restaurant_table_id }}">
+                        <span aria-hidden="true">⇄</span> نقل الطلب إلى طاولة أخرى
+                    </button>
+                @endif
                 @if($order->invoice && ((int) $order->created_by === (int) auth()->id() || auth()->user()?->can('invoices.view')))
                     <a class="rb-reprint-link" href="{{ route('restaurant.pos.orders.invoice-print', $order) }}"
                        target="_blank" rel="noopener" aria-label="إعادة طباعة فاتورة الطلب {{ $order->order_number }}">
@@ -3681,10 +3732,101 @@ body.rb-pos-mode {
     .rb-drawer,.rb-drawer *{transition:none!important}
 }
 
+
+/* POS table correction form, consistent with branded modals. */
+.rb-table-transfer-trigger{
+ display:flex;align-items:center;justify-content:center;gap:7px;
+ width:calc(100% - 24px);min-height:42px;margin:8px 12px;
+ padding:8px 12px;border:1px solid color-mix(in srgb,var(--rb-orange) 26%,var(--rb-border));
+ border-radius:10px;background:color-mix(in srgb,var(--rb-orange) 5%,#fff);
+ color:var(--rb-orange);font-weight:850;font-size:12px;cursor:pointer;
+}
+.rb-table-transfer-trigger:hover{border-color:var(--rb-orange);background:color-mix(in srgb,var(--rb-orange) 9%,#fff)}
+.rb-pos .rb-table-choice-hint{display:block;margin:6px 0;color:var(--rb-muted);font-size:11px;line-height:1.6}
+.rb-pos .rb-transfer-occupied{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:12px!important}
+.rb-pos .rb-transfer-occupied input{width:18px;height:18px;accent-color:var(--rb-orange)}
+.rb-pos .rb-transfer-advice{margin:12px 0 0;padding:10px 12px;background:var(--rb-soft);border-radius:10px;font-size:12px}
+.rb-pos .rb-transfer-error{padding:9px 12px;color:#b42318;background:#fff4f3;border-radius:9px;font-size:12px}
+.rb-pos #rbTableTransferModal .rb-field{margin-top:12px}
+
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    const tableTransferModal = document.getElementById('rbTableTransferModal');
+    const transferTableSelect = document.getElementById('rbTransferTableSelect');
+    const transferReason = document.getElementById('rbTransferReason');
+    const transferOccupied = document.getElementById('rbTransferOccupied');
+    const transferError = document.getElementById('rbTransferError');
+    const transferConfirm = document.getElementById('rbTransferConfirm');
+    let transferOrderId = null;
+    let transferFromTable = null;
+    const transferUrlPattern = @json(route('restaurant.pos.orders.transfer-table', ['order' => '__ORDER__']));
+    const csrfForTransfer = @json(csrf_token());
+    const closeTransferModal = () => {
+        tableTransferModal.hidden = true;
+        tableTransferModal.setAttribute('aria-hidden', 'true');
+        transferOrderId = null;
+    };
+    const openTransferModal = (button) => {
+        transferOrderId = Number(button.dataset.transferOrder);
+        transferFromTable = button.dataset.transferTable || '';
+        transferTableSelect.value = '';
+        transferReason.value = '';
+        transferOccupied.checked = false;
+        transferError.hidden = true;
+        transferTableSelect.querySelectorAll('option').forEach(option => {
+            option.disabled = Boolean(option.value && option.value === transferFromTable);
+        });
+        document.getElementById('rbTableTransferContext').textContent =
+            'الطلب ' + (button.dataset.transferNumber || '#' + transferOrderId)
+            + ' — اختر الطاولة الصحيحة. الطلب نفسه سيبقى برقمِه الأصلي.';
+        tableTransferModal.hidden = false;
+        tableTransferModal.setAttribute('aria-hidden', 'false');
+        transferTableSelect.focus();
+    };
+    document.addEventListener('click', event => {
+        const trigger = event.target.closest('[data-transfer-order]');
+        if (trigger) { event.preventDefault(); openTransferModal(trigger); }
+    });
+    tableTransferModal.querySelectorAll('[data-close-table-transfer]').forEach(button =>
+        button.addEventListener('click', closeTransferModal));
+    transferConfirm.addEventListener('click', async () => {
+        if (!transferOrderId || !transferTableSelect.value || transferReason.value.trim().length < 8) {
+            transferError.textContent = 'اختر الطاولة واكتب سبب النقل (8 أحرف على الأقل).';
+            transferError.hidden = false;
+            return;
+        }
+        const occupied = transferTableSelect.selectedOptions[0]?.dataset.occupied === '1';
+        if (occupied && !transferOccupied.checked) {
+            transferError.textContent = 'الطاولة الجديدة مشغولة. أكّد ضم الطلب إلى جلستها أولًا.';
+            transferError.hidden = false;
+            return;
+        }
+        transferConfirm.disabled = true;
+        transferError.hidden = true;
+        try {
+            const response = await fetch(transferUrlPattern.replace('__ORDER__', String(transferOrderId)), {
+                method: 'POST', credentials: 'same-origin',
+                headers: {'Accept':'application/json','Content-Type':'application/json','X-CSRF-TOKEN':csrfForTransfer},
+                body: JSON.stringify({
+                    restaurant_table_id: Number(transferTableSelect.value),
+                    reason: transferReason.value.trim(),
+                    accept_occupied: occupied && transferOccupied.checked
+                }),
+            });
+            const data = await response.json();
+            if (!response.ok || !data.ok) throw new Error(Object.values(data.errors || {}).flat()[0] || data.message || 'تعذر نقل الطلب.');
+            closeTransferModal();
+            // Reload table occupancy and latest orders from the server.
+            window.location.reload();
+        } catch(error) {
+            transferError.textContent = error.message || 'تعذر نقل الطلب.';
+            transferError.hidden = false;
+        } finally {
+            transferConfirm.disabled = false;
+        }
+    });
     const rbRoot = document.getElementById('rbPosRoot');
     const rbDrawerBackdropNode = document.getElementById('rbDrawerBackdrop');
     const rbDrawerNode = document.getElementById('rbOrdersDrawer');
