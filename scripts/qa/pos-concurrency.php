@@ -97,7 +97,11 @@ if (($argv[1] ?? null) === '--worker-kds') {
     try {
         if ($args['kind'] === 'kitchen') {
             $ticket = KitchenTicket::query()->findOrFail((int) $args['ticket_id']);
-            app(KitchenTicketService::class)->start($ticket, $actor);
+            $transition = (string) ($args['transition'] ?? 'start');
+            if (! in_array($transition, ['start', 'markReady', 'serve'], true)) {
+                throw new RuntimeException('Unsupported kitchen transition in QA worker.');
+            }
+            app(KitchenTicketService::class)->{$transition}($ticket, $actor);
             echo json_encode(['status' => 'success', 'action' => 'kitchen_started'], JSON_THROW_ON_ERROR)."\n";
         } else {
             $order = Order::query()->findOrFail((int) $args['order_id']);
@@ -289,3 +293,93 @@ if (($results[0]['status'] ?? null) !== 'success'
     throw new RuntimeException('KDS-vs-POS race caused inconsistent state: '.json_encode($results));
 }
 echo "PASS POS-RACE-03: kitchen starts while cashier edits; edit denied and financial state preserved\n";
+
+// Case 4: ten real independent processes compete for sufficient stock.
+// Every unique checkout must survive; no lost charges or duplicate invoices.
+$d = fixture(25);
+// The kitchen module was enabled in Case 3. A new test branch also needs its
+// own routing station or KDS will correctly refuse every checkout.
+KitchenStation::query()->create([
+    'location_id' => $d['location'], 'name' => 'QA parallel kitchen',
+    'code' => 'QA-LOAD-'.Str::random(6),
+    'is_default' => true, 'is_active' => true,
+]);
+$launch = microtime(true) + 2.0;
+$parallelWorkers = [];
+$parallelTokens = [];
+for ($i = 0; $i < 10; $i++) {
+    $token = (string) Str::uuid();
+    $parallelTokens[] = $token;
+    $args = base64_encode(json_encode([
+        ...$d, 'token' => $token, 'ready_at' => $launch,
+    ], JSON_THROW_ON_ERROR));
+    $worker = new Process([PHP_BINARY, __FILE__, '--worker', $args]);
+    $worker->setTimeout(100);
+    $worker->start();
+    $parallelWorkers[] = $worker;
+}
+$parallelResults = [];
+foreach ($parallelWorkers as $worker) {
+    $worker->wait();
+    if (! $worker->isSuccessful()) {
+        throw new RuntimeException('Ten-client load failed: '.$worker->getExitCode().' '.$worker->getErrorOutput());
+    }
+    $parallelResults[] = json_decode(trim($worker->getOutput()), true, flags: JSON_THROW_ON_ERROR);
+}
+$orders = Order::query()->where('location_id', $d['location'])->get();
+if (count($parallelResults) !== 10
+    || count(array_filter($parallelResults, static fn($r) => ($r['status'] ?? '') === 'success')) !== 10
+    || $orders->count() !== 10
+    || $orders->pluck('public_request_token')->unique()->count() !== 10
+    || (int) $orders->sum(fn($order) => $order->payments()->count()) !== 10
+    || (int) $orders->sum(fn($order) => $order->invoice()->count()) !== 10
+    || (float) Inventory::query()->where('location_id', $d['location'])
+        ->where('product_id', $d['product'])->sole()->quantity !== 15.0) {
+    throw new RuntimeException('Ten-client parallel totals or inventory inconsistent: '.json_encode($parallelResults));
+}
+echo "PASS POS-RACE-04: ten simultaneous POS checkouts, ten invoices and payments, exact stock\n";
+
+
+
+// Cases 5-6: kitchen marks ready / serves at the exact moment cashier attempts
+// an invalid post-dispatch quantity change. Independent MySQL connections.
+foreach ([
+    ['transition' => 'markReady', 'expected' => 'ready', 'label' => 'POS-RACE-05'],
+    ['transition' => 'serve', 'expected' => 'served', 'label' => 'POS-RACE-06'],
+] as $stage) {
+    $launch = microtime(true) + 2.0;
+    $workers = [];
+    foreach ([
+        ['kind' => 'kitchen', 'transition' => $stage['transition']],
+        ['kind' => 'cashier'],
+    ] as $task) {
+        $args = base64_encode(json_encode([
+            ...$c, ...$task, 'order_id' => $kdsOrder->id,
+            'ticket_id' => $ticket->id, 'item_id' => $item->id,
+            'ready_at' => $launch,
+        ], JSON_THROW_ON_ERROR));
+        $worker = new Process([PHP_BINARY, __FILE__, '--worker-kds', $args]);
+        $worker->setTimeout(80);
+        $worker->start();
+        $workers[] = $worker;
+    }
+    $results = [];
+    foreach ($workers as $worker) {
+        $worker->wait();
+        if (! $worker->isSuccessful()) {
+            throw new RuntimeException($stage['label'].' worker error: '.$worker->getErrorOutput());
+        }
+        $results[] = json_decode(trim($worker->getOutput()), true, flags: JSON_THROW_ON_ERROR);
+    }
+    if (($results[0]['status'] ?? '') !== 'success'
+        || ($results[1]['status'] ?? '') !== 'rejected'
+        || $ticket->fresh()->statusValue() !== $stage['expected']
+        || (float) $item->fresh()->quantity !== 1.0
+        || $kdsOrder->payments()->count() !== 1
+        || (float) $kdsOrder->fresh()->invoice?->total_amount !== 10.0
+        || (float) Inventory::query()->where('location_id', $c['location'])
+            ->where('product_id', $c['product'])->sole()->quantity !== 4.0) {
+        throw new RuntimeException($stage['label'].' invalid financial/KDS state: '.json_encode($results));
+    }
+    echo 'PASS '.$stage['label'].': concurrent '.$stage['transition'].' vs cashier edit, immutable stock/financial records'."\n";
+}
