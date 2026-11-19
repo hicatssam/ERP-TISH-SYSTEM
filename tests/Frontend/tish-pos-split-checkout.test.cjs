@@ -113,3 +113,35 @@ test('POS does not silently expose empty payment-method dropdowns as valid split
  assert.match(view, /لا توجد طريقتا دفع مختلط متاحتان/);
  assert.match(view, /paymentMethod\.options\.length <= 1/);
 });
+
+test('POS stage B edits only unpaid server drafts in the popup without creating a second order', () => {
+ assert.match(view, /id="rbDraftPreviewSave"/);
+ assert.match(view, /const draftEditUrlPattern = @json/);
+ assert.match(view, /draftPreviewSave\.hidden = kind !== 'server' \|\| !draft\.editable/);
+ assert.match(view, /draftPreviewSave\.addEventListener\('click', async/);
+ assert.match(view, /method: 'PATCH'/);
+ assert.match(view, /'X-CSRF-TOKEN'/);
+ assert.match(view, /data-draft-quantity/);
+ assert.match(view, /data-draft-notes/);
+ assert.match(view, /if \(!activeServerDraft\?\.editable \|\| draftPreviewSave\.disabled\) return/);
+});
+
+test('POS stage B draft cancellation requests a reason and never directly erases orders', () => {
+ assert.match(view, /id="rbDraftPreviewCancel"/);
+ assert.match(view, /id="rbDraftCancelReason"/);
+ assert.match(view, /draftPreviewCancel\.hidden = kind !== 'server' \|\| !draft\.cancelable/);
+ assert.match(view, /draftPreviewCancel\.addEventListener\('click', async/);
+ assert.match(view, /cancellation_reason: reason/);
+ assert.match(view, /reason\.length < 8/);
+ assert.match(view, /pendingDraftCancellation = true/);
+ assert.match(view, /draftPreviewCancel\.textContent = 'تأكيد إلغاء المسودة'/);
+ assert.doesNotMatch(view, /window\.confirm\(/);
+});
+
+test('POS stage B cancels one draft item only before kitchen without emptying the order', () => {
+ assert.match(view, /remove\.dataset\.draftRemove = String\(item\.id\)/);
+ assert.match(view, /const removedIds = activeServerDraft\.items/);
+ assert.match(view, /remove_item_ids: removedIds/);
+ assert.match(view, /if \(!items\.length\)/);
+ assert.match(view, /لا يمكن حذف جميع العناصر/);
+});

@@ -90,6 +90,109 @@ class RestaurantPosController extends Controller
     }
 
     /**
+     * Explicit cancellation with a documented reason and the existing
+     * accounting/inventory/kitchen compensation service.
+     */
+    public function cancelDraft(
+        Request $request, Order $order, \App\Services\Orders\OrderService $orders
+    ): \Illuminate\Http\JsonResponse {
+        $location = $this->context->resolveLocation($request->user(), (int) $order->location_id);
+        abort_unless($order->isRestaurantOrder()
+            && (int) $order->location_id === (int) $location->id, 403);
+        $this->authorize('cancel', $order);
+        $data = $request->validate([
+            'cancellation_reason' => ['required', 'string', 'min:8', 'max:500'],
+        ]);
+        if ($order->statusValue() !== 'draft') {
+            throw ValidationException::withMessages([
+                'order' => 'إلغاء الطلبات المرسلة للمطبخ يحتاج إجراءات الإلغاء المخصصة لها.',
+            ]);
+        }
+        $cancelled = $orders->cancelOrder($order, $data['cancellation_reason'], $request->user());
+
+        return response()->json([
+            'ok' => true,
+            'order_id' => $cancelled->id,
+            'status' => $cancelled->statusValue(),
+        ]);
+    }
+
+    /**
+     * POS stage B: update only unpaid, unsent drafts. Keep the row lock
+     * throughout the permission/status check and nested order update.
+     */
+    public function updateDraftItems(
+        Request $request, Order $order, \App\Services\Orders\OrderService $orders
+    ): \Illuminate\Http\JsonResponse {
+        $location = $this->context->resolveLocation($request->user(), (int) $order->location_id);
+        abort_unless($order->isRestaurantOrder()
+            && (int) $order->location_id === (int) $location->id
+            && ((int) $order->created_by === (int) $request->user()->id
+                || $request->user()->can('orders.update')), 403);
+        $data = $request->validate([
+            'items' => ['required', 'array', 'min:1', 'max:100'],
+            'items.*.id' => ['required', 'integer', 'distinct',
+                \Illuminate\Validation\Rule::exists('order_items', 'id')->where('order_id', $order->id)],
+            'items.*.quantity' => ['required', 'numeric', 'min:0.001', 'max:10000'],
+            'items.*.kitchen_notes' => ['nullable', 'string', 'max:500'],
+            'remove_item_ids' => ['nullable', 'array', 'max:100'],
+            'remove_item_ids.*' => ['required', 'integer', 'distinct',
+                \Illuminate\Validation\Rule::exists('order_items', 'id')->where('order_id', $order->id)],
+        ]);
+
+        $updated = \Illuminate\Support\Facades\DB::transaction(function () use ($order, $orders, $data, $request): Order {
+            $locked = Order::query()->lockForUpdate()->findOrFail($order->id);
+            if ($locked->statusValue() !== 'draft'
+                || $locked->payments()->exists()
+                || $locked->kitchenTickets()->exists()
+                || $locked->invoice()->exists()) {
+                throw ValidationException::withMessages([
+                    'order' => 'الطلب مرتبط بدفع أو مطبخ أو فاتورة، ولا يمكن تعديله كمسودة.',
+                ]);
+            }
+            $existing = $locked->items()->pluck('id')->map(fn ($id) => (int) $id)->sort()->values()->all();
+            $submitted = collect($data['items'])->pluck('id')->map(fn ($id) => (int) $id)->sort()->values()->all();
+            $removed = collect($data['remove_item_ids'] ?? [])->map(fn ($id) => (int) $id)->sort()->values()->all();
+            if (array_intersect($submitted, $removed)
+                || $existing !== collect(array_merge($submitted, $removed))->sort()->values()->all()) {
+                throw ValidationException::withMessages([
+                    'items' => 'عناصر التعديل أو الإلغاء لا تتطابق مع المسودة المحفوظة.',
+                ]);
+            }
+
+            if ($removed) {
+                $lines = $locked->items()->whereIn('id', $removed)->get();
+                foreach ($lines as $line) {
+                    $line->modifiers()->delete();
+                    $line->delete();
+                }
+                \App\Services\ActivityLogger::log(
+                    userId: $request->user()->id,
+                    action: 'restaurant.pos.draft.items_cancelled',
+                    module: 'restaurant',
+                    recordType: 'orders',
+                    recordId: $locked->id,
+                    metadata: ['location_id' => $locked->location_id, 'removed_item_ids' => $removed],
+                );
+            }
+
+            return $orders->updateOrder($locked, [
+                'customer_id' => $locked->customer_id,
+                'payment_arrangement' => $locked->payment_arrangement?->value ?? $locked->payment_arrangement,
+                'notes' => $locked->notes,
+                'items' => $data['items'],
+            ], $request->user());
+        }, 3);
+
+        return response()->json([
+            'ok' => true,
+            'order_id' => $updated->id,
+            'total' => (float) $updated->total_amount,
+            'message' => 'تم تحديث المسودة دون إنشاء بيع أو دفعة جديدة.',
+        ]);
+    }
+
+    /**
      * Draft previews for the current POS branch, without leaving the cashier.
      * This is read-only; a persisted draft must not be treated as a fresh cart
      * or posted again with a new request token.
@@ -109,7 +212,7 @@ class RestaurantPosController extends Controller
             ->where('location_id', $location->id)
             ->whereNotNull('restaurant_service_type')
             ->where('status', 'draft')
-            ->with(['customer:id,name', 'items:id,order_id,product_name,quantity,line_total,kitchen_notes']);
+            ->with(['customer:id,name', 'items:id,order_id,product_name,quantity,line_total,kitchen_notes', 'payments:id,order_id', 'kitchenTickets:id,order_id', 'invoice:id,order_id']);
 
         if (! empty($data['q'])) {
             $search = trim($data['q']);
@@ -128,7 +231,14 @@ class RestaurantPosController extends Controller
                 'customer' => $order->customer?->name ?? 'عميل نقدي',
                 'total' => (float) $order->total_amount,
                 'status' => 'draft',
+                'cancelable' => ($request->user()->can('cancel', $order) && $order->statusValue() === 'draft'),
+                'editable' => ($order->payments->isEmpty()
+                    && $order->kitchenTickets->isEmpty()
+                    && $order->invoice === null
+                    && ((int) $order->created_by === (int) $request->user()->id
+                        || $request->user()->can('orders.update'))),
                 'items' => $order->items->map(fn ($item): array => [
+                    'id' => $item->id,
                     'name' => $item->product_name,
                     'quantity' => (float) $item->quantity,
                     'line_total' => (float) $item->line_total,
