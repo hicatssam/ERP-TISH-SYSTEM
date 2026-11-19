@@ -133,5 +133,7 @@ test('POS stage B draft cancellation requests a reason and never directly erases
  assert.match(view, /draftPreviewCancel\.addEventListener\('click', async/);
  assert.match(view, /cancellation_reason: reason/);
  assert.match(view, /reason\.length < 8/);
- assert.match(view, /window\.confirm\('تأكيد إلغاء هذه المسودة/);
+ assert.match(view, /pendingDraftCancellation = true/);
+ assert.match(view, /draftPreviewCancel\.textContent = 'تأكيد إلغاء المسودة'/);
+ assert.doesNotMatch(view, /window\.confirm\(/);
 });
