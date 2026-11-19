@@ -145,6 +145,9 @@ Route::middleware([
             Route::post('/pos/drafts/{order}/cancel', [RestaurantPosController::class, 'cancelDraft'])
                 ->name('pos.drafts.cancel');
 
+            Route::post('/pos/orders/{order}/transfer-table', [RestaurantPosController::class, 'transferTable'])
+                ->name('pos.orders.transfer-table');
+
             Route::get('/pos/orders/{order}/invoice-print', [RestaurantPosController::class, 'printInvoice'])
                 ->name('pos.orders.invoice-print');
 
