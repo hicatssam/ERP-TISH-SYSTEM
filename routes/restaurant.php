@@ -117,6 +117,10 @@ Route::middleware([
                 ->name('pos.cart-availability');
             Route::get('/pos/receipt-search', [RestaurantPosController::class, 'receiptSearch'])
                 ->name('pos.receipt-search');
+            Route::get('/pos/orders/{order}/queued-lines', [RestaurantPosController::class, 'queuedKitchenLines'])
+                ->name('pos.orders.queued-lines');
+            Route::post('/pos/orders/{order}/cancel-queued-line', [RestaurantPosController::class, 'cancelQueuedKitchenLine'])
+                ->name('pos.orders.cancel-queued-line');
 
             Route::post('/pos/customers/quick', [RestaurantPosController::class, 'quickStoreCustomer'])
                 ->name('pos.customers.quick-store')
