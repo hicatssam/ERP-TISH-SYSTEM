@@ -37,6 +37,21 @@ test('invoice and print cannot silently bypass immediate settlement', () => {
  assert.match(request,/\$this->input\('pos_action'\) === 'bill_print'/);
  assert.match(request,/\$arrangement !== PaymentArrangement::PayNow->value/);
 });
+test('four POS actions distinguish draft, unpaid kitchen print, payment and paid invoice print', () => {
+ assert.match(view,/id="rbKotPrintBtn"/);
+ assert.match(view,/id="rbSaveDraftBtn"/);
+ assert.match(view,/id="rbBillPaymentBtn"/);
+ assert.match(view,/id="rbBillPrintBtn"/);
+ assert.match(view,/billPaymentBtn.addEventListener\('click', \(\) => openCheckout\('bill_payment'\)\)/);
+ assert.match(view,/billPrintBtn.addEventListener\('click', \(\) => openCheckout\('bill_print'\)\)/);
+ assert.match(view,/kotPrintBtn.addEventListener\('click', \(\) => submitOrder\('kot_print'\)\)/);
+ assert.match(view,/saveDraftBtn.addEventListener\('click', saveLocalDraft\)/);
+ assert.match(view,/localStorage.setItem\(draftKey, JSON.stringify\(serializeDraft\(\)\)\)/);
+ assert.match(view,/printingInvoice && option.value !== 'pay_now'/);
+ assert.match(view,/if \(printingInvoice\) paymentArrangement.value = 'pay_now'/);
+ assert.match(view,/pendingAction === 'bill_print' && paymentArrangement.value !== 'pay_now'/);
+ assert.match(view,/\[\.\.\.paymentArrangement.options\].forEach\(option => \{ option.disabled = false; \}\)/);
+});
 test('server enforces immediate two-entry mixed payment and atomic full settlement', () => {
  assert.match(request,/'split_payments' => \['nullable', 'array', 'size:2'\]/);
  assert.match(request,/PaymentArrangement::PayNow->value/);
