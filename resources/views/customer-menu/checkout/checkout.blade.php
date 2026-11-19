@@ -14,6 +14,12 @@
 @include('customer-menu.partials.pwa-head')
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-drive-ui-fixes-v1.css') }}?v=1">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-ux-v2.css') }}?v=2">
+<style>
+/* Table is selected once per customer browser visit, with cashier correction later. */
+.table-once-hint{margin:10px 0 0;padding:10px 13px;border-radius:11px;border:1px solid #efc6cd;background:#fff7f8;color:#5b1420;font-size:.86rem;line-height:1.7}
+.table-card.table-once-locked:not(.selected){opacity:.43;pointer-events:none}
+.table-card.selected.table-once-locked{outline:3px solid #c7102b;outline-offset:2px}
+</style>
 </head>
 <body class="crisp-customer-menu tish-paper tish-checkout-page">
 <div class="app crisp-menu-app">
@@ -72,6 +78,7 @@
       @endforelse
      </div>
      <input type="hidden" name="restaurant_table_id" id="tableIdInput">
+     <p id="tableOneTimeHint" class="table-once-hint" role="status" hidden></p>
     </div>
     <label class="full" id="addressField" hidden>عنوان التوصيل<textarea name="address" autocomplete="street-address" maxlength="500"></textarea></label>
     <label class="full">ملاحظات الطلب<textarea name="notes" maxlength="700"></textarea></label>
@@ -166,6 +173,35 @@ function renderSummary() {
     document.getElementById('summaryTotal').textContent = CM.money(CM.cartTotal());
 }
 
+const tableVisitKey = 'tish_customer_selected_table_' + @json($location->code);
+let lockedTableId = '';
+try { lockedTableId = sessionStorage.getItem(tableVisitKey) || ''; } catch (_) {}
+function showLockedTable() {
+    const hint = document.getElementById('tableOneTimeHint');
+    const selected = Array.from(document.querySelectorAll('.table-card'))
+        .find(item => String(item.dataset.tableId) === lockedTableId);
+    const valid = !!selected && !selected.disabled;
+    document.querySelectorAll('.table-card').forEach(card => {
+        card.classList.toggle('table-once-locked', valid);
+        if (valid) card.disabled = String(card.dataset.tableId) !== lockedTableId;
+    });
+    if (valid) {
+        const service = document.getElementById('serviceType');
+        if (Array.from(service.options).some(option => option.value === 'dine_in')) {
+            service.value = 'dine_in';
+            selectCheckoutTable(selected);
+        }
+        hint.textContent = 'تم تثبيت ' + selected.textContent.replace(/\\s+/g, ' ').trim()
+            + ' لهذا الطلب. إذا كان الرقم غير صحيح، اطلب التصحيح من الكاشير.';
+        hint.hidden = false;
+    } else {
+        if (lockedTableId) {
+            lockedTableId = '';
+            try { sessionStorage.removeItem(tableVisitKey); } catch (_) {}
+        }
+        hint.hidden = true;
+    }
+}
 function preselectQrTable() {
     const table = CM.selectedTable();
     const service = document.getElementById('serviceType');
@@ -173,8 +209,11 @@ function preselectQrTable() {
     const card = Array.from(document.querySelectorAll('.table-card'))
         .find(item => String(item.dataset.tableId) === String(table.id) && !item.disabled);
     if (!card) return;
-    service.value = 'dine_in';
-    selectCheckoutTable(card);
+    if (!lockedTableId) {
+        lockedTableId = String(card.dataset.tableId);
+        try { sessionStorage.setItem(tableVisitKey, lockedTableId); } catch (_) {}
+    }
+    showLockedTable();
 }
 
 function serviceFields() {
@@ -202,7 +241,13 @@ function selectCheckoutTable(card) {
 document.getElementById('tableGrid').addEventListener('click', e => {
     const card = e.target.closest('.table-card');
     if (!card || card.disabled) return;
+    if (lockedTableId && String(card.dataset.tableId) !== lockedTableId) return;
     selectCheckoutTable(card);
+    if (!lockedTableId) {
+        lockedTableId = String(card.dataset.tableId);
+        try { sessionStorage.setItem(tableVisitKey, lockedTableId); } catch (_) {}
+    }
+    showLockedTable();
 });
 
 async function loadPayments() {
@@ -466,6 +511,7 @@ document.getElementById('checkoutForm').addEventListener('submit', async e => {
 // Start checkout infrastructure first. Even if a malformed legacy cart row
 // slips through, tables and payment methods must never remain stuck loading.
 preselectQrTable();
+showLockedTable();
 serviceFields();
 loadPayments();
 renderSummary();
