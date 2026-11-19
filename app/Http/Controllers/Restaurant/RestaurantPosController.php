@@ -313,6 +313,7 @@ class RestaurantPosController extends Controller
                 'restaurantTable.area',
                 'customer',
                 'invoice',
+                'kitchenTickets',
             ])
             ->latest()
             ->limit(8)
@@ -467,6 +468,75 @@ class RestaurantPosController extends Controller
                 'scope' => $customer->scope,
             ],
         ], 201);
+    }
+
+    /**
+     * Preview the current KDS line states. Only a privileged user may cancel
+     * an unpaid queued line; preparing and paid items are read-only.
+     */
+    public function queuedKitchenLines(Request $request, Order $order): \Illuminate\Http\JsonResponse
+    {
+        $location = $this->context->resolveLocation($request->user(), (int) $order->location_id);
+        abort_unless($order->isRestaurantOrder()
+            && (int) $order->location_id === (int) $location->id, 403);
+        $this->authorize('cancel', $order);
+
+        $order->load(['items.kitchenTicketItems.ticket', 'invoice']);
+        $positiveLines = $order->items->filter(fn ($item) => (float) $item->quantity > 0);
+        $canModify = $order->statusValue() === 'confirmed'
+            && ! $order->payments()->exists()
+            && (float) ($order->invoice?->paid_amount ?? 0) <= 0.004
+            && $positiveLines->count() > 1;
+
+        return response()->json([
+            'number' => $order->order_number,
+            'total' => (float) $order->total_amount,
+            'items' => $positiveLines->map(function ($item) use ($canModify): array {
+                $ticketLines = $item->kitchenTicketItems;
+                $eligible = $canModify && $ticketLines->isNotEmpty()
+                    && $ticketLines->every(fn ($line) =>
+                        ($line->status instanceof \BackedEnum ? $line->status->value : (string) $line->status) === 'queued'
+                        && $line->ticket?->statusValue() === 'queued');
+                return [
+                    'id' => $item->id,
+                    'name' => $item->product_name,
+                    'quantity' => (float) $item->quantity,
+                    'eligible' => $eligible,
+                    'status' => $eligible ? 'بانتظار التحضير' : 'غير متاح للإلغاء السريع',
+                ];
+            })->values()->all(),
+        ]);
+    }
+
+    public function cancelQueuedKitchenLine(
+        Request $request,
+        Order $order,
+        \App\Services\Kitchen\KitchenTicketService $kitchen,
+        \App\Services\Orders\OrderService $orders
+    ): \Illuminate\Http\JsonResponse {
+        $location = $this->context->resolveLocation($request->user(), (int) $order->location_id);
+        abort_unless($order->isRestaurantOrder()
+            && (int) $order->location_id === (int) $location->id, 403);
+        $this->authorize('cancel', $order);
+        $data = $request->validate([
+            'order_item_id' => ['required', 'integer',
+                \Illuminate\Validation\Rule::exists('order_items', 'id')->where('order_id', $order->id)],
+            'cancellation_reason' => ['required', 'string', 'min:8', 'max:500'],
+        ]);
+        $updated = $kitchen->cancelQueuedLine(
+            $order,
+            (int) $data['order_item_id'],
+            trim($data['cancellation_reason']),
+            $request->user(),
+            $orders
+        );
+
+        return response()->json([
+            'ok' => true,
+            'order_id' => $updated->id,
+            'total' => (float) $updated->total_amount,
+            'message' => 'تم إلغاء عنصر المطبخ قبل التحضير وتحديث الفاتورة والمخزون.',
+        ]);
     }
 
     /**

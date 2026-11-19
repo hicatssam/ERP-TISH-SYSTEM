@@ -935,6 +935,112 @@ class PosCashierShiftSimulationTest extends TestCase
     }
 
     #[Test]
+    public function pos_kitchen_queued_unpaid_item_cancellation_restores_stock_updates_invoice_and_audits(): void
+    {
+        $f = $this->fixture(5);
+        $this->kitchenFixture($f);
+        $f['cashier']->givePermissionTo(Permission::findOrCreate('orders.cancel', 'web'));
+        $payload = $this->orderPayload($f, [
+            ['product_id' => $f['products'][0]->id, 'quantity' => 1],
+            ['product_id' => $f['products'][1]->id, 'quantity' => 1],
+        ]);
+        $payload['pos_action'] = 'kot_print';
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.store'), $payload)
+            ->assertCreated()->assertJsonPath('kitchen_dispatched', true);
+        $order = Order::query()->sole();
+        $burger = $order->items()->where('product_id', $f['products'][0]->id)->sole();
+
+        $this->actingAs($f['cashier'])->getJson(route('restaurant.pos.orders.queued-lines', $order))
+            ->assertOk()->assertJsonPath('items.0.eligible', true);
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.cancel-queued-line', $order), [
+            'order_item_id' => $burger->id,
+            'cancellation_reason' => 'ألغى الزبون البرغر قبل التحضير',
+        ])->assertOk()->assertJsonPath('total', 15);
+
+        $this->assertEquals(0, $burger->fresh()->quantity);
+        $this->assertEquals(15, $order->fresh()->total_amount);
+        $this->assertEquals(15, $order->fresh()->invoice?->total_amount);
+        $this->assertSame('cancelled', $burger->kitchenTicketItems()->sole()->status->value);
+        $this->assertEquals(5, Inventory::query()->where('product_id', $f['products'][0]->id)->sole()->quantity);
+        $this->assertEquals(4, Inventory::query()->where('product_id', $f['products'][1]->id)->sole()->quantity);
+        $this->assertDatabaseHas('activity_logs', [
+            'action' => 'restaurant.pos.kitchen_line_cancelled',
+            'record_type' => 'orders',
+            'record_id' => $order->id,
+        ]);
+        $this->assertDatabaseCount('payments', 0);
+
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.cancel-queued-line', $order), [
+            'order_item_id' => $burger->id,
+            'cancellation_reason' => 'إعادة إرسال نفس الإلغاء بدون تعديل',
+        ])->assertUnprocessable();
+        $this->assertEquals(5, Inventory::query()->where('product_id', $f['products'][0]->id)->sole()->quantity);
+
+        app(\App\Services\Orders\OrderService::class)->cancelOrder(
+            $order->fresh(), 'إلغاء بقية الطلب قبل بدء التحضير', $f['cashier']
+        );
+        $this->assertEquals(5, Inventory::query()->where('product_id', $f['products'][0]->id)->sole()->quantity);
+        $this->assertEquals(5, Inventory::query()->where('product_id', $f['products'][1]->id)->sole()->quantity);
+    }
+
+    #[Test]
+    public function pos_kitchen_queued_cancel_never_changes_paid_or_preparing_items(): void
+    {
+        $f = $this->fixture(5);
+        $this->kitchenFixture($f);
+        $f['cashier']->givePermissionTo(Permission::findOrCreate('orders.cancel', 'web'));
+        $items = [
+            ['product_id' => $f['products'][0]->id, 'quantity' => 1],
+            ['product_id' => $f['products'][1]->id, 'quantity' => 1],
+        ];
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.store'),
+            $this->orderPayload($f, $items))->assertCreated();
+        $paid = Order::query()->sole();
+        $paidItem = $paid->items()->firstOrFail();
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.cancel-queued-line', $paid), [
+            'order_item_id' => $paidItem->id,
+            'cancellation_reason' => 'محاولة إلغاء عنصر مدفوع',
+        ])->assertUnprocessable()->assertJsonValidationErrors('order');
+        $this->assertEquals(25, $paid->fresh()->invoice?->total_amount);
+        $this->assertDatabaseCount('payments', 1);
+
+        $payload = $this->orderPayload($f, $items);
+        $payload['pos_action'] = 'kot_print';
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.store'), $payload)
+            ->assertCreated();
+        $unpaid = Order::query()->latest('id')->firstOrFail();
+        $ticket = $unpaid->kitchenTickets()->sole();
+        app(\App\Services\Kitchen\KitchenTicketService::class)->start($ticket, $f['cashier']);
+        $unpaidItem = $unpaid->items()->firstOrFail();
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.cancel-queued-line', $unpaid), [
+            'order_item_id' => $unpaidItem->id,
+            'cancellation_reason' => 'محاولة إلغاء عنصر بدأ تحضيره',
+        ])->assertUnprocessable()->assertJsonValidationErrors('order_item_id');
+        $this->assertEquals(25, $unpaid->fresh()->total_amount);
+    }
+
+    #[Test]
+    public function pos_kitchen_queued_cancel_requires_explicit_orders_cancel_permission(): void
+    {
+        $f = $this->fixture(5);
+        $this->kitchenFixture($f);
+        $payload = $this->orderPayload($f, [
+            ['product_id' => $f['products'][0]->id, 'quantity' => 1],
+            ['product_id' => $f['products'][1]->id, 'quantity' => 1],
+        ]);
+        $payload['pos_action'] = 'kot_print';
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.store'), $payload)
+            ->assertCreated();
+        $order = Order::query()->sole();
+        $item = $order->items()->firstOrFail();
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.cancel-queued-line', $order), [
+            'order_item_id' => $item->id,
+            'cancellation_reason' => 'محاولة بدون صلاحية إلغاء',
+        ])->assertForbidden();
+        $this->assertEquals(25, $order->fresh()->total_amount);
+    }
+
+    #[Test]
     public function pos_31_kitchen_queued_order_rejects_quantity_edit_without_financial_changes(): void
     {
         $f = $this->fixture();
