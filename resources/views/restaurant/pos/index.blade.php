@@ -648,18 +648,76 @@
             <div class="rb-modal-head">
                 <div>
                     <h2 id="rbQuickCustomerTitle">إضافة عميل جديد</h2>
-                    <p>يُحفظ في الفرع الحالي ويُختار تلقائيًا للطلب.</p>
+                    <p>النوع الافتراضي فرد. يتم حفظ البيانات واختيار العميل تلقائيًا في الطلب.</p>
                 </div>
                 <button type="button" class="rb-modal-close" data-close-quick-customer aria-label="إغلاق">×</button>
             </div>
             <div class="rb-modal-body">
-                <div class="rb-field">
-                    <label for="rbQuickCustomerName">اسم العميل *</label>
-                    <input id="rbQuickCustomerName" class="rb-control" maxlength="150" autocomplete="name" required>
-                </div>
-                <div class="rb-field" style="margin-top:12px">
-                    <label for="rbQuickCustomerPhone">رقم الجوال *</label>
-                    <input id="rbQuickCustomerPhone" class="rb-control" type="tel" maxlength="20" autocomplete="tel" required>
+                <div class="rb-quick-customer-fields">
+                    <div class="rb-field">
+                        <label for="rbQuickCustomerType">نوع العميل *</label>
+                        <select id="rbQuickCustomerType" class="rb-control">
+                            <option value="individual" selected>فرد</option>
+                            <option value="institution">مؤسسة</option>
+                            <option value="company">شركة</option>
+                            <option value="government">جهة / قطاع</option>
+                        </select>
+                    </div>
+                    <div class="rb-field">
+                        <label for="rbQuickCustomerName">اسم العميل / الجهة *</label>
+                        <input id="rbQuickCustomerName" class="rb-control" maxlength="150" autocomplete="name" required>
+                    </div>
+                    <div class="rb-field">
+                        <label for="rbQuickCustomerPhone">رقم الجوال *</label>
+                        <input id="rbQuickCustomerPhone" class="rb-control" type="tel" maxlength="20" autocomplete="tel" required>
+                    </div>
+                    <div class="rb-field">
+                        <label for="rbQuickCustomerSecondaryPhone">هاتف بديل</label>
+                        <input id="rbQuickCustomerSecondaryPhone" class="rb-control" type="tel" maxlength="20">
+                    </div>
+                    <div class="rb-field" data-quick-institution hidden>
+                        <label for="rbQuickCustomerContactPerson">الشخص المسؤول</label>
+                        <input id="rbQuickCustomerContactPerson" class="rb-control" maxlength="150">
+                    </div>
+                    <div class="rb-field" data-quick-institution hidden>
+                        <label for="rbQuickCustomerTaxNumber">الرقم الضريبي / التعريفي</label>
+                        <input id="rbQuickCustomerTaxNumber" class="rb-control" maxlength="100">
+                    </div>
+                    <div class="rb-field rb-quick-wide">
+                        <label for="rbQuickCustomerAddress">العنوان</label>
+                        <input id="rbQuickCustomerAddress" class="rb-control" maxlength="500">
+                    </div>
+                    @if(auth()->user()->isAdmin() || auth()->user()->can('customers.view_all') || auth()->user()->can('financial.global.view'))
+                    <div class="rb-field" data-quick-institution hidden>
+                        <label for="rbQuickCustomerScope">نطاق العميل</label>
+                        <select id="rbQuickCustomerScope" class="rb-control">
+                            <option value="branch">الفرع الحالي فقط</option>
+                            <option value="selected">فروع محددة</option>
+                            <option value="global">جميع الفروع</option>
+                        </select>
+                    </div>
+                    <div class="rb-field rb-quick-wide" id="rbQuickCustomerLocations" hidden>
+                        <label>الفروع المسموح بالسحب منها</label>
+                        <div class="rb-quick-branch-options">
+                            @foreach($locations as $quickLocation)
+                            <label><input type="checkbox" value="{{ $quickLocation->id }}" data-quick-location> {{ $quickLocation->name }}</label>
+                            @endforeach
+                        </div>
+                    </div>
+                    <div class="rb-field rb-quick-wide" data-quick-institution hidden>
+                        <label><input type="checkbox" id="rbQuickCustomerAllowCredit"> السماح بالبيع على الحساب</label>
+                        <small>تفعيل المديونية يحتاج صلاحية إدارية؛ لا يتم احتساب هذا الطلب كمدفوع تلقائيًا.</small>
+                    </div>
+                    <div class="rb-quick-credit-fields rb-quick-wide" id="rbQuickCustomerCreditFields" hidden>
+                        <div class="rb-field"><label for="rbQuickCustomerCreditLimit">الحد الائتماني (₪)</label><input id="rbQuickCustomerCreditLimit" type="number" min="0" step="0.01" class="rb-control"></div>
+                        <div class="rb-field"><label for="rbQuickCustomerBillingCycle">دورة الفوترة</label><select id="rbQuickCustomerBillingCycle" class="rb-control"><option value="immediate">فوري</option><option value="weekly">أسبوعي</option><option value="monthly">شهري</option></select></div>
+                        <div class="rb-field"><label for="rbQuickCustomerPaymentTerms">مهلة السداد بالأيام</label><input id="rbQuickCustomerPaymentTerms" type="number" min="0" max="365" value="0" class="rb-control"></div>
+                    </div>
+                    @endif
+                    <div class="rb-field rb-quick-wide">
+                        <label for="rbQuickCustomerNotes">ملاحظات</label>
+                        <textarea id="rbQuickCustomerNotes" class="rb-control" rows="2"></textarea>
+                    </div>
                 </div>
                 <p class="rb-quick-customer-error" id="rbQuickCustomerError" role="alert" hidden></p>
             </div>
@@ -1960,7 +2018,7 @@ body.rb-pos-mode {
 .rb-customer-field-head label{margin:0}
 .rb-quick-customer-button{font-size:.8rem;min-height:36px;padding:6px 12px;flex:0 0 auto}
 .rb-modal.rb-quick-customer-visible{z-index:10060}
-.rb-quick-customer-dialog{width:min(420px,96vw)}
+.rb-quick-customer-dialog{width:min(760px,96vw);max-height:90dvh;overflow-y:auto}.rb-quick-customer-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.rb-quick-wide{grid-column:1/-1}.rb-quick-credit-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.rb-quick-branch-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.rb-quick-branch-options label{display:flex;gap:6px;align-items:center}@media(max-width:600px){.rb-quick-customer-fields,.rb-quick-credit-fields,.rb-quick-branch-options{grid-template-columns:1fr}.rb-quick-wide{grid-column:1}}
 .rb-quick-customer-error{margin:12px 0 0;color:#b42318;font-weight:800;font-size:.85rem;line-height:1.5}
 @media(max-width:390px){.rb-customer-field-head{align-items:flex-start}.rb-quick-customer-button{font-size:.72rem;padding:6px 9px}}
 #rbTableSessionAccountLink{margin-top:9px;max-width:max-content}
