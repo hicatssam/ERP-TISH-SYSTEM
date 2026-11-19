@@ -145,3 +145,36 @@ test('POS stage B cancels one draft item only before kitchen without emptying th
  assert.match(view, /if \(!items\.length\)/);
  assert.match(view, /لا يمكن حذف جميع العناصر/);
 });
+
+test('POS UX touch controls are at least 44px and mobile cart totals stay in sync', () => {
+ assert.match(view, /\.rb-pos \.rb-qty-btn \{width:44px;height:44px;min-width:44px;min-height:44px/);
+ assert.match(view, /\.rb-pos \.rb-cart-remove \{min-width:44px;min-height:44px/);
+ assert.match(view, /\.rb-pos \.rb-add-note \{min-height:44px/);
+ assert.match(view, /id="rbMobileCartBar"/);
+ assert.match(view, /id="rbMobileCheckoutBtn"/);
+ assert.match(view, /id="rbMobileCartTotal"/);
+ assert.match(view, /id="rbMobileCartCount"/);
+ assert.match(view, /document\.getElementById\('rbMobileCartTotal'\)\.textContent = money\(totals\.total\)/);
+ assert.match(view, /document\.getElementById\('rbMobileCheckoutBtn'\)\.disabled = !cart\.size/);
+ assert.match(view, /@media\(max-width:820px\)/);
+ assert.match(view, /position:fixed;bottom:0;left:0;right:0/);
+ assert.match(view, /rbMobileCheckoutBtn'\)\.addEventListener\('click'/);
+});
+test('POS UX quick cash only preselects configured cash and retains normal validation and explicit confirmation', () => {
+ assert.match(view, /id="rbQuickCashBtn"/);
+ assert.match(view, /id="rbQuickCashExpand"/);
+ assert.match(view, /const cash = \[\.\.\.paymentMethod\.options\]\.find\(option => option\.value && option\.dataset\.type === 'cash' && !option\.disabled\)/);
+ assert.match(view, /if \(!payNow \|\| !cash\)/);
+ assert.match(view, /paymentArrangement\.value = 'pay_now'/);
+ assert.match(view, /splitTenderToggle\.checked = false/);
+ assert.match(view, /paymentMethod\.value = cash\.value/);
+ assert.match(view, /const canCompact = !discountAlreadyEntered && !notesAlreadyEntered/);
+ assert.match(view, /checkoutModal\.classList\.toggle\('rb-quick-cash', canCompact\)/);
+ assert.match(view, /checkoutModal\.classList\.remove\('rb-quick-cash'\)/);
+ assert.match(view, /\[data-quick-cash-optional\]/);
+ assert.match(view, /!validatePaymentFields\(\)/);
+ const start = view.indexOf("quickCashBtn.addEventListener('click'");
+ const end = view.indexOf("quickCashExpand.addEventListener('click'", start);
+ assert.ok(start >= 0 && end > start);
+ assert.doesNotMatch(view.slice(start, end), /submitOrder\(/);
+});
