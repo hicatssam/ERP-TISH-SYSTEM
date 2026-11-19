@@ -321,26 +321,30 @@
                     <div class="rb-order-actions">
                         <button type="button" class="rb-action rb-action-kot" id="rbKotPrintBtn"
                                 title="تأكيد الطلب وإرساله للمطبخ وطباعة تذكرة التحضير دون تحصيل المبلغ">
-                            إرسال للمطبخ وطباعة (الدفع لاحقًا)
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11V7l8-4 8 4v4M5 11v10h14V11M8 15h8"/></svg>
+                            <span class="rb-action-title">إرسال للمطبخ</span>
+                            <small class="rb-action-subtitle">بدون دفع</small>
                         </button>
 
                         <button type="button" class="rb-action rb-action-draft" id="rbSaveDraftBtn"
                             title="حفظ المنتجات مؤقتًا على هذا الجهاز دون إنشاء طلب أو خصم مخزون">
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M5 3h11l3 3v15H5z"></path>
-                                <path d="M8 8h8"></path>
-                            </svg>
-                            حفظ مسودة على هذا الجهاز
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h13l3 3v15H4zM8 3v7h8V3M8 21v-8h8v8"/></svg>
+                            <span class="rb-action-title">حفظ مسودة</span>
+                            <small class="rb-action-subtitle">استكمال لاحقًا</small>
                         </button>
 
                         <button type="button" class="rb-action rb-action-payment" id="rbBillPaymentBtn"
-                            title="فتح الدفع مع دعم الدفع الآن أو لاحقًا حسب إعدادات الفرع">
-                            الفاتورة والدفع
+                            title="فتح شاشة التحصيل نقدًا أو بطاقة أو دفع مختلط؛ مع دعم الدفع اللاحق حسب إعدادات الفرع">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="15" rx="2"/><path d="M3 10h18M16 15h3"/></svg>
+                            <span class="rb-action-title">تحصيل الدفع</span>
+                            <small class="rb-action-subtitle">نقدي / بطاقة / مختلط</small>
                         </button>
 
                         <button type="button" class="rb-action rb-action-print" id="rbBillPrintBtn"
                             title="تحصيل المبلغ كاملًا ثم إصدار وطباعة فاتورة العميل">
-                            الدفع وطباعة الفاتورة
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8V3h12v5M6 17H4V9h16v8h-2M6 14h12v7H6zM16 11h2"/></svg>
+                            <span class="rb-action-title">إتمام وطباعة</span>
+                            <small class="rb-action-subtitle">بعد التحقق من الدفع</small>
                         </button>
                     </div>
                 </div>
@@ -1890,15 +1894,18 @@ body.rb-pos-mode {
 }
 
 .rb-action {
-    min-height: 37px;
-    display: inline-flex;
+    min-height: 72px;
+    display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 0 8px;
+    gap: 4px;
+    padding: 9px 7px;
     border: 1px solid transparent;
-    border-radius: 5px;
-    font-size: 9px;
+    border-radius: 10px;
+    font-size: 11px;
+    line-height: 1.35;
+    text-align: center;
     font-weight: 850;
     cursor: pointer;
     transition: .14s ease;
@@ -1910,21 +1917,28 @@ body.rb-pos-mode {
 }
 
 .rb-action svg {
-    width: 12px;
-    height: 12px;
+    width: 19px;
+    height: 19px;
+    flex: 0 0 19px;
     fill: none;
     stroke: currentColor;
     stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
+.rb-action-title {font-weight:900;font-size:12px}
+.rb-action-subtitle {font-size:10px;font-weight:650;opacity:.85}
+.rb-action:focus-visible {outline:2px solid var(--rb-orange);outline-offset:2px}
+
 .rb-action-kot {
-    color: #fff;
-    background: var(--rb-navy);
-    border-color: var(--rb-navy);
+    color: var(--rb-text);
+    background: var(--rb-white);
+    border-color: var(--rb-border);
 }
 
 .rb-action-draft {
-    color: var(--rb-muted);
+    color: var(--rb-text);
     background: var(--rb-white);
     border-color: var(--rb-border);
 }
@@ -2516,8 +2530,13 @@ body.rb-pos-mode {
     }
 
     .rb-order-actions {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+        padding-inline: 8px;
     }
+    .rb-action {min-height:68px;padding:8px 3px}
+    .rb-action-title {font-size:11px}
+    .rb-action-subtitle {font-size:9px}
 
     .rb-modal-foot {
         align-items: stretch;
