@@ -50,6 +50,7 @@ class ReportCatalog
         $groups = [];
         foreach ($core as $group => $reports) {
             foreach ($reports as $type => $title) {
+                if (! ActivityModules::reportAllowed($type)) continue;
                 if (ActivityModules::scoped() && ($code = ActivityModules::reportModule($type))
                     && ! app(ModuleService::class)->isEnabled($code)) {
                     continue;
@@ -57,7 +58,8 @@ class ReportCatalog
                 $groups[$group][] = ['type' => $type, 'title' => $title, 'url' => route('reports.show', $type), 'description' => 'عرض · Excel · PDF · طباعة'];
             }
         }
-        foreach ($this->native() as $meta) {
+        foreach ($this->native() as $reportType => $meta) {
+            if (! ActivityModules::reportAllowed($reportType)) continue;
             if (Route::has($meta['route']) && $this->allowed(auth()->user(), $meta)) {
                 $groups[$meta['group']][] = ['title' => $meta['title'], 'url' => route($meta['route']), 'description' => 'تقرير تفصيلي'];
             }
@@ -66,7 +68,8 @@ class ReportCatalog
             ['title' => 'تقرير المعرض اليومي والجرد', 'route' => 'showroom-daily-reports.index', 'permission' => 'showroom_daily_reports.view', 'group' => 'المبيعات والمعارض'],
             ['title' => 'الحوالات البنكية وحالات اعتمادها', 'route' => 'incoming-bank-transfers.index', 'permission' => ['payments.record', 'payments.verify', 'financial.branch.view', 'financial.global.view', 'financial.collections.view'], 'group' => 'المالية'],
         ] as $meta) {
-            if (Route::has($meta['route']) && $this->allowed(auth()->user(), $meta)) {
+            if (ActivityModules::reportAllowed($meta['route'] === 'showroom-daily-reports.index' ? 'showroom-daily' : 'payments')
+                && Route::has($meta['route']) && $this->allowed(auth()->user(), $meta)) {
                 $groups[$meta['group']][] = ['title' => $meta['title'], 'url' => route($meta['route']), 'description' => 'عرض · تصدير · طباعة'];
             }
         }
