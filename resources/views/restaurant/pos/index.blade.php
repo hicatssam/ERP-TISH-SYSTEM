@@ -2805,7 +2805,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const quickCustomerName = document.getElementById('rbQuickCustomerName');
     const quickCustomerPhone = document.getElementById('rbQuickCustomerPhone');
     const quickCustomerError = document.getElementById('rbQuickCustomerError');
+    const quickCustomerType = document.getElementById('rbQuickCustomerType');
+    const quickCustomerScope = document.getElementById('rbQuickCustomerScope');
+    const quickCustomerAllowCredit = document.getElementById('rbQuickCustomerAllowCredit');
     let quickCustomerSaving = false;
+
+    function quickValue(id) {
+        return document.getElementById(id)?.value?.trim() || '';
+    }
+    function syncQuickCustomerFields() {
+        const isInstitution = quickCustomerType?.value !== 'individual';
+        quickCustomerModal.querySelectorAll('[data-quick-institution]').forEach(el => {
+            el.hidden = !isInstitution;
+        });
+        if (!isInstitution) {
+            if (quickCustomerScope) quickCustomerScope.value = 'branch';
+            if (quickCustomerAllowCredit) quickCustomerAllowCredit.checked = false;
+        }
+        const selected = isInstitution && quickCustomerScope?.value === 'selected';
+        const locationGroup = document.getElementById('rbQuickCustomerLocations');
+        if (locationGroup) locationGroup.hidden = !selected;
+        const creditFields = document.getElementById('rbQuickCustomerCreditFields');
+        if (creditFields) creditFields.hidden = !(isInstitution && quickCustomerAllowCredit?.checked);
+    }
+    quickCustomerType?.addEventListener('change', syncQuickCustomerFields);
+    quickCustomerScope?.addEventListener('change', syncQuickCustomerFields);
+    quickCustomerAllowCredit?.addEventListener('change', syncQuickCustomerFields);
 
     function closeQuickCustomer() {
         if (!quickCustomerModal || quickCustomerSaving) return;
@@ -2815,8 +2840,21 @@ document.addEventListener('DOMContentLoaded', () => {
         quickCustomerOpen?.focus();
     }
     quickCustomerOpen?.addEventListener('click', () => {
+        quickCustomerModal.querySelectorAll('input:not([type="checkbox"]),textarea').forEach(field => {
+            field.value = '';
+        });
+        quickCustomerModal.querySelectorAll('input[type="checkbox"]').forEach(field => {
+            field.checked = false;
+        });
         quickCustomerName.value = '';
         quickCustomerPhone.value = '';
+        quickCustomerType.value = 'individual';
+        if (quickCustomerScope) quickCustomerScope.value = 'branch';
+        const terms = document.getElementById('rbQuickCustomerPaymentTerms');
+        if (terms) terms.value = '0';
+        const cycle = document.getElementById('rbQuickCustomerBillingCycle');
+        if (cycle) cycle.value = 'immediate';
+        syncQuickCustomerFields();
         quickCustomerError.hidden = true;
         quickCustomerError.textContent = '';
         quickCustomerModal.hidden = false;
@@ -2850,7 +2888,30 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || form.querySelector('[name="_token"]').value,
                 },
-                body: JSON.stringify({name, phone, location_id: locationId}),
+                body: JSON.stringify({
+                    name, phone, location_id: locationId,
+                    customer_type: quickCustomerType.value,
+                    secondary_phone: quickValue('rbQuickCustomerSecondaryPhone') || null,
+                    contact_person: quickCustomerType.value !== 'individual'
+                        ? quickValue('rbQuickCustomerContactPerson') || null : null,
+                    tax_number: quickCustomerType.value !== 'individual'
+                        ? quickValue('rbQuickCustomerTaxNumber') || null : null,
+                    address: quickValue('rbQuickCustomerAddress') || null,
+                    notes: quickValue('rbQuickCustomerNotes') || null,
+                    scope: quickCustomerType.value !== 'individual'
+                        ? (quickCustomerScope?.value || 'branch') : 'branch',
+                    location_ids: quickCustomerScope?.value === 'selected'
+                        && quickCustomerType.value !== 'individual'
+                        ? [...quickCustomerModal.querySelectorAll('[data-quick-location]:checked')]
+                            .map(field => Number(field.value)) : [],
+                    allow_credit: quickCustomerType.value !== 'individual'
+                        && Boolean(quickCustomerAllowCredit?.checked),
+                    ...(quickCustomerAllowCredit?.checked && quickCustomerType.value !== 'individual' ? {
+                        credit_limit: quickValue('rbQuickCustomerCreditLimit') || null,
+                        billing_cycle: quickValue('rbQuickCustomerBillingCycle') || 'immediate',
+                        payment_terms_days: Number(quickValue('rbQuickCustomerPaymentTerms') || 0),
+                    } : {}),
+                }),
             });
             const data = await response.json();
             if (!response.ok) {
