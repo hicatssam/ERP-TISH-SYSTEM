@@ -74,6 +74,18 @@ class RestaurantPosNonCashDetailsValidationTest extends TestCase
     }
 
     #[Test]
+    public function invoice_and_print_rejects_unpaid_checkout_arrangements(): void
+    {
+        $errors = $this->afterValidationErrors([
+            'service_type' => 'takeaway',
+            'pos_action' => 'bill_print',
+            'payment_arrangement' => 'pay_on_pickup',
+        ]);
+
+        $this->assertTrue($errors->has('payment_arrangement'));
+    }
+
+    #[Test]
     public function cash_payment_does_not_require_transfer_details(): void
     {
         $method = $this->paymentMethod('cash');

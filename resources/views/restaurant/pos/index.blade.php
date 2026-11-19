@@ -3683,14 +3683,21 @@ document.addEventListener('DOMContentLoaded', () => {
         splitMethods.forEach((field, i) => {
             field.disabled = !splitActive;
             splitAmounts[i].disabled = !splitActive;
-            splitReferences[i].disabled = !splitActive;
-            splitConfirmations[i].disabled = !splitActive;
             field.required = splitActive;
             splitAmounts[i].required = splitActive;
             const option = field.options[field.selectedIndex];
             const nonCash = splitActive && !!field.value && option?.dataset.type !== 'cash';
-            splitReferences[i].required = nonCash || (splitActive && option?.dataset.reference === '1');
+            const needsReference = nonCash || (splitActive && option?.dataset.reference === '1');
+            // Hide irrelevant transfer fields and prevent stale values from
+            // being submitted after switching to a cash payment method.
+            splitReferences[i].disabled = !needsReference;
+            splitReferences[i].required = needsReference;
+            splitReferences[i].style.display = needsReference ? '' : 'none';
+            form.querySelector('label[for="' + splitReferences[i].id + '"]').style.display =
+                needsReference ? '' : 'none';
+            splitConfirmations[i].disabled = !nonCash;
             splitConfirmations[i].required = nonCash;
+            splitConfirmations[i].parentElement.style.display = nonCash ? '' : 'none';
         });
         if (splitActive) {
             paymentMethod.disabled = true;

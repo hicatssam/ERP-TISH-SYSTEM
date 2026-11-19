@@ -114,6 +114,17 @@ class StoreRestaurantPosOrderRequest extends FormRequest
 
             $arrangement = (string) $this->input('payment_arrangement');
 
+            // "Invoice and print" is an immediate-settlement action. Unpaid,
+            // partial, credit, or pending-verification orders must use the
+            // separate checkout workflow rather than a paid-sale shortcut.
+            if ($this->input('pos_action') === 'bill_print'
+                && $arrangement !== PaymentArrangement::PayNow->value) {
+                $validator->errors()->add(
+                    'payment_arrangement',
+                    'الفاتورة والطباعة تتطلب دفعًا فوريًا مكتملًا. استخدم الفاتورة والدفع أو إرسال للمطبخ للدفع لاحقًا.'
+                );
+            }
+
             $noImmediatePayment = in_array(
                 $arrangement,
                 [
