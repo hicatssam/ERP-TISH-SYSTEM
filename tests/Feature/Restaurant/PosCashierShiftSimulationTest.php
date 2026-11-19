@@ -779,6 +779,54 @@ class PosCashierShiftSimulationTest extends TestCase
     }
 
     #[Test]
+    public function pos_stage_b_manager_can_cancel_draft_with_reason_without_stock_or_payment_side_effects(): void
+    {
+        $f = $this->fixture(20);
+        $f['cashier']->givePermissionTo(Permission::findOrCreate('orders.cancel', 'web'));
+        $order = Order::query()->create([
+            'order_number' => 'DRAFT-CANCEL-'.Str::random(8),
+            'location_id' => $f['branch']->id,
+            'created_by' => $f['cashier']->id,
+            'status' => 'draft',
+            'payment_status' => 'payment_pending',
+            'payment_arrangement' => 'pay_on_pickup',
+            'restaurant_service_type' => 'takeaway',
+            'subtotal' => 10, 'total_amount' => 10,
+        ]);
+        $order->items()->create([
+            'product_id' => $f['products'][0]->id,
+            'product_name' => $f['products'][0]->name,
+            'unit_price' => 10, 'quantity' => 1, 'line_total' => 10,
+        ]);
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.drafts.cancel', $order), [
+            'cancellation_reason' => 'ألغى الزبون الطلب قبل المطبخ',
+        ])->assertOk()->assertJsonPath('status', 'cancelled');
+        $this->assertSame('cancelled', $order->fresh()->statusValue());
+        $this->assertDatabaseCount('payments', 0);
+        $this->assertEquals(20, Inventory::query()->where('product_id', $f['products'][0]->id)->sole()->quantity);
+    }
+
+    #[Test]
+    public function pos_stage_b_cashier_without_cancel_permission_is_forbidden(): void
+    {
+        $f = $this->fixture(20);
+        $order = Order::query()->create([
+            'order_number' => 'DRAFT-RESTRICT-'.Str::random(8),
+            'location_id' => $f['branch']->id,
+            'created_by' => $f['cashier']->id,
+            'status' => 'draft',
+            'payment_status' => 'payment_pending',
+            'payment_arrangement' => 'pay_on_pickup',
+            'restaurant_service_type' => 'takeaway',
+            'subtotal' => 10, 'total_amount' => 10,
+        ]);
+        $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.drafts.cancel', $order), [
+            'cancellation_reason' => 'سبب صالح للاختبار فقط',
+        ])->assertForbidden();
+        $this->assertSame('draft', $order->fresh()->statusValue());
+    }
+
+    #[Test]
     public function pos_stage_b_rejects_paid_or_kitchen_dispatched_order_amendments(): void
     {
         $f = $this->fixture(20);
