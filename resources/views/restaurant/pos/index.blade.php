@@ -800,9 +800,11 @@
             <button type="button" class="rb-modal-close" data-close-draft-preview aria-label="إغلاق">×</button>
         </div>
         <div class="rb-modal-body" id="rbDraftPreviewBody"></div>
+        <p id="rbDraftEditError" role="alert" hidden style="color:#b42318;font-weight:750;padding:0 15px"></p>
         <div class="rb-modal-foot">
             <button type="button" class="rb-btn rb-btn-light" data-close-draft-preview>إغلاق</button>
             <button type="button" class="rb-btn rb-btn-primary" id="rbDraftPreviewRestore" hidden>استكمال المسودة</button>
+            <button type="button" class="rb-btn rb-btn-primary" id="rbDraftPreviewSave" hidden>حفظ تعديلات المسودة</button>
             <a class="rb-btn rb-btn-primary" id="rbDraftPreviewOpen" href="#" hidden>فتح الطلب المسجل</a>
         </div>
     </div>
@@ -2721,6 +2723,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const catalogUrl = @json(route('restaurant.pos.catalog'));
     const qrOrdersUrl = @json(route('restaurant.pos.qr-orders'));
     const draftOrdersUrl = @json(route('restaurant.pos.drafts'));
+    const draftEditUrlPattern = @json(route('restaurant.pos.drafts.items.update', ['order' => '__ORDER__']));
     const cashierPosUrl = @json(route('restaurant.pos.index', ['location_id' => $location->id]));
     @can('customers.create')
     const quickCustomerUrl = @json(route('restaurant.pos.customers.quick-store'));
@@ -3067,6 +3070,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const draftPreviewModal = document.getElementById('rbDraftPreviewModal');
     const draftPreviewBody = document.getElementById('rbDraftPreviewBody');
     const draftPreviewRestore = document.getElementById('rbDraftPreviewRestore');
+    const draftPreviewSave = document.getElementById('rbDraftPreviewSave');
+    const draftEditError = document.getElementById('rbDraftEditError');
+    let activeServerDraft = null;
     const draftPreviewOpen = document.getElementById('rbDraftPreviewOpen');
     let draftRequest = 0;
     let draftSearchTimer;
@@ -4297,6 +4303,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function openDraftPreview(draft, kind) {
         currentDraftPreview = kind;
+        activeServerDraft = kind === 'server' ? draft : null;
+        draftEditError.hidden = true;
+        draftEditError.textContent = '';
         const items = Array.isArray(draft.items) ? draft.items : [];
         const total = kind === 'server' ? `<p><strong>الإجمالي:</strong> ${money(draft.total)}</p>` : '';
         const label = kind === 'server' ? 'طلب مسجل على الخادم (للعرض فقط)' : 'مسودة محفوظة على هذا الجهاز';
@@ -4310,6 +4319,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 </li>`).join('') : '<li>لا توجد منتجات.</li>'}</ul>`;
         document.getElementById('rbDraftPreviewTitle').textContent =
             kind === 'server' ? 'تفاصيل الطلب المسودة' : 'معاينة المسودة المحلية';
+        draftPreviewSave.hidden = kind !== 'server' || !draft.editable;
+        if (kind === 'server' && draft.editable) {
+            draftPreviewBody.querySelectorAll('.rb-draft-preview-items li').forEach((line, index) => {
+                const item = items[index];
+                if (!item) return;
+                const controls = document.createElement('div');
+                controls.style.cssText = 'display:grid;grid-template-columns:100px 1fr;gap:10px;margin-top:8px';
+                const quantity = document.createElement('input');
+                quantity.type = 'number';
+                quantity.min = '0.001';
+                quantity.step = '0.001';
+                quantity.value = String(item.quantity);
+                quantity.dataset.draftQuantity = String(item.id);
+                quantity.setAttribute('aria-label', 'الكمية');
+                quantity.className = 'rb-control';
+                const notes = document.createElement('input');
+                notes.type = 'text';
+                notes.maxLength = 500;
+                notes.value = item.notes || '';
+                notes.dataset.draftNotes = String(item.id);
+                notes.setAttribute('aria-label', 'ملاحظات المطبخ');
+                notes.placeholder = 'ملاحظات المطبخ';
+                notes.className = 'rb-control';
+                controls.append(quantity, notes);
+                line.appendChild(controls);
+            });
+        }
         draftPreviewRestore.hidden = kind !== 'local';
         draftPreviewOpen.hidden = kind !== 'server' || !draft.url;
         if (draft.url) draftPreviewOpen.href = draft.url;
@@ -4323,6 +4359,7 @@ document.addEventListener('DOMContentLoaded', () => {
         draftPreviewModal.hidden = true;
         draftPreviewModal.setAttribute('aria-hidden', 'true');
         currentDraftPreview = null;
+        activeServerDraft = null;
         document.body.style.overflow = '';
     }
 
@@ -5072,6 +5109,40 @@ async function submitOrder(action) {
     });
     draftPreviewModal.querySelectorAll('[data-close-draft-preview]').forEach(button =>
         button.addEventListener('click', closeDraftPreview));
+    draftPreviewSave.addEventListener('click', async () => {
+        if (!activeServerDraft?.editable || draftPreviewSave.disabled) return;
+        const items = activeServerDraft.items.map(item => ({
+            id: item.id,
+            quantity: Number(draftPreviewBody.querySelector('[data-draft-quantity="' + item.id + '"]')?.value),
+            kitchen_notes: draftPreviewBody.querySelector('[data-draft-notes="' + item.id + '"]')?.value || '',
+        }));
+        if (items.some(item => !Number.isFinite(item.quantity) || item.quantity <= 0)) {
+            draftEditError.textContent = 'يجب أن تكون جميع الكميات أكبر من صفر.';
+            draftEditError.hidden = false;
+            return;
+        }
+        draftPreviewSave.disabled = true;
+        draftEditError.hidden = true;
+        try {
+            const response = await fetch(draftEditUrlPattern.replace('__ORDER__', String(activeServerDraft.id)), {
+                method: 'PATCH',
+                headers: {'Accept':'application/json', 'Content-Type':'application/json',
+                    'X-CSRF-TOKEN': form.querySelector('[name="_token"]').value},
+                credentials: 'same-origin',
+                body: JSON.stringify({items}),
+            });
+            const data = await response.json();
+            if (!response.ok || !data.ok) throw new Error(Object.values(data.errors || {}).flat()[0] || data.message || 'تعذر تحديث المسودة.');
+            closeDraftPreview();
+            statusMessage('تم تعديل المسودة المحفوظة بنجاح.', 'success');
+            openDrawer('draft');
+        } catch (error) {
+            draftEditError.textContent = error.message || 'فشل الاتصال أثناء حفظ المسودة؛ تحقق قبل تكرار العملية.';
+            draftEditError.hidden = false;
+        } finally {
+            draftPreviewSave.disabled = false;
+        }
+    });
     draftPreviewRestore.addEventListener('click', () => {
         if (currentDraftPreview !== 'local') return;
         closeDraftPreview();
