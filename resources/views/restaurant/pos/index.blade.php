@@ -625,7 +625,8 @@
                         </div>
 
                         <div class="rb-field rb-field-wide" id="rbReferenceGroup" hidden>
-                            <label>رقم العملية / المرجع</label>
+                            <label>رقم الحوالة / العملية</label>
+                            <small class="rb-field-hint">هذه الحوالة جزء من دفع الطلب الحالي، وتسجَّل باسم مستخدم الكاشير {{ $cashierName }}. لا يلزم إرفاق إشعار.</small>
                             <input
                                 type="text"
                                 name="reference_number"
@@ -675,14 +676,10 @@
                             </small>
                         </div>
 
-                        <div class="rb-field rb-field-wide" id="rbProofGroup" hidden>
-                            <label>إثبات الدفع</label>
-                            <input
-                                type="file"
-                                name="payment_proof"
-                                accept="image/*"
-                                class="rb-control rb-file-control"
-                            >
+                        {{-- POS transfers are recorded against this order and cashier.
+                             Proof uploads are intentionally not part of the cashier screen. --}}
+                        <div class="rb-field rb-field-wide" id="rbProofGroup" hidden style="display:none!important">
+                            <input type="file" name="payment_proof" disabled hidden aria-hidden="true" tabindex="-1">
                         </div>
 
                         <div class="rb-field rb-field-wide" id="rbManualReceiptGroup" hidden>
@@ -690,7 +687,7 @@
                                 <input type="checkbox" name="payment_received_confirmed" value="1" id="rbManualReceipt">
                                 <span>تحققت بنفسي من وصول المبلغ إلى حساب المحل باستخدام رقم العملية أعلاه.</span>
                             </label>
-                            <small class="rb-field-hint">يُسجَّل التحصيل باسم مستخدم الكاشير. عند الحاجة إلى مراجعة مستقلة فعّل طلب إثبات الدفع لهذه الطريقة من الإعدادات.</small>
+                            <small class="rb-field-hint">يُسجَّل الدفع باسم مستخدم الكاشير ويرتبط بالطلب الحالي. طرق الدفع التي تتطلب تحققًا مستقلًا تظل بانتظار المراجعة.</small>
                         </div>
 
                         <div class="rb-field rb-field-wide" data-quick-cash-optional>
@@ -4627,12 +4624,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 || arrangement === 'pending_verification'
             );
 
-        const requiresProof =
-            !noImmediate
-            && (
-                methodRequiresVerification
-                || arrangement === 'pending_verification'
-            );
+        // Cashier POS never requires an uploaded proof document.
+        // Methods requiring verification are still processed as pending.
+        const requiresProof = false;
 
         referenceGroup.hidden = !requiresReference;
         senderNameGroup.hidden = !isNonCash;
@@ -4804,16 +4798,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return false;
         }
 
-        if (
-            proofInput?.required
-            && !proofInput.files.length
-        ) {
-            showCheckoutError(
-                'هذه طريقة دفع تحتاج إثبات دفع.',
-                'payment_proof'
-            );
-            return false;
-        }
 
         clearCheckoutError();
 
