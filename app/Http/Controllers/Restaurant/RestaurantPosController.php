@@ -540,6 +540,111 @@ class RestaurantPosController extends Controller
     }
 
     /**
+     * A supervisor can find active menu listings, including temporarily
+     * unavailable ones, without leaving POS.
+     */
+    public function menuAvailability(Request $request): \Illuminate\Http\JsonResponse
+    {
+        abort_unless($request->user()->can('restaurant_menu.manage'), 403);
+        $data = $request->validate(['q' => ['nullable', 'string', 'max:100']]);
+        $location = $this->context->resolveLocation(
+            $request->user(), $request->integer('location_id') ?: null
+        );
+        $query = \App\Models\RestaurantMenuItem::query()
+            ->where('location_id', $location->id)
+            ->where('is_active', true)
+            ->where('show_in_pos', true)
+            ->whereHas('product', fn ($product) => $product->where('is_active', true))
+            ->with(['product:id,name,name_ar']);
+        if (! empty($data['q'])) {
+            $term = trim($data['q']);
+            $query->where(function ($builder) use ($term): void {
+                $builder->where('display_name', 'like', "%{$term}%")
+                    ->orWhere('display_name_ar', 'like', "%{$term}%")
+                    ->orWhereHas('product', fn ($p) => $p
+                        ->where('name', 'like', "%{$term}%")
+                        ->orWhere('name_ar', 'like', "%{$term}%")
+                        ->orWhere('sku', 'like', "%{$term}%"));
+            });
+        }
+        $menu = $query->orderBy('sort_order')->orderBy('id')->limit(40)->get();
+        $available = \App\Models\LocationProduct::query()
+            ->where('location_id', $location->id)
+            ->whereIn('product_id', $menu->pluck('product_id'))
+            ->pluck('is_available', 'product_id');
+
+        return response()->json([
+            'products' => $menu->map(fn ($item) => [
+                'id' => (int) $item->product_id,
+                'name' => $item->display_name_ar ?: $item->display_name
+                    ?: $item->product?->name_ar ?: $item->product?->name,
+                'available' => (bool) ($available[$item->product_id] ?? false),
+            ])->all(),
+        ]);
+    }
+
+    /**
+     * An explicit status setting, not a toggle, so duplicate taps are safe.
+     * The required audit entry rolls back together with the status change.
+     */
+    public function setMenuAvailability(Request $request): \Illuminate\Http\JsonResponse
+    {
+        abort_unless($request->user()->can('restaurant_menu.manage'), 403);
+        $data = $request->validate([
+            'product_id' => ['required', 'integer', 'min:1'],
+            'is_available' => ['required', 'boolean'],
+            'reason' => ['required', 'string', 'min:8', 'max:500'],
+        ]);
+        $location = $this->context->resolveLocation(
+            $request->user(), $request->integer('location_id') ?: null
+        );
+        $productId = (int) $data['product_id'];
+        abort_unless(\App\Models\RestaurantMenuItem::query()
+            ->where('location_id', $location->id)
+            ->where('product_id', $productId)
+            ->where('is_active', true)
+            ->where('show_in_pos', true)
+            ->whereHas('product', fn ($product) => $product->where('is_active', true))
+            ->exists(), 404);
+
+        $available = (bool) $data['is_available'];
+        \Illuminate\Support\Facades\DB::transaction(function () use (
+            $location, $productId, $available, $data, $request
+        ): void {
+            $row = \App\Models\LocationProduct::query()
+                ->where('location_id', $location->id)
+                ->where('product_id', $productId)
+                ->lockForUpdate()->firstOrFail();
+            $before = (bool) $row->is_available;
+            if ($before === $available) return;
+            $row->update(['is_available' => $available]);
+            // Mandatory operational audit: never silently hide/reopen menu.
+            \App\Models\ActivityLog::query()->create([
+                'user_id' => $request->user()->id,
+                'action' => 'restaurant.pos.menu_availability_changed',
+                'module' => 'restaurant',
+                'record_type' => 'location_products',
+                'record_id' => $row->id,
+                'old_values' => ['is_available' => $before],
+                'new_values' => ['is_available' => $available],
+                'metadata' => [
+                    'location_id' => $location->id,
+                    'product_id' => $productId,
+                    'reason' => trim($data['reason']),
+                ],
+                'created_at' => now(),
+            ]);
+        }, 3);
+
+        return response()->json([
+            'ok' => true,
+            'product_id' => $productId,
+            'is_available' => $available,
+            'message' => $available ? 'تمت إعادة إتاحة الصنف في هذا الفرع.' : 'تم إيقاف الصنف مؤقتًا في هذا الفرع.',
+        ]);
+    }
+
+    /**
      * Search older saved receipts without needing access to the orders page.
      * The print endpoint independently enforces these branch/user rules.
      */
