@@ -845,7 +845,29 @@
     </div>
 </aside>
 
+<div class="rb-modal" id="rbDraftPreviewModal" hidden aria-hidden="true">
+    <div class="rb-modal-backdrop" data-close-draft-preview></div>
+    <div class="rb-modal-dialog rb-draft-preview-dialog" role="dialog" aria-modal="true"
+         aria-labelledby="rbDraftPreviewTitle">
+        <div class="rb-modal-head">
+            <h2 id="rbDraftPreviewTitle">تفاصيل المسودة</h2>
+            <button type="button" class="rb-modal-close" data-close-draft-preview aria-label="إغلاق">×</button>
+        </div>
+        <div class="rb-modal-body" id="rbDraftPreviewBody"></div>
+        <div class="rb-modal-foot">
+            <button type="button" class="rb-btn rb-btn-light" data-close-draft-preview>إغلاق</button>
+            <button type="button" class="rb-btn rb-btn-primary" id="rbDraftPreviewRestore" hidden>استكمال المسودة</button>
+            <a class="rb-btn rb-btn-primary" id="rbDraftPreviewOpen" href="#" hidden>فتح الطلب المسجل</a>
+        </div>
+    </div>
+</div>
+
 <style>
+.rb-draft-preview-dialog{width:min(660px,96vw)}
+.rb-draft-preview-items{list-style:none;padding:0;margin:12px 0;display:grid;gap:8px}
+.rb-draft-preview-items li{padding:10px;border:1px solid var(--rb-border);border-radius:8px}
+.rb-draft-preview-dialog .rb-modal-body{max-height:65dvh;overflow:auto}
+.rb-draft-preview-dialog [hidden]{display:none!important}
 /* POS split-payment controls: readable and touch-friendly at checkout. */
 .rb-pos .rb-split-toggle,.rb-pos .rb-split-confirm{display:flex;align-items:center;gap:10px;line-height:1.5;cursor:pointer}
 .rb-pos .rb-split-toggle input,.rb-pos .rb-split-confirm input{width:19px;height:19px;accent-color:#ad201c;flex-shrink:0}
@@ -2675,6 +2697,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let products = @json($productPayload);
     const catalogUrl = @json(route('restaurant.pos.catalog'));
     const qrOrdersUrl = @json(route('restaurant.pos.qr-orders'));
+    const draftOrdersUrl = @json(route('restaurant.pos.drafts'));
+    const cashierPosUrl = @json(route('restaurant.pos.index', ['location_id' => $location->id]));
     @can('customers.create')
     const quickCustomerUrl = @json(route('restaurant.pos.customers.quick-store'));
     @else
@@ -3017,6 +3041,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const serverOrdersTitle = document.getElementById('rbServerOrdersTitle');
     const serverOrdersList = document.getElementById('rbServerOrdersList');
     const recentOrdersMarkup = serverOrdersList.innerHTML;
+    const draftPreviewModal = document.getElementById('rbDraftPreviewModal');
+    const draftPreviewBody = document.getElementById('rbDraftPreviewBody');
+    const draftPreviewRestore = document.getElementById('rbDraftPreviewRestore');
+    const draftPreviewOpen = document.getElementById('rbDraftPreviewOpen');
+    let draftRequest = 0;
+    let draftSearchTimer;
+    let currentDraftPreview = null;
     let qrRequest = 0;
     let qrSearchTimer;
 
@@ -4221,6 +4252,77 @@ document.addEventListener('DOMContentLoaded', () => {
         statusMessage('تم حذف المسودة المحلية.');
     }
 
+    function openDraftPreview(draft, kind) {
+        currentDraftPreview = kind;
+        const items = Array.isArray(draft.items) ? draft.items : [];
+        const total = kind === 'server' ? `<p><strong>الإجمالي:</strong> ${money(draft.total)}</p>` : '';
+        const label = kind === 'server' ? 'طلب مسجل على الخادم (للعرض فقط)' : 'مسودة محفوظة على هذا الجهاز';
+        draftPreviewBody.innerHTML = `<p>${escapeHtml(label)}</p>
+            <p><strong>الرقم / العميل:</strong> ${escapeHtml(draft.number || draft.customer || 'مسودة محلية')}</p>
+            ${total}
+            <ul class="rb-draft-preview-items">${items.length ? items.map(item =>
+                `<li>${escapeHtml(item.name || productCache.get(Number(item.id))?.name_ar || productCache.get(Number(item.id))?.name || ('منتج #' + item.id))}
+                    × ${escapeHtml(item.quantity)}
+                    ${item.notes || item.kitchen_notes ? `<small>${escapeHtml(item.notes || item.kitchen_notes)}</small>` : ''}
+                </li>`).join('') : '<li>لا توجد منتجات.</li>'}</ul>`;
+        document.getElementById('rbDraftPreviewTitle').textContent =
+            kind === 'server' ? 'تفاصيل الطلب المسودة' : 'معاينة المسودة المحلية';
+        draftPreviewRestore.hidden = kind !== 'local';
+        draftPreviewOpen.hidden = kind !== 'server' || !draft.url;
+        if (draft.url) draftPreviewOpen.href = draft.url;
+        closeDrawer();
+        draftPreviewModal.hidden = false;
+        draftPreviewModal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeDraftPreview() {
+        draftPreviewModal.hidden = true;
+        draftPreviewModal.setAttribute('aria-hidden', 'true');
+        currentDraftPreview = null;
+        document.body.style.overflow = '';
+    }
+
+    async function loadServerDrafts(page = 1) {
+        const request = ++draftRequest;
+        if (page === 1) serverOrdersList.innerHTML = '<div class="rb-drawer-empty">جار تحميل المسودات...</div>';
+        const url = new URL(draftOrdersUrl, window.location.origin);
+        url.searchParams.set('location_id', locationId);
+        url.searchParams.set('page', page);
+        if (drawerSearchInput.value.trim()) url.searchParams.set('q', drawerSearchInput.value.trim());
+        try {
+            const response = await fetch(url, {headers: {Accept: 'application/json'}});
+            if (!response.ok) throw new Error('تعذر تحميل المسودات.');
+            const data = await response.json();
+            if (request !== draftRequest || drawerMode !== 'draft') return;
+            if (page === 1) serverOrdersList.replaceChildren();
+            serverOrdersList.querySelector('[data-draft-more]')?.remove();
+            (data.orders || []).forEach(order => {
+                const card = document.createElement('button');
+                card.type = 'button';
+                card.className = 'rb-server-order-card';
+                card.style.width = '100%';
+                card.style.textAlign = 'right';
+                card.innerHTML = `<div class="rb-server-order-top"><strong>${escapeHtml(order.number)}</strong><span>مسودة</span></div>
+                    <div class="rb-server-order-meta"><span>${escapeHtml(order.customer)}</span><span>${money(order.total)}</span></div>`;
+                card.addEventListener('click', () => openDraftPreview(order, 'server'));
+                serverOrdersList.appendChild(card);
+            });
+            if (!serverOrdersList.children.length) serverOrdersList.innerHTML = '<div class="rb-drawer-empty">لا توجد مسودات مسجلة في هذا الفرع.</div>';
+            if (data.has_more) {
+                const more = document.createElement('button');
+                more.type = 'button';
+                more.dataset.draftMore = String(page + 1);
+                more.className = 'rb-load-more';
+                more.textContent = 'عرض المزيد من المسودات';
+                serverOrdersList.appendChild(more);
+            }
+        } catch (error) {
+            if (request !== draftRequest || drawerMode !== 'draft') return;
+            serverOrdersList.innerHTML = '<div class="rb-drawer-empty">تعذر تحميل المسودات. أعد المحاولة.</div>';
+        }
+    }
+
     function renderLocalDraftCard() {
         const draft = loadLocalDraft();
 
@@ -4248,17 +4350,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span>${escapeHtml(savedLabel)}</span>
                 </div>
                 <div class="rb-local-draft-actions">
-                    <button type="button" class="rb-draft-restore" id="rbRestoreDraftBtn">استرجاع</button>
+                    <button type="button" class="rb-draft-restore" id="rbPreviewLocalDraftBtn">عرض التفاصيل</button>
                     <button type="button" class="rb-draft-delete" id="rbDeleteDraftBtn">حذف</button>
                 </div>
             </div>
         `;
 
-        document.getElementById('rbRestoreDraftBtn')?.addEventListener('click', restoreLocalDraft);
+        document.getElementById('rbPreviewLocalDraftBtn')?.addEventListener('click', () => {
+            const current = loadLocalDraft();
+            if (current) openDraftPreview(current, 'local');
+        });
         document.getElementById('rbDeleteDraftBtn')?.addEventListener('click', deleteLocalDraft);
     }
 
     function filterServerOrders() {
+        if (drawerMode === 'draft') return;
         const query = (drawerSearchInput.value || '').trim().toLowerCase();
 
         serverOrdersList.querySelectorAll('[data-server-order]').forEach(card => {
@@ -4326,11 +4432,12 @@ document.addEventListener('DOMContentLoaded', () => {
             loadQrOrders();
         } else if (mode === 'draft') {
             qrRequest++;
-            serverOrdersList.innerHTML = recentOrdersMarkup;
+            serverOrdersList.innerHTML = '';
             drawerTitle.textContent = 'قائمة المسودات';
             drawerSubtitle.textContent = 'مسودات الجهاز + الطلبات المسجلة بحالة Draft';
             serverOrdersTitle.textContent = 'مسودات الخادم الحديثة';
             renderLocalDraftCard();
+            loadServerDrafts();
         } else {
             qrRequest++;
             serverOrdersList.innerHTML = recentOrdersMarkup;
@@ -4628,11 +4735,13 @@ async function submitOrder(action) {
             'success'
         );
 
+        // Stay on POS after a committed checkout. Reloading the same cashier
+        // screen resets the cart, refreshes recent orders and prevents replay.
         window.setTimeout(() => {
-            window.location.href =
-                data?.redirect_url
-                || '{{ route('orders.index') }}';
-        }, action === 'bill_payment' ? 150 : 700);
+            const url = new URL(cashierPosUrl, window.location.origin);
+            url.searchParams.set('order_created', data.order_number || data.order_id);
+            window.location.assign(url.toString());
+        }, 700);
 
     } catch (error) {
         printWindow?.close();
@@ -4879,7 +4988,10 @@ async function submitOrder(action) {
     });
 
     drawerSearchInput.addEventListener('input', () => {
-        if (drawerMode === 'qr') {
+        if (drawerMode === 'draft') {
+            clearTimeout(draftSearchTimer);
+            draftSearchTimer = setTimeout(() => loadServerDrafts(), 250);
+        } else if (drawerMode === 'qr') {
             clearTimeout(qrSearchTimer);
             qrSearchTimer = setTimeout(() => loadQrOrders(), 250);
         } else filterServerOrders();
@@ -4887,6 +4999,15 @@ async function submitOrder(action) {
     serverOrdersList.addEventListener('click', event => {
         const more = event.target.closest('[data-qr-more]');
         if (more) loadQrOrders(Number(more.dataset.qrMore));
+        const draftMore = event.target.closest('[data-draft-more]');
+        if (draftMore) loadServerDrafts(Number(draftMore.dataset.draftMore));
+    });
+    draftPreviewModal.querySelectorAll('[data-close-draft-preview]').forEach(button =>
+        button.addEventListener('click', closeDraftPreview));
+    draftPreviewRestore.addEventListener('click', () => {
+        if (currentDraftPreview !== 'local') return;
+        closeDraftPreview();
+        restoreLocalDraft();
     });
     closeDrawerBtn.addEventListener('click', closeDrawer);
     drawerBackdrop.addEventListener('click', closeDrawer);
@@ -4896,6 +5017,10 @@ async function submitOrder(action) {
     // -----------------------------
     document.addEventListener('keydown', event => {
         if (event.key === 'Escape') {
+            if (!draftPreviewModal.hidden) {
+                closeDraftPreview();
+                return;
+            }
             if (quickCustomerModal && !quickCustomerModal.hidden) {
                 closeQuickCustomer();
                 return;
