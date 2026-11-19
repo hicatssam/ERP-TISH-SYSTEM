@@ -89,3 +89,18 @@ test('POS quick customer supports full details, individual default, company fiel
  assert.match(view, /customer_type: quickCustomerType.value/);
  assert.match(view, /customerSelect.value = String\(customer.id\)/);
 });
+
+test('POS stays on cashier screen after checkout and previews local/server drafts without redirect', () => {
+ assert.match(view, /window\.location\.assign\(url\.toString\(\)\)/);
+ assert.match(view, /const url = new URL\(cashierPosUrl, window\.location\.origin\)/);
+ assert.doesNotMatch(view, /window\.location\.href\s*=\s*\n\s*data\?\.redirect_url/);
+ assert.match(view, /id="rbDraftPreviewModal"/);
+ assert.match(view, /function openDraftPreview\(draft, kind\)/);
+ assert.match(view, /function loadServerDrafts\(page = 1\)/);
+ assert.match(view, /loadServerDrafts\(\)/);
+ assert.match(view, /openDraftPreview\(order, 'server'\)/);
+ assert.match(view, /openDraftPreview\(current, 'local'\)/);
+ assert.match(view, /draftPreviewRestore\.addEventListener\('click'/);
+ assert.match(view, /draftPreviewModal\.hidden = false/);
+ assert.match(view, /draftRequest \|\| drawerMode !== 'draft'/);
+});
