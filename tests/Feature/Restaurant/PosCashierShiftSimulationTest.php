@@ -1220,6 +1220,50 @@ class PosCashierShiftSimulationTest extends TestCase
     }
 
     #[Test]
+    public function pos_peak_two_cashiers_handle_ten_orders_with_five_kitchen_tickets_without_duplicate_payments(): void
+    {
+        // Alternating transactions model two cashiers on a busy shift.
+        // True simultaneous last-stock races are covered by the MySQL CI workflow.
+        $f = $this->fixture(20);
+        $this->kitchenFixture($f);
+        $employee = Employee::query()->create([
+            'employee_number' => 'PEAK-'.Str::random(8),
+            'full_name' => 'Second Shift Cashier',
+        ]);
+        $employee->locations()->attach($f['branch']->id, ['is_primary' => true]);
+        $secondCashier = User::factory()->create(['employee_id' => $employee->id]);
+        foreach (['restaurant.view', 'restaurant_pos.use', 'restaurant_menu.view', 'orders.create'] as $ability) {
+            $secondCashier->givePermissionTo(Permission::findOrCreate($ability, 'web'));
+        }
+
+        $productId = $f['products'][0]->id;
+        foreach (range(1, 10) as $index) {
+            $cashier = $index % 2 ? $f['cashier'] : $secondCashier;
+            $payload = $this->orderPayload($f, [
+                ['product_id' => $productId, 'quantity' => 1],
+            ]);
+            if ($index <= 5) $payload['pos_action'] = 'kot_print';
+            $result = $this->actingAs($cashier)->postJson(route('restaurant.pos.orders.store'), $payload)
+                ->assertCreated();
+            // Same request repeated due to a slow response must not double-charge.
+            if ($index === 6) {
+                $this->actingAs($cashier)->postJson(route('restaurant.pos.orders.store'), $payload)
+                    ->assertOk()
+                    ->assertJsonPath('order_id', $result->json('order_id'));
+            }
+        }
+
+        $this->assertDatabaseCount('orders', 10);
+        $this->assertDatabaseCount('order_items', 10);
+        $this->assertDatabaseCount('kitchen_tickets', 10);
+        $this->assertDatabaseCount('payments', 5);
+        $this->assertEquals(50, Payment::query()->sum('amount'));
+        $this->assertEquals(10, Inventory::query()
+            ->where('location_id', $f['branch']->id)
+            ->where('product_id', $productId)->sole()->quantity);
+    }
+
+    #[Test]
     public function pos_50_existing_unpaid_order_can_collect_cash_and_card_separately_without_overpayment(): void
     {
         // This proves split settlement through PaymentService, not that the
