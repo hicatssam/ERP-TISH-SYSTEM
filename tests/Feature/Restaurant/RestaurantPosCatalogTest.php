@@ -35,6 +35,48 @@ class RestaurantPosCatalogTest extends TestCase
     use RefreshDatabase;
 
     #[Test]
+    public function cart_availability_checks_live_branch_menu_without_creating_orders(): void
+    {
+        $branch = $this->branch('AVAILCHECK');
+        $cashier = $this->cashier($branch);
+        $category = $this->category();
+        $available = $this->product($category, 'AVAIL-YES');
+        $unavailable = $this->product($category, 'AVAIL-NO');
+        $this->onMenu($branch, $available, 1);
+        $this->onMenu($branch, $unavailable, 2);
+        $this->atBranch($branch, $available, true);
+        $this->atBranch($branch, $unavailable, false);
+
+        $this->actingAs($cashier)->getJson(route('restaurant.pos.cart-availability', [
+            'location_id' => $branch->id,
+            'ids' => [$available->id, $unavailable->id],
+        ]))->assertOk()
+            ->assertJsonPath('available_ids.0', $available->id)
+            ->assertJsonPath('unavailable_ids.0', $unavailable->id);
+
+        $this->assertDatabaseCount('orders', 0);
+        $this->actingAs($cashier)->getJson(route('restaurant.pos.cart-availability', [
+            'location_id' => $branch->id,
+            'ids' => [$available->id, $available->id],
+        ]))->assertUnprocessable()->assertJsonValidationErrors('ids.1');
+    }
+
+    #[Test]
+    public function receipt_search_only_returns_authorized_invoiced_restaurant_orders(): void
+    {
+        $branch = $this->branch('RECEIPTBR');
+        $cashier = $this->cashier($branch);
+
+        $this->actingAs($cashier)->getJson(route('restaurant.pos.receipt-search', [
+            'location_id' => $branch->id, 'q' => 'nonexistent',
+        ]))->assertOk()->assertJsonCount(0, 'orders');
+
+        $this->actingAs($cashier)->getJson(route('restaurant.pos.receipt-search', [
+            'location_id' => $branch->id, 'q' => str_repeat('x', 151),
+        ]))->assertUnprocessable()->assertJsonValidationErrors('q');
+    }
+
+    #[Test]
     public function catalog_serves_uploaded_images_and_falls_back_to_product_when_menu_image_is_missing(): void
     {
         Storage::fake('public');
