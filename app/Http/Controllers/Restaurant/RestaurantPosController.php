@@ -1076,10 +1076,13 @@ class RestaurantPosController extends Controller
                 ? $order->status->value
                 : (string) $order->status;
 
-        $message =
-            $status === 'draft'
-                ? 'تم إنشاء طلب المطعم وهو بانتظار تحقق الدفع.'
-                : 'تم إنشاء طلب المطعم وتأكيده بنجاح.';
+        $hasPendingPayment = $order->payments()
+            ->where('status', 'pending_verification')->exists();
+        $message = $status === 'draft'
+            ? 'تم إنشاء طلب المطعم وهو بانتظار تحقق الدفع.'
+            : ($hasPendingPayment
+                ? 'تم تأكيد الطلب. بعض الدفعات بانتظار التحقق ولا تُحتسب مدفوعة حتى اعتمادها.'
+                : 'تم إنشاء طلب المطعم وتأكيده بنجاح.');
 
         /*
         |--------------------------------------------------------------------------
