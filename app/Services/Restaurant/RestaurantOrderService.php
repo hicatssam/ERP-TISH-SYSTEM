@@ -35,9 +35,17 @@ class RestaurantOrderService
         $openedSession = null;
         $locationId = (int) $data['location_id'];
         $token = (string) ($data['pos_request_token'] ?? '');
+        $hashPayload = Arr::except($data, ['pos_request_token', 'payment_proof']);
+        // Binary uploads must not enter the idempotency fingerprint.
+        // The financial amounts, methods, references and confirmations remain hashed.
+        if (isset($hashPayload['split_payments']) && is_array($hashPayload['split_payments'])) {
+            foreach ($hashPayload['split_payments'] as &$part) {
+                unset($part['payment_proof']);
+            }
+            unset($part);
+        }
         $payloadHash = hash('sha256', json_encode(
-            Arr::except($data, ['pos_request_token', 'payment_proof']),
-            JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE
+            $hashPayload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE
         ));
         $replay = function () use ($token, $payloadHash, $locationId, $user): ?Order {
             if ($token === '') return null;
@@ -146,6 +154,7 @@ class RestaurantOrderService
                         'payment_method_id' => (int) $part['payment_method_id'],
                         'amount' => (int) round((float) $part['amount'] * 100) / 100,
                         'reference_number' => $part['reference_number'] ?? null,
+                        'payment_proof' => $part['payment_proof'] ?? null,
                     ], $user);
                 }
                 $order->refresh();
