@@ -170,13 +170,11 @@ class StoreRestaurantPosOrderRequest extends FormRequest
                         continue;
                     }
                     if ($method->requires_verification) {
-                        if (! $this->hasFile("split_payments.$index.payment_proof")) {
-                            $validator->errors()->add("split_payments.$index.payment_proof",
-                                'هذه الطريقة تتطلب إثبات دفع، وستبقى الدفعة بانتظار اعتماد المحاسب.');
-                        }
+                        // Cashier POS records the transfer reference, not an
+                        // uploaded receipt. Finance reviews it independently.
                         if (mb_strlen(trim((string) ($row['reference_number'] ?? ''))) < 1) {
                             $validator->errors()->add("split_payments.$index.reference_number",
-                                'رقم الحوالة أو العملية مطلوب قبل إرسال الدفعة للتحقق.');
+                                'رقم الحوالة أو العملية مطلوب قبل تسجيل الدفعة بانتظار التحقق.');
                         }
                         continue;
                     }
