@@ -710,7 +710,8 @@ class PosCashierShiftSimulationTest extends TestCase
             ['product_id' => $f['products'][0]->id, 'quantity' => 1],
         ]);
         $payload['payment_arrangement'] = 'pending_verification';
-        $payload['payment_proof'] = \Illuminate\Http\UploadedFile::fake()->image('receipt.png');
+        // POS collects the transfer reference only; it does not require
+        // uploading a receipt or falsely mark the transfer as settled.
         $this->actingAs($f['cashier'])->post(route('restaurant.pos.orders.store'), $payload, [
             'Accept' => 'application/json',
         ])->assertCreated()->assertJsonPath('status', 'draft');
@@ -719,6 +720,8 @@ class PosCashierShiftSimulationTest extends TestCase
         $this->assertNull($order->invoice);
         $this->assertEquals(20, Inventory::query()->where('product_id', $f['products'][0]->id)->sole()->quantity);
         $this->assertSame('pending_verification', $order->payments()->sole()->statusValue());
+        $this->assertNull($order->payments()->sole()->payment_proof);
+        $this->assertNotEmpty($order->payments()->sole()->reference_number);
     }
 
     #[Test]
