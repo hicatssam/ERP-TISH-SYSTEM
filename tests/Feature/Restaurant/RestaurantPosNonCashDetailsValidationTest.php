@@ -102,7 +102,7 @@ class RestaurantPosNonCashDetailsValidationTest extends TestCase
     }
 
     #[Test]
-    public function manually_checked_transfer_can_have_no_sender_details_but_verified_method_still_needs_proof(): void
+    public function cashier_transfer_requires_reference_but_never_uploaded_proof_even_when_finance_verification_is_enabled(): void
     {
         $manual = $this->paymentMethod('electronic_wallet');
         $errors = $this->afterValidationErrors([
@@ -114,13 +114,24 @@ class RestaurantPosNonCashDetailsValidationTest extends TestCase
         $this->assertFalse($errors->has('payment_received_confirmed'));
         $this->assertFalse($errors->has('sender_name'));
 
+        // Finance verifies this payment later; the POS cashier still records
+        // only its reference, without a mandatory transfer slip upload.
         $manual->update(['requires_verification' => true]);
         $errors = $this->afterValidationErrors([
             'service_type' => 'takeaway', 'payment_arrangement' => 'pay_now',
             'payment_method_id' => $manual->id, 'reference_number' => 'WALLET-123',
-            'payment_received_confirmed' => 1,
         ]);
-        $this->assertTrue($errors->has('payment_proof'));
+        $this->assertFalse($errors->has('payment_proof'));
+        $this->assertFalse($errors->has('payment_received_confirmed'));
+        $this->assertFalse($errors->has('sender_name'));
+        $this->assertFalse($errors->has('reference_number'));
+
+        $missingReference = $this->afterValidationErrors([
+            'service_type' => 'takeaway', 'payment_arrangement' => 'pay_now',
+            'payment_method_id' => $manual->id,
+        ]);
+        $this->assertTrue($missingReference->has('reference_number'));
+        $this->assertFalse($missingReference->has('payment_proof'));
     }
 
     private function paymentMethod(string $type): PaymentMethod
