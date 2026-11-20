@@ -50,6 +50,7 @@ class StoreRestaurantPosOrderRequest extends FormRequest
             'split_payments.*.amount' => ['required_with:split_payments', 'numeric', 'gt:0'],
             'split_payments.*.reference_number' => ['nullable', 'string', 'max:100'],
             'split_payments.*.payment_received_confirmed' => ['nullable', 'boolean'],
+            'split_payments.*.payment_proof' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
             'reference_number' => ['nullable', 'string', 'max:100'],
             'sender_name' => ['nullable', 'string', 'max:150'],
             'sender_phone' => ['nullable', 'string', 'max:50'],
@@ -163,9 +164,20 @@ class StoreRestaurantPosOrderRequest extends FormRequest
                     if (! is_array($row)) continue;
                     $methodId = (int) ($row['payment_method_id'] ?? 0);
                     $method = PaymentMethod::query()->active()->find($methodId);
-                    if (! $method || $method->requires_verification) {
+                    if (! $method) {
                         $validator->errors()->add("split_payments.$index.payment_method_id",
-                            'طريقة الدفع غير مفعلة أو تحتاج تحققًا منفصلًا، ولا تصلح للدفع المختلط الفوري.');
+                            'طريقة الدفع المحددة غير مفعلة.');
+                        continue;
+                    }
+                    if ($method->requires_verification) {
+                        if (! $this->hasFile("split_payments.$index.payment_proof")) {
+                            $validator->errors()->add("split_payments.$index.payment_proof",
+                                'هذه الطريقة تتطلب إثبات دفع، وستبقى الدفعة بانتظار اعتماد المحاسب.');
+                        }
+                        if (mb_strlen(trim((string) ($row['reference_number'] ?? ''))) < 1) {
+                            $validator->errors()->add("split_payments.$index.reference_number",
+                                'رقم الحوالة أو العملية مطلوب قبل إرسال الدفعة للتحقق.');
+                        }
                         continue;
                     }
                     if ((string) $method->type !== 'cash' || $method->requires_reference) {
