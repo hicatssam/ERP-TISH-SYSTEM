@@ -511,19 +511,19 @@
 
                         {{-- Two-tender immediate checkout: both amounts are posted atomically. --}}
                         @php
-                            $eligibleSplitMethods = $paymentMethods->where('requires_verification', false);
+                            $eligibleSplitMethods = $paymentMethods;
                             $splitTenderAvailable = $eligibleSplitMethods->count() >= 2;
                         @endphp
                         <div class="rb-field rb-field-wide" id="rbSplitTenderOption">
                             <label class="rb-split-toggle" for="rbSplitTenderToggle">
                                 <input type="checkbox" id="rbSplitTenderToggle" @disabled(! $splitTenderAvailable)
                                     aria-describedby="rbSplitTenderHelp">
-                                <span>تقسيم الدفع بين نقد وبطاقة / طريقتين</span>
+                                <span>تقسيم الدفع بين أي طريقتين متاحتين</span>
                             </label>
                             @if(! $splitTenderAvailable)
                                 <div id="rbSplitTenderHelp" class="rb-payment-method-warning" role="status">
                                     الدفع المختلط غير متاح لهذا الفرع حاليًا: تحتاج إلى طريقتي دفع نشطتين ومتاحَتين للفرع
-                                    ولا تتطلبان تحققًا لاحقًا. المتاح الآن: {{ $eligibleSplitMethods->count() }}.
+                                    ويمكن تأكيد كل دفعة بحسب سياسة التحقق الخاصة بها. المتاح الآن: {{ $eligibleSplitMethods->count() }}.
                                     @can('payment_methods.view')
                                         <a href="{{ route('payment-methods.index') }}" target="_blank" rel="noopener">فتح إدارة طرق الدفع</a>
                                     @endcan
@@ -536,7 +536,7 @@
                             <strong>الدفع المختلط — مجموع الدفعتين يجب أن يساوي إجمالي الطلب</strong>
                             @if($eligibleSplitMethods->count() < 2)
                                 <p class="rb-payment-method-warning" role="alert">
-                                    الدفع المختلط غير متاح: يلزم تفعيل طريقتين مختلفتين على الأقل لا تتطلبان تحققًا لاحقًا في هذا الفرع.
+                                    الدفع المختلط غير متاح: يلزم تفعيل طريقتين مختلفتين على الأقل في هذا الفرع.
                                     @can('payment_methods.view')
                                         <a href="{{ route('payment-methods.index') }}" target="_blank" rel="noopener">مراجعة طرق الدفع</a>
                                     @endcan
@@ -551,13 +551,12 @@
                                                 name="split_payments[{{ $i }}][payment_method_id]" class="rb-control" disabled>
                                             <option value="">اختر الطريقة</option>
                                             @foreach($eligibleSplitMethods as $method)
-                                                @if(!$method->requires_verification)
-                                                    <option value="{{ $method->id }}"
+                                                     <option value="{{ $method->id }}"
                                                             data-type="{{ $method->type }}"
+                                                            data-verification="{{ $method->requires_verification ? '1':'0' }}"
                                                             data-reference="{{ $method->requires_reference ? '1':'0' }}">
                                                         {{ $method->name_ar ?: $method->name }}
                                                     </option>
-                                                @endif
                                             @endforeach
                                         </select>
                                         <label for="rbSplitAmount{{ $i }}">المبلغ (₪)</label>
@@ -568,11 +567,20 @@
                                                name="split_payments[{{ $i }}][reference_number]" class="rb-control" disabled>
                                         <label class="rb-split-confirm"><input data-split-confirm type="checkbox" value="1"
                                                name="split_payments[{{ $i }}][payment_received_confirmed]" disabled>
-                                            تم التأكد من تحصيل الدفعة غير النقدية
+                                            تم التأكد من وصول الدفعة غير النقدية
                                         </label>
+                                        <div class="rb-split-proof-wrap" data-split-proof-wrap hidden>
+                                            <label for="rbSplitProof{{ $i }}">إثبات الدفع للتحويل أو المحفظة (إلزامي للتحقق)</label>
+                                            <input type="file" id="rbSplitProof{{ $i }}" data-split-proof
+                                                name="split_payments[{{ $i }}][payment_proof]"
+                                                accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                                                class="rb-control" disabled>
+                                            <small>هذه الدفعة ستظل بانتظار مراجعة واعتماد الموظف المختص، ولن تُحتسب كتحصيل مؤكد قبل الاعتماد.</small>
+                                        </div>
                                     </fieldset>
                                 @endfor
                             </div>
+                            <p class="rb-payment-method-warning" role="status">يمكنك الاختيار من جميع طرق الدفع المتاحة للفرع. الدفعات التي تتطلب تحققًا ستبقى معلّقة حتى مراجعتها، ولا تُعتبر الفاتورة مدفوعة بالكامل قبل الاعتماد.</p>
                             <strong id="rbSplitTenderBalance" aria-live="polite"></strong>
                         </div>
 
@@ -3944,6 +3952,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const splitAmounts = [...form.querySelectorAll('[data-split-amount]')];
     const splitReferences = [...form.querySelectorAll('[data-split-reference]')];
     const splitConfirmations = [...form.querySelectorAll('[data-split-confirm]')];
+    const splitProofs = [...form.querySelectorAll('[data-split-proof]')];
     const splitMode = () => splitTenderToggle.checked && paymentArrangement.value === 'pay_now';
     function renderSplitTender() {
         if (!splitMode()) return;
@@ -5083,7 +5092,11 @@ document.addEventListener('DOMContentLoaded', () => {
             splitAmounts[i].required = splitActive;
             const option = field.options[field.selectedIndex];
             const nonCash = splitActive && !!field.value && option?.dataset.type !== 'cash';
+            const needsVerification = splitActive && !!field.value && option?.dataset.verification === '1';
             const needsReference = nonCash || (splitActive && option?.dataset.reference === '1');
+            splitProofs[i].disabled = !needsVerification;
+            splitProofs[i].required = needsVerification;
+            splitProofs[i].closest('[data-split-proof-wrap]').hidden = !needsVerification;
             // Hide irrelevant transfer fields and prevent stale values from
             // being submitted after switching to a cash payment method.
             splitReferences[i].disabled = !needsReference;
@@ -5091,9 +5104,9 @@ document.addEventListener('DOMContentLoaded', () => {
             splitReferences[i].style.display = needsReference ? '' : 'none';
             form.querySelector('label[for="' + splitReferences[i].id + '"]').style.display =
                 needsReference ? '' : 'none';
-            splitConfirmations[i].disabled = !nonCash;
-            splitConfirmations[i].required = nonCash;
-            splitConfirmations[i].parentElement.style.display = nonCash ? '' : 'none';
+            splitConfirmations[i].disabled = !nonCash || needsVerification;
+            splitConfirmations[i].required = nonCash && !needsVerification;
+            splitConfirmations[i].parentElement.style.display = nonCash && !needsVerification ? '' : 'none';
         });
         if (splitActive) {
             paymentMethod.disabled = true;
@@ -5297,9 +5310,17 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             for (let i = 0; i < 2; i++) {
                 const option = splitMethods[i].options[splitMethods[i].selectedIndex];
-                if (option?.dataset.type !== 'cash'
-                    && (!splitReferences[i].value.trim() || !splitConfirmations[i].checked)) {
-                    showCheckoutError('كل دفعة غير نقدية تحتاج رقم عملية وتأكيد التحصيل.', 'split_payments');
+                const pendingReview = option?.dataset.verification === '1';
+                if (option?.dataset.type !== 'cash' && !splitReferences[i].value.trim()) {
+                    showCheckoutError('كل دفعة غير نقدية تحتاج رقم عملية أو مرجع.', 'split_payments');
+                    return false;
+                }
+                if (pendingReview && !splitProofs[i].files.length) {
+                    showCheckoutError('أرفق إثبات التحويل لهذه الدفعة حتى تُسجل بانتظار التحقق.', 'split_payments');
+                    return false;
+                }
+                if (!pendingReview && option?.dataset.type !== 'cash' && !splitConfirmations[i].checked) {
+                    showCheckoutError('أكد وصول الدفعة غير النقدية قبل اعتماد تحصيلها.', 'split_payments');
                     return false;
                 }
             }
