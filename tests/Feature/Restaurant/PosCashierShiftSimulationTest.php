@@ -197,12 +197,26 @@ class PosCashierShiftSimulationTest extends TestCase
     }
 
     #[Test]
-    public function pos_54_split_tender_rejects_ineligible_method_without_partial_commit(): void
+    public function pos_54_split_tender_requires_proof_for_verification_methods_and_rejects_disabled_methods(): void
     {
         $f = $this->fixture();
         $payload = $this->mixedPayload($f);
-        PaymentMethod::query()->findOrFail($payload['split_payments'][1]['payment_method_id'])
-            ->update(['requires_verification' => true]);
+        $method = PaymentMethod::query()
+            ->findOrFail($payload['split_payments'][1]['payment_method_id']);
+
+        // A bank/wallet method requiring verification is now allowed in mixed
+        // checkout, but never without proof. No partial sale may be committed.
+        $method->update(['requires_verification' => true]);
+        $this->actingAs($f['cashier'])
+            ->postJson(route('restaurant.pos.orders.store'), $payload)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('split_payments.1.payment_proof');
+        $this->assertDatabaseCount('orders', 0);
+        $this->assertDatabaseCount('payments', 0);
+
+        // A genuinely disabled method must still be rejected by the method
+        // eligibility check, independently of the proof requirement.
+        $method->update(['is_active' => false]);
         $this->actingAs($f['cashier'])
             ->postJson(route('restaurant.pos.orders.store'), $payload)
             ->assertUnprocessable()
