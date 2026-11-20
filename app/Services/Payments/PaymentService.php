@@ -52,8 +52,20 @@ class PaymentService
             }
 
             $proof = $data['payment_proof'] ?? null;
-            if ($method->requires_verification && ! $proof instanceof UploadedFile) {
-                throw ValidationException::withMessages(['payment_proof' => 'طريقة الدفع المختارة تتطلب إرفاق إثبات دفع.']);
+            $isCashierPosPayment = $data['order_type'] === 'order'
+                && $source instanceof \App\Models\Order
+                && $source->order_source === 'restaurant_pos';
+            if ($method->requires_verification && ! $isCashierPosPayment
+                && ! $proof instanceof UploadedFile) {
+                throw ValidationException::withMessages([
+                    'payment_proof' => 'طريقة الدفع المختارة تتطلب إرفاق إثبات دفع.',
+                ]);
+            }
+            if ($method->requires_verification && $isCashierPosPayment
+                && blank($data['reference_number'] ?? null)) {
+                throw ValidationException::withMessages([
+                    'reference_number' => 'رقم الحوالة مطلوب في نقطة البيع قبل تسجيل دفعة بانتظار التحقق.',
+                ]);
             }
 
             $amount = round((float) $data['amount'], 2);
