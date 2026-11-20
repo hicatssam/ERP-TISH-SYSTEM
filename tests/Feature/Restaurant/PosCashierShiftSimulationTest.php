@@ -197,25 +197,26 @@ class PosCashierShiftSimulationTest extends TestCase
     }
 
     #[Test]
-    public function pos_54_split_tender_requires_proof_for_verification_methods_and_rejects_disabled_methods(): void
+    public function pos_54_split_tender_requires_reference_for_verification_methods_and_rejects_disabled_methods(): void
     {
         $f = $this->fixture();
         $payload = $this->mixedPayload($f);
         $method = PaymentMethod::query()
             ->findOrFail($payload['split_payments'][1]['payment_method_id']);
 
-        // A bank/wallet method requiring verification is now allowed in mixed
-        // checkout, but never without proof. No partial sale may be committed.
+        // In cashier checkout, a verification-required wallet/bank method
+        // needs a reference number only. No proof image is required.
         $method->update(['requires_verification' => true]);
+        unset($payload['split_payments'][1]['reference_number']);
         $this->actingAs($f['cashier'])
             ->postJson(route('restaurant.pos.orders.store'), $payload)
             ->assertUnprocessable()
-            ->assertJsonValidationErrors('split_payments.1.payment_proof');
+            ->assertJsonValidationErrors('split_payments.1.reference_number');
         $this->assertDatabaseCount('orders', 0);
         $this->assertDatabaseCount('payments', 0);
 
-        // A genuinely disabled method must still be rejected by the method
-        // eligibility check, independently of the proof requirement.
+        // A genuinely disabled method remains forbidden even with a reference.
+        $payload['split_payments'][1]['reference_number'] = 'VALID-REFERENCE-54';
         $method->update(['is_active' => false]);
         $this->actingAs($f['cashier'])
             ->postJson(route('restaurant.pos.orders.store'), $payload)
