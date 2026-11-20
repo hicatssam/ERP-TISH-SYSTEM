@@ -927,8 +927,14 @@ class RestaurantPosController extends Controller
             ]);
         }
 
+        $splitHasPendingVerification = collect($data['split_payments'] ?? [])
+            ->contains(fn (array $part): bool => PaymentMethod::query()
+                ->whereKey($part['payment_method_id'] ?? null)
+                ->where('requires_verification', true)->exists());
+
         if ($action === 'bill_print' && (
             $data['payment_arrangement'] === 'pending_verification'
+            || $splitHasPendingVerification
             || (! empty($data['payment_method_id'])
                 && PaymentMethod::query()->whereKey($data['payment_method_id'])
                     ->where('requires_verification', true)->exists())
@@ -961,14 +967,14 @@ class RestaurantPosController extends Controller
         foreach (($data['split_payments'] ?? []) as $index => $part) {
             $method = PaymentMethod::query()->active()
                 ->find($part['payment_method_id'] ?? null);
-            if (! $method || $method->requires_verification
+            if (! $method
                 || ($method->locationPaymentMethods()->exists()
                     && ! $method->locationPaymentMethods()
                         ->where('location_id', $location->id)
                         ->where('is_active', true)->exists())) {
                 throw ValidationException::withMessages([
                     "split_payments.$index.payment_method_id" =>
-                        'طريقة الدفع غير متاحة لهذا الفرع أو تحتاج تحققًا منفصلًا.',
+                        'طريقة الدفع غير مفعلة أو غير متاحة لهذا الفرع.',
                 ]);
             }
         }
