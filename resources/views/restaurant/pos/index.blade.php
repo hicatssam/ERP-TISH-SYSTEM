@@ -516,8 +516,7 @@
                         @endphp
                         <div class="rb-field rb-field-wide" id="rbSplitTenderOption">
                             <label class="rb-split-toggle" for="rbSplitTenderToggle">
-                                <input type="checkbox" id="rbSplitTenderToggle"
-                                    @disabled(! $splitTenderAvailable)
+                                <input type="checkbox" id="rbSplitTenderToggle" @disabled(! $splitTenderAvailable)
                                     aria-describedby="rbSplitTenderHelp">
                                 <span>تقسيم الدفع بين نقد وبطاقة / طريقتين</span>
                             </label>
