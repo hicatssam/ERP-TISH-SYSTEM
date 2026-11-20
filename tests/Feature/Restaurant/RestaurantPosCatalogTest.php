@@ -238,6 +238,81 @@ class RestaurantPosCatalogTest extends TestCase
     }
 
     #[Test]
+    public function split_checkout_accepts_cash_plus_bank_transfer_with_pending_review(): void
+    {
+        Storage::fake('local');
+        $branch = $this->branch('SPLIT-BANK');
+        $cashier = $this->cashier($branch);
+        $cashier->givePermissionTo(Permission::findOrCreate('orders.create', 'web'));
+        $channel = SalesChannel::query()->create([
+            'name' => 'Split checkout', 'slug' => 'split-bank-pos',
+            'type' => 'direct', 'is_active' => true,
+        ]);
+        $cash = PaymentMethod::query()->create([
+            'name' => 'Cash', 'name_ar' => 'نقدًا', 'code' => 'split-cash',
+            'type' => 'cash', 'is_active' => true, 'requires_verification' => false,
+        ]);
+        $bank = PaymentMethod::query()->create([
+            'name' => 'Bank', 'name_ar' => 'تحويل بنكي', 'code' => 'split-bank',
+            'type' => 'bank_transfer', 'is_active' => true,
+            'requires_reference' => true, 'requires_verification' => true,
+        ]);
+        $product = $this->product($this->category(), 'SPLIT-ITEM');
+        $this->onMenu($branch, $product, 1);
+        $this->atBranch($branch, $product, true);
+        Inventory::query()->create([
+            'location_id' => $branch->id, 'product_id' => $product->id,
+            'quantity' => 10, 'reserved_quantity' => 0, 'unit_cost' => 4,
+        ]);
+
+        $this->actingAs($cashier)
+            ->get(route('restaurant.pos.index', ['location_id' => $branch->id]))
+            ->assertOk()
+            ->assertSee('تقسيم الدفع بين أي طريقتين متاحتين')
+            ->assertSee('data-verification="1"', false)
+            ->assertSee('id="rbSplitProof0"', false);
+
+        $payload = [
+            'pos_action' => 'bill_payment', 'location_id' => $branch->id,
+            'service_type' => 'takeaway', 'payment_arrangement' => 'pay_now',
+            'sales_channel_id' => $channel->id,
+            'items' => [['product_id' => $product->id, 'quantity' => 1]],
+            'split_payments' => [
+                ['payment_method_id' => $cash->id, 'amount' => 4],
+                ['payment_method_id' => $bank->id, 'amount' => 6,
+                    'reference_number' => 'BANK-SPLIT-123'],
+            ],
+        ];
+
+        $this->actingAs($cashier)->post(route('restaurant.pos.orders.store'), $payload, [
+            'Accept' => 'application/json',
+        ])->assertUnprocessable()->assertJsonValidationErrors('split_payments.1.payment_proof');
+        $this->assertDatabaseCount('orders', 0);
+
+        $payload['split_payments'][1]['payment_proof'] = UploadedFile::fake()->image('bank-proof.jpg');
+        $this->actingAs($cashier)->post(route('restaurant.pos.orders.store'), $payload, [
+            'Accept' => 'application/json',
+        ])->assertCreated()->assertJsonPath('status', 'confirmed');
+
+        $order = Order::query()->sole();
+        $payments = $order->payments()->get()->keyBy('payment_method_id');
+        $this->assertCount(2, $payments);
+        $this->assertSame('confirmed', $payments[$cash->id]->statusValue());
+        $this->assertSame('pending_verification', $payments[$bank->id]->statusValue());
+        $this->assertNotEmpty($payments[$bank->id]->payment_proof);
+        $this->assertSame('partially_paid', $order->fresh()->payment_status->value ?? $order->fresh()->payment_status);
+        $this->assertNotNull($order->fresh()->invoice);
+
+        // Paid-invoice shortcut must not accept a transfer still awaiting review.
+        $payload['pos_action'] = 'bill_print';
+        $payload['split_payments'][1]['payment_proof'] = UploadedFile::fake()->image('another-proof.jpg');
+        $this->actingAs($cashier)->post(route('restaurant.pos.orders.store'), $payload, [
+            'Accept' => 'application/json',
+        ])->assertUnprocessable()->assertJsonValidationErrors('payment_arrangement');
+        $this->assertDatabaseCount('orders', 1);
+    }
+
+    #[Test]
     public function cashier_only_sees_branch_payment_methods_and_cannot_submit_another_branch_method(): void
     {
         $branch = $this->branch('PAY-A');
