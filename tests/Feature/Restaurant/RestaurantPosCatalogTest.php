@@ -270,7 +270,7 @@ class RestaurantPosCatalogTest extends TestCase
             ->assertOk()
             ->assertSee('تقسيم الدفع بين أي طريقتين متاحتين')
             ->assertSee('data-verification="1"', false)
-            ->assertSee('id="rbSplitProof0"', false);
+            ->assertDontSee('id="rbSplitProof0"', false);
 
         $payload = [
             'pos_action' => 'bill_payment', 'location_id' => $branch->id,
@@ -284,12 +284,8 @@ class RestaurantPosCatalogTest extends TestCase
             ],
         ];
 
-        $this->actingAs($cashier)->post(route('restaurant.pos.orders.store'), $payload, [
-            'Accept' => 'application/json',
-        ])->assertUnprocessable()->assertJsonValidationErrors('split_payments.1.payment_proof');
-        $this->assertDatabaseCount('orders', 0);
-
-        $payload['split_payments'][1]['payment_proof'] = UploadedFile::fake()->image('bank-proof.jpg');
+        // Reference number alone is sufficient to record a pending transfer
+        // from cashier POS. No receipt image is requested or stored.
         $this->actingAs($cashier)->post(route('restaurant.pos.orders.store'), $payload, [
             'Accept' => 'application/json',
         ])->assertCreated()->assertJsonPath('status', 'confirmed');
@@ -299,13 +295,13 @@ class RestaurantPosCatalogTest extends TestCase
         $this->assertCount(2, $payments);
         $this->assertSame('confirmed', $payments[$cash->id]->statusValue());
         $this->assertSame('pending_verification', $payments[$bank->id]->statusValue());
-        $this->assertNotEmpty($payments[$bank->id]->payment_proof);
+        $this->assertNull($payments[$bank->id]->payment_proof);
+        $this->assertSame('BANK-SPLIT-123', $payments[$bank->id]->reference_number);
         $this->assertSame('partially_paid', $order->fresh()->payment_status->value ?? $order->fresh()->payment_status);
         $this->assertNotNull($order->fresh()->invoice);
 
         // Paid-invoice shortcut must not accept a transfer still awaiting review.
         $payload['pos_action'] = 'bill_print';
-        $payload['split_payments'][1]['payment_proof'] = UploadedFile::fake()->image('another-proof.jpg');
         $this->actingAs($cashier)->post(route('restaurant.pos.orders.store'), $payload, [
             'Accept' => 'application/json',
         ])->assertUnprocessable()->assertJsonValidationErrors('payment_arrangement');
