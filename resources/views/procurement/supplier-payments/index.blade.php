@@ -131,6 +131,8 @@
                     <th>المبلغ المدفوع</th>
                     <th>المبلغ المطبق</th>
                     <th>طريقة الدفع</th>
+                    <th>الحساب المصدر</th>
+                    <th>مرجع الحوالة</th>
                 </tr>
             </thead>
             <tbody>
@@ -145,8 +147,10 @@
                         <td>{{ number_format($payment->amount, 2) }} {{ $payment->currency?->displayName() }}</td>
                         <td>{{ number_format($payment->applied_amount, 2) }}</td>
                         <td>{{ $payment->paymentMethod?->name_ar }}</td>
+                        <td>{{ $payment->sourcePaymentAccount?->name ?? 'غير محدد (سجل سابق/نقدي)' }}</td>
+                        <td>{{ $payment->reference_number ?: '—' }}</td>
                 </tr>@empty<tr>
-                        <td colspan="7">
+                        <td colspan="9">
                             <div class="empty-state-sm">لا توجد دفعات موردين.</div>
                         </td>
                     </tr>
