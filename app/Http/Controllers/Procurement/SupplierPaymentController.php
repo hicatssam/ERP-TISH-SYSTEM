@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Procurement\Concerns\ScopesProcurementLocations;
 use App\Http\Requests\Procurement\StoreSupplierPaymentRequest;
 use App\Models\Currency;
+use App\Models\LocationPaymentAccount;
 use App\Models\PaymentMethod;
 use App\Models\SupplierInvoice;
 use App\Models\SupplierPayment;
@@ -28,7 +29,7 @@ class SupplierPaymentController extends Controller
         $locationIds = $this->permittedLocationIds($request->user());
 
         $payments = SupplierPayment::query()
-            ->with(['supplier', 'supplierInvoice', 'location', 'currency', 'paymentMethod', 'creator'])
+            ->with(['supplier', 'supplierInvoice', 'location', 'currency', 'paymentMethod', 'sourcePaymentAccount', 'creator'])
             ->whereIn('location_id', $locationIds)
             ->when($request->filled('supplier_invoice_id'), fn ($query) => $query->where('supplier_invoice_id', $request->integer('supplier_invoice_id')))
             ->latest('payment_date')
@@ -67,6 +68,12 @@ class SupplierPaymentController extends Controller
             'invoices' => $invoices,
             'currencies' => Currency::query()->active()->orderBy('code')->get(),
             'paymentMethods' => PaymentMethod::query()->where('is_active', true)->orderBy('sort_order')->get(),
+            'sourceAccounts' => LocationPaymentAccount::query()
+                ->with('paymentMethod')
+                ->whereIn('location_id', $locationIds)
+                ->where('is_active', true)
+                ->where('can_disburse', true)
+                ->orderBy('sort_order')->orderBy('name')->get(),
         ]);
     }
 
