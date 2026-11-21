@@ -10,6 +10,7 @@ use App\Models\IncomingBankTransfer;
 use App\Models\Location;
 use App\Models\LocationPaymentAccount;
 use App\Models\PaymentMethod;
+use App\Models\Payment;
 use App\Models\User;
 use App\Services\PrintThemeService;
 use App\Services\ActivityLogger;
@@ -44,6 +45,36 @@ class IncomingBankTransferController extends Controller
             $request,
             $locationIds
         );
+
+        // Customer bank/e-wallet sales are stored in payments, NOT in
+        // incoming_bank_transfers. Keep these counts separate from receipts
+        // to avoid suggesting the same money was received twice.
+        $bankSalesQuery = Payment::query()
+            ->whereIn('location_id', $locationIds)
+            ->whereHas('paymentMethod', fn ($methods) => $methods
+                ->whereIn('type', ['bank_transfer', 'electronic_wallet']));
+        if ($request->filled('location_id')) {
+            $bankSalesQuery->where('location_id', $request->integer('location_id'));
+        }
+        if ($request->filled('payment_method_id')) {
+            $bankSalesQuery->where('payment_method_id', $request->integer('payment_method_id'));
+        }
+        if ($request->filled('location_payment_account_id')) {
+            $bankSalesQuery->where('location_payment_account_id', $request->integer('location_payment_account_id'));
+        }
+        if ($request->filled('date_from')) {
+            $bankSalesQuery->whereDate('paid_at', '>=', $request->date('date_from'));
+        }
+        if ($request->filled('date_to')) {
+            $bankSalesQuery->whereDate('paid_at', '<=', $request->date('date_to'));
+        }
+        $bankSalesCount = (clone $bankSalesQuery)->count();
+        $unassignedBankSalesCount = (clone $bankSalesQuery)
+            ->whereNull('location_payment_account_id')->count();
+        $bankSalesLink = route('payments.bank-sales', array_filter(
+            $request->only(['location_id', 'payment_method_id', 'location_payment_account_id', 'date_from', 'date_to']),
+            fn ($value) => filled($value)
+        ));
 
         $summary = $this->summaryFor($query);
 
@@ -138,6 +169,9 @@ class IncomingBankTransferController extends Controller
         return view('finance.incoming-bank-transfers.index', [
             'transfers' => $transfers,
             'summary' => $summary,
+            'bankSalesCount' => $bankSalesCount,
+            'unassignedBankSalesCount' => $unassignedBankSalesCount,
+            'bankSalesLink' => $bankSalesLink,
             'methodBreakdown' => $methodBreakdown,
             'branchBreakdown' => $branchBreakdown,
             'paymentMethods' => $paymentMethods,

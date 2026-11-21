@@ -59,7 +59,9 @@ class UnifiedInvoiceDocumentTest extends TestCase
             $this->assertStringContainsString('منتج تجريبي', $document);
             $this->assertStringContainsString('22.00', $document);
             $this->assertStringContainsString('د.ع', $document);
-            $this->assertStringContainsString('class="invoice-party-table"', $document);
+            $this->assertStringContainsString('class="ci-blocks"', $document);
+            $this->assertStringContainsString('بيانات العميل', $document);
+            $this->assertStringContainsString('بيانات الفاتورة', $document);
         }
 
         $this->assertStringContainsString('<div class="print-screen-toolbar">', $browser);
@@ -117,10 +119,22 @@ class UnifiedInvoiceDocumentTest extends TestCase
 
             foreach ([false, true] as $pdfMode) {
                 $html = view('finance.invoices.print', compact('invoice', 'pdfMode'))->render();
-                $this->assertStringContainsString('invoice-payment-watermark '.$case['class'], $html);
-                $this->assertStringContainsString('>'.$case['label'].'</div>', $html);
-                $this->assertStringContainsString('position: absolute;', $html);
-                $this->assertStringContainsString('class="invoice-party-table"', $html);
+                // Invoice print now uses image-backed circular seals for paid/unpaid
+                // and a text fallback for partial payments. Verify the actual
+                // status and seal without forcing the retired watermark markup.
+                $this->assertStringContainsString('حالة الدفع:', $html);
+                $this->assertStringContainsString('حالة الدفع: '.$case['label'], $html);
+                $this->assertStringContainsString('class="ci-blocks"', $html);
+                if ($case['class'] === 'invoice-watermark-partial') {
+                    $this->assertStringContainsString('ci-payment-fallback-pending', $html);
+                    $this->assertStringNotContainsString('class="ci-payment-image ', $html);
+                } else {
+                    $this->assertStringContainsString(
+                        'ci-payment-image ci-payment-image-'.($case['class'] === 'invoice-watermark-paid' ? 'paid' : 'unpaid'),
+                        $html
+                    );
+                    $this->assertStringContainsString('data:image/png;base64,', $html);
+                }
                 $this->assertStringContainsString('TSH-STAMP-TEST', $html);
                 $this->assertStringContainsString('برجر خضار', $html);
                 if ($pdfMode) {
