@@ -127,6 +127,9 @@
         @can('expenses.view')<a class="btn btn-ghost btn-sm" href="{{ route('costing.expenses.index') }}">المصاريف التشغيلية</a>@endcan
         @can('accounting.books.view')<a class="btn btn-ghost btn-sm" href="{{ route('accounting.books.journals') }}">القيود المحاسبية</a>@endcan
     </nav>
+    @if($sourceAccount)
+        <p class="page-subheading" style="margin-bottom:.75rem">حوالات الموردين الصادرة من: <strong>{{ $sourceAccount->name }}</strong> — <a href="{{ route('supplier-payments.index') }}">إظهار كل الدفعات</a></p>
+    @endif
     <div class="table-wrap">
         <table class="data-table">
             <thead>
