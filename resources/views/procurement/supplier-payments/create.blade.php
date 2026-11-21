@@ -93,6 +93,7 @@
                                     value="{{ $invoice->id }}"
 
                                     data-supplier="{{ $invoice->supplier_id }}"
+                                    data-supplier-name="{{ $invoice->supplier?->name }}"
                                     data-location="{{ $invoice->location_id }}"
 
                                     data-remaining="{{ number_format(
@@ -1280,8 +1281,8 @@
                 const selectedInvoice = invoice.selectedOptions[0];
                 const isCash = selectedMethod?.dataset.methodType === 'cash';
                 const needsTransfer = Boolean(selectedMethod) && !isCash;
-                sourceGroup.hidden = !needsTransfer;
-                recipientGroups.forEach(group => { group.hidden = !needsTransfer; });
+                sourceGroup.style.display = needsTransfer ? '' : 'none';
+                recipientGroups.forEach(group => { group.style.display = needsTransfer ? '' : 'none'; });
                 sourceAccount.required = needsTransfer;
                 recipientName.required = needsTransfer;
                 recipientAccount.required = needsTransfer;
@@ -1293,7 +1294,10 @@
                 if (sourceAccount.selectedOptions[0]?.disabled) sourceAccount.value = '';
             };
             form.querySelectorAll('input[name="payment_method_id"]').forEach(radio => radio.addEventListener('change', updateAccountSelection));
-            invoice.addEventListener('change', updateAccountSelection);
+            invoice.addEventListener('change', () => {
+                updateAccountSelection();
+                recipientName.value = invoice.selectedOptions[0]?.dataset.supplierName || '';
+            });
             updateAccountSelection();
 
 
