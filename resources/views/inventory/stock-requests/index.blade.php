@@ -18,7 +18,7 @@
                 <td><strong>{{ $req->request_number }}</strong></td>
                 <td>{{ $req->branch?->name }}</td>
                 <td>{{ $req->factory?->name }}</td>
-                <td><span class="badge badge-pending">@statusArabic($req->status)</span></td>
+                <td><span class="badge badge-pending">@if(($req->status?->value ?? $req->status) === 'pending_factory_review')بانتظار مراجعة فرع التوريد@else@statusArabic($req->status)@endif</span></td>
                 <td>{{ $req->created_at->format('Y-m-d') }}</td>
                 <td><div class="actions"><a href="{{ route('stock-requests.show', $req) }}" class="btn btn-ghost btn-sm">عرض</a></div></td>
             </tr>
