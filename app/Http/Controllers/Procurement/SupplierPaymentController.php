@@ -27,17 +27,25 @@ class SupplierPaymentController extends Controller
     {
         $this->authorize('viewAny', SupplierPayment::class);
         $locationIds = $this->permittedLocationIds($request->user());
+        $request->validate(['source_payment_account_id' => ['nullable', 'integer', 'exists:location_payment_accounts,id']]);
+        $sourceAccount = null;
+        if ($request->filled('source_payment_account_id')) {
+            $sourceAccount = LocationPaymentAccount::query()
+                ->whereIn('location_id', $locationIds)
+                ->findOrFail($request->integer('source_payment_account_id'));
+        }
 
         $payments = SupplierPayment::query()
             ->with(['supplier', 'supplierInvoice', 'location', 'currency', 'paymentMethod', 'sourcePaymentAccount', 'creator'])
             ->whereIn('location_id', $locationIds)
+            ->when($sourceAccount, fn ($query) => $query->where('source_payment_account_id', $sourceAccount->id))
             ->when($request->filled('supplier_invoice_id'), fn ($query) => $query->where('supplier_invoice_id', $request->integer('supplier_invoice_id')))
             ->latest('payment_date')
             ->latest('id')
             ->paginate(25)
             ->withQueryString();
 
-        return view('procurement.supplier-payments.index', compact('payments'));
+        return view('procurement.supplier-payments.index', compact('payments', 'sourceAccount'));
     }
 
     public function create(Request $request): View
