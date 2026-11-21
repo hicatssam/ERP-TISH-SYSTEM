@@ -75,6 +75,9 @@ class SupplierPaymentSourceAccountTest extends TestCase
             'beneficiary_account' => 'DEMO-ACCOUNT-NOT-REAL',
         ];
         $service = app(SupplierPaymentService::class);
+        // The DatabaseSeeder may create pre-existing demo supplier payments.
+        // Rejected attempts must leave this count unchanged, not force zero.
+        $paymentsBefore = SupplierPayment::query()->count();
         foreach ([
             ['source_payment_account_id' => null],
             ['source_payment_account_id' => $account->id],
@@ -86,7 +89,7 @@ class SupplierPaymentSourceAccountTest extends TestCase
                 $this->assertArrayHasKey('source_payment_account_id', $exception->errors());
             }
         }
-        $this->assertDatabaseCount('supplier_payments', 0);
+        $this->assertDatabaseCount('supplier_payments', $paymentsBefore);
 
         $account->update(['can_disburse' => true, 'is_customer_visible' => false]);
         // The public menu must not reveal a treasury-only source account.
@@ -98,6 +101,7 @@ class SupplierPaymentSourceAccountTest extends TestCase
         $this->assertSame('بسطة تجريبية', $payment->beneficiary_name);
         $this->assertSame('DEMO-BOP-TRX-001', $payment->reference_number);
         $this->assertEqualsWithDelta(60, (float) $invoice->fresh()->remaining_amount, .02);
+        $this->assertDatabaseCount('supplier_payments', $paymentsBefore + 1);
         $this->assertSame(1, SupplierPayment::where('source_payment_account_id', $account->id)->count());
     }
 }
