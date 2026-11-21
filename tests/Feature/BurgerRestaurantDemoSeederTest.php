@@ -3,6 +3,11 @@
 namespace Tests\Feature;
 
 use App\Models\Category;
+use App\Models\Supplier;
+use App\Models\SupplierProduct;
+use App\Models\PurchaseOrder;
+use App\Models\PurchaseOrderItem;
+use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\Location;
 use App\Models\Order;
@@ -29,6 +34,14 @@ class BurgerRestaurantDemoSeederTest extends TestCase
         $this->assertSame(76, RestaurantMenuItem::count());
         $this->assertSame(12, Order::count());
         $this->assertSame(12, Invoice::count());
+        $this->assertSame(8, Supplier::where('supplier_code', 'like', 'TISH-SUP-%')->count());
+        $this->assertSame(53, SupplierProduct::count());
+        $this->assertSame(8, PurchaseOrder::where('purchase_order_number', 'like', 'TISH-DEMO-PO-%')->count());
+        $this->assertSame(8, Expense::where('expense_number', 'like', 'TISH-DEMO-EXP-%')->count());
+        $this->assertSame(0, SupplierProduct::whereHas('product', fn ($q) => $q->where('is_raw_material', false))->count());
+        $this->assertSame(0, PurchaseOrderItem::whereHas('product', fn ($q) => $q->where('is_raw_material', false))->count());
+        $this->assertTrue(PurchaseOrder::where('purchase_order_number', 'like', 'TISH-DEMO-PO-%')->get()->every(fn ($order) => $order->statusValue() === 'draft' && (float) $order->grand_total > 0));
+        $this->assertTrue(Expense::where('expense_number', 'like', 'TISH-DEMO-EXP-%')->get()->every(fn ($expense) => $expense->statusValue() === 'draft'));
         $this->assertSame(8, Product::where('sku', 'like', 'BRG-SAUCES-%')->count());
         $this->assertSame(['B01'], Location::query()->orderBy('code')->pluck('code')->all());
         $branchId = Location::query()->where('code', 'B01')->value('id');
@@ -77,6 +90,10 @@ class BurgerRestaurantDemoSeederTest extends TestCase
         $this->assertSame(12, Order::count());
         $this->assertSame($quantities, DB::table('inventories')->orderBy('id')->pluck('quantity', 'id')->all());
         $this->assertSame(76, Recipe::count());
+        $this->assertSame(8, Supplier::where('supplier_code', 'like', 'TISH-SUP-%')->count());
+        $this->assertSame(53, SupplierProduct::count());
+        $this->assertSame(8, PurchaseOrder::where('purchase_order_number', 'like', 'TISH-DEMO-PO-%')->count());
+        $this->assertSame(8, Expense::where('expense_number', 'like', 'TISH-DEMO-EXP-%')->count());
     }
 
     public function test_full_seed_refuses_to_mix_legacy_records_into_the_restaurant_fixture(): void
