@@ -62,13 +62,24 @@ if (Test-Path '.env.testing') {
     }
 }
 
-Check 'Git working tree (inspect changes)' { git status --short; git log -1 --oneline }
-Check 'Patch formatting / conflict markers' { git diff --check }
+Check 'Git working tree (must be clean for release)' {
+    $changes = @(git status --porcelain)
+    if ($changes.Count -gt 0 -and ($changes | Where-Object { $_ -ne '' }).Count -gt 0) {
+        $changes
+        throw 'Uncommitted changes must be committed to a tested release branch before deployment.'
+    }
+    git log -1 --oneline
+}
+Check 'Patch formatting / conflict markers' { git diff --check; git diff --cached --check }
 Check 'Composer metadata' { composer validate --no-check-publish }
 Check 'PHP version' { php -v }
 Check 'PHP packages / extensions' { composer check-platform-reqs }
 Check 'Laravel configuration and routes' { php artisan route:list --json }
-Check 'Current MySQL schema migration status - READ ONLY' { php artisan migrate:status }
+Check 'Current MySQL schema migration status - READ ONLY' {
+    $status = php artisan migrate:status 2>&1
+    $status
+    if ($status -match '\bPending\b') { throw 'Unapplied migrations. Review in staging; do not auto-migrate the live DB.' }
+}
 Check 'PHPUnit FULL suite, sqlite in-memory' { php -d memory_limit=1024M artisan test }
 Check 'Frontend production build' { npm run build }
 
