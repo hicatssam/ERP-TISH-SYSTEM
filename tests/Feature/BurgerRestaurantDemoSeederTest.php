@@ -48,7 +48,11 @@ class BurgerRestaurantDemoSeederTest extends TestCase
         $this->assertEqualsWithDelta(0, (float) SupplierInvoice::where('invoice_number', 'TISH-DEMO-INV-BAKERY')->value('remaining_amount'), .02);
         $this->assertSame(0, SupplierProduct::whereHas('product', fn ($q) => $q->where('is_raw_material', false))->count());
         $this->assertSame(0, PurchaseOrderItem::whereHas('product', fn ($q) => $q->where('is_raw_material', false))->count());
-        $this->assertTrue(PurchaseOrder::where('purchase_order_number', 'like', 'TISH-DEMO-PO-%')->get()->every(fn ($order) => $order->statusValue() === 'draft' && (float) $order->grand_total > 0));
+        $demoOrders = PurchaseOrder::where('purchase_order_number', 'like', 'TISH-DEMO-PO-%')->get();
+        $this->assertTrue($demoOrders->every(fn ($order) => (float) $order->grand_total > 0));
+        $this->assertSame(6, $demoOrders->filter(fn ($order) => $order->statusValue() === 'draft')->count());
+        $this->assertSame('received', PurchaseOrder::where('purchase_order_number', 'TISH-DEMO-PO-MEAT')->firstOrFail()->statusValue());
+        $this->assertSame('partially_received', PurchaseOrder::where('purchase_order_number', 'TISH-DEMO-PO-BAKERY')->firstOrFail()->statusValue());
         $this->assertTrue(Expense::where('expense_number', 'like', 'TISH-DEMO-EXP-%')->get()->every(fn ($expense) => $expense->statusValue() === 'draft'));
         $this->assertSame(8, Product::where('sku', 'like', 'BRG-SAUCES-%')->count());
         $this->assertSame(['B01'], Location::query()->orderBy('code')->pluck('code')->all());
@@ -102,6 +106,9 @@ class BurgerRestaurantDemoSeederTest extends TestCase
         $this->assertSame(53, SupplierProduct::count());
         $this->assertSame(8, PurchaseOrder::where('purchase_order_number', 'like', 'TISH-DEMO-PO-%')->count());
         $this->assertSame(8, Expense::where('expense_number', 'like', 'TISH-DEMO-EXP-%')->count());
+        $this->assertSame(2, GoodsReceipt::where('status', 'posted')->count());
+        $this->assertSame(2, SupplierInvoice::where('invoice_number', 'like', 'TISH-DEMO-INV-%')->count());
+        $this->assertSame(2, SupplierPayment::whereHas('supplierInvoice', fn ($query) => $query->where('invoice_number', 'like', 'TISH-DEMO-INV-%'))->count());
     }
 
     public function test_full_seed_refuses_to_mix_legacy_records_into_the_restaurant_fixture(): void
