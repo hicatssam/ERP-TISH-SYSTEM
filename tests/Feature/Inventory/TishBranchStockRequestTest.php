@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Inventory;
 
+use App\Models\Category;
 use App\Models\Location;
 use App\Models\Product;
 use App\Models\StockRequest;
@@ -25,7 +26,9 @@ class TishBranchStockRequestTest extends TestCase
     private function admin(): User
     {
         $user = User::factory()->create();
-        $user->assignRole(Role::findOrCreate('Admin', 'web'));
+        $admin = Role::findOrCreate('Admin', 'web');
+        $admin->givePermissionTo(Permission::findOrCreate('stock_requests.create', 'web'));
+        $user->assignRole($admin);
 
         return $user;
     }
@@ -75,21 +78,45 @@ class TishBranchStockRequestTest extends TestCase
         $this->assertDatabaseCount('stock_requests', 0);
     }
 
+    private function ingredient(): Product
+    {
+        $category = Category::create([
+            'name' => 'Restaurant ingredients', 'slug' => 'tish-ingredients',
+            'is_active' => true,
+        ]);
+
+        return Product::create([
+            'category_id' => $category->id,
+            'name' => 'Tomatoes', 'sku' => 'TISH-TOMATO',
+            'unit' => 'kg', 'product_type' => 'standard',
+            'base_selling_price' => 0,
+            'is_active' => true, 'is_raw_material' => true,
+        ]);
+    }
+
     public function test_branch_user_cannot_forge_another_receiving_branch(): void
     {
         $destination = $this->branch('BRANCH_A');
-        $other = $this->branch('BRANCH_B');
-        $third = $this->branch('BRANCH_C');
+        $source = $this->branch('BRANCH_B');
+        $forged = $this->branch('BRANCH_C');
+        $ingredient = $this->ingredient();
         $user = User::factory()->create();
         $user->employee->locations()->attach($destination->id, ['is_primary' => true]);
         $user->givePermissionTo(Permission::findOrCreate('stock_requests.create', 'web'));
 
         $this->actingAs($user)->post(route('stock-requests.store'), [
-            'branch_id' => $third->id,
-            'source_location_id' => $other->id,
-            'items' => [['product_id' => 999, 'quantity' => 1]],
-        ])->assertSessionHasErrors('items.0.product_id');
+            'branch_id' => $forged->id,
+            'source_location_id' => $source->id,
+            'items' => [['product_id' => $ingredient->id, 'quantity' => 2]],
+        ])->assertRedirect();
 
-        $this->assertDatabaseCount('stock_requests', 0);
+        $this->assertDatabaseHas('stock_requests', [
+            'branch_location_id' => $destination->id,
+            'factory_location_id' => $source->id,
+            'status' => 'pending_factory_review',
+        ]);
+        $this->assertDatabaseMissing('stock_requests', [
+            'branch_location_id' => $forged->id,
+        ]);
     }
 }
