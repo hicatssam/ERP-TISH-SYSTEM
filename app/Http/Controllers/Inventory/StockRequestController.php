@@ -70,125 +70,85 @@ class StockRequestController extends Controller
         );
     }
 
+    /**
+     * TISH requests stock from one active branch to another.
+     * The legacy factory_location_id database column stores the supplying location
+     * until a separate, reversible schema migration is scheduled.
+     */
     public function create()
     {
-        $this->authorize(
-            'create',
-            StockRequest::class
-        );
+        $this->authorize('create', StockRequest::class);
 
-        $factory =
-            Location::query()
-                ->where(
-                    'type',
-                    LocationType::Factory->value
-                )
-                ->active()
-                ->firstOrFail();
+        $user = Auth::user();
+        $branches = Location::query()
+            ->branches()
+            ->active()
+            ->orderBy('name')
+            ->get(['id', 'name']);
 
-        $products =
-            Product::active()
-                ->where('is_raw_material', true)
-                ->with('category')
-                ->orderBy('name')
-                ->get();
+        $destination = $user->isAdmin()
+            ? null
+            : $user->primaryLocation();
 
-        return view(
-            'inventory.stock-requests.create',
-            compact(
-                'factory',
-                'products'
-            )
-        );
+        $products = Product::active()
+            ->where('is_raw_material', true)
+            ->with('category')
+            ->orderBy('name')
+            ->get();
+
+        return view('inventory.stock-requests.create', compact(
+            'branches', 'destination', 'products'
+        ));
     }
 
-    public function store(
-        StoreStockRequestRequest $request
-    ) {
-        $this->authorize(
-            'create',
-            StockRequest::class
-        );
+    public function store(StoreStockRequestRequest $request)
+    {
+        $this->authorize('create', StockRequest::class);
 
-        $user =
-            $request->user();
+        $user = $request->user();
+        $validated = $request->validated();
 
-        $branch =
-            $user->isAdmin()
-                ? Location::find(
-                    $request->branch_id
-                )
-                : $user->primaryLocation();
+        // Managers cannot forge the receiving branch in the submitted payload.
+        $branch = $user->isAdmin()
+            ? Location::query()->branches()->active()->find($validated['branch_id'] ?? null)
+            : $user->primaryLocation();
 
-        $factory =
-            Location::query()
-                ->where(
-                    'type',
-                    LocationType::Factory->value
-                )
-                ->active()
-                ->firstOrFail();
+        $source = Location::query()->branches()->active()
+            ->find($validated['source_location_id']);
 
-        if (! $branch || ! $factory) {
-            return back()
-                ->with(
-                    'error',
-                    'لا يمكن إنشاء الطلب. تحقق من الموقع.'
-                );
+        if (! $branch || ! $branch->is_active || ! $branch->isBranch()) {
+            throw ValidationException::withMessages([
+                'branch_id' => 'يجب اختيار فرع مستلم نشط قبل إنشاء طلب المخزون.',
+            ]);
         }
 
-        $validated =
-            $request->validated();
+        if (! $source || (int) $source->id === (int) $branch->id) {
+            throw ValidationException::withMessages([
+                'source_location_id' => 'اختر فرع توريد نشطاً مختلفاً عن الفرع المستلم.',
+            ]);
+        }
 
-        $stockRequest =
-            DB::transaction(
-                function () use (
-                    $user,
-                    $branch,
-                    $factory,
-                    $validated
-                ) {
-                    $stockRequest =
-                        StockRequest::create([
-                            'request_number' =>
-                                StockRequestNumberService::generate(),
+        $stockRequest = DB::transaction(function () use ($user, $branch, $source, $validated) {
+            $stockRequest = StockRequest::create([
+                'request_number' => StockRequestNumberService::generate(),
+                'branch_location_id' => $branch->id,
+                // Legacy column name retained to avoid breaking historical records.
+                'factory_location_id' => $source->id,
+                'status' => 'pending_factory_review',
+                'notes' => $validated['notes'] ?? null,
+                'created_by' => $user->id,
+            ]);
 
-                            'branch_location_id' =>
-                                $branch->id,
+            foreach ($validated['items'] as $item) {
+                StockRequestItem::create([
+                    'stock_request_id' => $stockRequest->id,
+                    'product_id' => $item['product_id'],
+                    'requested_quantity' => $item['quantity'],
+                ]);
+            }
 
-                            'factory_location_id' =>
-                                $factory->id,
-
-                            'status' =>
-                                'pending_factory_review',
-
-                            'notes' =>
-                                $validated['notes']
-                                ?? null,
-
-                            'created_by' =>
-                                $user->id,
-                        ]);
-
-                    foreach (
-                        $validated['items']
-                        as $item
-                    ) {
-                        StockRequestItem::create([
-                            'stock_request_id' =>
-                                $stockRequest->id,
-
-                            'product_id' =>
-                                $item['product_id'],
-
-                            'requested_quantity' =>
-                                $item['quantity'],
-                        ]);
-                    }
-
-                    return $stockRequest;
-                }
-            );
+            return $stockRequest;
+        });
 
         ActivityLogger::log(
             userId: $user->id,
@@ -198,36 +158,21 @@ class StockRequestController extends Controller
             recordId: $stockRequest->id,
             oldValues: null,
             newValues: $stockRequest->only([
-                'request_number',
-                'status',
-                'branch_location_id',
-                'factory_location_id',
+                'request_number', 'status', 'branch_location_id', 'factory_location_id',
             ]),
-            metadata: [
-                'items_count' =>
-                    count(
-                        $validated['items']
-                    ),
-            ],
+            metadata: ['items_count' => count($validated['items'])],
         );
 
         NotificationDispatcher::notifyByPermissions(
             new StockRequestCreatedNotification($stockRequest),
             ['stock_requests.view', 'stock_requests.review'],
-            $factory->id,
+            $source->id,
             ['inventory.view_all_locations'],
             $user->id,
         );
 
-        return redirect()
-            ->route(
-                'stock-requests.show',
-                $stockRequest
-            )
-            ->with(
-                'success',
-                'تم إرسال طلب المخزون بنجاح.'
-            );
+        return redirect()->route('stock-requests.show', $stockRequest)
+            ->with('success', 'تم إرسال طلب المخزون إلى فرع التوريد بنجاح.');
     }
 
     public function show(
