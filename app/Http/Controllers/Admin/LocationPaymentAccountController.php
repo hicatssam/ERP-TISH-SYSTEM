@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Location;
 use App\Models\LocationPaymentAccount;
 use App\Models\PaymentMethod;
+use App\Models\SupplierPayment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -181,6 +182,11 @@ class LocationPaymentAccountController extends Controller
         $data['can_disburse'] = $request->boolean('can_disburse');
         $data['sort_order'] = $data['sort_order'] ?? 0;
 
+        if (SupplierPayment::query()->where('source_payment_account_id', $account->id)->exists()
+            && (int) $data['payment_method_id'] !== (int) $account->payment_method_id) {
+            return back()->withErrors(['payment_method_id' => 'لا يمكن تغيير طريقة دفع حساب سبق استخدامه في حوالات الموردين.']);
+        }
+
         $account->update($data);
 
         return back()->with(
@@ -197,6 +203,10 @@ class LocationPaymentAccountController extends Controller
             $account->location_id === $location->id,
             404
         );
+
+        if (SupplierPayment::query()->where('source_payment_account_id', $account->id)->exists()) {
+            return back()->withErrors(['account' => 'هذا الحساب مرتبط بحوالات موردين. أوقفه بدل حذفه حفاظاً على السجل المالي.']);
+        }
 
         $account->delete();
 
