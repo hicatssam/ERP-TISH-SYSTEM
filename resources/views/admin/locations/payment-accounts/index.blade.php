@@ -492,7 +492,7 @@
                             السماح بالصرف من هذا الحساب إلى الموردين
                         </label>
                         <small class="form-hint">الافتراضي معطّل حفاظًا على الحسابات المستخدمة لاستقبال دفعات العملاء.</small>
-                    
+
 
                     </div>
 
@@ -653,7 +653,7 @@
                             <input type="checkbox" name="can_disburse" id="edit_can_disburse" value="1">
                             السماح بالصرف إلى الموردين
                         </label>
-                    
+
                     </div>
 
                 </fieldset>
