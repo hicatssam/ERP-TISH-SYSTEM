@@ -9,13 +9,14 @@ Current demo data:
 - 53 raw ingredients with opening stock and inventory movements
 - 8 **fictional raw-material suppliers** (meat, bakery bread, produce, dairy, sauces, drinks, pantry, frozen/vegetarian)
 - 53 supplier-product offers, **all raw ingredients**, no finished menu products
-- 8 itemized purchase orders in **draft** (not received and not posted)
+- 8 itemized purchase orders: 6 **draft**, 1 fully received and 1 partially received via application services
+- 2 posted goods receipts, 2 supplier invoices (one partially settled and one fully settled), and 2 supplier payments through real services
 - 8 categorized expenses in **draft** (not paid, not posted)
 - 6 preexisting staff accounts and role assignments (Admin, branch manager, cashier, chef, inventory manager, accountant)
 - Existing cash shift, tables, kitchen stations, 12 POS orders, actual sales invoices and recipe inventory movements
 - 4 additional example customers
 
-**Important**: Posted financial results currently come from POS orders generated through the real restaurant order service; expense and purchasing entries are intentionally drafts. No fake GL entries, supplier payments, posted goods receipts or salary payments are inserted directly. That would make reconciliation unreliable. Later fixtures should use normal receipt, supplier invoice, payment, payroll and expense posting services, followed by explicit reconciliation assertions.
+**Important**: Posted supplier invoices and payments run through real domain services and ledger integration; they are not inserted directly. The two lifecycle purchase orders are no longer drafts. Expenses remain unposted drafts. All sample companies and amounts are fictional. Independent reconciliation and regression testing remain required.
 
 ## Safe local execution
 
@@ -33,7 +34,7 @@ Do not run `migrate:fresh` on any database holding real data. Never execute this
 
 ## Outstanding for full enterprise demo
 
-1. Test realistic purchase orders -> goods receiving -> supplier invoices -> supplier payments through domain services (including partial delivery/returns).
+1. Extend procurement lifecycle fixtures to purchase returns, rejected deliveries, and multiple payment methods.
 2. Expense approval/posting, petty cash, cash-session closing and variance reconciliation through application services.
 3. Payroll/attendance/leave cases, deductions and pay-period settlement through HR services.
 4. Multi-period, multi-branch comparable financial reporting, COGS, wastage, expiry, and stock valuation.
