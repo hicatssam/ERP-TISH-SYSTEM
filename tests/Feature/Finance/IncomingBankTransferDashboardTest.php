@@ -30,7 +30,7 @@ class IncomingBankTransferDashboardTest extends TestCase
         [, $accountB] = $this->makeMethodAndAccount($branchB, $bank);
 
         foreach ([[$branchA, null], [$branchB, $accountB->id]] as $i => [$branch, $accountId]) {
-            \\Illuminate\\Support\\Facades\\DB::table('payments')->insert([
+            \Illuminate\Support\Facades\DB::table('payments')->insert([
                 'order_type' => 'order',
                 'order_id' => 100 + $i,
                 'payment_method_id' => $bank->id,
