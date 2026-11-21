@@ -85,10 +85,11 @@ class BurgerRestaurantDemoSeeder extends Seeder
             $this->openingStock($raw, $admin);
             $this->seedRestaurantOperations($admin);
             $this->seedOrders($admin);
+            $this->call(TishRestaurantOperationsDemoSeeder::class);
             $this->assertDemoInventoryAndRecipes();
         });
 
-        $this->command?->info('تم تجهيز Tish بالكامل: منيو برجر مصور، وصفات، مواد خام، مخزون، مطبخ، طاولات وطلبات مترابطة.');
+        $this->command?->info('تم تجهيز Tish التجريبي: منيو برجر، وصفات ومواد خام، مخزون، موردون للمواد الخام، مسودات مشتريات ومصاريف، مطبخ وطاولات وطلبات.');
         $this->command?->warn('بيانات تجريبية فقط. المستخدم admin وكلمة المرور TishDemo@2026!');
     }
 
