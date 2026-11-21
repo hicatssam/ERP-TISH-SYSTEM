@@ -70,17 +70,27 @@ Check 'Git working tree (must be clean for release)' {
     }
     git log -1 --oneline
 }
-Check 'Patch formatting / conflict markers' { git diff --check; git diff --cached --check }
+Check 'Patch formatting / conflict markers' {
+    $working = @(git diff --check 2>&1)
+    $workingExit = $LASTEXITCODE
+    $staged = @(git diff --cached --check 2>&1)
+    $stagedExit = $LASTEXITCODE
+    $working
+    $staged
+    if ($workingExit -ne 0 -or $stagedExit -ne 0) {
+        throw 'Git whitespace or patch format errors detected.'
+    }
+}
 Check 'Composer metadata' { composer validate --no-check-publish }
 Check 'PHP version' { php -v }
-Check 'PHP packages / extensions' { composer check-platform-reqs }
+Check 'PHP packages / extensions' { composer check-platform-reqs --no-interaction }
 Check 'Laravel configuration and routes' { php artisan route:list --json }
 Check 'Current MySQL schema migration status - READ ONLY' {
     $status = php artisan migrate:status 2>&1
     $status
     if ($status -match '\bPending\b') { throw 'Unapplied migrations. Review in staging; do not auto-migrate the live DB.' }
 }
-Check 'PHPUnit FULL suite, sqlite in-memory' { php -d memory_limit=1024M artisan test }
+Check 'PHPUnit FULL suite, sqlite in-memory' { php -d memory_limit=1024M artisan test --no-ansi }
 Check 'Frontend production build' { npm run build }
 
 Message ""
