@@ -12,6 +12,7 @@ return new class extends Migration
             // Existing customer-facing receiving accounts are NOT implicitly
             // authorized for outward transfers.
             $table->boolean('can_disburse')->default(false);
+            $table->boolean('is_customer_visible')->default(true);
         });
 
         Schema::table('supplier_payments', function (Blueprint $table): void {
@@ -29,7 +30,7 @@ return new class extends Migration
             $table->dropColumn(['beneficiary_name', 'beneficiary_account']);
         });
         Schema::table('location_payment_accounts', function (Blueprint $table): void {
-            $table->dropColumn('can_disburse');
+            $table->dropColumn(['can_disburse', 'is_customer_visible']);
         });
     }
 };
