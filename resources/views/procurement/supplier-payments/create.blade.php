@@ -93,6 +93,7 @@
                                     value="{{ $invoice->id }}"
 
                                     data-supplier="{{ $invoice->supplier_id }}"
+                                    data-location="{{ $invoice->location_id }}"
 
                                     data-remaining="{{ number_format(
                                         (float) $invoice->remaining_amount,
@@ -367,6 +368,7 @@
                                         type="radio"
                                         name="payment_method_id"
                                         value="{{ $method->id }}"
+                                        data-method-type="{{ $method->type }}"
                                         @checked(
                                             (string) old('payment_method_id')
                                             ===
@@ -436,6 +438,31 @@
 
                     </div>
 
+
+                    {{-- مصدر الحوالة: نفس الحساب الذي يصدر منه الدفع فعلياً --}}
+                    <div class="form-group" style="grid-column:1/-1" id="source-account-group">
+                        <label for="source-payment-account-id" class="form-label">الحساب المصدر للحوالة *</label>
+                        <select class="form-input" name="source_payment_account_id" id="source-payment-account-id">
+                            <option value="">اختر وسيلة الدفع والفاتورة أولاً</option>
+                            @foreach($sourceAccounts as $account)
+                                <option value="{{ $account->id }}" data-method="{{ $account->payment_method_id }}" data-location="{{ $account->location_id }}" @selected((string) old('source_payment_account_id') === (string) $account->id)>
+                                    {{ $account->name }} — {{ $account->provider_name ?: $account->paymentMethod?->name_ar }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <small class="form-hint">تظهر الحسابات المسموح بالصرف منها فقط، ضمن فرع الفاتورة ووسيلة الدفع.</small>
+                        @error('source_payment_account_id')<span class="form-error">{{ $message }}</span>@enderror
+                    </div>
+                    <div class="form-group" id="beneficiary-name-group">
+                        <label for="beneficiary-name" class="form-label">اسم المستفيد *</label>
+                        <input class="form-input" id="beneficiary-name" name="beneficiary_name" value="{{ old('beneficiary_name', $selectedInvoice?->supplier?->name) }}" maxlength="255" autocomplete="off" placeholder="الاسم الذي ستصل إليه الحوالة">
+                        @error('beneficiary_name')<span class="form-error">{{ $message }}</span>@enderror
+                    </div>
+                    <div class="form-group" id="beneficiary-account-group">
+                        <label for="beneficiary-account" class="form-label">حساب / محفظة المستفيد *</label>
+                        <input class="form-input" id="beneficiary-account" name="beneficiary_account" value="{{ old('beneficiary_account') }}" maxlength="150" autocomplete="off" placeholder="IBAN أو رقم المحفظة">
+                        @error('beneficiary_account')<span class="form-error">{{ $message }}</span>@enderror
+                    </div>
 
                     {{-- رقم المرجع --}}
                     <div class="form-group">
@@ -1241,6 +1268,35 @@
             */
 
             applyInvoice(false);
+            // Keep the source account bound to the selected invoice branch
+            // and payment method; the service repeats these checks server-side.
+            const sourceAccount = document.getElementById('source-payment-account-id');
+            const sourceGroup = document.getElementById('source-account-group');
+            const recipientName = document.getElementById('beneficiary-name');
+            const recipientAccount = document.getElementById('beneficiary-account');
+            const recipientGroups = [document.getElementById('beneficiary-name-group'), document.getElementById('beneficiary-account-group')];
+            const updateAccountSelection = () => {
+                const selectedMethod = form.querySelector('input[name="payment_method_id"]:checked');
+                const selectedInvoice = invoice.selectedOptions[0];
+                const isCash = selectedMethod?.dataset.methodType === 'cash';
+                const needsTransfer = Boolean(selectedMethod) && !isCash;
+                sourceGroup.hidden = !needsTransfer;
+                recipientGroups.forEach(group => { group.hidden = !needsTransfer; });
+                sourceAccount.required = needsTransfer;
+                recipientName.required = needsTransfer;
+                recipientAccount.required = needsTransfer;
+                for (const option of sourceAccount.options) {
+                    if (!option.value) continue;
+                    option.hidden = option.dataset.method !== selectedMethod?.value || option.dataset.location !== selectedInvoice?.dataset.location;
+                    option.disabled = option.hidden;
+                }
+                if (sourceAccount.selectedOptions[0]?.disabled) sourceAccount.value = '';
+            };
+            form.querySelectorAll('input[name="payment_method_id"]').forEach(radio => radio.addEventListener('change', updateAccountSelection));
+            invoice.addEventListener('change', updateAccountSelection);
+            updateAccountSelection();
+
+
 
         })();
 
