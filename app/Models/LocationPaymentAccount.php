@@ -22,6 +22,7 @@ class LocationPaymentAccount extends Model
         'phone_number',
         'instructions',
         'is_active',
+        'can_disburse',
         'sort_order',
     ];
 
@@ -29,6 +30,7 @@ class LocationPaymentAccount extends Model
     {
         return [
             'is_active' => 'boolean',
+            'can_disburse' => 'boolean',
             'sort_order' => 'integer',
         ];
     }
