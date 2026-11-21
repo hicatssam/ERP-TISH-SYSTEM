@@ -164,15 +164,36 @@ test('QR table is carried across menu pages and cleared after checkout', () => {
 });
 test('QR checkout preselects only a currently available table', () => {
     const source = fs.readFileSync(path.join(root, 'resources/views/customer-menu/checkout/checkout.blade.php'), 'utf8');
-    const fn = source.slice(source.indexOf('function preselectQrTable()'), source.indexOf('function serviceFields()'));
+    // Include the checkout table-lock helper: preselectQrTable now persists the QR table
+    // in sessionStorage and delegates rendering/selection to showLockedTable().
+    const lockHelper = source.slice(source.indexOf('function showLockedTable()'), source.indexOf('function serviceFields()'));
     const selectTable = source.slice(source.indexOf('function selectCheckoutTable('), source.indexOf("document.getElementById('tableGrid').addEventListener"));
     for (const disabled of [false, true]) {
         const service = {options: [{value: 'dine_in'}, {value: 'takeaway'}], value: 'takeaway'};
         const input = {value: ''};
-        const card = {dataset: {tableId: '7'}, disabled, setAttribute() {}, classList: {toggle() {}}};
-        vm.runInNewContext(fn + selectTable + '\npreselectQrTable();', {CM: {selectedTable() {return {id: 7};}},
-            document: {getElementById(id) {return id === 'serviceType' ? service : input;}, querySelectorAll() {return [card];}}});
+        const hint = {hidden: true, textContent: ''};
+        const card = {dataset: {tableId: '7'}, disabled, textContent: 'Table 7', setAttribute() {}, classList: {toggle() {}}};
+        const stored = new Map();
+        const sessionStorage = {
+            getItem(key) {return stored.get(key) || null;},
+            setItem(key, value) {stored.set(key, value);},
+            removeItem(key) {stored.delete(key);}
+        };
+        const document = {
+            getElementById(id) {
+                if (id === 'serviceType') return service;
+                if (id === 'tableIdInput') return input;
+                if (id === 'tableOneTimeHint') return hint;
+                return null;
+            },
+            querySelectorAll() {return [card];}
+        };
+        vm.runInNewContext("let lockedTableId = ''; const tableVisitKey = 'tish-test-table';\n" + lockHelper + selectTable + '\npreselectQrTable();', {
+            CM: {selectedTable() {return {id: 7};}}, document, sessionStorage
+        });
         assert.equal(service.value, disabled ? 'takeaway' : 'dine_in');
         assert.equal(String(input.value), disabled ? '' : '7');
+        assert.equal(stored.get('tish-test-table'), disabled ? undefined : '7');
+        assert.equal(hint.hidden, disabled);
     }
 });
