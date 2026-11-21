@@ -23,6 +23,9 @@ class StoreSupplierPaymentRequest extends FormRequest
             'amount' => ['required', 'numeric', 'gt:0'],
             'payment_date' => ['required', 'date'],
             'payment_method_id' => ['required', 'integer', Rule::exists('payment_methods', 'id')],
+            'source_payment_account_id' => ['nullable', 'integer', Rule::exists('location_payment_accounts', 'id')],
+            'beneficiary_name' => ['nullable', 'string', 'max:255'],
+            'beneficiary_account' => ['nullable', 'string', 'max:150'],
             'reference_number' => ['nullable', 'string', 'max:100'],
             'notes' => ['nullable', 'string'],
         ];

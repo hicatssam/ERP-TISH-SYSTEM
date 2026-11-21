@@ -3,6 +3,14 @@
 namespace Tests\Feature;
 
 use App\Models\Category;
+use App\Models\Supplier;
+use App\Models\SupplierProduct;
+use App\Models\PurchaseOrder;
+use App\Models\PurchaseOrderItem;
+use App\Models\GoodsReceipt;
+use App\Models\SupplierInvoice;
+use App\Models\SupplierPayment;
+use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\Location;
 use App\Models\Order;
@@ -29,6 +37,23 @@ class BurgerRestaurantDemoSeederTest extends TestCase
         $this->assertSame(76, RestaurantMenuItem::count());
         $this->assertSame(12, Order::count());
         $this->assertSame(12, Invoice::count());
+        $this->assertSame(8, Supplier::where('supplier_code', 'like', 'TISH-SUP-%')->count());
+        $this->assertSame(53, SupplierProduct::count());
+        $this->assertSame(8, PurchaseOrder::where('purchase_order_number', 'like', 'TISH-DEMO-PO-%')->count());
+        $this->assertSame(8, Expense::where('expense_number', 'like', 'TISH-DEMO-EXP-%')->count());
+        $this->assertSame(2, GoodsReceipt::where('status', 'posted')->count());
+        $this->assertSame(2, SupplierInvoice::where('invoice_number', 'like', 'TISH-DEMO-INV-%')->count());
+        $this->assertSame(2, SupplierPayment::whereHas('supplierInvoice', fn ($query) => $query->where('invoice_number', 'like', 'TISH-DEMO-INV-%'))->count());
+        $this->assertGreaterThan(0, (float) SupplierInvoice::where('invoice_number', 'TISH-DEMO-INV-MEAT')->value('remaining_amount'));
+        $this->assertEqualsWithDelta(0, (float) SupplierInvoice::where('invoice_number', 'TISH-DEMO-INV-BAKERY')->value('remaining_amount'), .02);
+        $this->assertSame(0, SupplierProduct::whereHas('product', fn ($q) => $q->where('is_raw_material', false))->count());
+        $this->assertSame(0, PurchaseOrderItem::whereHas('product', fn ($q) => $q->where('is_raw_material', false))->count());
+        $demoOrders = PurchaseOrder::where('purchase_order_number', 'like', 'TISH-DEMO-PO-%')->get();
+        $this->assertTrue($demoOrders->every(fn ($order) => (float) $order->grand_total > 0));
+        $this->assertSame(6, $demoOrders->filter(fn ($order) => $order->statusValue() === 'draft')->count());
+        $this->assertSame('received', PurchaseOrder::where('purchase_order_number', 'TISH-DEMO-PO-MEAT')->firstOrFail()->statusValue());
+        $this->assertSame('partially_received', PurchaseOrder::where('purchase_order_number', 'TISH-DEMO-PO-BAKERY')->firstOrFail()->statusValue());
+        $this->assertTrue(Expense::where('expense_number', 'like', 'TISH-DEMO-EXP-%')->get()->every(fn ($expense) => $expense->statusValue() === 'draft'));
         $this->assertSame(8, Product::where('sku', 'like', 'BRG-SAUCES-%')->count());
         $this->assertSame(['B01'], Location::query()->orderBy('code')->pluck('code')->all());
         $branchId = Location::query()->where('code', 'B01')->value('id');
@@ -77,6 +102,13 @@ class BurgerRestaurantDemoSeederTest extends TestCase
         $this->assertSame(12, Order::count());
         $this->assertSame($quantities, DB::table('inventories')->orderBy('id')->pluck('quantity', 'id')->all());
         $this->assertSame(76, Recipe::count());
+        $this->assertSame(8, Supplier::where('supplier_code', 'like', 'TISH-SUP-%')->count());
+        $this->assertSame(53, SupplierProduct::count());
+        $this->assertSame(8, PurchaseOrder::where('purchase_order_number', 'like', 'TISH-DEMO-PO-%')->count());
+        $this->assertSame(8, Expense::where('expense_number', 'like', 'TISH-DEMO-EXP-%')->count());
+        $this->assertSame(2, GoodsReceipt::where('status', 'posted')->count());
+        $this->assertSame(2, SupplierInvoice::where('invoice_number', 'like', 'TISH-DEMO-INV-%')->count());
+        $this->assertSame(2, SupplierPayment::whereHas('supplierInvoice', fn ($query) => $query->where('invoice_number', 'like', 'TISH-DEMO-INV-%'))->count());
     }
 
     public function test_full_seed_refuses_to_mix_legacy_records_into_the_restaurant_fixture(): void

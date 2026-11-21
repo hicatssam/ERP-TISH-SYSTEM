@@ -21,6 +21,39 @@ class IncomingBankTransferDashboardTest extends TestCase
     use RefreshDatabase;
 
     #[Test]
+    public function empty_incoming_panel_shows_separate_bank_sales_without_counting_them_as_receipts(): void
+    {
+        $branchA = $this->makeLocation('A');
+        $branchB = $this->makeLocation('B');
+        $user = $this->makeBranchUser($branchA, ['financial.branch.view']);
+        [$bank, $accountA] = $this->makeMethodAndAccount($branchA);
+        [, $accountB] = $this->makeMethodAndAccount($branchB, $bank);
+
+        foreach ([[$branchA, null], [$branchB, $accountB->id]] as $i => [$branch, $accountId]) {
+            \Illuminate\Support\Facades\DB::table('payments')->insert([
+                'order_type' => 'order',
+                'order_id' => 100 + $i,
+                'payment_method_id' => $bank->id,
+                'location_payment_account_id' => $accountId,
+                'location_id' => $branch->id,
+                'amount' => 42,
+                'status' => 'confirmed',
+                'received_by' => $user->id,
+                'paid_at' => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        $this->actingAs($user)->get(route('incoming-bank-transfers.index'))
+            ->assertOk()
+            ->assertViewHas('bankSalesCount', 1)
+            ->assertViewHas('unassignedBankSalesCount', 1)
+            ->assertViewHas('summary', fn ($summary) => (int) $summary->transfers_count === 0)
+            ->assertSee('هذه المدفوعات موجودة في سجل المبيعات البنكية');
+    }
+
+    #[Test]
     public function branch_user_sees_only_own_branch_transfers(): void
     {
         $branchA = $this->makeLocation('A');
