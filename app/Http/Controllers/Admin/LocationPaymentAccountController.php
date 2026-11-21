@@ -94,6 +94,7 @@ class LocationPaymentAccountController extends Controller
                 'nullable',
                 'boolean',
             ],
+            'can_disburse' => ['nullable', 'boolean'],
             'sort_order' => [
                 'nullable',
                 'integer',
@@ -103,6 +104,7 @@ class LocationPaymentAccountController extends Controller
 
         $data['location_id'] = $location->id;
         $data['is_active'] = $request->boolean('is_active');
+        $data['can_disburse'] = $request->boolean('can_disburse');
         $data['sort_order'] = $data['sort_order'] ?? 0;
 
         LocationPaymentAccount::create($data);
@@ -167,6 +169,7 @@ class LocationPaymentAccountController extends Controller
                 'nullable',
                 'boolean',
             ],
+            'can_disburse' => ['nullable', 'boolean'],
             'sort_order' => [
                 'nullable',
                 'integer',
@@ -175,6 +178,7 @@ class LocationPaymentAccountController extends Controller
         ]);
 
         $data['is_active'] = $request->boolean('is_active');
+        $data['can_disburse'] = $request->boolean('can_disburse');
         $data['sort_order'] = $data['sort_order'] ?? 0;
 
         $account->update($data);
