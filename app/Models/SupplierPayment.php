@@ -10,7 +10,8 @@ class SupplierPayment extends Model
     protected $fillable = [
         'payment_number', 'supplier_id', 'supplier_invoice_id', 'location_id',
         'currency_id', 'exchange_rate', 'amount', 'base_amount', 'applied_amount',
-        'payment_date', 'payment_method_id', 'reference_number', 'status', 'notes',
+        'payment_date', 'payment_method_id', 'source_payment_account_id',
+        'beneficiary_name', 'beneficiary_account', 'reference_number', 'status', 'notes',
         'created_by',
     ];
 
@@ -48,6 +49,11 @@ class SupplierPayment extends Model
     public function paymentMethod(): BelongsTo
     {
         return $this->belongsTo(PaymentMethod::class);
+    }
+
+    public function sourcePaymentAccount(): BelongsTo
+    {
+        return $this->belongsTo(LocationPaymentAccount::class, 'source_payment_account_id');
     }
 
     public function creator(): BelongsTo

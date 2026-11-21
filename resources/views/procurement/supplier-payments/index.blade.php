@@ -120,6 +120,16 @@
             <a class="btn btn-gold" href="{{ route('supplier-payments.create') }}">تسجيل دفعة مورد</a>
         @endcan
     </div>
+    <nav aria-label="عمليات مالية مرتبطة" style="display:flex;gap:.5rem;flex-wrap:wrap;margin:.6rem 0 1rem">
+        @can('supplier_invoices.view')<a class="btn btn-ghost btn-sm" href="{{ route('supplier-invoices.index') }}">فواتير الموردين</a>@endcan
+        @can('purchase_orders.view')<a class="btn btn-ghost btn-sm" href="{{ route('purchase-orders.index') }}">أوامر الشراء</a>@endcan
+        @can('goods_receipts.view')<a class="btn btn-ghost btn-sm" href="{{ route('goods-receipts.index') }}">استلام المشتريات</a>@endcan
+        @can('expenses.view')<a class="btn btn-ghost btn-sm" href="{{ route('costing.expenses.index') }}">المصاريف التشغيلية</a>@endcan
+        @can('accounting.books.view')<a class="btn btn-ghost btn-sm" href="{{ route('accounting.books.journals') }}">القيود المحاسبية</a>@endcan
+    </nav>
+    @if($sourceAccount)
+        <p class="page-subheading" style="margin-bottom:.75rem">حوالات الموردين الصادرة من: <strong>{{ $sourceAccount->name }}</strong> — <a href="{{ route('supplier-payments.index') }}">إظهار كل الدفعات</a></p>
+    @endif
     <div class="table-wrap">
         <table class="data-table">
             <thead>
@@ -131,6 +141,8 @@
                     <th>المبلغ المدفوع</th>
                     <th>المبلغ المطبق</th>
                     <th>طريقة الدفع</th>
+                    <th>الحساب المصدر</th>
+                    <th>مرجع الحوالة</th>
                 </tr>
             </thead>
             <tbody>
@@ -145,8 +157,10 @@
                         <td>{{ number_format($payment->amount, 2) }} {{ $payment->currency?->displayName() }}</td>
                         <td>{{ number_format($payment->applied_amount, 2) }}</td>
                         <td>{{ $payment->paymentMethod?->name_ar }}</td>
+                        <td>{{ $payment->sourcePaymentAccount?->name ?? 'غير محدد (سجل سابق/نقدي)' }}</td>
+                        <td>{{ $payment->reference_number ?: '—' }}</td>
                 </tr>@empty<tr>
-                        <td colspan="7">
+                        <td colspan="9">
                             <div class="empty-state-sm">لا توجد دفعات موردين.</div>
                         </td>
                     </tr>

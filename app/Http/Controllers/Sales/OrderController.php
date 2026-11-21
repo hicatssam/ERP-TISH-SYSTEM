@@ -432,6 +432,7 @@ class OrderController extends Controller
             ->with('paymentMethod')
             ->where('location_id', $order->location_id)
             ->where('is_active', true)
+            ->where('is_customer_visible', true)
             ->whereIn(
                 'payment_method_id',
                 $bankPaymentMethods->pluck('id')
