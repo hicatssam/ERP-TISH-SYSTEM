@@ -11,7 +11,7 @@
 </div>
 <div class="table-wrap">
     <table class="data-table">
-        <thead><tr><th>رقم الطلب</th><th>الفرع</th><th>المصنع</th><th>الحالة</th><th>التاريخ</th><th>الإجراءات</th></tr></thead>
+        <thead><tr><th>رقم الطلب</th><th>الفرع</th><th>فرع التوريد</th><th>الحالة</th><th>التاريخ</th><th>الإجراءات</th></tr></thead>
         <tbody>
         @forelse($requests as $req)
             <tr>
