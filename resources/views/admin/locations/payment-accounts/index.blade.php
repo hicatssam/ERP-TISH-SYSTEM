@@ -173,6 +173,7 @@
                     @endif
 
                     @if($account->can_disburse)<span class="badge badge-success">مسموح بالصرف</span>@endif
+                    @if($account->is_customer_visible)<span class="badge">يظهر للعملاء</span>@else<span class="badge">حساب داخلي</span>@endif
                     <span class="pa-sort-order">الترتيب: {{ $account->sort_order }}</span>
 
                 </div>
@@ -195,6 +196,7 @@
                             'sort_order' => $account->sort_order,
                             'is_active' => (bool) $account->is_active,
                             'can_disburse' => (bool) $account->can_disburse,
+                            'is_customer_visible' => (bool) $account->is_customer_visible,
                             'updateUrl' => route('locations.payment-accounts.update', [$location, $account]),
                         ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) }}"
                         onclick="paOpenEditModal(JSON.parse(this.dataset.account))"
@@ -314,7 +316,7 @@
                     <div class="form-group">
 
                         <label class="form-label">
-                            الاسم الظاهر للعميل
+                            اسم الحساب
                         </label>
 
                         <input
@@ -480,6 +482,12 @@
                     </div>
                     <div class="form-group">
                         <label class="pa-checkbox-label">
+                            <input type="checkbox" name="is_customer_visible" value="1" @checked(old('is_customer_visible', true))>
+                            إظهار الحساب للعملاء لاستقبال المدفوعات
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label class="pa-checkbox-label">
                             <input type="checkbox" name="can_disburse" value="1" @checked(old('can_disburse', false))>
                             السماح بالصرف من هذا الحساب إلى الموردين
                         </label>
@@ -573,7 +581,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">الاسم الظاهر للعميل</label>
+                        <label class="form-label">اسم الحساب</label>
                         <input type="text" name="name" id="edit_name" class="form-input" required>
                     </div>
 
@@ -632,6 +640,12 @@
                         <label class="pa-checkbox-label">
                             <input type="checkbox" name="is_active" id="edit_is_active" value="1">
                             حساب فعال
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label class="pa-checkbox-label">
+                            <input type="checkbox" name="is_customer_visible" id="edit_is_customer_visible" value="1">
+                            إظهار الحساب للعملاء
                         </label>
                     </div>
                     <div class="form-group">
