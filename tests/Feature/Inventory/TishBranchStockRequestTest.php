@@ -87,7 +87,7 @@ class TishBranchStockRequestTest extends TestCase
 
         return Product::create([
             'category_id' => $category->id,
-            'name' => 'Tomatoes', 'sku' => 'TISH-TOMATO',
+            'name' => 'Tomatoes', 'sku' => 'TISH-TOMATO', 'barcode' => 'TISH-TOMATO',
             'unit' => 'kg', 'product_type' => 'standard',
             'base_selling_price' => 0,
             'is_active' => true, 'is_raw_material' => true,
