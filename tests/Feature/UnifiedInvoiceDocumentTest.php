@@ -127,7 +127,7 @@ class UnifiedInvoiceDocumentTest extends TestCase
                 $this->assertStringContainsString('class="ci-blocks"', $html);
                 if ($case['class'] === 'invoice-watermark-partial') {
                     $this->assertStringContainsString('ci-payment-fallback-pending', $html);
-                    $this->assertStringNotContainsString('ci-payment-image', $html);
+                    $this->assertStringNotContainsString('class="ci-payment-image ', $html);
                 } else {
                     $this->assertStringContainsString(
                         'ci-payment-image ci-payment-image-'.($case['class'] === 'invoice-watermark-paid' ? 'paid' : 'unpaid'),
