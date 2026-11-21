@@ -284,7 +284,7 @@ class StockRequestController extends Controller
 
         return back()->with(
             'success',
-            'تم إرسال الطلب إلى المصنع.'
+            'تم إرسال الطلب إلى فرع التوريد.'
         );
     }
 
