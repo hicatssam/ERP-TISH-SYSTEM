@@ -86,6 +86,7 @@ class BurgerRestaurantDemoSeeder extends Seeder
             $this->seedRestaurantOperations($admin);
             $this->seedOrders($admin);
             $this->call(TishRestaurantOperationsDemoSeeder::class);
+            $this->call(TishProcurementLifecycleDemoSeeder::class);
             $this->assertDemoInventoryAndRecipes();
         });
 
