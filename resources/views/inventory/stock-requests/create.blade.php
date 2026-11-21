@@ -15,6 +15,7 @@
 @if($branches->count() < 2)
     <div class="alert alert-warning" role="alert" style="margin-bottom:1rem">
         يلزم وجود فرعين نشطين على الأقل لإجراء طلب نقل داخلي. إذا كان المطعم فرعاً واحداً، استخدم أوامر الشراء واستلام البضاعة من المورد بدلاً من تحويل بين الفروع.
+        <a href="{{ route('purchase-orders.create') }}" class="btn btn-ghost btn-sm" style="margin-inline-start:.75rem">فتح أمر شراء من المورد</a>
     </div>
 @endif
 
