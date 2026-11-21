@@ -88,7 +88,10 @@ class SupplierPaymentSourceAccountTest extends TestCase
         }
         $this->assertDatabaseCount('supplier_payments', 0);
 
-        $account->update(['can_disburse' => true]);
+        $account->update(['can_disburse' => true, 'is_customer_visible' => false]);
+        // The public menu must not reveal a treasury-only source account.
+        $this->get('/menu/B01/payment-options')->assertOk()
+            ->assertDontSee('بنك فلسطين — حساب فرع TISH التجريبي');
         $payment = $service->record($data + ['source_payment_account_id' => $account->id], $actor);
         $this->assertSame($account->id, $payment->source_payment_account_id);
         $this->assertSame('بسطة تجريبية', $payment->beneficiary_name);
