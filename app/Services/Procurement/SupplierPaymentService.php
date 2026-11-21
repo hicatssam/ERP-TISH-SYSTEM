@@ -3,6 +3,7 @@
 namespace App\Services\Procurement;
 
 use App\Models\SupplierInvoice;
+use App\Models\LocationPaymentAccount;
 use App\Models\SupplierPayment;
 use App\Models\User;
 use App\Services\ActivityLogger;
@@ -94,6 +95,51 @@ class SupplierPaymentService
                 ]);
             }
 
+            // A payment method (Bank of Palestine / PalPay) does not identify
+            // the actual company account. Require an explicitly authorized
+            // outgoing account for all non-cash supplier settlements.
+            $sourceAccount = null;
+            if ($paymentMethod->type !== 'cash') {
+                if (empty($data['source_payment_account_id'])) {
+                    throw ValidationException::withMessages([
+                        'source_payment_account_id' => 'يجب تحديد الحساب الذي خرجت منه الحوالة.',
+                    ]);
+                }
+
+                $sourceAccount = LocationPaymentAccount::query()
+                    ->whereKey((int) $data['source_payment_account_id'])
+                    ->where('location_id', $invoice->location_id)
+                    ->where('payment_method_id', $paymentMethod->id)
+                    ->where('is_active', true)
+                    ->where('can_disburse', true)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (! $sourceAccount) {
+                    throw ValidationException::withMessages([
+                        'source_payment_account_id' => 'الحساب المصدر غير نشط أو غير مسموح بالصرف منه أو لا يتبع الفرع وطريقة الدفع.',
+                    ]);
+                }
+
+                if (blank($data['reference_number'] ?? null)) {
+                    throw ValidationException::withMessages([
+                        'reference_number' => 'رقم مرجع الحوالة مطلوب للمدفوعات غير النقدية.',
+                    ]);
+                }
+            } elseif (! empty($data['source_payment_account_id'])) {
+                throw ValidationException::withMessages([
+                    'source_payment_account_id' => 'لا تحدد حساب تحويل بنكي عند الدفع نقداً.',
+                ]);
+            }
+
+            $beneficiaryName = trim((string) ($data['beneficiary_name'] ?? ''));
+            $beneficiaryAccount = trim((string) ($data['beneficiary_account'] ?? ''));
+            if ($paymentMethod->type !== 'cash' && ($beneficiaryName === '' || $beneficiaryAccount === '')) {
+                throw ValidationException::withMessages([
+                    'beneficiary_account' => 'يجب تحديد اسم المستفيد وحسابه أو رقم محفظته.',
+                ]);
+            }
+
             $payment = SupplierPayment::query()->create([
                 'payment_number' => $this->numbers->next('supplier_payment', 'SPY'),
                 'supplier_id' => $invoice->supplier_id,
@@ -107,6 +153,9 @@ class SupplierPaymentService
                 'payment_date' => $data['payment_date'],
                 'payment_method_id' => $data['payment_method_id'],
                 'reference_number' => $data['reference_number'] ?? null,
+                'source_payment_account_id' => $sourceAccount?->id,
+                'beneficiary_name' => $beneficiaryName ?: null,
+                'beneficiary_account' => $beneficiaryAccount ?: null,
                 'status' => 'confirmed',
                 'notes' => $data['notes'] ?? null,
                 'created_by' => $actor->id,
@@ -124,7 +173,10 @@ class SupplierPaymentService
                 recordId: $payment->id,
                 oldValues: null,
                 newValues: $payment->only(['payment_number', 'supplier_id', 'supplier_invoice_id', 'amount']),
-                metadata: ['invoice_remaining_amount' => $invoice->remaining_amount],
+                metadata: [
+                    'invoice_remaining_amount' => $invoice->remaining_amount,
+                    'source_payment_account_id' => $sourceAccount?->id,
+                ],
             );
 
             DB::afterCommit(function () use ($payment, $invoice): void {
@@ -140,7 +192,7 @@ class SupplierPaymentService
                 );
             });
 
-            return $payment->load(['supplier', 'supplierInvoice', 'currency', 'paymentMethod', 'creator']);
+            return $payment->load(['supplier', 'supplierInvoice', 'currency', 'paymentMethod', 'sourcePaymentAccount', 'creator']);
         });
     }
 }

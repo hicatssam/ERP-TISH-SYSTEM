@@ -218,6 +218,7 @@ class CustomerMenuController extends Controller
                     ->where('location_id', $location->id)
                     ->where('payment_method_id', $method->id)
                     ->where('is_active', true)
+                    ->where('is_customer_visible', true)
                     ->orderBy('sort_order')
                     ->orderBy('id')
                     ->get()
