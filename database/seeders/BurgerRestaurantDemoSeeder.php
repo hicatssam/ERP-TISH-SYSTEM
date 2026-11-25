@@ -17,6 +17,7 @@ use App\Models\Order;
 use App\Models\PaymentMethod;
 use App\Models\Payment;
 use App\Models\AccountingJournal;
+use App\Services\Finance\AccountingBookService;
 use App\Models\Product;
 use App\Models\Recipe;
 use App\Models\RecipeItem;
@@ -87,6 +88,7 @@ class BurgerRestaurantDemoSeeder extends Seeder
                 ->update(['show_in_delivery' => false]);
             $this->openingStock($raw, $admin);
             $this->seedRestaurantOperations($admin);
+            $this->postOpeningInventoryValue($admin);
             $this->seedOrders($admin);
             $this->seedBankVerificationScenario($admin);
             $this->assertDemoInventoryAndRecipes();
@@ -518,6 +520,46 @@ class BurgerRestaurantDemoSeeder extends Seeder
      * Exercises: pending payment -> bank verification -> customer advance 2400
      * -> confirmed order -> invoice -> advance settlement -> COGS / inventory.
      */
+    /**
+     * QA-only opening valuation. InventoryService records physical opening stock
+     * but does not create a GL capital contribution. Book it once at actual
+     * movement base cost, before order costs start crediting inventory 1200.
+     */
+    private function postOpeningInventoryValue(User $admin): void
+    {
+        $accounts = DB::table('accounting_accounts')
+            ->whereIn('code', ['1200', '3000'])
+            ->where('is_active', true)
+            ->pluck('id', 'code');
+        if (! isset($accounts['1200'], $accounts['3000'])) {
+            throw new RuntimeException('Opening inventory and equity accounts are required.');
+        }
+
+        foreach (Location::query()->branches()->active()->get() as $branch) {
+            $amount = round((float) DB::table('stock_movements')
+                ->where('location_id', $branch->id)
+                ->where('reason', 'opening_stock')
+                ->where('idempotency_key', 'like', 'tish-demo:opening:%')
+                ->sum('base_total_cost'), 2);
+            if ($amount <= 0) {
+                throw new RuntimeException("No valued opening stock for {$branch->code}.");
+            }
+
+            app(AccountingBookService::class)->postSourceEntry(
+                'tish_demo_opening_stock',
+                (int) $branch->id,
+                (int) $branch->id,
+                now()->toDateString(),
+                'إثبات مخزون افتتاحي تجريبي مقابل رأس المال',
+                [
+                    ['account_id' => $accounts['1200'], 'debit' => $amount, 'credit' => 0],
+                    ['account_id' => $accounts['3000'], 'debit' => 0, 'credit' => $amount],
+                ],
+                $admin,
+            );
+        }
+    }
+
     private function seedBankVerificationScenario(User $admin): void
     {
         $branch = Location::query()->where('code', 'B01')->firstOrFail();
@@ -598,6 +640,21 @@ class BurgerRestaurantDemoSeeder extends Seeder
                     throw new RuntimeException("Demo payment has no GL journal: {$payment->id}");
                 }
             }
+        }
+
+        $openingJournals = AccountingJournal::query()
+            ->where('source_type', 'tish_demo_opening_stock')->count();
+        if ($openingJournals !== Location::query()->branches()->active()->count()) {
+            throw new RuntimeException('Missing opening inventory valuation journals.');
+        }
+
+        $inventoryNet = (float) DB::table('accounting_journal_lines as line')
+            ->join('accounting_accounts as account', 'account.id', '=', 'line.accounting_account_id')
+            ->where('account.code', '1200')
+            ->selectRaw('COALESCE(SUM(line.debit - line.credit), 0) as balance')
+            ->value('balance');
+        if ($inventoryNet < -0.005) {
+            throw new RuntimeException('Inventory ledger unexpectedly negative after demo sales.');
         }
 
         $unbalanced = DB::table('accounting_journals')
