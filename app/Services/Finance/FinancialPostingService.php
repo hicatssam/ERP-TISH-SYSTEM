@@ -83,6 +83,64 @@ class FinancialPostingService
         );
     }
 
+    /**
+     * Move pre-invoice customer advances into receivables when the sale is posted.
+     * This never touches the bank again and is idempotent per invoice.
+     * Must be called in the same transaction as invoice issue and sale posting.
+     */
+    public function settleOrderAdvances(Invoice $invoice, User $actor): void
+    {
+        $sourceType = 'invoice_advance_settlements';
+        if (DB::table('accounting_journals')->where('source_type', $sourceType)
+            ->where('source_id', $invoice->id)->exists()) {
+            return;
+        }
+
+        $orderType = $invoice->order_type instanceof \BackedEnum
+            ? $invoice->order_type->value : (string) $invoice->order_type;
+        $column = $orderType === 'order' ? 'order_id' : 'special_cake_order_id';
+        if (! in_array($orderType, ['order', 'special_cake_order'], true)) {
+            return;
+        }
+
+        $advance = DB::table('accounting_journal_lines as line')
+            ->join('accounting_accounts as account', 'account.id', '=', 'line.accounting_account_id')
+            ->join('accounting_journals as journal', 'journal.id', '=', 'line.accounting_journal_id')
+            ->join('sales_ledger_entries as entry', function ($join) {
+                $join->on('entry.id', '=', 'journal.source_id')
+                    ->where('journal.source_type', '=', 'sales_ledger_entries');
+            })
+            ->where('account.code', '2400')
+            ->where('entry.'.$column, $invoice->order_id)
+            ->where('entry.location_id', $invoice->location_id)
+            ->selectRaw('COALESCE(SUM(line.credit - line.debit), 0) as amount')
+            ->value('amount');
+
+        $amount = round(min((float) $invoice->total_amount, max(0, (float) $advance)), 2);
+        if ($amount <= 0) {
+            return;
+        }
+
+        $accounts = DB::table('accounting_accounts')->whereIn('code', ['1100', '2400'])
+            ->where('is_active', true)->pluck('id', 'code');
+        if (! isset($accounts['1100'], $accounts['2400'])) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'accounting' => 'حسابات تسوية الدفعات المقدمة غير جاهزة.',
+            ]);
+        }
+
+        app(AccountingBookService::class)->postSourceEntry(
+            $sourceType, (int) $invoice->id, (int) $invoice->location_id,
+            $invoice->issued_at->toDateString(),
+            "تسوية دفعات مقدمة للفاتورة {$invoice->invoice_number}",
+            [
+                ['account_id' => $accounts['2400'], 'debit' => $amount, 'credit' => 0],
+                ['account_id' => $accounts['1100'], 'debit' => 0, 'credit' => $amount],
+            ],
+            $actor
+        );
+    }
+
     public function paymentReversal(Payment $payment, User $actor, string $keySuffix, float $amount): void
     {
         $this->post(
