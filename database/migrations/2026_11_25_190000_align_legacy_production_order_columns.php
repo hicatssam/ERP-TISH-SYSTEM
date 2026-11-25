@@ -60,12 +60,7 @@ return new class extends Migration
                     ->whereNotNull('actual_stock_quantity')
                     ->update(['actual_quantity' => DB::raw('actual_stock_quantity')]);
             }
-            if (Schema::hasColumn('production_order_items', 'issued_stock_quantity')) {
-                DB::table('production_order_items')
-                    ->where('reserved_quantity', 0)
-                    ->where('issued_stock_quantity', '>', 0)
-                    ->update(['reserved_quantity' => DB::raw('issued_stock_quantity')]);
-            }
+            // Legacy issued material is not equivalent to an active reservation.
             if (Schema::hasColumn('production_order_items', 'issued_unit_cost')) {
                 DB::table('production_order_items')
                     ->where('actual_unit_cost', 0)
