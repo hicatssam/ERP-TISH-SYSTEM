@@ -41,37 +41,33 @@ return new class extends Migration
                 'consumed_at' => fn (Blueprint $table) => $table->timestamp('consumed_at')->nullable(),
                 'waste_percent' => fn (Blueprint $table) => $table->decimal('waste_percent', 8, 3)->default(0),
             ];
+            $newColumns = [];
             foreach ($columns as $name => $define) {
                 if (! Schema::hasColumn('production_order_items', $name)) {
                     Schema::table('production_order_items', $define);
+                    $newColumns[$name] = true;
                 }
             }
 
             // Preserve legacy values instead of initializing the new workflow
             // fields to zero on historic rows. Only fill newly empty values.
-            if (Schema::hasColumn('production_order_items', 'planned_stock_quantity')) {
+            if (isset($newColumns['planned_quantity']) && Schema::hasColumn('production_order_items', 'planned_stock_quantity')) {
                 DB::table('production_order_items')
                     ->where('planned_quantity', 0)
                     ->update(['planned_quantity' => DB::raw('planned_stock_quantity')]);
             }
-            if (Schema::hasColumn('production_order_items', 'actual_stock_quantity')) {
+            if (isset($newColumns['actual_quantity']) && Schema::hasColumn('production_order_items', 'actual_stock_quantity')) {
                 DB::table('production_order_items')
                     ->whereNull('actual_quantity')
                     ->whereNotNull('actual_stock_quantity')
                     ->update(['actual_quantity' => DB::raw('actual_stock_quantity')]);
             }
             // Legacy issued material is not equivalent to an active reservation.
-            if (Schema::hasColumn('production_order_items', 'issued_unit_cost')) {
+            if (isset($newColumns['actual_unit_cost']) && Schema::hasColumn('production_order_items', 'issued_unit_cost')) {
                 DB::table('production_order_items')
                     ->where('actual_unit_cost', 0)
                     ->whereNotNull('issued_unit_cost')
                     ->update(['actual_unit_cost' => DB::raw('issued_unit_cost')]);
-            }
-            if (Schema::hasColumn('production_order_items', 'actual_total_cost')) {
-                DB::table('production_order_items')
-                    ->where('actual_cost', 0)
-                    ->whereNotNull('actual_total_cost')
-                    ->update(['actual_cost' => DB::raw('actual_total_cost')]);
             }
         }
     }
