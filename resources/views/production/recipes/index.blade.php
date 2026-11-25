@@ -64,7 +64,7 @@
             </div>
             <div class="recipe-filter-actions">
                 <button type="submit" class="btn btn-gold">عرض النتائج</button>
-                <a href="{{ route('production.recipes.index') }}" class="btn btn-outline">إعادة ضبط</a>
+                <a href="{{ route('production.recipes.index', ['reset' => 1]) }}" class="btn btn-outline">إنهاء الفلترة</a>
             </div>
         </form>
     </div>
