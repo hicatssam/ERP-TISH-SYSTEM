@@ -109,6 +109,83 @@ class AccountingBooksTest extends TestCase
         $this->assertSame(0, AccountingJournal::query()->count());
     }
 
+    public function test_preinvoice_bank_payment_is_a_liability_then_settled_once_against_invoice(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
+        [$branch, $user] = $this->branchUser($this->allPermissions());
+        $this->baseCurrency();
+        $this->openPeriod($user);
+        $bank = $this->method('bank_transfer');
+        $payment = Payment::query()->create([
+            'order_type' => 'order', 'order_id' => 90021, 'location_id' => $branch->id,
+            'payment_method_id' => $bank->id, 'amount' => 64, 'status' => 'confirmed',
+            'paid_at' => now(), 'received_by' => $user->id,
+        ]);
+
+        $posting = app(FinancialPostingService::class);
+        $posting->collection($payment, $user);
+        $this->assertEquals(64, AccountingJournal::query()->sole()
+            ->lines()->whereHas('account', fn ($q) => $q->where('code', '2400'))->value('credit'));
+
+        $invoice = Invoice::query()->create([
+            'invoice_number' => 'GL-ADVANCE-001', 'invoice_type' => 'regular_order',
+            'order_type' => 'order', 'order_id' => $payment->order_id,
+            'location_id' => $branch->id, 'status' => 'active',
+            'subtotal' => 64, 'total_amount' => 64,
+            'issued_by' => $user->id, 'issued_at' => now(),
+        ]);
+        $posting->sale($invoice, $user);
+        $posting->settleOrderAdvances($invoice, $user);
+        $posting->settleOrderAdvances($invoice, $user);
+
+        $this->assertSame(3, AccountingJournal::query()->count());
+        $this->assertEquals(64, AccountingJournal::query()
+            ->where('source_type', 'invoice_advance_settlements')->sole()
+            ->lines()->whereHas('account', fn ($q) => $q->where('code', '2400'))->value('debit'));
+        $report = app(AccountingReportService::class)->report([$branch->id], '2026-10-01', '2026-10-02');
+        $this->assertEquals(0, $report['position']['difference']);
+        $this->assertSame(0, $report['unlinked_operations']);
+    }
+
+    public function test_refund_of_preinvoice_payment_reduces_advance_liability(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
+        [$branch, $user] = $this->branchUser($this->allPermissions());
+        $this->baseCurrency();
+        $this->openPeriod($user);
+        $bank = $this->method('bank_transfer');
+        $payment = Payment::query()->create([
+            'order_type' => 'order', 'order_id' => 90022, 'location_id' => $branch->id,
+            'payment_method_id' => $bank->id, 'amount' => 64, 'status' => 'confirmed',
+            'paid_at' => now(), 'received_by' => $user->id,
+        ]);
+        $posting = app(FinancialPostingService::class);
+        $posting->collection($payment, $user);
+        $refund = Refund::query()->create([
+            'payment_id' => $payment->id, 'order_type' => 'order',
+            'order_id' => $payment->order_id, 'payment_method_id' => $bank->id,
+            'amount' => 24, 'reason' => 'Refund before confirmation',
+            'processed_by' => $user->id, 'processed_at' => now(),
+        ]);
+        $posting->refund($refund, $payment, $user);
+
+        $this->assertEquals(24, AccountingJournal::query()->latest('id')->firstOrFail()
+            ->lines()->whereHas('account', fn ($q) => $q->where('code', '2400'))->value('debit'));
+
+        $invoice = Invoice::query()->create([
+            'invoice_number' => 'GL-ADVANCE-002', 'invoice_type' => 'regular_order',
+            'order_type' => 'order', 'order_id' => $payment->order_id,
+            'location_id' => $branch->id, 'status' => 'active',
+            'subtotal' => 64, 'total_amount' => 64,
+            'issued_by' => $user->id, 'issued_at' => now(),
+        ]);
+        $posting->sale($invoice, $user);
+        $posting->settleOrderAdvances($invoice, $user);
+        $this->assertEquals(40, AccountingJournal::query()
+            ->where('source_type', 'invoice_advance_settlements')->sole()
+            ->lines()->whereHas('account', fn ($q) => $q->where('code', '2400'))->value('debit'));
+    }
+
     public function test_new_invoice_and_confirmed_cash_collection_post_once_into_the_same_balanced_ledger(): void
     {
         $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
