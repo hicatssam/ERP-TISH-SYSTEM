@@ -86,7 +86,11 @@ try {
         'planned_unit_cost' => 170,
         'created_by' => $user->id,
     ]);
-    $material = $order->items()->create([
+    // The legacy QA schema has required columns which are intentionally
+    // absent from ProductionOrderItem::$fillable. Insert the fixture through
+    // the query builder so legacy and modern required fields are both present.
+    $materialId = DB::table('production_order_items')->insertGetId([
+        'production_order_id' => $order->id,
         'product_id' => $product->id,
         'recipe_quantity' => 3,
         'planned_stock_quantity' => 3,
@@ -96,7 +100,10 @@ try {
         'waste_percent' => 0,
         'planned_unit_cost' => 56.6667,
         'planned_cost' => 170,
+        'created_at' => now(),
+        'updated_at' => now(),
     ]);
+    $material = $order->items()->findOrFail($materialId);
 
     $service = app(ProductionOrderService::class);
     $started = $service->start($order, $user);
