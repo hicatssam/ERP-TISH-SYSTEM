@@ -190,8 +190,9 @@ class SaleBatchAllocationService
                 ->where('location_id', $locationId)
                 ->where('product_id', $productId)
                 ->where('available_quantity', '>', 0)
-                ->where(fn ($q) => $q->whereNull('expiry_date')
-                    ->orWhereDate('expiry_date', '>=', today()))
+                ->where(fn ($q) => $product->tracks_expiry
+                    ? $q->whereDate('expiry_date', '>=', today())
+                    : $q->whereNull('expiry_date')->orWhereDate('expiry_date', '>=', today()))
                 ->orderByRaw('CASE WHEN expiry_date IS NULL THEN 1 ELSE 0 END')
                 ->orderBy('expiry_date')->orderBy('id')
                 ->lockForUpdate()->get();
