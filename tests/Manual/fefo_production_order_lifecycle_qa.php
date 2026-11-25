@@ -21,7 +21,7 @@ use App\Services\Production\ProductionOrderService;
 use Illuminate\Support\Facades\DB;
 
 $root = dirname(__DIR__, 2);
-$expected = realpath('/tmp/tish-finance-qa-20261125/database/tish-procurement-e2e.sqlite');
+$expected = realpath('/tmp/tish-finance-qa-20261125/database/tish-production-schema-qa.sqlite');
 if (! $expected || DB::getDriverName() !== 'sqlite'
     || realpath(DB::getDatabaseName()) !== $expected
     || is_file($root.'/.env') || is_file($root.'/bootstrap/cache/config.php')) {
@@ -88,6 +88,9 @@ try {
     ]);
     $material = $order->items()->create([
         'product_id' => $product->id,
+        'recipe_quantity' => 3,
+        'planned_stock_quantity' => 3,
+        'planned_total_cost' => 170,
         'planned_quantity' => 3,
         'reserved_quantity' => 0,
         'waste_percent' => 0,
