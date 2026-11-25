@@ -179,8 +179,13 @@ class FinancialPostingService
         ?string $description = null,
         string $currencyCode = 'ILS',
     ): void {
-        if (! Schema::hasTable('sales_ledger_entries') || $amount <= 0) {
+        if ($amount <= 0) {
             return;
+        }
+        if (! Schema::hasTable('sales_ledger_entries') || ! Schema::hasTable('accounting_journals')) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'accounting' => 'دفاتر المحاسبة غير متاحة؛ لا يمكن تأكيد الحركة المالية.',
+            ]);
         }
 
         DB::transaction(function () use (
@@ -188,10 +193,9 @@ class FinancialPostingService
             $referenceId, $invoiceId, $orderId, $specialCakeOrderId, $description, $currencyCode
         ): void {
             $existing = SalesLedgerEntry::query()->where('idempotency_key', $key)->first();
-            $periodId = null;
-            if (! $existing && FinancialPeriod::query()->exists()) {
-                $periodId = $this->periods->openForDate($date, true)->id;
-            }
+            // New operational sources must never be saved without a matching open period.
+            // Existing idempotent retries retain their original period and journal.
+            $periodId = $existing ? null : $this->periods->openForDate($date, true)->id;
 
             $entry = $existing ?? SalesLedgerEntry::query()->firstOrCreate(
                 ['idempotency_key' => $key],
