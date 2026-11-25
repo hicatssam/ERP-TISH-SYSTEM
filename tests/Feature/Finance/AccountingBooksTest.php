@@ -39,6 +39,76 @@ class AccountingBooksTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_new_financial_source_fails_without_an_open_period_and_is_not_saved(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
+        [$branch, $user] = $this->branchUser($this->allPermissions());
+        $this->baseCurrency();
+        $invoice = Invoice::query()->create([
+            'invoice_number' => 'GL-NO-PERIOD', 'invoice_type' => 'regular_order',
+            'order_type' => 'order', 'order_id' => 98710, 'location_id' => $branch->id,
+            'status' => 'active', 'subtotal' => 64, 'total_amount' => 64,
+            'issued_by' => $user->id, 'issued_at' => now(),
+        ]);
+
+        try {
+            app(FinancialPostingService::class)->sale($invoice, $user);
+            $this->fail('A financial source cannot be saved without an open period.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('financial_period', $exception->errors());
+        }
+
+        $this->assertSame(0, SalesLedgerEntry::query()->count());
+        $this->assertSame(0, AccountingJournal::query()->count());
+    }
+
+    public function test_new_financial_source_rejects_period_for_a_different_month(): void
+    {
+        $this->travelTo(now()->setDate(2026, 11, 23)->setTime(15, 0));
+        [$branch, $user] = $this->branchUser($this->allPermissions());
+        $this->baseCurrency();
+        $this->openPeriod($user); // October exists, but November must still be blocked.
+        $invoice = Invoice::query()->create([
+            'invoice_number' => 'GL-WRONG-PERIOD', 'invoice_type' => 'regular_order',
+            'order_type' => 'order', 'order_id' => 98711, 'location_id' => $branch->id,
+            'status' => 'active', 'subtotal' => 64, 'total_amount' => 64,
+            'issued_by' => $user->id, 'issued_at' => now(),
+        ]);
+
+        try {
+            app(FinancialPostingService::class)->sale($invoice, $user);
+            $this->fail('An unrelated open period must not authorize journal posting.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('financial_period', $exception->errors());
+        }
+
+        $this->assertSame(0, SalesLedgerEntry::query()->count());
+        $this->assertSame(0, AccountingJournal::query()->count());
+    }
+
+    public function test_financial_source_rolls_back_when_base_currency_is_missing(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
+        [$branch, $user] = $this->branchUser($this->allPermissions());
+        $this->openPeriod($user);
+        $invoice = Invoice::query()->create([
+            'invoice_number' => 'GL-NO-CURRENCY', 'invoice_type' => 'regular_order',
+            'order_type' => 'order', 'order_id' => 98712, 'location_id' => $branch->id,
+            'status' => 'active', 'subtotal' => 64, 'total_amount' => 64,
+            'issued_by' => $user->id, 'issued_at' => now(),
+        ]);
+
+        try {
+            app(FinancialPostingService::class)->sale($invoice, $user);
+            $this->fail('An operational source must not persist without a base currency.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('currency_code', $exception->errors());
+        }
+
+        $this->assertSame(0, SalesLedgerEntry::query()->count());
+        $this->assertSame(0, AccountingJournal::query()->count());
+    }
+
     public function test_new_invoice_and_confirmed_cash_collection_post_once_into_the_same_balanced_ledger(): void
     {
         $this->travelTo(now()->setDate(2026, 10, 2)->setTime(15, 0));
