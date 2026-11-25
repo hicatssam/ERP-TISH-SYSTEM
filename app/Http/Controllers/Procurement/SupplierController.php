@@ -108,6 +108,7 @@ class SupplierController extends Controller
                 'products' =>
                     Product::query()
                         ->active()
+                        ->where('is_raw_material', true)
                         ->orderBy('name_ar')
                         ->orderBy('name')
                         ->get(),
@@ -259,6 +260,7 @@ class SupplierController extends Controller
                 'products' =>
                     Product::query()
                         ->active()
+                        ->where('is_raw_material', true)
                         ->orderBy('name_ar')
                         ->orderBy('name')
                         ->get(),
