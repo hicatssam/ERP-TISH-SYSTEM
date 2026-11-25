@@ -156,7 +156,7 @@ class InventoryService
             );
 
             $reasonValue = $reason instanceof MovementReason ? $reason->value : $reason;
-            if ($reasonValue === MovementReason::OrderSale->value && $inventoryBatchId !== null) {
+            if (in_array($reasonValue, [MovementReason::OrderSale->value, MovementReason::TransferDispatch->value], true) && $inventoryBatchId !== null) {
                 $product = Product::query()->findOrFail($productId);
                 if ($product->tracks_batch || $product->tracks_expiry) {
                     $batch = InventoryBatch::query()->whereKey($inventoryBatchId)
@@ -830,7 +830,7 @@ class InventoryService
             return;
         }
 
-        if ($sale && $inventoryBatchId !== null) {
+        if (($sale || $transfer) && $inventoryBatchId !== null) {
             return; // The locked batch is validated and decremented in decrease().
         }
 
