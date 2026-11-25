@@ -314,6 +314,11 @@ class PurchaseOrderService
 
         foreach ($items as $row) {
             $product = Product::query()->findOrFail($row['product_id']);
+            if (! $product->is_raw_material || ! $product->is_active) {
+                throw ValidationException::withMessages([
+                    'items' => 'أوامر شراء TISH تقبل المواد الخام النشطة فقط، وليس منتجات المنيو الجاهزة.',
+                ]);
+            }
             $supplierProduct = $supplierProducts->get($product->id);
 
             if (! $supplierProduct) {
