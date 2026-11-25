@@ -12,6 +12,7 @@ use App\Models\RestaurantMenuItem;
 use App\Models\Recipe;
 use App\Models\User;
 use App\Services\Inventory\InventoryService;
+use App\Services\Inventory\SaleBatchAllocationService;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 
@@ -19,6 +20,7 @@ class RestaurantOrderInventoryService
 {
     public function __construct(
         private readonly InventoryService $inventoryService,
+        private readonly SaleBatchAllocationService $batchAllocations,
     ) {
     }
 
@@ -86,18 +88,15 @@ class RestaurantOrderInventoryService
                 'revision' => 0,
             ]);
 
-            $this->inventoryService->decrease(
+            $this->batchAllocations->consume(
                 locationId: (int) $order->location_id,
                 productId: (int) $row['stock_product_id'],
                 quantity: (float) $row['consumed_quantity'],
-                reason: MovementReason::OrderSale,
                 userId: (int) $user->id,
                 referenceType: 'orders',
                 referenceId: (int) $order->id,
-                idempotencyKey:
-                    "order:{$order->id}:consumption:{$consumption->id}:confirm",
+                idempotencyKey: "order:{$order->id}:consumption:{$consumption->id}:confirm",
                 note: $this->movementNote($consumption, 'sale'),
-                unitCost: number_format($unitCost, 4, '.', ''),
             );
         }
     }
@@ -217,33 +216,21 @@ class RestaurantOrderInventoryService
             $direction = $delta > 0 ? 'out' : 'in';
 
             if ($delta > 0) {
-                $this->inventoryService->decrease(
+                $this->batchAllocations->consume(
                     locationId: (int) $order->location_id,
                     productId: (int) $consumption->stock_product_id,
                     quantity: $delta,
-                    reason: MovementReason::OrderSale,
                     userId: (int) $user->id,
                     referenceType: 'orders',
                     referenceId: (int) $order->id,
-                    idempotencyKey:
-                        "order:{$order->id}:consumption:{$consumption->id}:revision:{$nextRevision}:{$direction}",
+                    idempotencyKey: "order:{$order->id}:consumption:{$consumption->id}:revision:{$nextRevision}:{$direction}",
                     note: $this->movementNote($consumption, 'edit+'),
                 );
             } else {
-                $this->inventoryService->increase(
-                    locationId: (int) $order->location_id,
-                    productId: (int) $consumption->stock_product_id,
-                    quantity: abs($delta),
-                    reason: MovementReason::OrderCancellation,
-                    userId: (int) $user->id,
-                    referenceType: 'orders',
-                    referenceId: (int) $order->id,
-                    unitCost: $consumption->unit_cost_snapshot !== null
-                        ? (string) $consumption->unit_cost_snapshot
-                        : null,
-                    idempotencyKey:
-                        "order:{$order->id}:consumption:{$consumption->id}:revision:{$nextRevision}:{$direction}",
-                    note: $this->movementNote($consumption, 'edit-'),
+                $this->restoreOrderConsumption(
+                    $order, $consumption, abs($delta), $user,
+                    "order:{$order->id}:consumption:{$consumption->id}:revision:{$nextRevision}:{$direction}",
+                    'edit-'
                 );
             }
 
@@ -280,6 +267,12 @@ class RestaurantOrderInventoryService
 
             foreach ($order->items as $item) {
                 if ((float) $item->quantity <= 0) continue;
+                $legacyProduct = Product::query()->findOrFail($item->product_id);
+                if ($legacyProduct->tracks_batch || $legacyProduct->tracks_expiry) {
+                    throw ValidationException::withMessages(['items' =>
+                        'إلغاء طلب قديم لمادة متتبعة يحتاج تسوية دفعات موثقة، ولا يمكن إعادة المخزون الإجمالي فقط.'
+                    ]);
+                }
                 $this->inventoryService->increase(
                     locationId: (int) $order->location_id,
                     productId: (int) $item->product_id,
@@ -303,26 +296,59 @@ class RestaurantOrderInventoryService
                 $consumption->update(['restored_at' => now()]);
                 continue;
             }
-            $this->inventoryService->increase(
-                locationId: (int) $order->location_id,
-                productId: (int) $consumption->stock_product_id,
-                quantity: (float) $consumption->consumed_quantity,
-                reason: MovementReason::OrderCancellation,
-                userId: (int) $user->id,
-                referenceType: 'orders',
-                referenceId: (int) $order->id,
-                unitCost: $consumption->unit_cost_snapshot !== null
-                    ? (string) $consumption->unit_cost_snapshot
-                    : null,
-                idempotencyKey:
-                    "order:{$order->id}:consumption:{$consumption->id}:cancel",
-                note: $this->movementNote($consumption, 'cancel'),
+            $this->restoreOrderConsumption(
+                $order, $consumption, (float) $consumption->consumed_quantity,
+                $user, "order:{$order->id}:consumption:{$consumption->id}:cancel",
+                'cancel'
             );
 
             $consumption->update([
                 'restored_at' => now(),
             ]);
         }
+    }
+
+    /**
+     * Restore the exact consumed batches for tracked products; preserve
+     * historical aggregate-stock behavior for non-tracked products.
+     */
+    private function restoreOrderConsumption(
+        Order $order,
+        OrderInventoryConsumption $consumption,
+        float $quantity,
+        User $user,
+        string $key,
+        string $action,
+    ): void {
+        $product = Product::query()->findOrFail($consumption->stock_product_id);
+        if ($product->tracks_batch || $product->tracks_expiry) {
+            $this->batchAllocations->restore(
+                locationId: (int) $order->location_id,
+                productId: (int) $consumption->stock_product_id,
+                quantity: $quantity,
+                userId: (int) $user->id,
+                referenceType: 'orders',
+                referenceId: (int) $order->id,
+                consumptionPrefix: "order:{$order->id}:consumption:{$consumption->id}:",
+                idempotencyKey: $key,
+                note: $this->movementNote($consumption, $action),
+            );
+            return;
+        }
+
+        $this->inventoryService->increase(
+            locationId: (int) $order->location_id,
+            productId: (int) $consumption->stock_product_id,
+            quantity: $quantity,
+            reason: MovementReason::OrderCancellation,
+            userId: (int) $user->id,
+            referenceType: 'orders',
+            referenceId: (int) $order->id,
+            unitCost: $consumption->unit_cost_snapshot !== null
+                ? (string) $consumption->unit_cost_snapshot : null,
+            idempotencyKey: $key,
+            note: $this->movementNote($consumption, $action),
+        );
     }
 
     /**
@@ -721,6 +747,13 @@ class RestaurantOrderInventoryService
                 'delta' => $delta,
                 'new_quantity' => $newQty,
             ];
+
+            $legacyProduct = Product::query()->findOrFail($item->product_id);
+            if ($legacyProduct->tracks_batch || $legacyProduct->tracks_expiry) {
+                throw ValidationException::withMessages(['items' =>
+                    'تعديل طلب قديم لمادة متتبعة يحتاج تسوية دفعات موثقة.'
+                ]);
+            }
 
             if ($delta > 0) {
                 $positiveRows[] = [
