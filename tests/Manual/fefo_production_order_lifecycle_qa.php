@@ -31,6 +31,7 @@ if (! $expected || DB::getDriverName() !== 'sqlite'
 $product = Product::query()->where('sku', 'BRG-ING-BEEF')->firstOrFail();
 $recipe = Recipe::query()->whereNotNull('product_id')
     ->where('yield_quantity', '>', 0)
+    ->where('product_id', '!=', $product->id)
     ->whereHas('product')->orderBy('id')->firstOrFail();
 $user = User::findOrFail(1);
 $stock = Inventory::query()->where('location_id', 1)
