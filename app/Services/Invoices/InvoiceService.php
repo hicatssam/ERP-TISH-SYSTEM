@@ -102,6 +102,7 @@ class InvoiceService
 
             $this->applyAvailableCustomerCredit($invoice);
             $this->posting->sale($invoice, $user);
+            $this->posting->settleOrderAdvances($invoice, $user);
 
             if ($createdNow) {
                 DB::afterCommit(fn () => NotificationDispatcher::notifyByPermissions(
@@ -170,6 +171,7 @@ class InvoiceService
 
         $this->applyAvailableCustomerCredit($invoice);
         $this->posting->sale($invoice, $user);
+        $this->posting->settleOrderAdvances($invoice, $user);
 
         if ($createdNow) {
             DB::afterCommit(fn () => NotificationDispatcher::notifyByPermissions(
