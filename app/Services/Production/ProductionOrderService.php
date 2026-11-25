@@ -17,6 +17,8 @@ use App\Services\ModuleService;
 use App\Services\Notifications\NotificationDispatcher;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
@@ -69,7 +71,7 @@ class ProductionOrderService
             );
 
             $order = ProductionOrder::query()->create([
-                'production_number' => null,
+                'production_number' => 'PRD-TMP-'.Str::uuid()->toString(),
                 'location_id' => $locationId,
                 'recipe_id' => $recipe->id,
                 'product_id' => $recipe->product_id,
@@ -94,15 +96,32 @@ class ProductionOrderService
                 ),
             ]);
 
+            $legacyQuantity = Schema::hasColumn('production_order_items', 'planned_stock_quantity');
+            $legacyCost = Schema::hasColumn('production_order_items', 'planned_total_cost');
+            $recipeQuantity = Schema::hasColumn('production_order_items', 'recipe_quantity');
+
             foreach ($calculation['lines'] as $line) {
-                $order->items()->create([
+                $values = [
                     'product_id' => $line['product_id'],
+                    'recipe_item_id' => $line['recipe_item_id'] ?? null,
                     'planned_quantity' => $line['quantity'],
                     'reserved_quantity' => 0,
                     'waste_percent' => $line['waste_percent'],
                     'planned_unit_cost' => $line['unit_cost'],
                     'planned_cost' => $line['total_cost'],
-                ]);
+                ];
+
+                if ($recipeQuantity) {
+                    $values['recipe_quantity'] = $line['quantity'];
+                }
+                if ($legacyQuantity) {
+                    $values['planned_stock_quantity'] = $line['quantity'];
+                }
+                if ($legacyCost) {
+                    $values['planned_total_cost'] = $line['total_cost'];
+                }
+
+                $order->items()->create($values);
             }
 
             ActivityLogger::log(
