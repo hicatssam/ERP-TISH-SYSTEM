@@ -6,6 +6,7 @@ use App\Enums\MovementReason;
 use App\Enums\MovementType;
 use App\Events\LowStockDetected;
 use App\Models\Inventory;
+use App\Models\InventoryBatch;
 use App\Models\LocationProduct;
 use App\Models\Product;
 use App\Models\StockMovement;
@@ -153,6 +154,23 @@ class InventoryService
                 $reason,
                 $inventoryBatchId
             );
+
+            $reasonValue = $reason instanceof MovementReason ? $reason->value : $reason;
+            if ($reasonValue === MovementReason::OrderSale->value && $inventoryBatchId !== null) {
+                $product = Product::query()->findOrFail($productId);
+                if ($product->tracks_batch || $product->tracks_expiry) {
+                    $batch = InventoryBatch::query()->whereKey($inventoryBatchId)
+                        ->where('location_id', $locationId)->where('product_id', $productId)
+                        ->lockForUpdate()->firstOrFail();
+                    if ($batch->expiry_date && $batch->expiry_date->lt(today())
+                        || (float) $batch->available_quantity + 0.0005 < $quantity) {
+                        throw ValidationException::withMessages([
+                            'inventory_batch_id' => 'الدفعة منتهية الصلاحية أو رصيدها الصالح غير كافٍ.',
+                        ]);
+                    }
+                    $batch->decrement('available_quantity', $quantity);
+                }
+            }
 
             $inventory = $this->lockInventory($locationId, $productId);
             $before = $this->quantity($inventory->quantity);
@@ -810,6 +828,10 @@ class InventoryService
         $product = Product::query()->findOrFail($productId);
         if (! $product->tracks_batch && ! $product->tracks_expiry) {
             return;
+        }
+
+        if ($sale && $inventoryBatchId !== null) {
+            return; // The locked batch is validated and decremented in decrease().
         }
 
         throw ValidationException::withMessages([
