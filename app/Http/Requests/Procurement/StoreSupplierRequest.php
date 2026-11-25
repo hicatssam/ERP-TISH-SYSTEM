@@ -43,7 +43,7 @@ class StoreSupplierRequest extends FormRequest
             'contacts.*.is_primary' => ['nullable', 'boolean'],
             'contacts.*.notes' => ['nullable', 'string'],
             'products' => ['nullable', 'array', 'max:500'],
-            'products.*.product_id' => ['nullable', 'integer', 'distinct', Rule::exists('products', 'id')],
+            'products.*.product_id' => ['nullable', 'integer', 'distinct', Rule::exists('products', 'id')->where('is_raw_material', true)->where('is_active', true)],
             'products.*.supplier_sku' => ['nullable', 'string', 'max:100'],
             'products.*.supplier_product_name' => ['nullable', 'string', 'max:255'],
             'products.*.purchase_price' => ['nullable', 'numeric', 'min:0'],
