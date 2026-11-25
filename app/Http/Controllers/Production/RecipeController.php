@@ -25,8 +25,40 @@ class RecipeController extends Controller
     ) {
     }
 
-    public function index(Request $request): View
+    public function index(Request $request): View|RedirectResponse
     {
+        // Keep this user's recipe filters while they open, edit and save recipes.
+        // A deliberate reset is the only action that clears the saved selection.
+        $sessionKey = 'production.recipes.index_filters';
+        $filterKeys = ['q', 'category_id', 'product_id', 'status', 'visibility'];
+
+        if ($request->query('reset') === '1') {
+            $request->session()->forget($sessionKey);
+
+            return redirect()->route('production.recipes.index');
+        }
+
+        $hasExplicitFilters = collect($filterKeys)
+            ->contains(fn (string $key) => $request->query->has($key));
+
+        if ($hasExplicitFilters) {
+            $saved = collect($request->only($filterKeys))
+                ->filter(fn ($value) => is_scalar($value) && strlen((string) $value) <= 255)
+                ->all();
+            $request->session()->put($sessionKey, $saved);
+        } else {
+            $saved = $request->session()->get($sessionKey, []);
+            if (is_array($saved) && $saved !== []) {
+                $page = $request->query('page');
+                $params = $saved;
+                if (is_scalar($page) && ctype_digit((string) $page) && (int) $page > 0) {
+                    $params['page'] = (int) $page;
+                }
+
+                return redirect()->route('production.recipes.index', $params);
+            }
+        }
+
         $visibility = $request->string('visibility')->toString();
         if (! in_array($visibility, ['active', 'inactive', 'all'], true)) {
             $visibility = 'active';
