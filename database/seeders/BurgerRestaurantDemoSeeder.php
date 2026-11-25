@@ -15,6 +15,8 @@ use App\Models\Location;
 use App\Models\LocationProduct;
 use App\Models\Order;
 use App\Models\PaymentMethod;
+use App\Models\Payment;
+use App\Models\AccountingJournal;
 use App\Models\Product;
 use App\Models\Recipe;
 use App\Models\RecipeItem;
@@ -29,6 +31,7 @@ use App\Services\Inventory\InventoryService;
 use App\Services\Kitchen\KitchenTicketService;
 use App\Services\ModuleService;
 use App\Services\Orders\OrderService;
+use App\Services\Payments\PaymentService;
 use App\Services\Restaurant\RestaurantOrderService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -85,7 +88,9 @@ class BurgerRestaurantDemoSeeder extends Seeder
             $this->openingStock($raw, $admin);
             $this->seedRestaurantOperations($admin);
             $this->seedOrders($admin);
+            $this->seedBankVerificationScenario($admin);
             $this->assertDemoInventoryAndRecipes();
+            $this->assertFinanceFixtureIntegrity();
         });
 
         $this->command?->info('تم تجهيز Tish بالكامل: منيو برجر مصور، وصفات، مواد خام، مخزون، مطبخ، طاولات وطلبات مترابطة.');
@@ -505,6 +510,107 @@ class BurgerRestaurantDemoSeeder extends Seeder
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Verify a transfer on a draft POS order, then confirm and invoice it.
+     * Exercises: pending payment -> bank verification -> customer advance 2400
+     * -> confirmed order -> invoice -> advance settlement -> COGS / inventory.
+     */
+    private function seedBankVerificationScenario(User $admin): void
+    {
+        $branch = Location::query()->where('code', 'B01')->firstOrFail();
+        $marker = 'TISH-DEMO-BANK-ADVANCE-B01';
+        if (Order::query()->where('notes', $marker)->exists()) {
+            return;
+        }
+
+        $cashier = User::query()->where('username', 'cashier_b01')->firstOrFail();
+        $customer = Customer::query()->where('location_id', $branch->id)->firstOrFail();
+        $channel = SalesChannel::query()->where('slug', 'tish-direct')->firstOrFail();
+        $bank = PaymentMethod::query()->where('code', 'bank_of_palestine')->firstOrFail();
+        $burger = Product::query()->where('sku', 'BRG-BEEF-CLASSIC')->first();
+        if (! $burger) {
+            $burger = Product::query()->where('sku', 'like', 'BRG-BEEF-%')->firstOrFail();
+        }
+
+        $order = app(RestaurantOrderService::class)->createPosOrder([
+            'location_id' => $branch->id,
+            'customer_id' => $customer->id,
+            'sales_channel_id' => $channel->id,
+            'service_type' => 'takeaway',
+            'payment_arrangement' => 'pending_verification',
+            'payment_method_id' => $bank->id,
+            'reference_number' => 'TISH-QA-BANK-ADVANCE',
+            'discount_type' => 'fixed',
+            'discount_value' => 0,
+            'items' => [['product_id' => $burger->id, 'quantity' => 1]],
+            'notes' => $marker,
+            'order_source' => 'restaurant_pos',
+        ], $cashier);
+
+        if ($order->statusValue() !== 'draft') {
+            throw new RuntimeException('Bank transfer test order must await verification as draft.');
+        }
+
+        $payment = Payment::query()
+            ->where('order_type', 'order')
+            ->where('order_id', $order->id)
+            ->sole();
+
+        if ($payment->statusValue() !== 'pending_verification') {
+            throw new RuntimeException('Bank transfer test payment must be pending.');
+        }
+
+        app(PaymentService::class)->verify($payment, true, null, $admin);
+        if ($order->fresh()->statusValue() !== 'draft') {
+            throw new RuntimeException('Payment approval must not auto-confirm the order.');
+        }
+        app(OrderService::class)->confirmOrder($order->fresh(), $admin);
+    }
+
+    private function assertFinanceFixtureIntegrity(): void
+    {
+        $orders = Order::query()->where('notes', 'like', 'TISH-DEMO-%')->get();
+        if ($orders->count() < 13) {
+            throw new RuntimeException('Expected 12 cash POS orders and one bank transfer order.');
+        }
+
+        foreach ($orders as $order) {
+            if (! $order->invoice()->exists()) {
+                throw new RuntimeException("Demo order has no invoice: {$order->id}");
+            }
+
+            $payments = Payment::query()->where('order_type', 'order')
+                ->where('order_id', $order->id)->get();
+            if ($payments->isEmpty() || $payments->contains(fn ($p) => $p->statusValue() !== 'confirmed')) {
+                throw new RuntimeException("Demo payment missing or not confirmed: {$order->id}");
+            }
+
+            foreach ($payments as $payment) {
+                $entry = DB::table('sales_ledger_entries')
+                    ->where('idempotency_key', "payment:{$payment->id}:collection")
+                    ->first();
+                if (! $entry || ! AccountingJournal::query()
+                    ->where('source_type', 'sales_ledger_entries')
+                    ->where('source_id', $entry->id)->exists()) {
+                    throw new RuntimeException("Demo payment has no GL journal: {$payment->id}");
+                }
+            }
+        }
+
+        $unbalanced = DB::table('accounting_journals')
+            ->whereRaw('ABS(total_debit - total_credit) > 0.005')->count();
+        if ($unbalanced > 0) {
+            throw new RuntimeException("Unbalanced journals: {$unbalanced}");
+        }
+
+        $bank = $orders->firstWhere('notes', 'TISH-DEMO-BANK-ADVANCE-B01');
+        if (! $bank || ! AccountingJournal::query()
+            ->where('source_type', 'invoice_advance_settlements')
+            ->where('source_id', $bank->invoice?->id)->exists()) {
+            throw new RuntimeException('Bank advance was not settled against its invoice.');
         }
     }
 
