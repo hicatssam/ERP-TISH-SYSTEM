@@ -353,10 +353,8 @@ class PurchaseOrderController extends Controller
             ->whereHas(
                 'product',
                 fn ($query) =>
-                    $query->where(
-                        'is_active',
-                        true
-                    )
+                    $query->where('is_active', true)
+                        ->where('is_raw_material', true)
             )
 
             ->orderBy('supplier_id')
