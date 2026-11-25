@@ -124,7 +124,7 @@
                             <label class="form-label">المكون *</label>
                             <select class="form-input" name="items[{{ $i }}][ingredient_product_id]" required>
                                 <option value="">اختر</option>
-                                @foreach($products as $product)
+                                @foreach($products->where('is_raw_material', true) as $product)
                                     <option value="{{ $product->id }}"
                                             @selected((string)($row['ingredient_product_id'] ?? '') === (string)$product->id)>
                                         {{ $product->name_ar ?: $product->name }}
@@ -173,7 +173,7 @@
             <label class="form-label">المكون *</label>
             <select class="form-input" data-name="ingredient_product_id" required>
                 <option value="">اختر</option>
-                @foreach($products as $product)
+                @foreach($products->where('is_raw_material', true) as $product)
                     <option value="{{ $product->id }}">
                         {{ $product->name_ar ?: $product->name }} — {{ $product->unitDefinition?->symbol ?: $product->unit }}
                     </option>
