@@ -143,14 +143,18 @@ class SaleBatchAllocationService
         int $referenceId,
         string $idempotencyKey,
         ?string $note = null,
+        MovementReason $reason = MovementReason::OrderSale,
     ): Inventory {
+        if (! in_array($reason, [MovementReason::OrderSale, MovementReason::TransferDispatch], true)) {
+            throw ValidationException::withMessages(['reason' => 'لا يدعم FEFO هذا النوع من الاستهلاك.']);
+        }
         if ($quantity <= 0) {
             throw ValidationException::withMessages(['quantity' => 'كمية الاستهلاك يجب أن تكون موجبة.']);
         }
 
         return DB::transaction(function () use (
             $locationId, $productId, $quantity, $userId,
-            $referenceType, $referenceId, $idempotencyKey, $note
+            $referenceType, $referenceId, $idempotencyKey, $note, $reason
         ): Inventory {
             $product = Product::query()->findOrFail($productId);
             if (! $product->tracks_batch && ! $product->tracks_expiry) {
@@ -158,7 +162,7 @@ class SaleBatchAllocationService
                     locationId: $locationId,
                     productId: $productId,
                     quantity: $quantity,
-                    reason: MovementReason::OrderSale,
+                    reason: $reason,
                     userId: $userId,
                     referenceType: $referenceType,
                     referenceId: $referenceId,
@@ -215,7 +219,7 @@ class SaleBatchAllocationService
                     locationId: $locationId,
                     productId: $productId,
                     quantity: $take,
-                    reason: MovementReason::OrderSale,
+                    reason: $reason,
                     userId: $userId,
                     referenceType: $referenceType,
                     referenceId: $referenceId,
