@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Production\StoreRecipeRequest;
 use App\Http\Requests\Production\UpdateRecipeRequest;
 use App\Models\Product;
+use App\Models\Category;
 use App\Models\Recipe;
 use App\Services\Production\ProductionContextService;
 use App\Services\Production\RecipeCostService;
@@ -26,71 +27,76 @@ class RecipeController extends Controller
 
     public function index(Request $request): View
     {
+        $visibility = $request->string('visibility')->toString();
+        if (! in_array($visibility, ['active', 'inactive', 'all'], true)) {
+            $visibility = 'active';
+        }
+
+        $categoryId = $request->integer('category_id');
+        $productId = $request->integer('product_id');
+        $status = $request->string('status')->toString();
+
+        $productsQuery = Product::query()
+            ->where('is_raw_material', false)
+            ->whereHas('recipes')
+            ->when($visibility === 'active', fn ($q) => $q->where('is_active', true))
+            ->when($visibility === 'inactive', fn ($q) => $q->where('is_active', false))
+            ->when($categoryId > 0, fn ($q) => $q->where('category_id', $categoryId));
+
+        $products = (clone $productsQuery)
+            ->orderByRaw('COALESCE(name_ar, name)')
+            ->get(['id', 'category_id', 'name', 'name_ar']);
+
+        $categories = Category::query()
+            ->whereHas('products', fn ($q) => $q
+                ->where('is_raw_material', false)
+                ->whereHas('recipes')
+                ->when($visibility === 'active', fn ($q) => $q->where('is_active', true))
+                ->when($visibility === 'inactive', fn ($q) => $q->where('is_active', false)))
+            ->orderBy('sort_order')
+            ->orderByRaw('COALESCE(name_ar, name)')
+            ->get(['id', 'name', 'name_ar']);
+
         $query = Recipe::query()
-            ->with([
-                'product',
-                'productVariant',
-                'approver',
-            ]);
+            ->with(['product.category', 'productVariant', 'approver'])
+            ->withCount('items')
+            ->whereHas('product', fn ($q) => $q
+                ->where('is_raw_material', false)
+                ->when($visibility === 'active', fn ($q) => $q->where('is_active', true))
+                ->when($visibility === 'inactive', fn ($q) => $q->where('is_active', false))
+                ->when($categoryId > 0, fn ($q) => $q->where('category_id', $categoryId))
+                ->when($productId > 0, fn ($q) => $q->whereKey($productId)));
 
         if ($request->filled('q')) {
-            $search = trim(
-                (string) $request->input('q')
-            );
-
-            $query->where(
-                function ($builder) use ($search): void {
-                    $builder
-                        ->where(
-                            'code',
-                            'like',
-                            "%{$search}%"
-                        )
-                        ->orWhere(
-                            'name',
-                            'like',
-                            "%{$search}%"
-                        )
-                        ->orWhereHas(
-                            'product',
-                            fn ($product) =>
-                                $product
-                                    ->where(
-                                        'name',
-                                        'like',
-                                        "%{$search}%"
-                                    )
-                                    ->orWhere(
-                                        'name_ar',
-                                        'like',
-                                        "%{$search}%"
-                                    )
-                        );
-                }
-            );
+            $term = trim((string) $request->input('q'));
+            $query->where(function ($q) use ($term) {
+                $q->where('code', 'like', "%{$term}%")
+                    ->orWhere('name', 'like', "%{$term}%")
+                    ->orWhereHas('product', fn ($p) => $p
+                        ->where('name', 'like', "%{$term}%")
+                        ->orWhere('name_ar', 'like', "%{$term}%")
+                        ->orWhere('sku', 'like', "%{$term}%"));
+            });
         }
 
-        if ($request->filled('status')) {
-            $query->where(
-                'status',
-                $request->string('status')
-                    ->toString()
-            );
+        if ($status !== '' && in_array($status, array_column(RecipeStatus::cases(), 'value'), true)) {
+            $query->where('status', $status);
         }
 
-        return view(
-            'production.recipes.index',
-            [
-                'recipes' =>
-                    $query
-                        ->latest('id')
-                        ->paginate(25)
-                        ->withQueryString(),
+        $total = (clone $query)->count();
+        $missing = (clone $query)->whereDoesntHave('items')->count();
+        $draft = (clone $query)->where('status', RecipeStatus::Draft->value)->count();
 
-                'statuses' =>
-                    RecipeStatus::cases(),
-            ]
-        );
+        return view('production.recipes.index', [
+            'recipes' => $query->orderByDesc('id')->paginate(20)->withQueryString(),
+            'statuses' => RecipeStatus::cases(),
+            'products' => $products,
+            'categories' => $categories,
+            'visibility' => $visibility,
+            'total' => $total,
+            'missing' => $missing,
+            'draft' => $draft,
+        ]);
     }
 
     public function create(): View
