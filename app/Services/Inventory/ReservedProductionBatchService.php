@@ -80,8 +80,9 @@ class ReservedProductionBatchService
                 ->where('location_id', $locationId)
                 ->where('product_id', $productId)
                 ->where('available_quantity', '>', 0)
-                ->where(fn ($query) => $query->whereNull('expiry_date')
-                    ->orWhereDate('expiry_date', '>=', today()))
+                ->where(fn ($query) => $product->tracks_expiry
+                    ? $query->whereDate('expiry_date', '>=', today())
+                    : $query->whereNull('expiry_date')->orWhereDate('expiry_date', '>=', today()))
                 ->orderByRaw('CASE WHEN expiry_date IS NULL THEN 1 ELSE 0 END')
                 ->orderBy('expiry_date')
                 ->orderBy('id')
