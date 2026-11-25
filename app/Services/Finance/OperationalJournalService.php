@@ -25,11 +25,20 @@ class OperationalJournalService
     public function post(SalesLedgerEntry $entry, User $actor): void
     {
         if (! Schema::hasTable('accounting_journals')) {
-            return;
+            throw ValidationException::withMessages([
+                'accounting' => 'دفتر الأستاذ غير متاح؛ لا يمكن تأكيد حركة مالية دون قيد محاسبي.',
+            ]);
         }
         $currency = Currency::query()->where('is_base', true)->where('is_active', true)->first();
-        if (! $currency || ! FinancialPeriod::query()->exists() || $entry->currency_code !== $currency->code) {
-            return;
+        if (! $currency || $entry->currency_code !== $currency->code) {
+            throw ValidationException::withMessages([
+                'currency_code' => 'العملة الأساسية غير مهيأة أو عملة العملية غير مدعومة للترحيل.',
+            ]);
+        }
+        if (! FinancialPeriod::query()->exists()) {
+            throw ValidationException::withMessages([
+                'financial_period' => 'لا توجد فترة مالية؛ افتح فترة تغطي تاريخ العملية قبل التأكيد.',
+            ]);
         }
 
         // A retry must validate the existing source without requiring accounts that were
@@ -56,7 +65,9 @@ class OperationalJournalService
             default => [null, null],
         };
         if ($debit === null) {
-            return;
+            throw ValidationException::withMessages([
+                'accounting' => 'نوع الحركة المالية غير مدعوم للترحيل الآلي.',
+            ]);
         }
 
         $accounts = AccountingAccount::query()->whereIn('code', [$debit, $credit])
