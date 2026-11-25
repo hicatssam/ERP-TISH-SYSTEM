@@ -188,7 +188,12 @@ class SupplierService
             }
 
             $productId = (int) $row['product_id'];
-            Product::query()->whereKey($productId)->lockForUpdate()->firstOrFail();
+            $ingredient = Product::query()->whereKey($productId)->lockForUpdate()->firstOrFail();
+            if (! $ingredient->is_raw_material || ! $ingredient->is_active) {
+                throw ValidationException::withMessages([
+                    'products' => 'يمكن ربط المورد بالمواد الخام النشطة فقط، وليس بمنتجات المنيو الجاهزة.',
+                ]);
+            }
             if (in_array($productId, $seenProductIds, true)) {
                 throw ValidationException::withMessages([
                     'products' => 'لا يمكن تكرار المنتج نفسه داخل مورد واحد.',
