@@ -7,6 +7,7 @@ use App\Enums\MovementType;
 use App\Events\LowStockDetected;
 use App\Models\Inventory;
 use App\Models\LocationProduct;
+use App\Models\Product;
 use App\Models\StockMovement;
 use App\Services\ActivityLogger;
 use Illuminate\Support\Facades\DB;
@@ -146,6 +147,12 @@ class InventoryService
             if ($existing) {
                 return $existing;
             }
+
+            $this->assertTrackedConsumptionUsesBatchAwareFlow(
+                $productId,
+                $reason,
+                $inventoryBatchId
+            );
 
             $inventory = $this->lockInventory($locationId, $productId);
             $before = $this->quantity($inventory->quantity);
@@ -489,6 +496,12 @@ class InventoryService
                 ];
             }
 
+            $this->assertTrackedConsumptionUsesBatchAwareFlow(
+                $productId,
+                MovementReason::ProductionConsumption,
+                null
+            );
+
             $inventory = $this->lockInventory($locationId, $productId);
             $before = $this->quantity($inventory->quantity);
             $reservedBefore = $this->quantity($inventory->reserved_quantity);
@@ -767,6 +780,41 @@ class InventoryService
             (float) $inventory->available_quantity,
             (float) $locationProduct->minimum_stock_level,
         );
+    }
+
+    /**
+     * Fail closed when a stock-consuming workflow has not allocated a tracked
+     * batch. The production-batch flow currently allocates batches itself and
+     * passes their IDs; direct sale/transfer callers have no such allocation.
+     * This guard is deliberately strict until those paths implement FEFO,
+     * batch-level movements and reversible allocations.
+     *
+     * Waste/damage and supplier-return flows are not blocked: expired goods
+     * still need a documented disposal/return path.
+     */
+    private function assertTrackedConsumptionUsesBatchAwareFlow(
+        int $productId,
+        MovementReason|string $reason,
+        ?int $inventoryBatchId
+    ): void {
+        $reasonValue = $reason instanceof MovementReason ? $reason->value : $reason;
+        $sale = $reasonValue === MovementReason::OrderSale->value;
+        $transfer = $reasonValue === MovementReason::TransferDispatch->value;
+        $productionWithoutBatch = $reasonValue === MovementReason::ProductionConsumption->value
+            && $inventoryBatchId === null;
+
+        if (! $sale && ! $transfer && ! $productionWithoutBatch) {
+            return;
+        }
+
+        $product = Product::query()->findOrFail($productId);
+        if (! $product->tracks_batch && ! $product->tracks_expiry) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'inventory_batch_id' => 'لا يمكن استهلاك أو تحويل مادة تتبع الدفعات/الصلاحية دون تخصيص دفعة صالحة ومُسجلة. أوقف العملية حتى تفعيل مسار FEFO الآمن.',
+        ]);
     }
 
     private function assertPositiveQuantity(float $quantity): void
