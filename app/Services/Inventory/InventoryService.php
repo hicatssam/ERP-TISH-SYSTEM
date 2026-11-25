@@ -484,6 +484,7 @@ class InventoryService
         int $referenceId,
         string $idempotencyKey,
         ?string $note = null,
+        ?int $inventoryBatchId = null,
     ): array {
         $this->assertPositiveQuantity($quantity);
 
@@ -496,6 +497,7 @@ class InventoryService
             $referenceId,
             $idempotencyKey,
             $note,
+            $inventoryBatchId,
         ): array {
             $existingMovement = StockMovement::query()
                 ->where('idempotency_key', $idempotencyKey)
@@ -517,7 +519,7 @@ class InventoryService
             $this->assertTrackedConsumptionUsesBatchAwareFlow(
                 $productId,
                 MovementReason::ProductionConsumption,
-                null
+                $inventoryBatchId
             );
 
             $inventory = $this->lockInventory($locationId, $productId);
@@ -540,6 +542,32 @@ class InventoryService
             $reservedAfter = $this->quantity($reservedBefore - $quantity);
             $baseUnitCost = $this->baseUnitCost($inventory, null, null);
 
+            if ($inventoryBatchId !== null) {
+                $product = Product::query()->findOrFail($productId);
+                if (! $product->tracks_batch && ! $product->tracks_expiry) {
+                    throw ValidationException::withMessages([
+                        'inventory_batch_id' => 'لا يمكن تخصيص دفعة لصنف غير متتبع.',
+                    ]);
+                }
+
+                $batch = InventoryBatch::query()
+                    ->whereKey($inventoryBatchId)
+                    ->where('location_id', $locationId)
+                    ->where('product_id', $productId)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                if (($batch->expiry_date !== null && $batch->expiry_date->lt(today()))
+                    || (float) $batch->available_quantity + 0.0005 < $quantity) {
+                    throw ValidationException::withMessages([
+                        'inventory_batch_id' => 'الدفعة منتهية الصلاحية أو كميتها المتاحة غير كافية.',
+                    ]);
+                }
+
+                $batch->decrement('available_quantity', $quantity);
+                $baseUnitCost = $this->decimal($batch->base_unit_cost, 4);
+            }
+
             $inventory->update([
                 'quantity' => $after,
                 'reserved_quantity' => $reservedAfter,
@@ -561,7 +589,7 @@ class InventoryService
                 exchangeRate: null,
                 unitCost: $baseUnitCost,
                 baseUnitCost: $baseUnitCost,
-                inventoryBatchId: null,
+                inventoryBatchId: $inventoryBatchId,
                 idempotencyKey: $idempotencyKey,
                 note: $note,
             );
