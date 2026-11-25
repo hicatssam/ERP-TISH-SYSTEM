@@ -10,6 +10,7 @@ use App\Models\EmployeePurchaseReceipt;
 use App\Models\Expense;
 use App\Models\FinancialPeriod;
 use App\Models\Payment;
+use App\Models\Invoice;
 use App\Models\PaymentMethod;
 use App\Models\Refund;
 use App\Models\SalesLedgerEntry;
@@ -56,9 +57,9 @@ class OperationalJournalService
             LedgerEntryType::Sale => ['1100', '4000'],
             LedgerEntryType::SaleCancellation => ['4000', '1100'],
             LedgerEntryType::EmployeePurchase => ['1150', '4000'],
-            LedgerEntryType::PaymentCollection => [$this->treasuryCode($this->paymentMethod($entry)), '1100'],
-            LedgerEntryType::PaymentReversal => ['1100', $this->treasuryCode($this->paymentMethod($entry))],
-            LedgerEntryType::Refund => ['1100', $this->treasuryCode($this->paymentMethod($entry))],
+            LedgerEntryType::PaymentCollection => [$this->treasuryCode($this->paymentMethod($entry)), $this->customerCounter($entry)],
+            LedgerEntryType::PaymentReversal => [$this->customerCounter($entry), $this->treasuryCode($this->paymentMethod($entry))],
+            LedgerEntryType::Refund => [$this->customerCounter($entry), $this->treasuryCode($this->paymentMethod($entry))],
             LedgerEntryType::EmployeeCollection => [$this->treasuryCode($this->paymentMethod($entry)), '1150'],
             LedgerEntryType::Expense => ['6000', $this->expenseCounter($entry)],
             LedgerEntryType::ExpenseReversal => [$this->expenseReversalCounter($entry), '6000'],
@@ -97,6 +98,26 @@ class OperationalJournalService
         }
 
         return $method;
+    }
+
+    /**
+     * Payments received before an invoice are customer liabilities, not receivables.
+     * Refunds and corrections use the current invoice state: once the advance is
+     * settled against an invoice, a subsequent refund reduces receivables.
+     */
+    private function customerCounter(SalesLedgerEntry $entry): string
+    {
+        $payment = $entry->entry_type === LedgerEntryType::Refund
+            ? Payment::query()->findOrFail(Refund::query()->findOrFail($entry->reference_id)->payment_id)
+            : Payment::query()->findOrFail($entry->reference_id);
+
+        $orderType = $payment->orderTypeValue();
+        $invoiced = Invoice::query()
+            ->where('order_type', $orderType)
+            ->where('order_id', $payment->order_id)
+            ->exists();
+
+        return $invoiced ? '1100' : '2400';
     }
 
     private function expenseCounter(SalesLedgerEntry $entry): string
