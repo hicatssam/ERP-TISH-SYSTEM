@@ -162,7 +162,8 @@ class InventoryService
                     $batch = InventoryBatch::query()->whereKey($inventoryBatchId)
                         ->where('location_id', $locationId)->where('product_id', $productId)
                         ->lockForUpdate()->firstOrFail();
-                    if ($batch->expiry_date && $batch->expiry_date->lt(today())
+                    if (($product->tracks_expiry && $batch->expiry_date === null)
+                        || ($batch->expiry_date !== null && $batch->expiry_date->lt(today()))
                         || (float) $batch->available_quantity + 0.0005 < $quantity) {
                         throw ValidationException::withMessages([
                             'inventory_batch_id' => 'الدفعة منتهية الصلاحية أو رصيدها الصالح غير كافٍ.',
@@ -557,7 +558,8 @@ class InventoryService
                     ->lockForUpdate()
                     ->firstOrFail();
 
-                if (($batch->expiry_date !== null && $batch->expiry_date->lt(today()))
+                if (($product->tracks_expiry && $batch->expiry_date === null)
+                    || ($batch->expiry_date !== null && $batch->expiry_date->lt(today()))
                     || (float) $batch->available_quantity + 0.0005 < $quantity) {
                     throw ValidationException::withMessages([
                         'inventory_batch_id' => 'الدفعة منتهية الصلاحية أو كميتها المتاحة غير كافية.',
