@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Notifications\ProductionOrderNotification;
 use App\Services\ActivityLogger;
 use App\Services\Inventory\InventoryService;
+use App\Services\Inventory\ReservedProductionBatchService;
 use App\Services\ModuleService;
 use App\Services\Notifications\NotificationDispatcher;
 use Illuminate\Support\Collection;
@@ -23,6 +24,7 @@ class ProductionOrderService
 {
     public function __construct(
         private readonly InventoryService $inventory,
+        private readonly ReservedProductionBatchService $batchConsumption,
         private readonly RecipeCostService $costs,
         private readonly ModuleService $modules,
     ) {
@@ -313,19 +315,19 @@ class ProductionOrderService
                 $actualCost = 0.0;
 
                 if ($actualQuantity > 0) {
-                    $consumption = $this->inventory->consumeReserved(
-                        $locked->location_id,
-                        $item->product_id,
-                        $actualQuantity,
-                        $user->id,
-                        'production_orders',
-                        $locked->id,
-                        'production:' . $locked->id . ':consume:' . $item->id,
-                        'استهلاك مكون ضمن أمر الإنتاج ' . $locked->production_number
+                    $consumption = $this->batchConsumption->consume(
+                        locationId: (int) $locked->location_id,
+                        productId: (int) $item->product_id,
+                        quantity: $actualQuantity,
+                        userId: (int) $user->id,
+                        referenceType: 'production_orders',
+                        referenceId: (int) $locked->id,
+                        idempotencyKey: 'production:' . $locked->id . ':consume:' . $item->id,
+                        note: 'استهلاك مكون ضمن أمر الإنتاج ' . $locked->production_number
                     );
 
                     $actualUnitCost = round((float) $consumption['unit_cost'], 4);
-                    $actualCost = round($actualQuantity * $actualUnitCost, 2);
+                    $actualCost = (float) $consumption['total_cost'];
                     $actualMaterialCost += $actualCost;
                 }
 
