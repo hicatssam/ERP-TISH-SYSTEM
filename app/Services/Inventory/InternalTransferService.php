@@ -6,6 +6,9 @@ use App\Enums\MovementReason;
 use App\Enums\StockRequestStatus;
 use App\Enums\StockTransferStatus;
 use App\Models\StockReceivingInvoice;
+use App\Models\InventoryBatch;
+use App\Models\Product;
+use App\Models\StockMovement;
 use App\Models\StockRequest;
 use App\Models\StockTransfer;
 use App\Models\StockTransferItem;
@@ -25,6 +28,7 @@ class InternalTransferService
 {
     public function __construct(
         private readonly InventoryService $inventory,
+        private readonly SaleBatchAllocationService $batchAllocations,
         private readonly DocumentNumberService $numbers,
     ) {
     }
@@ -115,16 +119,18 @@ class InternalTransferService
             }
 
             foreach ($transfer->items as $item) {
-                $sourceInventory = $this->inventory->decrease(
-                    locationId: $transfer->from_location_id,
-                    productId: $item->product_id,
+                // Tracked items are allocated FEFO and retain their source
+                // inventory_batch_id on every dispatch stock movement.
+                $sourceInventory = $this->batchAllocations->consume(
+                    locationId: (int) $transfer->from_location_id,
+                    productId: (int) $item->product_id,
                     quantity: (float) $item->sent_quantity,
-                    reason: MovementReason::TransferDispatch,
-                    userId: $actor->id,
+                    userId: (int) $actor->id,
                     referenceType: 'stock_transfers',
-                    referenceId: $transfer->id,
+                    referenceId: (int) $transfer->id,
                     idempotencyKey: "stock-transfer-dispatch:{$transfer->id}:{$item->id}",
                     note: $notes,
+                    reason: MovementReason::TransferDispatch,
                 );
 
                 $item->update(['unit_cost' => $sourceInventory->unit_cost]);
@@ -209,20 +215,27 @@ class InternalTransferService
                 );
 
                 if ($received > 0) {
-                    $this->inventory->increase(
-                        locationId: $transfer->to_location_id,
-                        productId: $item->product_id,
-                        quantity: $received,
-                        reason: MovementReason::TransferReceipt,
-                        userId: $actor->id,
-                        referenceType: 'stock_transfers',
-                        referenceId: $transfer->id,
-                        unitCost: (string) $item->unit_cost,
-                        currencyId: $item->currency_id,
-                        exchangeRate: '1',
-                        idempotencyKey: "stock-transfer-receipt:{$transfer->id}:{$item->id}",
-                        note: $notes,
-                    );
+                    $product = Product::query()->findOrFail($item->product_id);
+                    if ($product->tracks_batch || $product->tracks_expiry) {
+                        $this->receiveTrackedBatches(
+                            $transfer, $item, $received, $actor, $notes
+                        );
+                    } else {
+                        $this->inventory->increase(
+                            locationId: $transfer->to_location_id,
+                            productId: $item->product_id,
+                            quantity: $received,
+                            reason: MovementReason::TransferReceipt,
+                            userId: $actor->id,
+                            referenceType: 'stock_transfers',
+                            referenceId: $transfer->id,
+                            unitCost: (string) $item->unit_cost,
+                            currencyId: $item->currency_id,
+                            exchangeRate: '1',
+                            idempotencyKey: "stock-transfer-receipt:{$transfer->id}:{$item->id}",
+                            note: $notes,
+                        );
+                    }
                 }
 
                 $shortage = max(0, $sent - $received - $damaged);
@@ -283,6 +296,93 @@ class InternalTransferService
 
             return $invoice;
         });
+    }
+
+    /**
+     * Receive only the physically accepted quantity. Dispatch movements are the
+     * immutable source-batch allocation record. Lost/damaged quantities remain
+     * out of destination stock, and discrepancies are recorded by receive().
+     *
+     * In-transit batches retain their original expiry, even if it has passed
+     * since dispatch. Expired received batches cannot be allocated by FEFO.
+     */
+    private function receiveTrackedBatches(
+        StockTransfer $transfer,
+        StockTransferItem $item,
+        float $received,
+        User $actor,
+        ?string $notes
+    ): void {
+        $prefix = "stock-transfer-dispatch:{$transfer->id}:{$item->id}:batch:";
+        $allocations = StockMovement::query()
+            ->where('location_id', $transfer->from_location_id)
+            ->where('product_id', $item->product_id)
+            ->where('reference_type', 'stock_transfers')
+            ->where('reference_id', $transfer->id)
+            ->where('reason', MovementReason::TransferDispatch->value)
+            ->where('idempotency_key', 'like', $prefix.'%')
+            ->whereNotNull('inventory_batch_id')
+            ->orderBy('id')
+            ->get();
+
+        if ($allocations->isEmpty()
+            || abs((float) $allocations->sum('quantity') - (float) $item->sent_quantity) > 0.0005) {
+            throw ValidationException::withMessages([
+                'items' => 'بيانات دفعات الإرسال مفقودة أو غير متطابقة مع الكمية المرسلة.',
+            ]);
+        }
+
+        $remaining = round($received, 3);
+        foreach ($allocations as $movement) {
+            if ($remaining <= 0.0005) {
+                break;
+            }
+            $quantity = round(min($remaining, (float) $movement->quantity), 3);
+            if ($quantity <= 0) {
+                continue;
+            }
+            $sourceBatch = InventoryBatch::query()
+                ->whereKey($movement->inventory_batch_id)
+                ->where('location_id', $transfer->from_location_id)
+                ->where('product_id', $item->product_id)
+                ->firstOrFail();
+
+            $destinationBatch = InventoryBatch::query()->create([
+                'product_id' => $item->product_id,
+                'location_id' => $transfer->to_location_id,
+                'batch_number' => $sourceBatch->batch_number,
+                'manufacturing_date' => $sourceBatch->manufacturing_date,
+                'expiry_date' => $sourceBatch->expiry_date,
+                'received_quantity' => $quantity,
+                'available_quantity' => $quantity,
+                'unit_cost' => $sourceBatch->unit_cost,
+                'base_unit_cost' => $sourceBatch->base_unit_cost,
+                'currency_id' => $sourceBatch->currency_id,
+            ]);
+
+            $this->inventory->increase(
+                locationId: (int) $transfer->to_location_id,
+                productId: (int) $item->product_id,
+                quantity: $quantity,
+                reason: MovementReason::TransferReceipt,
+                userId: (int) $actor->id,
+                referenceType: 'stock_transfers',
+                referenceId: (int) $transfer->id,
+                unitCost: (string) $sourceBatch->base_unit_cost,
+                currencyId: $sourceBatch->currency_id,
+                exchangeRate: '1',
+                inventoryBatchId: (int) $destinationBatch->id,
+                idempotencyKey: "stock-transfer-receipt:{$transfer->id}:{$item->id}:source-batch:{$sourceBatch->id}",
+                note: $notes,
+            );
+            $remaining = round($remaining - $quantity, 3);
+        }
+
+        if ($remaining > 0.0005) {
+            throw ValidationException::withMessages([
+                'items' => 'تعذر استلام الكمية كاملة مع بيانات دفعاتها.',
+            ]);
+        }
     }
 
     private function recordDiscrepancy(
