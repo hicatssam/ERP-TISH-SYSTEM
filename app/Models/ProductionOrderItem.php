@@ -16,6 +16,8 @@ class ProductionOrderItem extends Model
         'waste_percent_snapshot',
         'waste_percent',
         'planned_quantity',
+        'planned_stock_quantity',
+        'planned_total_cost',
         'reserved_quantity',
         'issued_quantity',
         'actual_quantity',
