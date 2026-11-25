@@ -134,13 +134,9 @@ class StorePurchaseOrderRequest extends FormRequest
                 )->where(
                     fn ($query) =>
                         $query
-                            ->where(
-                                'is_active',
-                                true
-                            )
-                            ->whereNull(
-                                'deleted_at'
-                            )
+                            ->where('is_active', true)
+                            ->where('is_raw_material', true)
+                            ->whereNull('deleted_at')
                 ),
             ],
 
