@@ -150,8 +150,8 @@ class CategoryController extends Controller
         $data['slug'] = Str::slug($data['name']);
 
         $iconPayload = [
-            'icon_key' => $data['icon_key'] ?? 'sparkles',
-            'icon_color' => $data['icon_color'] ?? '#111111',
+            'icon_key' => $data['icon_key'] ?? $category->icon_key ?? 'sparkles',
+            'icon_color' => $data['icon_color'] ?? $category->icon_color ?? '#111111',
         ];
 
         unset($data['icon_key'], $data['icon_color']);
