@@ -16,12 +16,13 @@
                 <tr>
                     <td>{{ $lp->location?->name }}</td>
                     <td><span class="badge {{ $lp->is_available ? 'badge-active' : 'badge-inactive' }}">{{ $lp->is_available ? 'نعم' : 'لا' }}</span></td>
-                    <td>{{ $lp->local_selling_price !== null ? $currencySymbol . number_format((float) $lp->local_selling_price, 2) : '—' }}</td>
+                    <td>{{ $currencySymbol }}{{ number_format((float) ($lp->local_selling_price ?? $product->base_selling_price), 2) }}
+                        <small style="display:block;color:var(--text-muted)">{{ $lp->local_selling_price === null ? 'السعر الأساسي' : 'سعر خاص' }}</small></td>
                     <td>{{ $lp->minimum_stock_level ?? '—' }}</td>
                     <td>
                         <form action="{{ route('location-products.update', $lp) }}" method="POST" style="display:inline-flex;gap:.5rem">
                             @csrf @method('PUT')
-                            <input type="number" name="local_selling_price" class="form-input" style="width:100px" step="0.01" value="{{ $lp->local_selling_price }}">
+                            <input type="number" name="local_selling_price" class="form-input" style="width:100px" step="0.01" min="0" value="{{ $lp->local_selling_price }}" placeholder="{{ $product->base_selling_price }}" title="اترك الحقل فارغًا لاستخدام السعر الأساسي" aria-label="السعر الخاص بالفرع (اختياري)">
                             <input type="number" name="minimum_stock_level" class="form-input" style="width:80px" step="0.001" value="{{ $lp->minimum_stock_level }}">
                             <button class="btn btn-outline btn-sm" type="submit">حفظ</button>
                         </form>
