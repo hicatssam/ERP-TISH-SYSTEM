@@ -7,6 +7,7 @@ use App\Models\DailyCashReconciliation;
 use App\Models\Employee;
 use App\Models\EmployeePurchase;
 use App\Models\EmployeePurchaseReceipt;
+use App\Models\FinancialPeriod;
 use App\Models\Inventory;
 use App\Models\InventoryBatch;
 use App\Models\Location;
@@ -224,6 +225,21 @@ class EmployeePurchaseAccountTest extends TestCase
             $user->givePermissionTo(Permission::findOrCreate($name, 'web'));
         }
         app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        // FinancialPostingService now requires an open period for every new
+        // operational journal. This is shared by branches, so create it once
+        // for the test's current (possibly time-travelled) month.
+        FinancialPeriod::query()->firstOrCreate(
+            ['year' => (int) now()->year, 'month' => (int) now()->month],
+            [
+                'name' => 'Employee Purchase QA '.now()->format('Y-m'),
+                'start_date' => now()->startOfMonth()->toDateString(),
+                'end_date' => now()->endOfMonth()->toDateString(),
+                'status' => 'open',
+                'opened_by' => $user->id,
+                'opened_at' => now(),
+            ]
+        );
 
         return [$branch, $employee, $user];
     }
