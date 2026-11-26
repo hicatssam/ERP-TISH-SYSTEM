@@ -509,179 +509,96 @@
 </style>
 
 
+
 <style>
-/* TISH-TRACK-REFERENCE-V1 — page-local presentation; no changes to order data. */
-body.tish-paper.tish-paper-track{
-    --track-red:#a91f17;--track-ink:#24211e;--track-paper:#f7e9d5;
-    --track-edge:polygon(0 2%,2% 1%,5% 2%,8% 0,12% 1%,16% 0,20% 1%,24% 0,28% 1%,32% 0,36% 1%,40% 0,44% 1%,49% 0,54% 1%,59% 0,63% 1%,68% 0,73% 1%,78% 0,83% 1%,88% 0,93% 1%,97% 0,100% 2%,99.5% 12%,100% 22%,99.5% 35%,100% 47%,99.5% 60%,100% 73%,99.5% 85%,100% 97%,97% 99%,94% 98%,90% 100%,86% 99%,81% 100%,76% 99%,71% 100%,66% 99%,61% 100%,56% 99%,51% 100%,46% 99%,41% 100%,36% 99%,31% 100%,26% 99%,21% 100%,16% 99%,11% 100%,6% 99%,2% 100%,0 97%,.5% 84%,0 71%,.5% 58%,0 45%,.5% 32%,0 20%,.5% 9%);
-    padding-bottom:calc(100px + env(safe-area-inset-bottom,0px));
+/* TISH-TRACK-REFERENCE-V3. Isolated tracking composition, reference-derived neutral texture.
+   All tracking, payment, notification and invoice values remain server driven. */
+body#tishTrack{
+ --tp-ink:#211e1a;--tp-red:#b51c11;--tp-cream:#fff0df;--tp-green:#21742b;
+ --tp-texture:url('data:image/webp;base64,UklGRlgDAABXRUJQVlA4IEwDAAAQFgCdASpIAEgAPsFYo04npSKiKPJMAPAYCWlaDfJY5rgA26lkr7f2E96/7nc/do/8tmVhRWTj/S0eeV6ee8G/8x//RILC6lv4SA06vt+OegdKz1oz9tV9FV6NLWFxJPj2modBrkdPFGLEQTdaygiphHZ1bbhpgHw3RNyhzc4H93gurPKcJ/9neFAYsl2rKXhlAtolI6NPaHL+U8T+elPKblKuF28Ism9mfuqnBrHr4TppR8/QWZpAAAD+7sT/rntdPxgVpL553EJakHy1khlpRtNCGnoAktaFX/UMmNtLdFzimJ0cPD0hkEF4eCVx92XHqoJ6MJmvHu+MfzRtmsL7eVCOLtt4DErOR0GfzpJqHRPk50MFIWtQlIOdBW1aTE9gLXD2kUd/pE0YYBjVopXbZjBNLVGgup122SHiXmM+z58kaG8Vz8w9cio0gLyucGfc2axvV3o2jm8UlMx9sbqo1UijimXoY6lgNw2LV/B3OC38lrdEUTg0KS+bywrZrQHHfXRfOfHOop0i3YVqb5UB15q1bYayhXqX5nU+hVFDk+NfuV8hSpP+IVu1hEGYt2Rauu1gEX2+Fe27Tqlyi+VpuJboAcoKiuFp4+YBW2LlEClwLzZN6h86Md3o6AmekfI9tNe76qnG3YQsXVe09mi4x67fkhq1mbVY0VqnYCzpS8SUS861biDv0Ht6smlmh5RPftSELI3hB+wk1DaqSlMotk55pcDBG5TDTPbs0AW/Z5UgtihAYVseLQpHsd3mwHKQqFCDPqEwkPfV0GJYhVNth5/VnSBawNFTVeWZmWgj5VaDXTQT2sMYnCzd67Va9tgjbGhPTeyUamjt6/rdY7mDxxFgBt0pEgVazfkqIC97qC2uTyF2tybgGkr/k0YFHJekezh95am5FfYh6mmnsm9J+a1BP/HQAaU1nJ3KGJaaQhAeWGu5pYRspQbdScwGKm9bGid15lRxP9JERKc7LLBaR2FaRvK59iYKA+Xz+npk16+Th8q6DYVsTBUBOihwXKBRjTA/vOoGKyVNCLQitSHkmrSAwDbyi6u3rud0Lm7MibtEsq8q8Ql0wzmSiDB6qNPw84jTIhwtPG74GT6AUSXrQ1Pi5DgqsATQAAAA');
+ --tp-paper:var(--tp-texture),linear-gradient(145deg,#fff2e3,#fae8d0);
+ --tp-edge:polygon(0% 2px,2% 0px,4% 1px,6% 3px,8% 1px,10% 0px,12% 2px,14% 1px,16% 2px,18% 0px,20% 1px,22% 3px,24% 1px,26% 0px,28% 2px,30% 1px,32% 2px,34% 0px,36% 1px,38% 3px,40% 1px,42% 0px,44% 2px,46% 1px,48% 2px,50% 0px,52% 1px,54% 3px,56% 1px,58% 0px,60% 2px,62% 1px,64% 2px,66% 0px,68% 1px,70% 3px,72% 1px,74% 0px,76% 2px,78% 1px,80% 2px,82% 0px,84% 1px,86% 3px,88% 1px,90% 0px,92% 2px,94% 1px,96% 2px,98% 0px,100% 1px,calc(100% - 0px) 5%,calc(100% - 2px) 9.5%,calc(100% - 1px) 14%,calc(100% - 3px) 18.5%,calc(100% - 1px) 23%,calc(100% - 0px) 27.5%,calc(100% - 2px) 32%,calc(100% - 1px) 36.5%,calc(100% - 3px) 41%,calc(100% - 1px) 45.5%,calc(100% - 0px) 50%,calc(100% - 2px) 54.5%,calc(100% - 1px) 59%,calc(100% - 3px) 63.5%,calc(100% - 1px) 68%,calc(100% - 0px) 72.5%,calc(100% - 2px) 77%,calc(100% - 1px) 81.5%,calc(100% - 3px) 86%,calc(100% - 1px) 90.5%,100% calc(100% - 2px),98% calc(100% - 0px),96% calc(100% - 2px),94% calc(100% - 1px),92% calc(100% - 3px),90% calc(100% - 1px),88% calc(100% - 0px),86% calc(100% - 2px),84% calc(100% - 0px),82% calc(100% - 2px),80% calc(100% - 1px),78% calc(100% - 3px),76% calc(100% - 1px),74% calc(100% - 0px),72% calc(100% - 2px),70% calc(100% - 0px),68% calc(100% - 2px),66% calc(100% - 1px),64% calc(100% - 3px),62% calc(100% - 1px),60% calc(100% - 0px),58% calc(100% - 2px),56% calc(100% - 0px),54% calc(100% - 2px),52% calc(100% - 1px),50% calc(100% - 3px),48% calc(100% - 1px),46% calc(100% - 0px),44% calc(100% - 2px),42% calc(100% - 0px),40% calc(100% - 2px),38% calc(100% - 1px),36% calc(100% - 3px),34% calc(100% - 1px),32% calc(100% - 0px),30% calc(100% - 2px),28% calc(100% - 0px),26% calc(100% - 2px),24% calc(100% - 1px),22% calc(100% - 3px),20% calc(100% - 1px),18% calc(100% - 0px),16% calc(100% - 2px),14% calc(100% - 0px),12% calc(100% - 2px),10% calc(100% - 1px),8% calc(100% - 3px),6% calc(100% - 1px),4% calc(100% - 0px),2% calc(100% - 2px),0% calc(100% - 0px),1px 95%,0px 90.5%,3px 86%,1px 81.5%,2px 77%,1px 72.5%,0px 68%,3px 63.5%,1px 59%,2px 54.5%,1px 50%,0px 45.5%,3px 41%,1px 36.5%,2px 32%,1px 27.5%,0px 23%,3px 18.5%,1px 14%,2px 9.5%);
+ --tp-rays:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath fill='%23b51c11' d='M38 14 17 0 30 17ZM29 23 0 12 19 26ZM26 31 8 35 25 35Z'/%3E%3C/svg%3E");
+ background:var(--tp-texture),#fae5cd!important;background-blend-mode:multiply!important;background-size:80px!important;
+ color:var(--tp-ink);padding-bottom:calc(83px + env(safe-area-inset-bottom,0px))!important;
 }
-body.tish-paper.tish-paper-track::before{height:23px}
-body.tish-paper.tish-paper-track::after{content:"";position:absolute;inset:10px auto auto 0;width:83px;height:100px;background:url('/assets/tish-paper/decor/halftone.svg') center/contain no-repeat;pointer-events:none;z-index:0}
-body.tish-paper.tish-paper-track .wrap{width:min(100% - 24px,650px)}
-body.tish-paper.tish-paper-track .topbar{margin-top:6px;padding:10px 0 12px}
-body.tish-paper.tish-paper-track .cm-unified-header{display:flex;justify-content:space-between;align-items:center;gap:10px}
-body.tish-paper.tish-paper-track .cm-unified-header-brand{display:flex;align-items:center;gap:9px;min-width:0}
-body.tish-paper.tish-paper-track .cm-unified-header-logo{width:65px!important;height:65px!important;flex:0 0 65px;object-fit:contain;filter:drop-shadow(0 3px 3px #48311e55)}
-body.tish-paper.tish-paper-track .cm-unified-header-brand-copy{display:grid;gap:2px;min-width:0;line-height:1.4}
-body.tish-paper.tish-paper-track .cm-unified-header-brand-copy strong{font-size:clamp(1rem,4vw,1.4rem);font-weight:900;overflow-wrap:anywhere}
-body.tish-paper.tish-paper-track .cm-unified-header-brand-copy small{font-size:.78rem;color:#4e4640;overflow-wrap:anywhere}
-body.tish-paper.tish-paper-track .cm-unified-header-actions{display:flex;align-items:center;gap:4px;flex-shrink:0}
-body.tish-paper.tish-paper-track .cm-language-switch{font-size:.88rem!important;min-height:40px;padding:8px 12px!important;filter:drop-shadow(0 3px 3px #4b302740);text-decoration:underline;text-decoration-color:var(--track-red);text-underline-offset:5px}
-body.tish-paper.tish-paper-track #trackingCard,
-body.tish-paper.tish-paper-track .track-summary{
-    position:relative;isolation:isolate;clip-path:none!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;
+body#tishTrack::before{height:23px!important;background: url('/assets/tish-paper/decor/red-torn-top.svg') center/100% 100% no-repeat!important;z-index:1}
+body#tishTrack::after{content:"";position:absolute;top:8px;left:0;width:76px;height:90px;background:url('/assets/tish-paper/decor/halftone.svg') center/contain no-repeat;pointer-events:none;z-index:0}
+body#tishTrack .wrap{width:min(calc(100% - 26px),620px)!important;margin-inline:auto}
+body#tishTrack .track-header{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 8px 9px;min-height:73px}
+body#tishTrack .track-brand{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
+body#tishTrack .track-brand img{width:clamp(52px,14vw,82px);height:clamp(52px,14vw,82px);flex-shrink:0;object-fit:contain;filter:drop-shadow(0 3px 2px #49311e66)}
+body#tishTrack .track-brand-copy{min-width:0;display:flex;flex-direction:column;line-height:1.35;text-align:start}
+body#tishTrack .track-brand-copy strong{font-size:clamp(15px,3.8vw,23px);font-weight:900;overflow-wrap:anywhere}
+body#tishTrack .track-brand-copy small{font-size:clamp(10px,2.9vw,15px);color:#48413a;overflow-wrap:anywhere}
+body#tishTrack .track-language{flex-shrink:0;display:flex;align-items:center}
+body#tishTrack .track-language .cm-language-switch{border:0!important;border-radius:0!important;min-width:70px;min-height:40px;font-size:clamp(13px,3.1vw,17px)!important;font-weight:900!important;color:var(--tp-ink)!important;background:var(--tp-paper)!important;background-blend-mode:multiply!important;clip-path:var(--tp-edge);padding:8px 12px!important;text-decoration:underline;text-decoration-color:var(--tp-red);text-underline-offset:5px;text-decoration-thickness:2px}
+body#tishTrack #trackingCard,body#tishTrack .track-summary,body#tishTrack #paymentSummary{position:relative;isolation:isolate;background:none!important;border:0!important;border-radius:0!important;clip-path:none!important;box-shadow:none!important;filter:drop-shadow(0 4px 2px #795a3755)}
+body#tishTrack #trackingCard::before,body#tishTrack .track-summary::before,body#tishTrack #paymentSummary::before{
+ content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:var(--tp-paper);background-blend-mode:multiply;background-size:80px,100%;clip-path:var(--tp-edge)
 }
-body.tish-paper.tish-paper-track #trackingCard::before,
-body.tish-paper.tish-paper-track .track-summary::before{
-    content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
-    background:var(--track-paper) url('/assets/tish-paper/paper/background.webp') center/540px auto repeat;
-    clip-path:var(--track-edge);
-}
-body.tish-paper.tish-paper-track #trackingCard{padding:18px 13px 20px!important;filter:drop-shadow(0 4px 3px #6c492b3b)}
-body.tish-paper.tish-paper-track .orderHead{display:grid;grid-template-columns:minmax(0,1fr);justify-items:start;gap:8px;padding:0 7px 4px;border:0}
-body.tish-paper.tish-paper-track .orderHead>div{width:100%;min-width:0}
-body.tish-paper.tish-paper-track .eyebrow{font-size:clamp(1.05rem,4.2vw,1.45rem);font-weight:900;color:var(--track-ink)}
-body.tish-paper.tish-paper-track .orderHead h1{position:relative;margin:2px 0 0;direction:ltr;text-align:end;font-size:clamp(1.35rem,5.2vw,2.2rem);line-height:1.45;font-weight:950;letter-spacing:-.025em;overflow-wrap:anywhere}
-html[dir="rtl"] body.tish-paper.tish-paper-track .orderHead h1{text-align:right}
-html[dir="ltr"] body.tish-paper.tish-paper-track .orderHead h1{text-align:left}
-body.tish-paper.tish-paper-track #label{max-width:100%;gap:8px;padding:9px 16px!important;font-size:clamp(.9rem,4vw,1.3rem);line-height:1.35;align-self:start;filter:drop-shadow(0 3px 2px #49372942);white-space:normal;background:#8b5b34 url('/assets/tish-paper/paper/background.webp') center/cover!important;background-blend-mode:multiply;clip-path:var(--track-edge)}
-body.tish-paper.tish-paper-track #label[data-order-state="ready"],
-body.tish-paper.tish-paper-track #label[data-order-state="completed"]{background:transparent url('/assets/tish-paper/paper/availability-green.webp') center/100% 100% no-repeat!important;clip-path:none}
-body.tish-paper.tish-paper-track #label[data-order-state="cancelled"],
-body.tish-paper.tish-paper-track #label[data-order-state="canceled"]{background:transparent url('/assets/tish-paper/paper/price-ticket.webp') center/100% 100% no-repeat!important}
-body.tish-paper.tish-paper-track .statusDot{display:grid;place-items:center;flex:0 0 21px;width:21px;height:21px;background:#fff9ee;color:#76502e;border-radius:50%;font-size:12px}
-body.tish-paper.tish-paper-track #label[data-order-state="ready"] .statusDot,
-body.tish-paper.tish-paper-track #label[data-order-state="completed"] .statusDot{color:#236524}
-body.tish-paper.tish-paper-track .statusDot i{display:none}
-body.tish-paper.tish-paper-track #label:is([data-order-state="ready"],[data-order-state="completed"]) .statusDot i{display:block}
-body.tish-paper.tish-paper-track .progress{padding:15px 0 19px}
-body.tish-paper.tish-paper-track .progressLine{--track-dot:clamp(38px,11vw,57px);gap:0;align-items:start}
-body.tish-paper.tish-paper-track .progressLine::before{top:calc(var(--track-dot) / 2);height:2px;background:#655247}
-body.tish-paper.tish-paper-track .progressItem{font-size:clamp(.66rem,2.9vw,1rem);font-weight:900;line-height:1.4;color:#62584f;min-width:0}
-body.tish-paper.tish-paper-track .progressItem.on{color:var(--track-ink)}
-body.tish-paper.tish-paper-track .progressItem .dot{width:var(--track-dot);height:var(--track-dot);margin:0 auto 6px;background:url('/assets/tish-paper/paper/favorite-disc.webp') center/100% 100% no-repeat!important;border-radius:50%;border:0!important;color:#7d6552!important;font-size:clamp(17px,4.5vw,25px);filter:drop-shadow(0 3px 2px #46251750)}
-body.tish-paper.tish-paper-track .progressItem.on .dot{background:var(--track-red) url('/assets/tish-paper/paper/nav-active.webp') center/100% 100% no-repeat!important;border:3px solid #fff1dc!important;color:#fff9ed!important}
-body.tish-paper.tish-paper-track .progressItem.current .dot{outline:2px solid var(--track-red);outline-offset:2px;box-shadow:none}
-body.tish-paper.tish-paper-track .paymentSummary{margin:0 0 12px;padding:13px 10px!important;gap:9px;background:transparent url('/assets/tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;box-shadow:none!important;filter:drop-shadow(0 4px 3px #62412742)}
-body.tish-paper.tish-paper-track .paymentSummaryIcon{width:45px;height:45px;flex:0 0 45px;font-size:20px;color:var(--track-red)}
-body.tish-paper.tish-paper-track .paymentSummaryText{gap:2px}
-body.tish-paper.tish-paper-track .paymentSummaryText strong{font-size:clamp(.95rem,4vw,1.32rem);line-height:1.4;font-weight:900}
-body.tish-paper.tish-paper-track .paymentSummaryText small{font-size:.76rem;line-height:1.6;color:#4e4640}
-body.tish-paper.tish-paper-track #paymentBadge{padding:9px 13px!important;font-size:clamp(.73rem,3.3vw,1rem);max-width:42%;border-radius:0;line-height:1.45}
-body.tish-paper.tish-paper-track #paymentBadge[data-payment-state="paid"]{filter:drop-shadow(0 3px 2px #48311e40)}
-body.tish-paper.tish-paper-track #paymentBadge:is([data-payment-state="partial"],[data-payment-state="review"]){background:#fff1d5;color:#875300}
-body.tish-paper.tish-paper-track #paymentBadge[data-payment-state="refunded"]{background:#e9e9f4;color:#514d79}
-body.tish-paper.tish-paper-track .notice.show,body.tish-paper.tish-paper-track .customer-status-alert.show{padding:11px 10px;margin:0 0 12px;line-height:1.6;text-align:center;font-size:clamp(.77rem,3.25vw,1.05rem);font-weight:900;background:#f7d6d0 url('/assets/tish-paper/paper/background.webp') center/540px auto repeat;background-blend-mode:multiply;clip-path:var(--track-edge)}
-body.tish-paper.tish-paper-track .customer-alert-controls{display:grid;justify-items:center;gap:5px;margin:8px 0 14px;text-align:center}
-body.tish-paper.tish-paper-track .customer-alert-controls button{border:2px solid var(--track-red)!important;border-radius:18px 15px 20px 13px!important;min-height:42px;padding:7px 12px!important;font-size:clamp(.8rem,3.5vw,1.13rem);line-height:1.5;box-shadow:0 3px 4px #55311e35}
-body.tish-paper.tish-paper-track .customer-alert-controls button[hidden]{display:none!important}
-body.tish-paper.tish-paper-track .customer-alert-controls small{font-size:.75rem;line-height:1.5;color:#4e4640}
-body.tish-paper.tish-paper-track .track-summary{padding:0 12px 12px;margin:12px 0 0;filter:drop-shadow(0 4px 3px #67472a40)}
-body.tish-paper.tish-paper-track .track-summary .sectionTitle{padding:11px 0 8px;margin:0;gap:6px}
-body.tish-paper.tish-paper-track .track-summary .sectionTitle h2{font-size:clamp(1.04rem,4.5vw,1.5rem);line-height:1.45}
-body.tish-paper.tish-paper-track .track-summary .live{font-size:.7rem;color:#4e4640}
-body.tish-paper.tish-paper-track .track-summary .items{border-color:#b5a48f}
-body.tish-paper.tish-paper-track .track-summary .item{align-items:center;padding:9px 0;gap:10px;border-color:#b5a48f;font-weight:850;line-height:1.4;font-size:clamp(.84rem,3.5vw,1.15rem)}
-body.tish-paper.tish-paper-track .track-summary .item>span{min-width:0;overflow-wrap:anywhere}
-body.tish-paper.tish-paper-track .track-summary .item small{font-size:.74rem;font-weight:550;margin-top:2px}
-body.tish-paper.tish-paper-track .track-summary .item b{font-size:clamp(.95rem,4vw,1.3rem);font-weight:950;flex-shrink:0}
-body.tish-paper.tish-paper-track .track-summary .total{align-items:center;padding-top:11px;font-size:clamp(1.05rem,4.5vw,1.5rem)}
-body.tish-paper.tish-paper-track .track-summary .total span:last-child{background:url('/assets/tish-paper/paper/price-ticket.webp') center/100% 100% no-repeat;color:#fff9ed!important;padding:8px 15px;white-space:nowrap;font-weight:950;filter:drop-shadow(0 3px 2px #4c2b2240)}
-body.tish-paper.tish-paper-track .footerActions{margin-top:15px;grid-template-columns:repeat(2,minmax(0,1fr))}
-body.tish-paper.tish-paper-track .footerActions .action{min-height:44px;font-size:.75rem;padding:7px 8px;line-height:1.45}
-body.tish-paper.tish-paper-track #tishStatusMini.tish-status-mini{position:static!important;display:none!important;margin:10px auto 0;max-width:100%;width:100%;min-height:42px!important;padding:9px 12px!important}
-body.tish-paper.tish-paper-track #tishStatusMini.tish-status-mini.is-visible{display:flex!important}
-body.tish-paper.tish-paper-track #tishStatusMini.tish-status-mini:focus-visible{outline:3px solid var(--track-red)!important;outline-offset:2px!important}
-body.tish-paper.tish-paper-track .bottom-nav{max-width:650px}
-@media(max-width:350px){
- body.tish-paper.tish-paper-track .wrap{width:calc(100% - 16px)}
- body.tish-paper.tish-paper-track #trackingCard{padding-inline:9px!important}
- body.tish-paper.tish-paper-track .cm-unified-header-logo{width:49px!important;height:49px!important;flex-basis:49px}
- body.tish-paper.tish-paper-track .paymentSummaryIcon{width:35px;height:35px;flex-basis:35px;font-size:17px}
- body.tish-paper.tish-paper-track .track-summary{padding-inline:9px}
-}
-@media print{body.tish-paper.tish-paper-track #trackingCard,body.tish-paper.tish-paper-track .track-summary{filter:none}}
-
-/* TISH-TRACK-REFERENCE-V2: real paper layers, distinct cards and compact mobile hierarchy. */
-body.tish-paper.tish-paper-track{
- --track-paper:#faeddb;--track-red:#a71e15;--track-ink:#211f1b;
- --track-grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.085' numOctaves='4' seed='12' result='noise'/%3E%3CfeDiffuseLighting in='noise' lighting-color='%23fff1d8' surfaceScale='2.5'%3E%3CfeDistantLight azimuth='225' elevation='47'/%3E%3C/feDiffuseLighting%3E%3C/filter%3E%3Crect width='150' height='150' filter='url(%23n)' opacity='.6'/%3E%3C/svg%3E");
- --track-rays:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 45 40'%3E%3Cpath fill='%23ad2117' d='M40 15 16 0 30 18ZM29 24 0 12 18 25ZM27 31 5 36 23 34Z'/%3E%3C/svg%3E");
- background:var(--track-grain),url('/assets/tish-paper/paper/background.webp') center/540px auto repeat,#f6e5cd!important;
- background-blend-mode:multiply,soft-light,normal!important;
- padding-bottom:calc(80px + env(safe-area-inset-bottom,0px))!important;
-}
-body.tish-paper.tish-paper-track::before{height:21px;background-color:#a71e15}
-body.tish-paper.tish-paper-track::after{width:70px;height:85px;top:12px}
-body.tish-paper.tish-paper-track .wrap{width:min(calc(100% - 18px),600px)}
-body.tish-paper.tish-paper-track .topbar{padding:12px 7px 8px!important;margin-top:4px!important}
-body.tish-paper.tish-paper-track .cm-unified-header{min-height:55px;gap:8px}
-body.tish-paper.tish-paper-track .cm-unified-header-logo{width:52px!important;height:52px!important;flex-basis:52px}
-body.tish-paper.tish-paper-track .cm-unified-header-brand-copy strong{font-size:clamp(15px,3.9vw,23px);font-weight:950}
-body.tish-paper.tish-paper-track .cm-unified-header-brand-copy small{font-size:clamp(10px,2.8vw,15px)}
-body.tish-paper.tish-paper-track .cm-unified-header-back{display:none}
-body.tish-paper.tish-paper-track .cm-language-switch{background:var(--track-grain),#faeddb!important;background-blend-mode:multiply!important;clip-path:var(--track-edge);font-size:clamp(12px,3vw,16px)!important;min-height:36px;padding:7px 14px!important;text-decoration-thickness:2px}
-body.tish-paper.tish-paper-track #trackingCard{padding:13px 11px 15px!important;filter:drop-shadow(0 4px 2px #69513766)}
-body.tish-paper.tish-paper-track #trackingCard::before,
-body.tish-paper.tish-paper-track .track-summary::before,
-body.tish-paper.tish-paper-track .paymentSummary::before{
- background:var(--track-grain),url('/assets/tish-paper/paper/background.webp') center/540px auto repeat,#faeddb!important;
- background-blend-mode:multiply,soft-light,normal!important;
- clip-path:var(--track-edge);border:1px solid #fff4e6;
-}
-body.tish-paper.tish-paper-track #trackingCard::after{content:"";position:absolute;inset:5px -3px -5px;z-index:-2;background:#dfc7a8;clip-path:var(--track-edge);pointer-events:none}
-body.tish-paper.tish-paper-track .orderHead{padding:0 8px 2px;gap:7px}
-body.tish-paper.tish-paper-track .eyebrow{font-size:clamp(16px,4.1vw,26px);line-height:1.35;font-weight:950}
-body.tish-paper.tish-paper-track .orderHead h1{display:inline-block;max-width:100%;font-size:clamp(20px,5.35vw,36px);line-height:1.3;font-weight:950;margin:4px 0 0;letter-spacing:-.04em}
-html[dir="rtl"] body.tish-paper.tish-paper-track .orderHead h1{direction:rtl}
-body.tish-paper.tish-paper-track .orderHead h1::before{content:"";display:inline-block;width:26px;height:24px;background:var(--track-rays) center/contain no-repeat;vertical-align:middle;margin-inline:5px 0}
-body.tish-paper.tish-paper-track .track-status-trigger{background:none;border:0;padding:0;font:inherit;color:inherit;max-width:100%;cursor:pointer;justify-self:start}
-body.tish-paper.tish-paper-track #label{padding:8px 13px!important;font-size:clamp(14px,4vw,23px);min-height:33px;background:var(--track-grain),#a71e15!important;background-blend-mode:multiply!important;clip-path:var(--track-edge)}
-body.tish-paper.tish-paper-track #label:is([data-order-state="ready"],[data-order-state="completed"]){background:var(--track-grain),#24782c!important;background-blend-mode:multiply!important;clip-path:var(--track-edge)}
-body.tish-paper.tish-paper-track #label[data-order-state="loading"]{background:#765137!important}
-body.tish-paper.tish-paper-track .statusDot{width:19px;height:19px;flex-basis:19px;font-size:11px}
-body.tish-paper.tish-paper-track .progress{padding:17px 0 18px}
-body.tish-paper.tish-paper-track .progressLine{--track-dot:clamp(34px,10.6vw,60px)}
-body.tish-paper.tish-paper-track .progressLine::before{height:1.5px;background:#32251e}
-body.tish-paper.tish-paper-track .progressItem{font-size:clamp(10px,2.8vw,18px);color:#6a6055;line-height:1.45}
-body.tish-paper.tish-paper-track .progressItem .dot{background:var(--track-grain),#ebd9c1!important;background-blend-mode:multiply!important;border:2px solid #fff0dc!important;color:#786452!important}
-body.tish-paper.tish-paper-track .progressItem.on .dot{background:var(--track-grain),#b22016!important;background-blend-mode:multiply!important;border:3px solid #fcead2!important;color:#fff7e7!important}
-body.tish-paper.tish-paper-track .progressItem.current .dot{outline:2px solid #b22016;outline-offset:2px;position:relative}
-body.tish-paper.tish-paper-track .progressItem.current .dot::before{content:"";position:absolute;left:-13px;top:-12px;width:20px;height:19px;background:var(--track-rays) center/contain no-repeat;pointer-events:none}
-body.tish-paper.tish-paper-track .paymentSummary{position:relative;isolation:isolate;padding:10px 11px!important;margin:0 0 12px;gap:8px;background:none!important;filter:drop-shadow(0 4px 2px #6b4e304f)}
-body.tish-paper.tish-paper-track .paymentSummary::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none}
-body.tish-paper.tish-paper-track .paymentSummaryIcon{background:var(--track-grain),#f4e0c6!important;background-blend-mode:multiply;border:1px solid #fff7e9;width:40px;height:40px;flex-basis:40px;box-shadow:0 2px 3px #62492c44}
-body.tish-paper.tish-paper-track .paymentSummaryText strong{font-size:clamp(15px,4.1vw,25px);line-height:1.35}
-body.tish-paper.tish-paper-track .paymentSummaryText small{font-size:clamp(10px,2.8vw,15px)}
-body.tish-paper.tish-paper-track #paymentBadge[data-payment-state="paid"]{background:var(--track-grain),#24782c!important;background-blend-mode:multiply!important;clip-path:var(--track-edge);font-size:clamp(13px,3.7vw,21px);padding:7px 12px!important}
-body.tish-paper.tish-paper-track .notice.show,body.tish-paper.tish-paper-track .customer-status-alert.show{background:var(--track-grain),#f8d1cb!important;background-blend-mode:multiply!important;box-shadow:none!important;padding:9px 10px;font-size:clamp(12px,3.3vw,20px);margin:0 0 11px;line-height:1.5}
-body.tish-paper.tish-paper-track #eta.show{background:var(--track-grain),#f6e6ce!important;color:#69421e;font-size:clamp(10px,2.9vw,15px);margin-top:1px}
-body.tish-paper.tish-paper-track .customer-alert-controls{margin:9px 0 15px;gap:4px;justify-items:stretch}
-body.tish-paper.tish-paper-track .customer-alert-controls button{justify-self:center;max-width:100%;background:var(--track-grain),#faeddb!important;background-blend-mode:multiply!important;font-size:clamp(13px,3.6vw,21px);min-height:38px;padding:6px 12px!important;border-radius:13px 11px 14px 10px!important}
-body.tish-paper.tish-paper-track .customer-alert-controls small{font-size:clamp(10px,2.8vw,15px)}
-body.tish-paper.tish-paper-track .track-summary{padding:0 12px 10px;margin:0;filter:drop-shadow(0 5px 3px #63472955)}
-body.tish-paper.tish-paper-track .track-summary .sectionTitle{padding:10px 0 8px;border-bottom:1px solid #c3ad92}
-body.tish-paper.tish-paper-track .track-summary .sectionTitle h2{font-size:clamp(17px,4.6vw,28px);font-weight:950}
-body.tish-paper.tish-paper-track .track-summary .live{font-size:clamp(10px,2.8vw,15px)}
-body.tish-paper.tish-paper-track .track-summary .items{border-top:0}
-body.tish-paper.tish-paper-track .track-summary .item{padding:10px 0;line-height:1.4;font-size:clamp(13px,3.7vw,22px);font-weight:900}
-body.tish-paper.tish-paper-track .track-summary .item small{font-size:clamp(10px,2.8vw,15px);font-weight:600}
-body.tish-paper.tish-paper-track .track-summary .item b{font-size:clamp(15px,4.2vw,25px);font-weight:950;direction:ltr}
-body.tish-paper.tish-paper-track .track-summary .total{padding-top:11px;font-size:clamp(17px,4.7vw,28px)}
-body.tish-paper.tish-paper-track .track-summary .total span:last-child{background:var(--track-grain),#b22016!important;background-blend-mode:multiply!important;clip-path:var(--track-edge);font-size:clamp(17px,4.8vw,29px);padding:8px 13px;direction:ltr}
-body.tish-paper.tish-paper-track .footerActions{margin:11px 0 0}
-body.tish-paper.tish-paper-track #pwaInstallBtn{display:none!important}
-body.tish-paper.tish-paper-track .bottom-nav{max-width:600px;min-height:calc(63px + env(safe-area-inset-bottom,0px));padding:4px 3px calc(4px + env(safe-area-inset-bottom,0px));background:var(--track-grain),url('/assets/tish-paper/decor/nav-background.svg') center/100% 100% no-repeat,#242322!important;background-blend-mode:multiply,normal,normal!important}
-body.tish-paper.tish-paper-track .bottom-nav .nav-btn{height:55px!important;gap:3px;font-size:clamp(10px,2.9vw,16px);line-height:1.35}
-body.tish-paper.tish-paper-track .bottom-nav .nav-btn .tish-paper-nav-icon{width:28px;height:28px;max-height:28px}
-body.tish-paper.tish-paper-track .bottom-nav .nav-btn.active{background:var(--track-grain),#b22016!important;background-blend-mode:multiply!important;clip-path:var(--track-edge)}
-@media(min-width:600px){body.tish-paper.tish-paper-track #trackingCard{padding:22px!important}body.tish-paper.tish-paper-track .track-summary{padding:0 20px 17px}body.tish-paper.tish-paper-track .progress{padding-block:24px}body.tish-paper.tish-paper-track .bottom-nav .nav-btn{height:70px!important}body.tish-paper.tish-paper-track{padding-bottom:100px!important}}
-
+body#tishTrack #trackingCard::after,body#tishTrack .track-summary::after{content:"";position:absolute;inset:4px -2px -4px;z-index:-2;pointer-events:none;background:#e4cbb0;clip-path:var(--tp-edge)}
+body#tishTrack #trackingCard{padding:14px 12px 17px!important;margin-bottom:10px}
+body#tishTrack .orderHead{display:block!important;padding:0 7px!important;border:0!important;text-align:start;line-height:1.35!important}
+body#tishTrack .orderHead .eyebrow{display:block!important;font-size:clamp(16px,4.3vw,27px)!important;font-weight:900!important;color:var(--tp-ink)!important}
+body#tishTrack .orderHead h1{display:block!important;position:relative;direction:ltr!important;text-align:inherit!important;font-size:clamp(20px,5.6vw,37px)!important;line-height:1.38!important;font-weight:900!important;margin:3px 0 8px!important;letter-spacing:-.04em;overflow-wrap:anywhere!important}
+html[dir="rtl"] body#tishTrack .orderHead h1{text-align:right!important}
+body#tishTrack .orderHead h1::before{content:"";display:inline-block;width:clamp(17px,6vw,35px);height:27px;background:var(--tp-rays) center/contain no-repeat;vertical-align:middle;margin-right:5px}
+body#tishTrack .track-status-trigger{display:block;background:none;border:0;padding:0;margin:0;max-width:100%;font:inherit;color:inherit;cursor:pointer}
+body#tishTrack #label{display:inline-flex!important;align-items:center;gap:8px;padding:8px 15px!important;max-width:100%;min-height:34px;font-size:clamp(15px,4.1vw,24px)!important;line-height:1.4;font-weight:900;color:#fff9ee!important;border:0!important;border-radius:0!important;background:var(--tp-texture),#b51c11!important;background-blend-mode:multiply!important;clip-path:var(--tp-edge)}
+body#tishTrack #label:is([data-order-state="ready"],[data-order-state="completed"]){background:var(--tp-texture),#268331!important;background-blend-mode:multiply!important}
+body#tishTrack #label[data-order-state="loading"]{background:#766354!important}
+body#tishTrack .statusDot{display:grid;place-items:center;width:21px;height:21px;flex:0 0 21px;background:#fff9ee;color:#a92417;border-radius:50%;font-size:12px}
+body#tishTrack .statusDot i{display:block}
+body#tishTrack #label:is([data-order-state="ready"],[data-order-state="completed"]) .statusDot{color:var(--tp-green)}
+body#tishTrack .progress{padding:20px 0 20px!important}
+body#tishTrack .progressLine{--dot:clamp(35px,11.2vw,65px);display:grid;grid-template-columns:repeat(4,minmax(0,1fr));align-items:start;gap:0}
+body#tishTrack .progressLine::before{top:calc(var(--dot)/2);height:2px;background:#342c25}
+body#tishTrack .progressItem{font-size:clamp(10px,3vw,17px)!important;font-weight:900;line-height:1.4!important;color:#665a50}
+body#tishTrack .progressItem.on{color:var(--tp-ink)}
+body#tishTrack .progressItem .dot{display:grid;place-items:center;width:var(--dot)!important;height:var(--dot)!important;margin:0 auto 7px!important;position:relative;background:var(--tp-texture),#e6d1b5!important;background-blend-mode:multiply!important;border:2px solid #fff3df!important;border-radius:49% 51% 48% 52% / 52% 48% 53% 47%!important;color:#7c6653!important;font-size:clamp(17px,5vw,29px)!important;box-shadow:0 3px 3px #65402455!important}
+body#tishTrack .progressItem.on .dot{background:var(--tp-texture),#bd2115!important;background-blend-mode:multiply!important;color:#fff4e3!important;border:3px solid #fff2df!important}
+body#tishTrack .progressItem.current .dot{outline:2px solid var(--tp-red);outline-offset:2px}
+body#tishTrack .progressItem.current .dot::before{content:"";position:absolute;left:-14px;top:-13px;width:22px;height:23px;background:var(--tp-rays) center/contain no-repeat}
+body#tishTrack #paymentSummary{padding:12px 13px!important;margin:0 0 13px!important;display:flex;align-items:center;gap:9px}
+body#tishTrack .paymentSummaryIcon{background:var(--tp-paper)!important;background-blend-mode:multiply!important;width:clamp(38px,10.8vw,58px);height:clamp(38px,10.8vw,58px);flex:0 0 clamp(38px,10.8vw,58px);color:var(--tp-red)!important;box-shadow:0 3px 3px #65402444;font-size:clamp(20px,5vw,28px)}
+body#tishTrack .paymentSummaryText{gap:2px}
+body#tishTrack .paymentSummaryText strong{font-size:clamp(15px,4.4vw,26px)!important;font-weight:900;line-height:1.3}
+body#tishTrack .paymentSummaryText small{font-size:clamp(10px,3vw,16px)!important;color:#4e463d;line-height:1.5}
+body#tishTrack #paymentBadge{max-width:43%;border-radius:0!important;clip-path:var(--tp-edge);font-size:clamp(12px,3.7vw,21px)!important;padding:8px 12px!important;line-height:1.4}
+body#tishTrack #paymentBadge[data-payment-state="paid"]{background:var(--tp-texture),#268331!important;background-blend-mode:multiply!important;color:#fff!important}
+body#tishTrack #paymentBadge:is([data-payment-state="partial"],[data-payment-state="review"]){background:#fff1d5!important;color:#875300!important}
+body#tishTrack #paymentBadge[data-payment-state="refunded"]{background:#e9e9f4!important;color:#514d79!important}
+body#tishTrack .notice.show,body#tishTrack .customer-status-alert.show{margin:0 0 11px!important;padding:12px 10px!important;border:0!important;border-radius:0!important;background:var(--tp-texture),#f9d5cf!important;background-blend-mode:multiply!important;clip-path:var(--tp-edge);color:#941b14!important;font-size:clamp(12px,3.6vw,21px)!important;text-align:center;font-weight:900;line-height:1.55!important}
+body#tishTrack #eta.show{background:var(--tp-texture),#f7e7d0!important;background-blend-mode:multiply!important;color:#704a24!important;padding:7px 9px!important;font-size:clamp(10px,2.8vw,15px)!important}
+body#tishTrack .customer-alert-controls{display:grid!important;justify-items:center;gap:5px;margin:12px 0 15px!important;text-align:center}
+body#tishTrack .customer-alert-controls button{width:auto;max-width:100%;background:var(--tp-paper)!important;background-blend-mode:multiply!important;border:2px solid var(--tp-red)!important;border-radius:14px 11px 13px 10px!important;min-height:43px!important;padding:7px 13px!important;font-size:clamp(12px,3.65vw,21px)!important;font-weight:900;line-height:1.4;color:#981b13!important;box-shadow:0 3px 3px #67432944}
+body#tishTrack .customer-alert-controls button[hidden]{display:none!important}
+body#tishTrack .customer-alert-controls small{font-size:clamp(10px,2.9vw,15px)!important;color:#51473e;line-height:1.5}
+body#tishTrack .track-summary{padding:0 14px 12px;margin:0}
+body#tishTrack .track-summary .sectionTitle{position:relative;display:flex;align-items:center;justify-content:space-between;gap:6px;margin:0 -5px!important;padding:11px 5px 9px!important;border-bottom:1px solid #bca68c;box-shadow:0 3px 4px #62402519}
+body#tishTrack .track-summary .sectionTitle h2{font-size:clamp(17px,4.7vw,29px)!important;font-weight:900;line-height:1.35}
+body#tishTrack .track-summary .live{font-size:clamp(10px,2.7vw,14px)!important;color:#51473e}
+body#tishTrack .track-summary .items{border-top:0!important}
+body#tishTrack .track-summary .item{align-items:center;padding:11px 0!important;gap:10px;border-color:#b9a58d!important;font-weight:900;font-size:clamp(14px,3.9vw,23px)!important;line-height:1.4!important}
+body#tishTrack .track-summary .item>span{min-width:0;overflow-wrap:anywhere}
+body#tishTrack .track-summary .item small{font-size:clamp(10px,2.9vw,16px)!important;color:#544a40;font-weight:600;margin-top:2px}
+body#tishTrack .track-summary .item b{color:#a21b13!important;font-size:clamp(15px,4.2vw,26px)!important;font-weight:900;flex-shrink:0}
+body#tishTrack .track-summary .total{display:flex;align-items:center;justify-content:space-between;padding-top:12px!important;font-size:clamp(18px,4.8vw,30px)!important;font-weight:900}
+body#tishTrack .track-summary .total span:last-child{color:#fff9eb!important;background:var(--tp-texture),#c01c0e!important;background-blend-mode:multiply!important;clip-path:var(--tp-edge);padding:9px 15px!important;white-space:nowrap;font-weight:900}
+body#tishTrack .footerActions{margin:12px 0 0!important}
+body#tishTrack .bottom-nav{width:min(100%,646px)!important;min-height:calc(71px + env(safe-area-inset-bottom,0px))!important;padding:5px 5px calc(5px + env(safe-area-inset-bottom,0px))!important;background:var(--tp-texture),#292725!important;background-blend-mode:multiply!important;clip-path:polygon(0 3px,3% 0,7% 3px,12% 0,19% 3px,25% 0,32% 3px,39% 1px,45% 4px,52% 0,60% 3px,67% 1px,74% 3px,82% 0,90% 3px,96% 0,100% 3px,100% 100%,0 100%)}
+body#tishTrack .bottom-nav .nav-btn{height:60px!important;min-height:60px!important;gap:4px!important;font-size:clamp(10px,3vw,17px)!important}
+body#tishTrack .bottom-nav .nav-btn .tish-paper-nav-icon{display:block!important;width:clamp(27px,7.6vw,40px)!important;height:clamp(27px,7.6vw,40px)!important;max-height:none!important}
+body#tishTrack .bottom-nav .nav-btn.active{background:var(--tp-texture),#c01c0e!important;background-blend-mode:multiply!important;clip-path:var(--tp-edge)}
+body#tishTrack #pwaInstallBtn.tish-paper-pin-control:not([hidden]){display:none!important}
+@media(max-width:350px){body#tishTrack .wrap{width:calc(100% - 16px)!important}body#tishTrack #trackingCard{padding-inline:9px!important}body#tishTrack .track-summary{padding-inline:9px}body#tishTrack .track-brand{gap:6px}}
+@media(min-width:600px){body#tishTrack #trackingCard{padding:20px!important}body#tishTrack .progress{padding-block:28px!important}body#tishTrack .track-summary{padding:0 20px 16px}}
+@media print{body#tishTrack #trackingCard,body#tishTrack .track-summary{filter:none}}
 </style>
 
 </head>
-<body class="tish-paper tish-paper-track">
+<body id="tishTrack" class="tish-paper tish-paper-track">
     @if($appDownloadUrl || $websiteUrl)
         <div class="appBar">
             <div class="wrap appBarInner">
@@ -707,10 +624,15 @@ body.tish-paper.tish-paper-track .bottom-nav .nav-btn.active{background:var(--tr
             </div>
         </div>
     @endif
-    <header class="topbar cm-unified-header-outer">
-        <div class="wrap">
-            @include('customer-menu.partials.unified-header', ['backUrl' => route('customer-menu.my-orders',$order->location->code)])
-        </div>
+    <header class="wrap track-header">
+        <a class="track-brand" href="{{ route('customer-menu.show', $location->code) }}" aria-label="الرئيسية">
+            <img src="{{ asset('assets/tish-paper/brand/logo-disc.webp') }}" alt="" width="65" height="65">
+            <span class="track-brand-copy">
+                <strong>{{ $branding['name'] ?? $brandName }}</strong>
+                <small>{{ $location->name }}</small>
+            </span>
+        </a>
+        <div class="track-language" data-cm-language-host></div>
     </header>
 
     <main class="wrap" style="padding-bottom:12px">
@@ -722,7 +644,7 @@ body.tish-paper.tish-paper-track .bottom-nav .nav-btn.active{background:var(--tr
                 </div>
                 <button class="track-status-trigger" id="tishStatusMini" type="button" aria-haspopup="dialog" aria-controls="tishStatusOverlay">
                 <span class="status" id="label" data-order-state="loading" aria-live="polite">
-                    <span class="statusDot" aria-hidden="true"><i class="fa-solid fa-check"></i></span>
+                    <span class="statusDot" aria-hidden="true"><i id="trackStateIcon" class="fa-solid fa-bag-shopping"></i></span>
                     <span id="tishStatusMiniText">جاري تحديث الحالة</span>
                 </span>
                 </button>
@@ -827,7 +749,13 @@ body.tish-paper.tish-paper-track .bottom-nav .nav-btn.active{background:var(--tr
     {{-- Tracking belongs to My Orders; all destinations use the order's branch. --}}
     @include('customer-menu.partials.bottom-nav', ['activeNav' => 'orders'])
     @include('customer-menu.partials.nav-badge-sync')
-    @include('customer-menu.partials.pwa-install')
+    {{-- Register the service worker without adding a floating install control to tracking. --}}
+    <script>
+    if ('serviceWorker' in navigator && window.isSecureContext) {
+        navigator.serviceWorker.register('/sw.js', {updateViaCache:'none'})
+            .then(registration => registration.update()).catch(() => {});
+    }
+    </script>
     @if($order->invoice)
         <script src="{{ asset('assets/js/customer-menu/tish-invoice-image-v2.js') }}?v=3"></script>
     @endif
@@ -1170,6 +1098,12 @@ body.tish-paper.tish-paper-track .bottom-nav .nav-btn.active{background:var(--tr
 
             card.classList.toggle('cancelled', cancelled);
             document.getElementById('label').dataset.orderState = state;
+            const stateIcon = document.getElementById('trackStateIcon');
+            stateIcon.className = 'fa-solid ' + ({
+                pending:'fa-bag-shopping', received:'fa-bag-shopping',
+                accepted:'fa-check', confirmed:'fa-check', preparing:'fa-fire-burner',
+                ready:'fa-check', completed:'fa-check', cancelled:'fa-xmark', canceled:'fa-xmark'
+            }[state] || 'fa-clock');
             label.textContent = menuT(data.label || statusText[state] || 'جاري تجهيز طلبك');
             statusDescription.textContent = menuT(data.description || '');
             statusDescription.classList.toggle('show', Boolean(data.description));
