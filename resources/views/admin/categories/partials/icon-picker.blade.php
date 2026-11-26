@@ -4,30 +4,18 @@
         isset($category) ? ($category->icon_key ?: 'sparkles') : 'sparkles'
     );
 
-    $selectedColor = old(
-        'icon_color',
-        isset($category) ? ($category->icon_color ?: '#111111') : '#111111'
-    );
-
     $icons = \App\Support\MenuIconLibrary::options();
 @endphp
 
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <div class="category-icon-designer" id="categoryIconDesigner">
     <div class="category-icon-head">
         <div>
             <label class="form-label">أيقونة الفئة</label>
-            <p>اختر أيقونة نظيفة تظهر في منيو العميل وعلى بطاقات الأصناف.</p>
+            <p>اختر الأيقونة التي تظهر في الصفحة الرئيسية والمنيو الكامل. لونها الأحمر العاجي يتبع هوية TISH.</p>
         </div>
 
-        <label class="category-icon-color">
-            <span>لون الأيقونة</span>
-            <input
-                type="color"
-                name="icon_color"
-                value="{{ $selectedColor }}"
-                id="categoryIconColor"
-            >
-        </label>
+
     </div>
 
     <input
@@ -46,7 +34,7 @@
                 aria-pressed="{{ $selectedIcon === $key ? 'true' : 'false' }}"
             >
                 <span class="category-icon-circle">
-                    <x-menu-icon :name="$key" :size="34" :stroke="1.65" />
+                    <i class="fa-solid {{ \App\Support\MenuIconLibrary::fontAwesome($key) }}" aria-hidden="true" style="font-size:28px"></i>
                 </span>
 
                 <strong>{{ $label }}</strong>
@@ -142,14 +130,16 @@
     place-items:center;
     border:1px solid #eeeeee;
     border-radius:50%;
-    background:#fafafa;
-    color:var(--category-icon-color,#111);
+    background:transparent url('/assets/tish-paper/paper/product-disc.webp') center/100% 100% no-repeat;
+    color:#a91f17;
+    border:0;
+    filter:drop-shadow(0 3px 2px #68422b35);
     transition:.18s ease;
 }
 .category-icon-choice.is-selected .category-icon-circle{
     color:#fff;
-    background:var(--category-icon-color,#111);
-    border-color:var(--category-icon-color,#111);
+    background:#a91f17;
+    border-color:#a91f17;
 }
 .category-icon-choice strong{
     font-size:.72rem;
@@ -190,15 +180,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!root) return;
 
     const hidden = root.querySelector('#categoryIconKey');
-    const color = root.querySelector('#categoryIconColor');
     const choices = [...root.querySelectorAll('[data-icon-key]')];
-
-    const syncColor = () => {
-        root.style.setProperty(
-            '--category-icon-color',
-            color?.value || '#111111'
-        );
-    };
 
     choices.forEach((button) => {
         button.addEventListener('click', () => {
@@ -212,7 +194,5 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    color?.addEventListener('input', syncColor);
-    syncColor();
 });
 </script>
