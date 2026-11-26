@@ -125,6 +125,25 @@ class Invoice extends Model
         return $this->isActive() ? 'badge-active' : 'badge-inactive';
     }
 
+    public function refundSummary(): array
+    {
+        $refunds = $this->order_id
+            ? Refund::query()->where('order_type', $this->orderTypeValue())
+                ->where('order_id', $this->order_id)->with('paymentMethod')
+                ->orderBy('processed_at')->orderBy('id')->get()
+            : collect();
+        $refunded = round((float) $refunds->sum('amount'), 2);
+        $net = round((float) $this->paid_amount, 2);
+
+        return [
+            'rows' => $refunds,
+            'refunded' => $refunded,
+            'net' => $net,
+            'collected' => round($net + $refunded, 2),
+            'state' => $refunded <= 0 ? null : ($net <= 0.004 ? 'refunded' : 'partially_refunded'),
+        ];
+    }
+
     public function paymentStatusValue(): string
     {
         $paid = $this->money($this->paid_amount);
