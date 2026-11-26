@@ -220,6 +220,10 @@ class LocationPaymentAccountController extends Controller
             return back()->withErrors(['account' => 'هذا الحساب مرتبط بحوالات موردين. أوقفه بدل حذفه حفاظاً على السجل المالي.']);
         }
 
+        if (\App\Models\Refund::query()->where('source_payment_account_id', $account->id)->exists()) {
+            return back()->withErrors(['account' => 'هذا الحساب مرتبط باستردادات عملاء. أوقفه بدل حذفه حفاظًا على السجل المالي.']);
+        }
+
         $account->delete();
 
         return back()->with(
