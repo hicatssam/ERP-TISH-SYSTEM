@@ -565,13 +565,13 @@ class ProductController extends Controller
                 $product->locationProducts()->create([
                     'location_id' => $locationId,
                     'is_available' => true,
-                    'local_selling_price' => $product->base_selling_price,
+                    'local_selling_price' => null, // Inherit the catalog price until explicitly overridden.
                     'minimum_stock_level' => 0,
                 ]);
                 continue;
             }
             $locationProduct->is_available = true;
-            if ($locationProduct->local_selling_price === null) $locationProduct->local_selling_price = $product->base_selling_price;
+            // A null local price deliberately inherits the current catalog price.
             if ($locationProduct->minimum_stock_level === null) $locationProduct->minimum_stock_level = 0;
             $locationProduct->save();
         }
