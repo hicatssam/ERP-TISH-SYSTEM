@@ -31,7 +31,7 @@
         && $bankPaymentMethods->isNotEmpty()
         && $bankPaymentAccounts->isNotEmpty();
 
-    $hasBankTransferErrors =
+    $hasBankTransferErrors = !old('order_refund_payment_id') && (
         $errors->has('payment_method_id')
         || $errors->has('location_payment_account_id')
         || $errors->has('amount')
@@ -39,7 +39,7 @@
         || $errors->has('payment_proof')
         || $errors->has('sender_name')
         || $errors->has('sender_phone')
-        || $errors->has('sender_account_number');
+        || $errors->has('sender_account_number'));
 @endphp
 
 <div class="card order-bank-transfers-card">
@@ -74,6 +74,14 @@
     </div>
 
     <div class="card-body">
+        @if(old('order_refund_payment_id') && $errors->any())
+            <div class="order-transfer-note is-warning" role="alert">
+                تعذر تسجيل الاسترداد:
+                @foreach($errors->all() as $error)
+                    <div>{{ $error }}</div>
+                @endforeach
+            </div>
+        @endif
         @if(in_array($orderStatus, ['confirmed', 'completed'], true))
             @if($invoiceRemainingAmount <= 0.004)
                 <div class="order-transfer-note is-success">
@@ -141,6 +149,8 @@
                 @forelse($bankTransfers as $payment)
                     @php
                         $paymentStatus = $payment->statusValue();
+                        $refundedAmount = round((float) $payment->refunds->sum('amount'), 2);
+                        $refundableAmount = round(max(0, (float) $payment->amount - $refundedAmount), 2);
                         $account = $payment->locationPaymentAccount;
                         $accountNumber = $account?->iban
                             ?: ($account?->account_number ?: $account?->phone_number);
@@ -198,6 +208,10 @@
 
                         <td>
                             <strong>₪{{ number_format((float) $payment->amount, 2) }}</strong>
+                            @if($refundedAmount > 0)
+                                <small class="order-transfer-muted">مسترد: ₪{{ number_format($refundedAmount, 2) }}</small>
+                                <small class="order-transfer-muted">صافي التحصيل: ₪{{ number_format($refundableAmount, 2) }}</small>
+                            @endif
                         </td>
 
                         <td dir="ltr">
@@ -281,11 +295,76 @@
                                 @else
                                     —
                                 @endcan
+                            @elseif(in_array($paymentStatus, ['confirmed', 'corrected'], true) && $refundableAmount > 0)
+                                @can('payments.refund')
+                                    @can('refund', $payment)
+                                        @if($refundPaymentMethods->isNotEmpty())
+                                            <button type="button" class="btn btn-outline btn-xs order-refund-open"
+                                                onclick="document.getElementById('orderRefund{{ $payment->id }}').showModal()">
+                                                استرداد المبلغ
+                                            </button>
+                                            <dialog id="orderRefund{{ $payment->id }}" class="order-refund-dialog"
+                                                aria-labelledby="orderRefundTitle{{ $payment->id }}" dir="rtl">
+                                                <h3 id="orderRefundTitle{{ $payment->id }}">استرداد دفعة #{{ $payment->id }}</h3>
+                                                <p>المتاح للاسترداد: <strong>₪{{ number_format($refundableAmount, 2) }}</strong></p>
+                                                <p class="order-transfer-note is-warning">سجّل الاسترداد بعد إرجاع المبلغ فعليًا للعميل. النظام لا ينفذ حوالة بنكية خارجية.</p>
+                                                <form method="POST" action="{{ route('payments.refund', $payment) }}"
+                                                    onsubmit="if(!confirm('هل تم إرجاع المبلغ فعليًا للعميل؟')) return false; this.querySelector('button[type=submit]').disabled=true;">
+                                                    @csrf
+                                                    <input type="hidden" name="order_refund_payment_id" value="{{ $payment->id }}">
+                                                    <div class="form-group">
+                                                        <label class="form-label" for="orderRefundAmount{{ $payment->id }}">المبلغ المسترد</label>
+                                                        <input id="orderRefundAmount{{ $payment->id }}" name="amount" type="number"
+                                                            class="form-input" step="0.01" min="0.01"
+                                                            max="{{ number_format($refundableAmount, 2, '.', '') }}"
+                                                            value="{{ number_format($refundableAmount, 2, '.', '') }}" required>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label class="form-label" for="orderRefundMethod{{ $payment->id }}">طريقة الاسترداد الفعلية</label>
+                                                        <select id="orderRefundMethod{{ $payment->id }}" name="payment_method_id" class="form-select" required>
+                                                            <option value="">اختر طريقة الاسترداد</option>
+                                                            @foreach($refundPaymentMethods as $method)
+                                                                <option value="{{ $method->id }}" @selected((int) $method->id === (int) $payment->payment_method_id)>
+                                                                    {{ $method->name_ar ?: $method->name }}
+                                                                </option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label class="form-label" for="orderRefundReason{{ $payment->id }}">سبب الاسترداد (والمرجع إن وجد)</label>
+                                                        <textarea id="orderRefundReason{{ $payment->id }}" name="reason" class="form-input"
+                                                            rows="3" minlength="5" maxlength="500" required></textarea>
+                                                    </div>
+                                                    <div class="order-refund-footer">
+                                                        <button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">إلغاء</button>
+                                                        <button type="submit" class="btn btn-danger">تسجيل الاسترداد</button>
+                                                    </div>
+                                                </form>
+                                            </dialog>
+                                        @else
+                                            <small class="order-transfer-muted">لا توجد طريقة استرداد مفعلة</small>
+                                        @endif
+                                    @else
+                                        —
+                                    @endcan
+                                @else
+                                    —
+                                @endcan
                             @else
                                 —
                             @endif
                         </td>
                     </tr>
+                    @foreach($payment->refunds as $refund)
+                        <tr class="order-refund-history">
+                            <td>{{ $refund->processed_at?->format('Y-m-d H:i') }}</td>
+                            <td colspan="2">استرداد للدفعة #{{ $payment->id }} — {{ $refund->paymentMethod?->name_ar ?: $refund->paymentMethod?->name }}</td>
+                            <td>—</td>
+                            <td><strong>-₪{{ number_format((float) $refund->amount, 2) }}</strong></td>
+                            <td colspan="3">{{ $refund->reason }}</td>
+                            <td>مسجل</td>
+                        </tr>
+                    @endforeach
                 @empty
                     <tr>
                         <td colspan="9" class="order-transfer-empty">
@@ -535,6 +614,25 @@
 @endcan
 
 <style>
+    .order-refund-dialog {
+        width: min(460px, calc(100% - 2rem));
+        max-height: 90vh;
+        overflow: auto;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.25rem;
+        background: #fff;
+        color: var(--text);
+        box-shadow: 0 20px 65px rgba(0,0,0,.25);
+        text-align: right;
+    }
+    .order-refund-dialog::backdrop { background: rgba(15,23,42,.6); }
+    .order-refund-dialog h3 { margin: 0 0 .7rem; }
+    .order-refund-dialog .form-group { margin-top: .8rem; }
+    .order-refund-footer { display:flex; justify-content:flex-end; gap:.65rem; margin-top: 1rem; }
+    .order-refund-open, .order-refund-history { color:#b42318; }
+    .order-refund-history td { background:rgba(180,35,24,.045); }
+
     .order-bank-transfers-card {
         margin-top: 1.2rem;
     }
