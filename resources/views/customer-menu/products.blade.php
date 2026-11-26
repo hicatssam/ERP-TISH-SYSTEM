@@ -207,7 +207,7 @@ body.tish-paper .tools .search:focus-within::before {
       @if(($theme['category_visual'] ?? 'icons') === 'images' && !empty($category['image']))
        <img src="{{ $category['image'] }}" alt="">
       @else
-       <i class="fa-solid {{ ['burger'=>'fa-burger','pizza'=>'fa-pizza-slice','coffee'=>'fa-mug-hot','cake'=>'fa-cake-candles','croissant'=>'fa-bread-slice','donut'=>'fa-cookie-bite','icecream'=>'fa-ice-cream','juice'=>'fa-glass-water','drink'=>'fa-bottle-water','fries'=>'fa-box','chicken'=>'fa-drumstick-bite','salad'=>'fa-bowl-food','sandwich'=>'fa-burger','chocolate'=>'fa-cookie','tea'=>'fa-mug-saucer','breakfast'=>'fa-egg','gift'=>'fa-gift','dessert'=>'fa-cookie-bite'][$category['icon_key'] ?? 'sparkles'] ?? 'fa-utensils' }}" aria-hidden="true"></i>
+       <i class="fa-solid {{ \App\Support\MenuIconLibrary::fontAwesome($category['icon_key'] ?? null) }}" aria-hidden="true"></i>
       @endif
      </span>
      <b>{{ $category['name'] }}</b>
