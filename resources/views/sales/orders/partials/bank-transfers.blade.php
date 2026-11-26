@@ -300,7 +300,7 @@
                                     @can('refund', $payment)
                                         @if($refundPaymentMethods->isNotEmpty())
                                             <button type="button" class="btn btn-outline btn-xs order-refund-open"
-                                                onclick="document.getElementById('orderRefund{{ $payment->id }}').showModal()">
+                                                onclick="openOrderRefundDialog('orderRefund{{ $payment->id }}')">
                                                 استرداد المبلغ
                                             </button>
                                             <dialog id="orderRefund{{ $payment->id }}" class="order-refund-dialog"
@@ -321,14 +321,26 @@
                                                     </div>
                                                     <div class="form-group">
                                                         <label class="form-label" for="orderRefundMethod{{ $payment->id }}">طريقة الاسترداد الفعلية</label>
-                                                        <select id="orderRefundMethod{{ $payment->id }}" name="payment_method_id" class="form-select" required>
+                                                        <select id="orderRefundMethod{{ $payment->id }}" name="payment_method_id" class="form-select" onchange="syncOrderRefundAccount(this.form)" required>
                                                             <option value="">اختر طريقة الاسترداد</option>
                                                             @foreach($refundPaymentMethods as $method)
-                                                                <option value="{{ $method->id }}" @selected((int) $method->id === (int) $payment->payment_method_id)>
+                                                                <option value="{{ $method->id }}" data-banking="{{ in_array($method->type, ['bank_transfer', 'electronic_wallet'], true) ? '1' : '0' }}" @selected((int) $method->id === (int) $payment->payment_method_id)>
                                                                     {{ $method->name_ar ?: $method->name }}
                                                                 </option>
                                                             @endforeach
                                                         </select>
+                                                    </div>
+                                                    <div class="form-group order-refund-account-field" hidden>
+                                                        <label class="form-label" for="orderRefundAccount{{ $payment->id }}">الحساب الذي سيخرج منه المبلغ *</label>
+                                                        <select id="orderRefundAccount{{ $payment->id }}" name="source_payment_account_id" class="form-select" data-original="{{ $payment->location_payment_account_id }}" disabled>
+                                                            <option value="">اختر حساب الصرف</option>
+                                                            @foreach($refundPaymentAccounts as $source)
+                                                                <option value="{{ $source->id }}" data-method="{{ $source->payment_method_id }}">
+                                                                    {{ $source->account_holder_name ?: $source->name }} — {{ $source->provider_name ?: $source->name }} — {{ $source->iban ?: $source->account_number ?: $source->phone_number }}
+                                                                </option>
+                                                            @endforeach
+                                                        </select>
+                                                        <small class="order-refund-account-hint order-transfer-muted"></small>
                                                     </div>
                                                     <div class="form-group">
                                                         <label class="form-label" for="orderRefundReason{{ $payment->id }}">سبب الاسترداد (والمرجع إن وجد)</label>
@@ -359,7 +371,15 @@
                         <tr class="order-refund-history">
                             <td>{{ $refund->processed_at?->format('Y-m-d H:i') }}</td>
                             <td colspan="2">استرداد للدفعة #{{ $payment->id }} — {{ $refund->paymentMethod?->name_ar ?: $refund->paymentMethod?->name }}</td>
-                            <td>—</td>
+                            <td>
+                                @if($refund->sourcePaymentAccount)
+                                    {{ $refund->sourcePaymentAccount->account_holder_name ?: $refund->sourcePaymentAccount->name }}
+                                    <small class="order-transfer-muted">{{ $refund->sourcePaymentAccount->provider_name }}</small>
+                                    <small class="order-transfer-account" dir="ltr">{{ $refund->sourcePaymentAccount->iban ?: $refund->sourcePaymentAccount->account_number ?: $refund->sourcePaymentAccount->phone_number }}</small>
+                                @else
+                                    —
+                                @endif
+                            </td>
                             <td><strong>-₪{{ number_format((float) $refund->amount, 2) }}</strong></td>
                             <td colspan="3">{{ $refund->reason }}</td>
                             <td>مسجل</td>
@@ -614,8 +634,14 @@
 @endcan
 
 <style>
-    .order-refund-dialog {
-        width: min(460px, calc(100% - 2rem));
+    dialog.order-refund-dialog {
+        position: fixed !important;
+        inset: 0 !important;
+        margin: auto !important;
+        width: min(520px, calc(100% - 2rem));
+        height: fit-content;
+        box-sizing: border-box;
+        transform: none !important;
         max-height: 90vh;
         overflow: auto;
         border: 1px solid var(--border);
@@ -626,6 +652,7 @@
         box-shadow: 0 20px 65px rgba(0,0,0,.25);
         text-align: right;
     }
+    .order-refund-account-field[hidden] { display:none !important; }
     .order-refund-dialog::backdrop { background: rgba(15,23,42,.6); }
     .order-refund-dialog h3 { margin: 0 0 .7rem; }
     .order-refund-dialog .form-group { margin-top: .8rem; }
@@ -871,6 +898,38 @@
 </style>
 
 <script>
+    function syncOrderRefundAccount(form) {
+        const method = form.elements.payment_method_id;
+        const account = form.elements.source_payment_account_id;
+        const field = form.querySelector('.order-refund-account-field');
+        const hint = form.querySelector('.order-refund-account-hint');
+        const banking = method.selectedOptions[0]?.dataset.banking === '1';
+        field.hidden = !banking;
+        account.disabled = !banking;
+        account.required = banking;
+        const matches = Array.from(account.options).filter(option => {
+            if (!option.value) return false;
+            const match = banking && option.dataset.method === method.value;
+            option.hidden = !match;
+            option.disabled = !match;
+            return match;
+        });
+        if (!matches.some(option => option.value === account.value)) {
+            account.value = matches.find(option => option.value === account.dataset.original)?.value
+                || (matches.length === 1 ? matches[0].value : '');
+        }
+        hint.textContent = banking && !matches.length
+            ? 'لا يوجد حساب يسمح بالصرف لهذه الطريقة. فعّل حساب الصرف من إعدادات الفرع.'
+            : '';
+        form.querySelector('button[type=submit]').disabled = banking && !matches.length;
+    }
+
+    function openOrderRefundDialog(id) {
+        const dialog = document.getElementById(id);
+        syncOrderRefundAccount(dialog.querySelector('form'));
+        dialog.showModal();
+    }
+
     function openBankTransferModal() {
         const modal = document.getElementById('bankTransferModal');
 
