@@ -492,6 +492,21 @@ body#tishCart .cart-reference-actions{border-inline-start:0;padding-inline-start
 body#tishCart .cart-reference-brand{flex:0 1 auto;margin-inline-end:auto}
 body#tishCart .cart-reference-actions .cm-language-switch{min-width:64px!important}
 
+/* CART V5: same paper bell as order tracking, for future-order opt-in. */
+body#tishCart #cartOrderAlerts{
+ appearance:none;position:relative;isolation:isolate;display:grid;place-items:center;
+ flex:0 0 44px;width:44px;height:44px;padding:0;border:0!important;background:none!important;
+ box-shadow:none!important;cursor:pointer;color:#ad2117;font-size:22px;filter:drop-shadow(0 3px 2px #5436224a);
+}
+body#tishCart #cartOrderAlerts::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:url('/assets/tish-paper/paper/product-disc.webp') center/100% 100% no-repeat}
+body#tishCart #cartOrderAlerts[aria-pressed="false"]{color:#8b3026}
+body#tishCart #cartOrderAlerts i{line-height:1}
+body#tishCart #cartOrderAlerts:disabled{cursor:wait;opacity:.65}
+body#tishCart #cartOrderAlerts:focus-visible{outline:2px solid var(--cart-red);outline-offset:2px;border-radius:50%}
+body#tishCart #cartOrderAlerts:active{transform:scale(.94)}
+body#tishCart .cart-alert-sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+@media(max-width:365px){body#tishCart #cartOrderAlerts{flex-basis:38px;width:38px;height:42px;font-size:19px}}
+@media(prefers-reduced-motion:reduce){body#tishCart #cartOrderAlerts:active{transform:none}}
 </style>
 
 </head>
@@ -504,6 +519,10 @@ body#tishCart .cart-reference-actions .cm-language-switch{min-width:64px!importa
   <span class="cart-reference-copy"><h1>سلة الطلب</h1><small>{{ $location->name }}</small></span>
  </a>
  <div class="cart-reference-actions">
+  <button type="button" id="cartOrderAlerts" aria-pressed="false" aria-label="تفعيل إشعارات الطلبات الجديدة" title="تفعيل إشعارات الطلبات الجديدة">
+   <i class="fa-solid fa-bell-slash" aria-hidden="true"></i>
+  </button>
+  <span id="cartOrderAlertsHint" class="cart-alert-sr" role="status" aria-live="polite"></span>
   <div data-cm-language-host></div>
  </div>
 </nav>
@@ -529,6 +548,83 @@ body#tishCart .cart-reference-actions .cm-language-switch{min-width:64px!importa
 
 <script>
 const CM = window.CustomerMenu;
+
+// This preference applies only to future orders. Existing order subscriptions
+// remain managed on their own tracking pages.
+(function () {
+    const button = document.getElementById('cartOrderAlerts');
+    const hint = document.getElementById('cartOrderAlertsHint');
+    const key = 'tish-future-order-push-v1';
+    const t = (ar, en) => document.documentElement.lang === 'en' ? en : ar;
+    const supported = () => window.isSecureContext && 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
+    let enabled = false;
+    let busy = false;
+    function preference() { try { return localStorage.getItem(key) === 'yes'; } catch (_) { return false; } }
+    function render(message = '') {
+        button.setAttribute('aria-pressed', String(enabled));
+        button.querySelector('i').className = 'fa-solid ' + (enabled ? 'fa-bell' : 'fa-bell-slash');
+        button.disabled = busy;
+        button.setAttribute('aria-busy', String(busy));
+        const label = enabled ? t('إيقاف إشعارات الطلبات الجديدة','Turn off notifications for new orders') : t('تفعيل إشعارات الطلبات الجديدة','Turn on notifications for new orders');
+        button.setAttribute('aria-label', label);
+        button.title = message || label;
+        hint.textContent = message || (enabled ? t('سيتم تسجيل اشتراك الطلب الجديد عند إرساله.','New orders will be subscribed when placed.') : label);
+    }
+    async function sync() {
+        if (busy) return;
+        enabled = false;
+        if (preference() && supported() && Notification.permission === 'granted') {
+            try {
+                const registration = await navigator.serviceWorker.getRegistration('/');
+                enabled = !!(await registration?.pushManager?.getSubscription()) && preference() && !busy;
+            } catch (_) {}
+        }
+        if (!busy) render();
+    }
+    button.addEventListener('click', async () => {
+        if (busy) return;
+        busy = true;
+        render();
+        let message = '';
+        try {
+            if (enabled) {
+                localStorage.removeItem(key);
+                enabled = false;
+            } else {
+                if (!supported()) throw new Error(t('الإشعارات غير مدعومة هنا. على iPhone ثبّت المنيو على الشاشة الرئيسية أولاً.','Notifications are unavailable here. On iPhone, install the menu on your Home Screen first.'));
+                // Ask while the user's tap is still active.
+                const permission = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
+                if (permission !== 'granted') throw new Error(t('لم يتم منح إذن الإشعارات.','Notification permission was not granted.'));
+                const response = await fetch(@json(route('customer-menu.push.public-key')), {cache:'no-store', credentials:'same-origin', signal:AbortSignal.timeout(8000)});
+                if (!response.ok) throw new Error(t('تعذر قراءة إعدادات الإشعارات.','Could not load notification settings.'));
+                const config = await response.json();
+                if (!config.enabled || !config.public_key) throw new Error(t('خدمة الإشعارات غير متاحة.','Notification service unavailable.'));
+                await navigator.serviceWorker.register('/sw.js', {scope:'/'});
+                const registration = await Promise.race([
+                    navigator.serviceWorker.ready,
+                    new Promise((_, reject) => setTimeout(() => reject(new Error(t('تعذر تجهيز الإشعارات.','Notification setup timed out.'))),8000))
+                ]);
+                const raw = config.public_key;
+                const bytes = Uint8Array.from(atob(raw.replace(/-/g,'+').replace(/_/g,'/') + '='.repeat((4-raw.length%4)%4)), c=>c.charCodeAt(0));
+                const subscription = await registration.pushManager.getSubscription() || await registration.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:bytes});
+                if (!subscription) throw new Error(t('تعذر تجهيز اشتراك الجهاز.','Could not prepare device subscription.'));
+                localStorage.setItem(key,'yes');
+                enabled = true;
+            }
+        } catch (error) {
+            enabled = false;
+            message = String(error.message || error);
+            if (typeof CM.toast === 'function') CM.toast(message);
+            console.warn('TISH cart notification preference:', error);
+        } finally {
+            busy = false;
+            render(message);
+        }
+    });
+    window.addEventListener('pageshow',sync);
+    window.addEventListener('storage',event=>{if(event.key===key) sync();});
+    sync();
+})();
 
 function renderCart() {
     const rows = CM.cartRows();
