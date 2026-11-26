@@ -695,6 +695,99 @@ body.tish-paper .tools .search:focus-within::before {
 }
 </style>
 
+
+<style>
+/* TISH HOME V1: one functional top-navigation row, separate from brand art.
+   Scoped to the homepage; preserve original image, background, badges and links. */
+html body.tish-paper.reference-home .reference-masthead .tish-drive-firstfold{
+ display:flex!important;flex-direction:column!important;align-items:stretch!important;
+ position:relative!important;isolation:isolate!important;line-height:normal!important;
+ margin-bottom:10px!important;
+}
+html body.tish-paper.reference-home .reference-masthead .tish-drive-hero-actions{
+ position:relative!important;inset:auto!important;z-index:7!important;pointer-events:auto!important;
+ box-sizing:border-box!important;display:flex!important;flex-direction:row!important;
+ direction:ltr!important;align-items:center!important;justify-content:flex-end!important;
+ gap:8px!important;width:calc(100% - 24px)!important;min-height:66px!important;
+ height:auto!important;max-width:100%!important;padding:11px 1px 5px!important;margin:0 auto!important;
+ background:none!important;overflow:visible!important;
+}
+html body.tish-paper.reference-home .reference-masthead .tish-drive-hero-actions .icon-btn,
+html body.tish-paper.reference-home .reference-masthead .tish-drive-hero-actions .tish-future-alert{
+ position:relative!important;inset:auto!important;top:auto!important;right:auto!important;left:auto!important;bottom:auto!important;
+ display:grid!important;place-items:center!important;flex:0 0 44px!important;
+ width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;
+ max-width:44px!important;margin:0!important;padding:0!important;
+ border:0!important;border-radius:0!important;box-shadow:none!important;clip-path:none!important;
+ background:transparent url('/assets/tish-paper/paper/product-disc.webp') center/100% 100% no-repeat!important;
+ color:#ad2117!important;filter:drop-shadow(0 3px 2px #54362240)!important;
+ pointer-events:auto!important;transform:none!important;translate:none!important;
+}
+html body.tish-paper.reference-home .reference-masthead .tish-drive-hero-actions .tish-future-alert::before{content:none!important}
+html body.tish-paper.reference-home .reference-masthead .tish-drive-hero-actions .icon-btn i{
+ font-size:20px!important;line-height:1!important;color:#ad2117!important;
+}
+html body.tish-paper.reference-home .reference-masthead .tish-drive-hero-actions .tish-future-alert svg{width:23px!important;height:23px!important}
+html body.tish-paper.reference-home .reference-masthead .tish-drive-hero-actions .tish-future-alert[aria-pressed="false"]{color:#8b3026!important}
+html body.tish-paper.reference-home .reference-masthead .tish-drive-hero-actions .tish-future-alert{order:1!important}
+html body.tish-paper.reference-home .reference-masthead .tish-drive-hero-actions .tish-drive-hero-fav{order:2!important}
+html body.tish-paper.reference-home .reference-masthead .tish-drive-hero-actions .tish-drive-hero-cart{order:3!important}
+html body.tish-paper.reference-home .reference-masthead .tish-drive-hero-actions .badge{
+ position:absolute!important;top:-2px!important;right:-3px!important;left:auto!important;
+ min-width:18px!important;height:18px!important;border:1.5px solid #fff4e6!important;
+ background:#ac2017!important;color:white!important;font-size:10px!important;
+}
+html body.tish-paper.reference-home .reference-masthead .tish-drive-hero-actions .tish-drive-hero-fav .badge{display:grid!important}
+html body.tish-paper.reference-home .reference-masthead .tish-drive-hero-actions .cm-language-switch{
+ position:relative!important;inset:auto!important;order:0!important;flex:0 0 auto!important;
+ min-width:70px!important;width:auto!important;min-height:40px!important;height:40px!important;
+ margin:0 auto 0 0!important;padding:6px 12px!important;
+ border:0!important;border-radius:0!important;box-shadow:none!important;
+ background:transparent url('/assets/tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;
+ color:#27211d!important;filter:drop-shadow(0 3px 2px #54362235)!important;
+ font:900 13px/1.3 "TISH Noto",Arial,sans-serif!important;pointer-events:auto!important;
+}
+html body.tish-paper.reference-home .reference-masthead .tish-drive-hero-actions :is(button,a):focus-visible{
+ outline:2px solid #ad2117!important;outline-offset:3px!important;
+}
+html body.tish-paper.reference-home .reference-masthead .tish-drive-hero-art{
+ display:block!important;width:100%!important;height:auto!important;aspect-ratio:630/360!important;
+ object-fit:contain!important;margin:0!important;flex:none!important;
+}
+html body.tish-paper.reference-home .reference-home-copy{margin:11px 0 14px!important;text-align:start!important}
+html body.tish-paper.reference-home .reference-home-copy h1{font-size:clamp(20px,5vw,27px)!important;line-height:1.35!important}
+html body.tish-paper.reference-home .reference-home-copy p{font-size:clamp(12px,3.05vw,15px)!important;line-height:1.65!important;margin-top:3px!important}
+html body.tish-paper.reference-home .tools{margin-bottom:19px!important;gap:8px!important}
+html body.tish-paper.reference-home .tools .search input:focus-visible{outline:2px solid #9d6351!important;outline-offset:-4px!important}
+html body.tish-paper.reference-home .reference-section{margin-top:17px!important;margin-bottom:20px!important}
+html body.tish-paper.reference-home .reference-section-head{margin-bottom:9px!important;gap:8px!important}
+html body.tish-paper.reference-home .reference-section-head h2{font-size:clamp(19px,4.5vw,26px)!important}
+html body.tish-paper.reference-home #categories{
+ direction:inherit!important;gap:8px!important;padding:7px 1px 10px!important;
+ justify-content:flex-start!important;align-items:flex-start!important;
+}
+html body.tish-paper.reference-home #categories .cat{
+ flex:0 0 clamp(67px,18.5vw,96px)!important;width:clamp(67px,18.5vw,96px)!important;
+ min-height:102px!important;gap:6px!important;
+}
+html body.tish-paper.reference-home #categories .cat>b{
+ font-size:clamp(11px,2.9vw,14px)!important;line-height:1.35!important;
+ min-height:2.7em!important;white-space:normal!important;
+}
+html[dir="ltr"] body.tish-paper.reference-home .reference-see-all .fa-chevron-left{transform:rotate(180deg)}
+html body.tish-paper.reference-home #homePromotion{margin-top:8px!important;margin-bottom:16px!important}
+@media(max-width:365px){
+ html body.tish-paper.reference-home .reference-masthead .tish-drive-hero-actions{gap:5px!important;width:calc(100% - 18px)!important}
+ html body.tish-paper.reference-home .reference-masthead .tish-drive-hero-actions .cm-language-switch{min-width:62px!important;font-size:12px!important}
+}
+@media(min-width:601px){
+ html body.tish-paper.reference-home .reference-masthead .tish-drive-hero-actions{width:min(calc(100% - 24px),630px)!important}
+}
+@media(prefers-reduced-motion:reduce){
+ html body.tish-paper.reference-home .reference-masthead .tish-drive-hero-actions :is(button,a){transition:none!important;scale:none!important}
+}
+</style>
+
 </head>
 <body class="crisp-customer-menu reference-home tish-paper">
 @php
@@ -758,13 +851,6 @@ body.tish-paper .tools .search:focus-within::before {
   {{-- Supplied TISH Drive hero replaces the old London-style header artwork.
        Keep cart/favorites as real links and preserve their badge IDs for JS sync. --}}
   <div class="tish-drive-firstfold" aria-label="{{ $branding['name'] }}">
-   <img class="tish-drive-hero-art"
-        src="{{ asset('assets/tish-paper/brand/tish-drive-hero-clean.svg') }}"
-        alt="{{ $branding['name'] }} — Hear it. Feel it."
-        width="630" height="360" fetchpriority="high">
-   {{-- Preserve admin-editable brand identity for assistive technologies and
-        customer header customization, while the supplied art is visual. --}}
-   <span class="tish-drive-hero-sr">{{ $branding['name'] }}@if(!empty($branding['tagline'])) — {{ $branding['tagline'] }}@endif</span>
    <nav class="tish-drive-hero-actions" aria-label="{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Quick actions' : 'أزرار المنيو' }}">
     <a class="icon-btn tish-drive-hero-cart"
        href="{{ route('customer-menu.cart', $location->code) }}"
@@ -777,6 +863,14 @@ body.tish-paper .tools .search:focus-within::before {
      <i class="fa-regular fa-heart" aria-hidden="true"></i><span class="badge" id="favBadgeTop">0</span>
     </a>
    </nav>
+   <img class="tish-drive-hero-art"
+        src="{{ asset('assets/tish-paper/brand/tish-drive-hero-clean.svg') }}"
+        alt="{{ $branding['name'] }} — Hear it. Feel it."
+        width="630" height="360" fetchpriority="high">
+   {{-- Preserve admin-editable brand identity for assistive technologies and
+        customer header customization, while the supplied art is visual. --}}
+   <span class="tish-drive-hero-sr">{{ $branding['name'] }}@if(!empty($branding['tagline'])) — {{ $branding['tagline'] }}@endif</span>
+
   </div>
   <div class="reference-home-copy"><h1>{{ $homeTitle }}</h1><p>{{ $homeSubtitle }}</p></div>
 
