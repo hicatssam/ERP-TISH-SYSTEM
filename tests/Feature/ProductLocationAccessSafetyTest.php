@@ -56,6 +56,23 @@ class ProductLocationAccessSafetyTest extends TestCase
         $this->assertSame('28.00', $a->fresh()->local_selling_price);
     }
 
+    public function test_resetting_branch_price_inherits_future_base_changes_without_touching_other_branch(): void
+    {
+        [$branchA, $branchB, $product, $a, $b, $user] = $this->setupCatalog();
+
+        $this->actingAs($user)->put(route('location-products.update', $a), [
+            'local_selling_price' => '',
+        ])->assertRedirect();
+        $this->assertNull($a->fresh()->local_selling_price);
+        $this->assertTrue($a->fresh()->is_available);
+        $this->assertSame('25.00', $product->fresh()->getEffectivePriceForLocation($branchA->id));
+
+        $product->update(['base_selling_price' => 30]);
+        $this->assertSame('30.00', $product->fresh()->getEffectivePriceForLocation($branchA->id));
+        $this->assertSame('22.00', $product->fresh()->getEffectivePriceForLocation($branchB->id));
+        $this->assertSame('22.00', $b->fresh()->local_selling_price);
+    }
+
     public function test_branch_cannot_update_or_disable_other_branch_product_link(): void
     {
         [, , , , $b, $user] = $this->setupCatalog();
