@@ -286,6 +286,19 @@ class CustomerMenuBranchIsolationTest extends TestCase
     public function test_full_takeaway_flow_preserves_inventory_invoice_and_kitchen_states(): void
     {
         [$branch, $product, $cash, $actor, $payload] = $this->orderFixture();
+
+        \App\Models\FinancialPeriod::query()->firstOrCreate(
+            ['year' => (int) now()->year, 'month' => (int) now()->month],
+            [
+                'name' => 'Restaurant QA '.now()->format('Y-m'),
+                'start_date' => now()->startOfMonth()->toDateString(),
+                'end_date' => now()->endOfMonth()->toDateString(),
+                'status' => 'open',
+                'opened_by' => $actor->id,
+                'opened_at' => now(),
+            ]
+        );
+
         app(\App\Services\Kitchen\KitchenRoutingService::class)->createDefaultStationIfMissing($branch->id, $actor);
         $payload['items'][0]['quantity'] = 2;
         $result = $this->postJson(route('customer-menu.orders.store', $branch->code), $payload)
@@ -323,6 +336,19 @@ class CustomerMenuBranchIsolationTest extends TestCase
     public function test_cancellation_restores_stock_and_cancels_invoice_and_kitchen(): void
     {
         [$branch, $product, $cash, $actor, $payload] = $this->orderFixture();
+
+        \App\Models\FinancialPeriod::query()->firstOrCreate(
+            ['year' => (int) now()->year, 'month' => (int) now()->month],
+            [
+                'name' => 'Restaurant QA '.now()->format('Y-m'),
+                'start_date' => now()->startOfMonth()->toDateString(),
+                'end_date' => now()->endOfMonth()->toDateString(),
+                'status' => 'open',
+                'opened_by' => $actor->id,
+                'opened_at' => now(),
+            ]
+        );
+
         app(\App\Services\Kitchen\KitchenRoutingService::class)->createDefaultStationIfMissing($branch->id, $actor);
         $result = $this->postJson(route('customer-menu.orders.store', $branch->code), $payload)->assertCreated()->json();
         $order = Order::findOrFail($result['order_id']);

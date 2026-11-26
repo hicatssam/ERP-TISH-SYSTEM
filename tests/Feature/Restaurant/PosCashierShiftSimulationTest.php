@@ -51,6 +51,19 @@ class PosCashierShiftSimulationTest extends TestCase
         ]);
         $employee->locations()->attach($branch->id, ['is_primary' => true]);
         $cashier = User::factory()->create(['employee_id' => $employee->id]);
+
+        \App\Models\FinancialPeriod::query()->firstOrCreate(
+            ['year' => (int) now()->year, 'month' => (int) now()->month],
+            [
+                'name' => 'Restaurant QA '.now()->format('Y-m'),
+                'start_date' => now()->startOfMonth()->toDateString(),
+                'end_date' => now()->endOfMonth()->toDateString(),
+                'status' => 'open',
+                'opened_by' => $cashier->id,
+                'opened_at' => now(),
+            ]
+        );
+
         foreach (['restaurant.view', 'restaurant_pos.use', 'restaurant_menu.view', 'orders.create'] as $ability) {
             $cashier->givePermissionTo(Permission::findOrCreate($ability, 'web'));
         }
