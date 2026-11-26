@@ -78,6 +78,7 @@ class PaymentController extends Controller
             'receivedBy',
             'verifiedBy',
             'refunds.paymentMethod',
+            'refunds.sourcePaymentAccount',
             'refunds.processedBy',
         ])->whereIn('location_id', $locationIds);
 
@@ -151,6 +152,11 @@ class PaymentController extends Controller
             ? Location::active()->get()
             : collect();
 
+        $refundPaymentAccounts = LocationPaymentAccount::query()
+            ->whereIn('location_id', $locationIds)
+            ->where('is_active', true)->where('can_disburse', true)
+            ->orderBy('sort_order')->orderBy('name')->get();
+
         $statusOptions =
             \App\Enums\PaymentStatus::cases();
 
@@ -160,7 +166,8 @@ class PaymentController extends Controller
                 'payments',
                 'paymentMethods',
                 'locations',
-                'statusOptions'
+                'statusOptions',
+                'refundPaymentAccounts'
             )
         );
     }
@@ -614,6 +621,25 @@ class PaymentController extends Controller
                     'payment_method_id' => 'طريقة الاسترداد غير مفعلة لهذا الفرع.',
                 ]);
             }
+            $sourceAccount = null;
+            if (in_array($refundMethod->type, ['bank_transfer', 'electronic_wallet'], true)) {
+                $sourceAccount = LocationPaymentAccount::query()
+                    ->where('location_id', $payment->location_id)
+                    ->where('payment_method_id', $refundMethod->id)
+                    ->where('is_active', true)->where('can_disburse', true)
+                    ->whereKey($validated['source_payment_account_id'] ?? 0)
+                    ->lockForUpdate()->first();
+                if (! $sourceAccount) {
+                    throw ValidationException::withMessages([
+                        'source_payment_account_id' => 'اختر حساب صرف نشطًا ومسموحًا له بالصرف من نفس الفرع وطريقة الدفع.',
+                    ]);
+                }
+            } elseif (! empty($validated['source_payment_account_id'])) {
+                throw ValidationException::withMessages([
+                    'source_payment_account_id' => 'حساب الصرف البنكي متاح فقط للاسترداد البنكي أو الإلكتروني.',
+                ]);
+            }
+
             app(CashDayGuard::class)->forMethod((int) $payment->location_id, $refundMethod);
 
             $refund = Refund::create([
@@ -621,6 +647,7 @@ class PaymentController extends Controller
                 'order_type' => $payment->order_type,
                 'order_id' => $payment->order_id,
                 'payment_method_id' => $validated['payment_method_id'],
+                'source_payment_account_id' => $sourceAccount?->id,
                 'amount' => $requestedRefund,
                 'reason' => $validated['reason'],
                 'processed_by' => Auth::id(),
@@ -715,6 +742,7 @@ class PaymentController extends Controller
                 newValues: [
                     'refund_amount' =>
                         $requestedRefund,
+                    'source_payment_account_id' => $sourceAccount?->id,
 
                     'total_refunded' =>
                         $totalRefunded,
