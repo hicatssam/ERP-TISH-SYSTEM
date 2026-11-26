@@ -29,8 +29,30 @@ final class MenuIconLibrary
             'dessert' => 'حلويات',
             'tea' => 'شاي',
             'breakfast' => 'فطور',
+            'sauce' => 'صوصات',
+            'appetizer' => 'مقبلات',
+            'cold-drink' => 'مشروبات باردة',
+            'utensils' => 'أدوات طعام',
             'sparkles' => 'أخرى',
         ];
+    }
+
+    public static function fontAwesome(?string $key): string
+    {
+        return [
+            'burger' => 'fa-burger', 'pizza' => 'fa-pizza-slice',
+            'coffee' => 'fa-mug-hot', 'cake' => 'fa-cake-candles',
+            'croissant' => 'fa-bread-slice', 'donut' => 'fa-cookie-bite',
+            'icecream' => 'fa-ice-cream', 'drink' => 'fa-bottle-water',
+            'juice' => 'fa-glass-water', 'fries' => 'fa-box',
+            'chicken' => 'fa-drumstick-bite', 'salad' => 'fa-bowl-food',
+            'sandwich' => 'fa-burger', 'chocolate' => 'fa-cookie',
+            'gift' => 'fa-gift', 'dessert' => 'fa-cookie-bite',
+            'tea' => 'fa-mug-saucer', 'breakfast' => 'fa-egg',
+            'sauce' => 'fa-jar', 'appetizer' => 'fa-bowl-rice',
+            'cold-drink' => 'fa-glass-water', 'utensils' => 'fa-utensils',
+            'sparkles' => 'fa-wand-magic-sparkles',
+        ][$key ?? ''] ?? 'fa-wand-magic-sparkles';
     }
 
     public static function keys(): array
