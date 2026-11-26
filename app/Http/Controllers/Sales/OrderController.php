@@ -649,7 +649,8 @@ class OrderController extends Controller
         $updatedOrder = $this->orderService->cancelOrder(
             $order,
             $request->validated('cancellation_reason'),
-            $request->user()
+            $request->user(),
+            $request->validated('stock_disposition')
         );
 
         $this->releaseCustomerMenuTableIfIdle(
