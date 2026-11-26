@@ -449,6 +449,21 @@ class OrderUpdateInventoryGuardTest extends TestCase
     {
         $location = $this->makeLocation();
         $user     = $this->makeUserWithUpdatePermission($location);
+
+        // A confirmed invoice adjustment posts a signed financial journal.
+        // The fixture must provide an active base currency and a period that
+        // covers the effective adjustment date (now), as production requires.
+        \App\Models\Currency::query()->create([
+            'code' => 'ILS', 'name' => 'Shekel', 'is_base' => true, 'is_active' => true,
+        ]);
+        \App\Models\FinancialPeriod::query()->create([
+            'name' => 'Invoice Adjustment QA '.now()->format('Y-m'),
+            'year' => (int) now()->year, 'month' => (int) now()->month,
+            'start_date' => now()->startOfMonth()->toDateString(),
+            'end_date' => now()->endOfMonth()->toDateString(),
+            'status' => 'open', 'opened_by' => $user->id, 'opened_at' => now(),
+        ]);
+
         $product  = $this->makeProduct();
         $order    = $this->makeConfirmedOrder($location, $user);
         $item     = $this->addItem($order, $product, 5.0);
