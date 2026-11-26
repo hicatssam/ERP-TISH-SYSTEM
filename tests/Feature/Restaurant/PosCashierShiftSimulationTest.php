@@ -51,6 +51,18 @@ class PosCashierShiftSimulationTest extends TestCase
         ]);
         $employee->locations()->attach($branch->id, ['is_primary' => true]);
         $cashier = User::factory()->create(['employee_id' => $employee->id]);
+        // Confirmed POS orders post payment and invoice journals. Exercise the
+        // real open-period invariant rather than bypassing financial controls.
+        \App\Models\Currency::query()->create([
+            'code' => 'ILS', 'name' => 'Shekel', 'is_base' => true, 'is_active' => true,
+        ]);
+        \App\Models\FinancialPeriod::query()->create([
+            'name' => 'POS Cashier QA '.now()->format('Y-m'),
+            'year' => (int) now()->year, 'month' => (int) now()->month,
+            'start_date' => now()->startOfMonth()->toDateString(),
+            'end_date' => now()->endOfMonth()->toDateString(),
+            'status' => 'open', 'opened_by' => $cashier->id, 'opened_at' => now(),
+        ]);
         foreach (['restaurant.view', 'restaurant_pos.use', 'restaurant_menu.view', 'orders.create'] as $ability) {
             $cashier->givePermissionTo(Permission::findOrCreate($ability, 'web'));
         }
