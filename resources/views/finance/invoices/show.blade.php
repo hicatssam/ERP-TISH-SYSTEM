@@ -66,9 +66,16 @@
                 <tr>
                     <td style="color:var(--text-muted)">حالة السداد</td>
                     <td>
-                        <span class="badge {{ $invoice->paymentStatusBadgeClass() }}">
-                            {{ $invoice->paymentStatusLabel() }}
+                        @php($refundSummary = $invoice->refundSummary())
+                        <span class="badge {{ $refundSummary['state'] ? 'badge-pending' : $invoice->paymentStatusBadgeClass() }}">
+                            {{ match($refundSummary['state']) { 'refunded' => 'مستردة بالكامل', 'partially_refunded' => 'مستردة جزئيًا', default => $invoice->paymentStatusLabel() } }}
                         </span>
+                        @if($refundSummary['refunded'] > 0)
+                            <div style="margin-top:.35rem;color:var(--error)">المسترد: {{ $currencySymbol }}{{ number_format($refundSummary['refunded'], 2) }}</div>
+                            @foreach($refundSummary['rows'] as $refund)
+                                <small style="display:block">{{ $refund->processed_at?->format('Y-m-d H:i') }} — {{ $refund->paymentMethod?->name_ar ?: $refund->paymentMethod?->name }} — {{ $currencySymbol }}{{ number_format((float)$refund->amount, 2) }}</small>
+                            @endforeach
+                        @endif
                     </td>
                 </tr>
                 <tr>
