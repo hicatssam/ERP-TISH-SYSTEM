@@ -67,7 +67,7 @@ if ($originalTables === $baseTables) {
         $t->string('sku')->unique(); $t->string('unit')->default('kg');
         $t->boolean('is_active')->default(true);
         $t->boolean('tracks_batch')->default(false);
-        $t->boolean('tracks_expiry')->default(false); $t->timestamps();
+        $t->boolean('tracks_expiry')->default(false); $t->timestamps(); $t->softDeletes();
     });
     Schema::create('inventories', function (Blueprint $t) {
         $t->id(); $t->unsignedBigInteger('location_id');
@@ -119,6 +119,16 @@ foreach ($fixtureTables as $table) {
     if (DB::table($table)->count() !== 0) {
         throw new RuntimeException("QA fixture table is not empty: {$table}");
     }
+}
+
+// A previous QA run created products before its missing soft-delete field
+// was discovered. Only reconcile this known empty fixture table after the
+// strict database identity, table-list and emptiness checks above.
+if (! Schema::hasColumn('products', 'deleted_at')) {
+    Schema::table('products', function (Blueprint $table): void {
+        $table->softDeletes();
+    });
+    echo "MYSQL QA PRODUCT SOFT-DELETE COLUMN: ADDED\n";
 }
 
 DB::beginTransaction();
