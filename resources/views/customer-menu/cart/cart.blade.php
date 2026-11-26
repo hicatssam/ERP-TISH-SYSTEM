@@ -486,6 +486,12 @@ html body#tishCart #pwaInstallBtn.tish-paper-pin-control:not([hidden]) :is(i,spa
  }
 }
 
+
+/* CART V4: keep language as the only secondary header action. */
+body#tishCart .cart-reference-actions{border-inline-start:0;padding-inline-start:0}
+body#tishCart .cart-reference-brand{flex:0 1 auto;margin-inline-end:auto}
+body#tishCart .cart-reference-actions .cm-language-switch{min-width:64px!important}
+
 </style>
 
 </head>
@@ -498,7 +504,6 @@ html body#tishCart #pwaInstallBtn.tish-paper-pin-control:not([hidden]) :is(i,spa
   <span class="cart-reference-copy"><h1>سلة الطلب</h1><small>{{ $location->name }}</small></span>
  </a>
  <div class="cart-reference-actions">
-  <a class="cart-branch-link" href="{{ route('customer-menu.index') }}">تغيير الفرع</a>
   <div data-cm-language-host></div>
  </div>
 </nav>
