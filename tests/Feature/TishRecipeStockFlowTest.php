@@ -199,6 +199,44 @@ class TishRecipeStockFlowTest extends TestCase
             ->where('order_id', $order->id)->whereNull('restored_at')->count());
     }
 
+    public function test_prepared_order_cancellation_requires_explicit_retention_and_does_not_restore_stock(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $branch = Location::query()->where('code', 'B01')->firstOrFail();
+        $admin = User::query()->where('username', 'admin')->firstOrFail();
+        $burger = Product::query()->where('sku', 'BRG-BEEF-CLASSIC')->firstOrFail();
+        $bun = Product::query()->where('sku', 'BRG-ING-BUN')->firstOrFail();
+        $service = app(OrderService::class);
+        $order = $service->createOrder([
+            'location_id' => $branch->id,
+            'sales_channel_id' => SalesChannel::query()->where('slug', 'tish-direct')->value('id'),
+            'restaurant_service_type' => 'takeaway',
+            'order_source' => 'restaurant_pos',
+            'payment_arrangement' => 'pay_on_pickup',
+            'items' => [['product_id' => $burger->id, 'quantity' => 1]],
+        ], $admin, false);
+        $order = $service->confirmOrder($order, $admin);
+        $ticket = $order->kitchenTickets()->firstOrFail();
+        $ticket->update(['status' => 'preparing', 'started_at' => now()]);
+        $afterSale = Inventory::query()->where('location_id', $branch->id)
+            ->where('product_id', $bun->id)->value('quantity');
+
+        try {
+            $service->cancelOrder($order->fresh(), 'Test attempted return after preparation', $admin, 'restore');
+            $this->fail('Started kitchen tickets must prevent automatic stock restoration.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('stock_disposition', $exception->errors());
+        }
+        $this->assertSame('confirmed', $order->fresh()->statusValue());
+        $service->cancelOrder($order->fresh(), 'Test cancellation after preparation', $admin, 'retain');
+        $this->assertSame('cancelled', $order->fresh()->statusValue());
+        $this->assertEquals($afterSale, Inventory::query()->where('location_id', $branch->id)
+            ->where('product_id', $bun->id)->value('quantity'));
+        $this->assertDatabaseHas('order_inventory_consumptions', [
+            'order_id' => $order->id, 'stock_product_id' => $bun->id, 'restored_at' => null,
+        ]);
+    }
+
     public function test_confirm_rejects_insufficient_ingredient_stock_without_partially_consuming_other_ingredients(): void
     {
         $this->seed(DatabaseSeeder::class);
