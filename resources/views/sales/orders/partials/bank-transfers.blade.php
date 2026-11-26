@@ -309,9 +309,10 @@
                                                 <p>المتاح للاسترداد: <strong>₪{{ number_format($refundableAmount, 2) }}</strong></p>
                                                 <p class="order-transfer-note is-warning">سجّل الاسترداد بعد إرجاع المبلغ فعليًا للعميل. النظام لا ينفذ حوالة بنكية خارجية.</p>
                                                 <form method="POST" action="{{ route('payments.refund', $payment) }}"
-                                                    onsubmit="if(!confirm('هل تم إرجاع المبلغ فعليًا للعميل؟')) return false; this.querySelector('button[type=submit]').disabled=true;">
+                                                    onsubmit="return submitOrderRefund(this)">
                                                     @csrf
                                                     <input type="hidden" name="order_refund_payment_id" value="{{ $payment->id }}">
+                                                    <div class="order-refund-edit-step">
                                                     <div class="form-group">
                                                         <label class="form-label" for="orderRefundAmount{{ $payment->id }}">المبلغ المسترد</label>
                                                         <input id="orderRefundAmount{{ $payment->id }}" name="amount" type="number"
@@ -349,7 +350,25 @@
                                                     </div>
                                                     <div class="order-refund-footer">
                                                         <button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">إلغاء</button>
-                                                        <button type="submit" class="btn btn-danger">تسجيل الاسترداد</button>
+                                                        <button type="submit" class="btn btn-danger" data-refund-next>تسجيل الاسترداد</button>
+                                                    </div>
+                                                    </div>
+                                                    <div class="order-refund-confirm-step" hidden>
+                                                        <div class="order-refund-confirm-icon" aria-hidden="true">
+                                                            <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg>
+                                                        </div>
+                                                        <h4 tabindex="-1" data-refund-confirm-title>تأكيد تسجيل الاسترداد</h4>
+                                                        <p>هل تم إرجاع المبلغ فعليًا للعميل؟</p>
+                                                        <div class="order-refund-confirm-summary">
+                                                            <span>المبلغ المسترد</span><strong data-refund-summary-amount></strong>
+                                                            <span>طريقة الاسترداد</span><strong data-refund-summary-method></strong>
+                                                            <span data-refund-summary-account-label>حساب الصرف</span><strong data-refund-summary-account></strong>
+                                                        </div>
+                                                        <small class="order-transfer-muted">سيتم تسجيل الحركة المالية وتحديث صافي المدفوع، دون تنفيذ حوالة خارجية.</small>
+                                                        <div class="order-refund-footer">
+                                                            <button type="button" class="btn btn-outline" onclick="showOrderRefundEdit(this.form)">رجوع</button>
+                                                            <button type="submit" class="btn btn-danger" data-refund-confirm>نعم، تأكيد الاسترداد</button>
+                                                        </div>
                                                     </div>
                                                 </form>
                                             </dialog>
@@ -652,7 +671,27 @@
         box-shadow: 0 20px 65px rgba(0,0,0,.25);
         text-align: right;
     }
-    .order-refund-account-field[hidden] { display:none !important; }
+    .order-refund-account-field[hidden],
+    .order-refund-edit-step[hidden],
+    .order-refund-confirm-step[hidden],
+    .order-refund-confirm-summary [hidden] { display:none !important; }
+    .order-refund-confirm-step { text-align:center; padding:.7rem 0 .15rem; }
+    .order-refund-confirm-icon {
+        display:grid; place-items:center; width:64px; height:64px;
+        margin:0 auto .85rem; border-radius:50%;
+        background:rgba(158,19,59,.08); color:#9e133b;
+    }
+    .order-refund-confirm-step h4 { margin:.25rem 0 .5rem; font-size:1.1rem; color:var(--text); }
+    .order-refund-confirm-step p { margin:.5rem 0 1rem; color:var(--text); }
+    .order-refund-confirm-summary {
+        display:grid; grid-template-columns:minmax(95px,auto) minmax(0,1fr);
+        text-align:right; gap:.7rem 1rem; padding:1rem;
+        border:1px solid var(--border); border-radius:12px; margin-bottom:.75rem;
+        background:var(--off-white,#faf6f7);
+    }
+    .order-refund-confirm-summary span { color:var(--text-muted); font-size:.78rem; }
+    .order-refund-confirm-summary strong { text-align:left; overflow-wrap:anywhere; font-size:.84rem; }
+    .order-refund-confirm-step .order-refund-footer { justify-content:center; flex-wrap:wrap; }
     .order-refund-dialog::backdrop { background: rgba(15,23,42,.6); }
     .order-refund-dialog h3 { margin: 0 0 .7rem; }
     .order-refund-dialog .form-group { margin-top: .8rem; }
@@ -921,14 +960,68 @@
         hint.textContent = banking && !matches.length
             ? 'لا يوجد حساب يسمح بالصرف لهذه الطريقة. فعّل حساب الصرف من إعدادات الفرع.'
             : '';
-        form.querySelector('button[type=submit]').disabled = banking && !matches.length;
+        form.querySelector('[data-refund-next]').disabled = banking && !matches.length;
+    }
+
+    function showOrderRefundEdit(form) {
+        if (form.dataset.submitting === '1') return;
+        form.dataset.refundStep = 'edit';
+        form.querySelector('.order-refund-edit-step').hidden = false;
+        form.querySelector('.order-refund-confirm-step').hidden = true;
+        form.querySelector('[data-refund-confirm]').disabled = false;
+        syncOrderRefundAccount(form);
+        if (form.closest('dialog').open) form.elements.amount.focus();
+    }
+
+    function submitOrderRefund(form) {
+        if (form.dataset.submitting === '1') return false;
+        if (form.dataset.refundStep !== 'confirm') {
+            if (!form.reportValidity()) return false;
+            const method = form.elements.payment_method_id;
+            const account = form.elements.source_payment_account_id;
+            const banking = method.selectedOptions[0]?.dataset.banking === '1';
+            form.querySelector('[data-refund-summary-amount]').textContent =
+                Number(form.elements.amount.value).toFixed(2) + ' ₪';
+            form.querySelector('[data-refund-summary-method]').textContent =
+                method.selectedOptions[0]?.textContent.trim() || '—';
+            form.querySelector('[data-refund-summary-account-label]').hidden = !banking;
+            const accountSummary = form.querySelector('[data-refund-summary-account]');
+            accountSummary.hidden = !banking;
+            accountSummary.textContent = banking ? (account.selectedOptions[0]?.textContent.trim() || '—') : '';
+            form.dataset.refundStep = 'confirm';
+            form.querySelector('.order-refund-edit-step').hidden = true;
+            form.querySelector('.order-refund-confirm-step').hidden = false;
+            form.querySelector('[data-refund-confirm-title]').focus();
+            return false;
+        }
+
+        form.dataset.submitting = '1';
+        form.querySelector('[data-refund-confirm]').disabled = true;
+        form.querySelector('[data-refund-confirm]').textContent = 'جاري تسجيل الاسترداد...';
+        return true;
     }
 
     function openOrderRefundDialog(id) {
         const dialog = document.getElementById(id);
-        syncOrderRefundAccount(dialog.querySelector('form'));
+        const form = dialog.querySelector('form');
+        if (form.dataset.submitting === '1') return;
+        showOrderRefundEdit(form);
         dialog.showModal();
     }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('dialog.order-refund-dialog').forEach(dialog => {
+            dialog.addEventListener('cancel', function (event) {
+                const form = dialog.querySelector('form');
+                if (form.dataset.submitting === '1') {
+                    event.preventDefault();
+                } else if (form.dataset.refundStep === 'confirm') {
+                    event.preventDefault();
+                    showOrderRefundEdit(form);
+                }
+            });
+        });
+    });
 
     function openBankTransferModal() {
         const modal = document.getElementById('bankTransferModal');
