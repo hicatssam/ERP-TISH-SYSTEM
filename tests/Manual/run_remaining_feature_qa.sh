@@ -34,7 +34,6 @@ done
 mapfile -t all < <(find tests/Feature tests/Unit -type f -name '*Test.php' | sort)
 remaining=()
 for file in "${all[@]}"; do
-    [[ -n "${passed[$file]:-}" ]] && continue
     remaining+=("$file")
 done
 
