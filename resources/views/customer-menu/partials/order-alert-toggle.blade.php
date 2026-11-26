@@ -84,6 +84,7 @@ html[dir="ltr"] body.tish-paper .cm-unified-header-actions.tish-alert-host .cm-u
 @media print{html[dir] body.tish-paper .cm-unified-header-actions.tish-alert-host{display:none!important}}
 
 </style>
+<link rel="stylesheet" href="/assets/css/customer-menu/tish-paper-disc-reference-v1.css?v=1">
 <script>
 (function () {
     'use strict';

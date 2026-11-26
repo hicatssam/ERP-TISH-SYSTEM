@@ -1,0 +1,98 @@
+/* TISH: dimensional torn paper discs, using the original paper assets.
+   State, routes, icons and event handlers remain owned by their existing pages. */
+html[dir] body {
+ --tish-disc-ivory: url('/assets/tish-paper/paper/product-disc.webp');
+ --tish-disc-red: url('/assets/tish-paper/paper/nav-active.webp');
+ --tish-disc-shape: polygon(50% 0%,54% 1.4%,59% .9%,63% 2.8%,67% 3.2%,71% 6.2%,75% 6.8%,79% 10%,83% 11.8%,86% 16%,90% 19.5%,91% 24%,94% 27%,94.6% 32%,97% 36%,97% 41%,99% 45%,98.5% 50%,100% 55%,97.8% 59%,97.4% 64%,94% 68%,93% 72%,89% 76%,87% 81%,82% 83%,78% 88%,73% 89%,70% 93%,65% 94%,60% 97%,55% 96.8%,50% 100%,45% 97.9%,40% 98.1%,35% 95.3%,30% 94.5%,26% 91%,21% 89%,18% 85%,14% 82%,10% 77%,8% 72%,5% 69%,5% 64%,2% 59%,2% 54%,0% 50%,1.8% 45%,1.6% 40%,4% 35%,4.5% 30%,8% 26%,9% 21%,13% 18%,16% 14%,21% 11%,25% 7%,30% 6%,35% 3%,40% 3.2%,45% 1%);
+ --tish-disc-red-fill: #ad2117 var(--tish-disc-red) center/150% 150% no-repeat;
+}
+/* Categories retain independent text and true selected state. */
+html[dir] body.tish-paper:is(.reference-home,.tish-paper-products) #categories.tish-round-reference .cat .cat-visual,
+html[dir] body.tish-paper.reference-home #categories .cat .cat-visual{
+ position:relative!important;isolation:isolate!important;
+ background:transparent var(--tish-disc-ivory) center/100% 100% no-repeat!important;
+ border:0!important;border-radius:0!important;box-shadow:none!important;overflow:visible!important;
+ filter:drop-shadow(0 3px 2px #68422b54)!important;
+}
+html[dir] body.tish-paper:is(.reference-home,.tish-paper-products) #categories.tish-round-reference .cat.active .cat-visual::before,
+html[dir] body.tish-paper.reference-home #categories .cat.active .cat-visual::before{
+ content:""!important;display:block!important;position:absolute!important;inset:3px!important;
+ z-index:-1!important;pointer-events:none!important;border:0!important;border-radius:0!important;
+ background:var(--tish-disc-red-fill)!important;
+ -webkit-mask:none!important;mask:none!important;clip-path:var(--tish-disc-shape)!important;
+ box-shadow:none!important;transform:none!important;
+}
+html[dir] body.tish-paper:is(.reference-home,.tish-paper-products) #categories.tish-round-reference .cat.active .cat-visual i,
+html[dir] body.tish-paper.reference-home #categories .cat.active .cat-visual i{color:#fff2df!important}
+/* Header controls: same actual paper texture, not a flat circular background. */
+html[dir] body:is(#tishCart,#tishTrack,.tish-paper,.tish-customer-invoice) :is(.tish-future-alert,.cm-unified-header-back,.cart-reference-back,#enableOrderAlerts){
+ position:relative!important;isolation:isolate!important;overflow:visible!important;
+ background:transparent var(--tish-disc-ivory) center/100% 100% no-repeat!important;
+ background-blend-mode:normal!important;border:0!important;border-radius:0!important;
+ box-shadow:none!important;clip-path:none!important;-webkit-mask:none!important;mask:none!important;
+ color:#ad2117!important;filter:drop-shadow(0 3px 2px #68422b48)!important;
+}
+html[dir] body:is(#tishCart,#tishTrack,.tish-paper,.tish-customer-invoice) :is(.tish-future-alert,.cm-unified-header-back,.cart-reference-back,#enableOrderAlerts)::before{
+ content:none!important;display:none!important;
+}
+html[dir] body:is(#tishCart,#tishTrack,.tish-paper,.tish-customer-invoice) :is(.tish-future-alert,.cm-unified-header-back,.cart-reference-back,#enableOrderAlerts)::after{
+ content:none!important;display:none!important;
+}
+html[dir] body:is(#tishCart,#tishTrack,.tish-paper,.tish-customer-invoice) :is(.tish-future-alert[aria-pressed="true"],#enableOrderAlerts[data-alert-state="on"],.cm-unified-header-back,.cart-reference-back){
+ color:#fff2df!important;
+}
+html[dir] body:is(#tishCart,#tishTrack,.tish-paper,.tish-customer-invoice) :is(.tish-future-alert[aria-pressed="true"],#enableOrderAlerts[data-alert-state="on"],.cm-unified-header-back,.cart-reference-back)::after{
+ content:""!important;display:block!important;position:absolute!important;inset:2.5px!important;z-index:-1!important;pointer-events:none!important;
+ background:var(--tish-disc-red-fill)!important;clip-path:var(--tish-disc-shape)!important;
+ -webkit-mask:none!important;mask:none!important;border:0!important;box-shadow:none!important;transform:none!important;
+}
+html[dir] body:is(#tishCart,#tishTrack,.tish-paper,.tish-customer-invoice) :is(.tish-future-alert,.cm-unified-header-back,.cart-reference-back,#enableOrderAlerts) i{color:inherit!important}
+html[dir] body:is(#tishCart,#tishTrack,.tish-paper,.tish-customer-invoice) :is(.tish-future-alert,.cm-unified-header-back,.cart-reference-back,#enableOrderAlerts):focus-visible{outline:2px solid #ad2117!important;outline-offset:3px!important}
+/* Homepage bell has a more specific local style in show.blade.php. */
+html[dir] body.tish-paper.reference-home .reference-masthead .tish-drive-hero-actions .tish-future-alert[aria-pressed="true"]{color:#fff2df!important}
+html[dir] body.tish-paper.reference-home .reference-masthead .tish-drive-hero-actions .tish-future-alert[aria-pressed="false"]{color:#ad2117!important}
+/* Tracking: pending is ivory; completed/current is red. The current ring and
+   rays are decorative, and the existing JS still controls .on and .current. */
+html[dir] body#tishTrack #trackingCard .progressLine{
+ --dot:clamp(44px,13vw,68px);align-items:start!important;
+}
+html[dir] body#tishTrack #trackingCard .progressLine::before{
+ top:calc(var(--dot)/2)!important;left:12.5%!important;right:12.5%!important;
+ height:2px!important;background:#342c25!important;
+}
+html[dir] body#tishTrack #trackingCard .progressItem .dot{
+ display:grid!important;place-items:center!important;isolation:isolate!important;position:relative!important;
+ width:var(--dot)!important;height:var(--dot)!important;margin:0 auto 8px!important;
+ background:transparent var(--tish-disc-ivory) center/100% 100% no-repeat!important;
+ background-blend-mode:normal!important;border:0!important;border-radius:0!important;
+ color:#84705a!important;font-size:clamp(20px,5.5vw,31px)!important;
+ box-shadow:none!important;outline:none!important;overflow:visible!important;
+ filter:drop-shadow(0 3px 2px #68422b55)!important;
+}
+html[dir] body#tishTrack #trackingCard .progressItem .dot::after{
+ content:none!important;display:none!important;
+}
+html[dir] body#tishTrack #trackingCard .progressItem.on .dot{
+ color:#fff2df!important;background:transparent var(--tish-disc-ivory) center/100% 100% no-repeat!important;
+}
+html[dir] body#tishTrack #trackingCard .progressItem.on .dot::after{
+ content:""!important;display:block!important;position:absolute!important;inset:4px!important;z-index:-1!important;
+ pointer-events:none!important;background:var(--tish-disc-red-fill)!important;
+ -webkit-mask:none!important;mask:none!important;clip-path:var(--tish-disc-shape)!important;
+ border:0!important;border-radius:0!important;box-shadow:none!important;transform:none!important;
+}
+html[dir] body#tishTrack #trackingCard .progressItem.current .dot{
+ outline:2px solid #ad2117!important;outline-offset:2px!important;
+ border-radius:48% 52% 49% 51% / 52% 48% 53% 47%!important;
+}
+html[dir] body#tishTrack #trackingCard .progressItem .dot i{color:inherit!important;line-height:1!important}
+html[dir] body#tishTrack #trackingCard .progressItem.on>span:last-child{color:#30221a!important}
+html[dir] body#tishTrack #trackingCard .progressItem.current>span:last-child{font-weight:900!important;color:#a91f17!important}
+@media(max-width:350px){
+ html[dir] body#tishTrack #trackingCard .progressLine{--dot:43px}
+ html[dir] body#tishTrack #trackingCard .progressItem{font-size:11px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ html[dir] body#tishTrack #trackingCard .progressItem .dot,
+ html[dir] body.tish-paper :is(.tish-future-alert,.cm-unified-header-back,.cart-reference-back){transition:none!important}
+}
