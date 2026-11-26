@@ -41,13 +41,17 @@
     $paymentArrangement = $order->payment_arrangement instanceof \BackedEnum
         ? $order->payment_arrangement->value
         : (string) ($order->payment_arrangement ?? '');
+    $refundSummary = $invoice->refundSummary();
+    if ($refundSummary['state']) {
+        $paymentStatus = $refundSummary['state'];
+    }
     $paymentLabels = [
         'payment_pending' => ['في انتظار الدفع', 'Payment pending', 'pending'],
         'partially_paid' => ['مدفوع جزئيًا', 'Partially paid', 'partial'],
         'paid' => ['مدفوع', 'Paid', 'paid'],
         'pending_payment_verification' => ['بانتظار التحقق من الدفع', 'Payment under review', 'review'],
-        'partially_refunded' => ['مسترجع جزئيًا', 'Partially refunded', 'refunded'],
-        'refunded' => ['مسترجع', 'Refunded', 'refunded'],
+        'partially_refunded' => ['مستردة جزئيًا', 'Partially refunded', 'refunded'],
+        'refunded' => ['مستردة بالكامل', 'Fully refunded', 'refunded'],
     ];
     $paymentInfo = $paymentLabels[$paymentStatus] ?? ['الحالة غير متاحة', 'Payment status unavailable', 'unknown'];
     $paymentLabel = $paymentInfo[$english ? 1 : 0];
@@ -64,6 +68,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Tajawal:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-invoice-v2.css') }}?v=6">
+@include('customer-menu.partials.order-alert-toggle')
 </head>
 <body class="tish-customer-invoice">
 <div class="tish-invoice-toolbar" aria-label="{{ $english ? 'Invoice actions' : 'إجراءات الفاتورة' }}">
@@ -135,6 +140,12 @@
    <strong>{{ $english ? 'Tax:' : 'الضريبة:' }}</strong>
    <span dir="ltr">{{ $currency }} {{ number_format($tax, 2) }}</span>
   </div>
+  @if($refundSummary['refunded'] > 0)
+  <div class="tish-invoice-total-row"><strong>{{ $english ? 'Collected before refunds:' : 'التحصيل قبل الاسترداد:' }}</strong><span dir="ltr">{{ $currency }} {{ number_format($refundSummary['collected'], 2) }}</span></div>
+  <div class="tish-invoice-total-row"><strong>{{ $english ? 'Refunded:' : 'المسترد:' }}</strong><span dir="ltr">-{{ $currency }} {{ number_format($refundSummary['refunded'], 2) }}</span></div>
+  <div class="tish-invoice-total-row"><strong>{{ $english ? 'Net paid:' : 'صافي المدفوع:' }}</strong><span dir="ltr">{{ $currency }} {{ number_format($refundSummary['net'], 2) }}</span></div>
+  @endif
+  @if(!$invoice->isActive())<div class="tish-invoice-total-row"><strong>{{ $english ? 'Invoice cancelled' : 'الفاتورة ملغاة' }}</strong></div>@endif
   <div class="tish-invoice-grand">
    <strong>{{ $english ? 'Total:' : 'الإجمالي:' }}</strong>
    <span dir="ltr">{{ $currency }} {{ number_format($total, 2) }}</span>
