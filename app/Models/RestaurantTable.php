@@ -19,6 +19,15 @@ class RestaurantTable extends Model
         'sort_order', 'is_active', 'notes',
     ];
 
+    protected static function booted(): void
+    {
+        static::creating(function (self $table): void {
+            if (blank($table->qr_token)) {
+                $table->qr_token = \Illuminate\Support\Str::random(48);
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [

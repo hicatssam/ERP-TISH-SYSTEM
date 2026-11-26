@@ -262,8 +262,252 @@
         @keyframes tish-paper-open{from{opacity:0;transform:translateY(80px) rotate(-5deg) scale(.82)}to{opacity:1;transform:none}}
         @keyframes tish-steam{50%{opacity:.3;transform:translateY(-12px)}}
         @media(prefers-reduced-motion:reduce){.tish-status-sheet,.tish-status-overlay[data-state="preparing"] .tish-status-icon::before{animation:none}}
-    </style>
-<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-v2.css') }}?v=1">
+    
+/* TISH-STATUS-POPUP-PAPER-V1 */
+#tishStatusOverlay .tish-status-sheet {
+    width: min(100%, 400px) !important;
+    max-height: 88dvh;
+    overflow-y: auto;
+    padding: 35px 22px 25px !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    color: #252525 !important;
+    background: #f3eee6
+      url('/assets/tish-paper/paper/background.webp')
+      center / 540px auto repeat !important;
+    box-shadow: 9px 12px 0 #a91f17,
+      0 25px 65px #0005 !important;
+    clip-path: polygon(
+      0 1%, 12% 0, 30% 1%, 51% 0,
+      72% 1%, 90% 0, 100% 1%,
+      99% 98%, 83% 100%, 60% 99%,
+      37% 100%, 14% 99%, 0 100%
+    );
+}
+
+#tishStatusOverlay .tish-status-sheet::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 18px;
+    background: url('/assets/tish-paper/decor/red-torn-top.svg')
+      center / 100% 100% no-repeat;
+    pointer-events: none;
+}
+
+#tishStatusOverlay .tish-status-icon {
+    width: 88px;
+    height: 88px;
+    border: 3px solid #252525;
+    background: #a91f17;
+    box-shadow: 4px 5px 0 #25252526;
+}
+
+#tishStatusOverlay .tish-status-sheet h2 {
+    color: #a91f17 !important;
+    font-weight: 950;
+    font-size: clamp(24px, 6vw, 31px);
+    line-height: 1.4;
+    margin: 10px 0 !important;
+}
+
+#tishStatusOverlay .tish-status-sheet p {
+    line-height: 1.75;
+    font-weight: 650;
+    margin: 8px 0 12px;
+}
+
+#tishStatusOverlay .tish-status-items {
+    border-top: 1px dashed #866a53;
+    border-bottom: 1px dashed #866a53;
+    padding: 13px 4px !important;
+    margin: 18px 0 !important;
+    line-height: 1.8;
+}
+
+#tishStatusOverlay .tish-status-items span {
+    margin: 7px 0;
+}
+
+#tishStatusOverlay .tish-status-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 18px;
+}
+
+#tishStatusOverlay .tish-status-actions button {
+    min-width: 0;
+    min-height: 58px;
+    padding: 12px 8px;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent
+      url('/assets/tish-paper/paper/nav-active.webp')
+      center / 100% 100% no-repeat !important;
+    color: #fff9ed !important;
+    font-family: inherit;
+    font-weight: 900;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+#tishStatusOverlay .tish-status-actions button:last-child {
+    background: transparent
+      url('/assets/tish-paper/paper/category-ivory.webp')
+      center / 100% 100% no-repeat !important;
+    color: #252525 !important;
+}
+
+#tishStatusOverlay .tish-status-close {
+    position: absolute;
+    top: 17px;
+    left: 17px;
+    z-index: 3;
+    border: 2px solid #252525;
+    background: #f3eee6;
+    color: #252525;
+}
+
+#tishStatusOverlay .tish-status-actions button:focus-visible,
+#tishStatusOverlay .tish-status-close:focus-visible {
+    outline: 3px solid #a91f17;
+    outline-offset: 3px;
+}
+
+@media (max-width: 480px) {
+    #tishStatusOverlay {
+        padding: 14px;
+    }
+    #tishStatusOverlay .tish-status-sheet {
+        padding: 30px 18px 20px !important;
+    }
+    #tishStatusOverlay .tish-status-actions button {
+        font-size: 13px;
+        min-height: 56px;
+    }
+}
+
+
+/* TISH-TRACK-MINI-PAPER-V4 */
+#tishStatusMini.tish-status-mini{
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: calc(74px + env(safe-area-inset-bottom,0px));
+    z-index: 60;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+
+    min-height: 58px !important;
+    padding: 13px 18px 15px !important;
+
+    background: transparent url('/assets/tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat !important;
+    border: 0 !important;
+    outline: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    filter: none !important;
+    clip-path: none !important;
+
+    color: #2a241f !important;
+    text-decoration: none !important;
+}
+
+#tishStatusMini.tish-status-mini:hover,
+#tishStatusMini.tish-status-mini:active,
+#tishStatusMini.tish-status-mini:focus,
+#tishStatusMini.tish-status-mini:focus-visible{
+    background: transparent url('/assets/tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat !important;
+    border: 0 !important;
+    outline: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    color: #2a241f !important;
+}
+
+#tishStatusMini.tish-status-mini::before,
+#tishStatusMini.tish-status-mini::after{
+    content: none !important;
+    display: none !important;
+}
+
+#tishStatusMini.tish-status-mini *{
+    box-shadow: none !important;
+}
+
+#tishStatusMini.tish-status-mini > span{
+    color: #2a241f !important;
+    font-size: 12px !important;
+    line-height: 1.45 !important;
+    font-weight: 800 !important;
+}
+
+#tishStatusMini.tish-status-mini > span:first-child{
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+
+#tishStatusMini.tish-status-mini > span:last-child{
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+    font-weight: 900 !important;
+    text-decoration: none !important;
+}
+
+#tishStatusMini.tish-status-mini i,
+#tishStatusMini.tish-status-mini .fa-solid,
+#tishStatusMini.tish-status-mini .fa{
+    color: #b32020 !important;
+    font-size: 13px !important;
+}
+
+@media (max-width: 480px){
+    #tishStatusMini.tish-status-mini{
+        left: 10px;
+        right: 10px;
+        bottom: calc(72px + env(safe-area-inset-bottom,0px));
+        min-height: 56px !important;
+        padding: 12px 15px 14px !important;
+    }
+
+    #tishStatusMini.tish-status-mini > span{
+        font-size: 11px !important;
+    }
+}
+
+</style>
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-v2.css') }}?v=2">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-fonts-v1.css') }}?v=2">
+
+<style>
+/* TISH-STATUS-BRAND-LOGO-V1 */
+#tishStatusOverlay .tish-status-icon {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    width: 110px !important;
+    height: 110px !important;
+    overflow: visible !important;
+}
+#tishStatusOverlay .tish-status-icon img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 5px 5px rgba(0,0,0,.12));
+}
+</style>
+
 </head>
 <body class="tish-paper tish-paper-track">
     @if($appDownloadUrl || $websiteUrl)
@@ -360,8 +604,8 @@
                 @foreach($order->items as $item)
                     <div class="item">
                         <span>
-                            {{ $item->product_name }}
-                            <small>الكمية: {{ $item->quantity }}</small>
+                            {{ $item->product ? \App\Support\CustomerMenuLanguage::name($item->product->name, $item->product->name_ar) : $item->product_name }}
+                            <small>{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Quantity' : 'الكمية' }}: {{ number_format((float) $item->quantity, 0) }}</small>
                         </span>
                         <b>{{ number_format($item->line_total,2) }} {{ $menuCurrencySymbol }}</b>
                     </div>
@@ -389,13 +633,13 @@
     <div class="tish-status-overlay" id="tishStatusOverlay" role="dialog" aria-modal="true" aria-labelledby="tishPopupTitle" aria-hidden="true">
         <div class="tish-status-sheet">
             <button type="button" class="tish-status-close" id="tishPopupClose" aria-label="إغلاق">×</button>
-            <div class="tish-status-icon" aria-hidden="true">🍔</div>
+            <div class="tish-status-icon" aria-hidden="true"><img src="/assets/tish-paper/brand/tish-logo.svg" alt=""></div>
             <small>طلب #{{ $order->order_number }}</small>
             <h2 id="tishPopupTitle">حالة طلبك</h2>
             <p id="tishPopupDescription"></p>
             <div class="tish-status-items">
                 @foreach($order->items as $item)
-                    <span>{{ $item->quantity }} × {{ $item->product_name }}</span>
+                    <span>{{ $item->quantity }} × {{ $item->product ? \App\Support\CustomerMenuLanguage::name($item->product->name, $item->product->name_ar) : $item->product_name }}</span>
                 @endforeach
             </div>
             <p id="tishPopupEta"></p>
@@ -512,8 +756,8 @@
             const state = String(window.tishLatestTracking?.state || '').toLowerCase();
             if (['ready', 'completed', 'cancelled', 'canceled'].includes(state)) return;
             const remaining = Math.max(0, Math.ceil((tishDeadlineMs - (Date.now() - tishClockOffsetMs)) / 1000));
-            const label = remaining ? '⏱️ الوقت التقديري المتبقي: ' + tishTimeFormat(remaining)
-                : '⏱️ انتهى الوقت التقديري، ننتظر تحديث المطبخ';
+            const label = remaining ? '⏱️ ' + menuF('الوقت التقديري المتبقي: {time}', {time: tishTimeFormat(remaining)})
+                : '⏱️ ' + menuT('انتهى الوقت التقديري، ننتظر تحديث المطبخ');
             const mainEta = document.getElementById('eta');
             mainEta.textContent = label;
             mainEta.classList.add('show');
@@ -547,7 +791,7 @@
             const minutes = Number(data.estimated_ready_minutes);
             tishPopupEta.textContent = ['ready','completed','cancelled'].includes(state)
                 ? '' : (Number.isFinite(minutes) && minutes > 0
-                    ? '⏱️ الوقت التقديري: حوالي ' + minutes + ' دقيقة (غير مضمون)'
+                    ? '⏱️ ' + menuF('الوقت التقديري: حوالي {minutes} دقيقة (غير مضمون)', {minutes})
                     : 'بانتظار تحديث وقت التحضير من المطعم');
             if (tishDeadlineMs) renderTishCountdown();
             tishOverlay.classList.add('is-open');
@@ -625,13 +869,13 @@
 
         function refreshAlertsHint() {
             if (!alertsButton || !alertsHint) return;
-            alertsButton.textContent = alertsEnabled ? '🔔 إشعارات الطلب مفعّلة' : '🔔 تفعيل صوت وإشعارات الطلب';
+            alertsButton.textContent = menuT(alertsEnabled ? '🔔 إشعارات الطلب مفعّلة' : '🔔 تفعيل صوت وإشعارات الطلب');
             if (disablePushButton) disablePushButton.hidden = !pushSubscribed;
-            alertsHint.textContent = pushErrorMessage || (alertsEnabled
+            alertsHint.textContent = menuT(pushErrorMessage || (alertsEnabled
                 ? ('Notification' in window && Notification.permission === 'granted'
                     ? (pushSubscribed ? 'الصوت وإشعارات الخلفية مفعّلان على هذا الجهاز.' : 'الصوت مفعّل. إشعارات الخلفية تحتاج إعدادًا إضافيًا.')
                     : 'الصوت مفعّل. إشعارات الجهاز تحتاج إذن المتصفح.')
-                : 'فعّل التنبيهات لتسمع صوتًا عند تغيّر حالة الطلب.');
+                : 'فعّل التنبيهات لتسمع صوتًا عند تغيّر حالة الطلب.'));
         }
 
         alertsButton?.addEventListener('click', async () => {
@@ -686,7 +930,7 @@
                 lastPopupState = state;
                 window.tishLatestTracking = data;
                 tishMini.classList.add('is-visible');
-                document.getElementById('tishStatusMiniText').textContent = data.label || 'متابعة الطلب';
+                document.getElementById('tishStatusMiniText').textContent = menuT(data.label || 'متابعة الطلب');
                 return;
             }
             if (state === lastNotifiedState && message === lastNotifiedMessage) return;
@@ -726,7 +970,7 @@
         function updateTracking(data) {
             window.tishLatestTracking = data;
             setTishDeadline(data);
-            document.getElementById('tishStatusMiniText').textContent = data.label || 'متابعة الطلب';
+            document.getElementById('tishStatusMiniText').textContent = menuT(data.label || 'متابعة الطلب');
             // The backend already computes the correct step (1=received,
             // 2=accepted, 3=preparing, 4=ready/completed) from the real
             // kitchen ticket states — trust it directly instead of

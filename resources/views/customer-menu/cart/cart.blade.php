@@ -16,6 +16,218 @@
 @include('customer-menu.partials.pwa-head')
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-drive-ui-fixes-v1.css') }}?v=1">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-ux-v2.css') }}?v=2">
+
+
+
+
+<style>
+/* TISH-CART-EXACT-PAPER-V1 */
+
+/* Full-sized paper card */
+html body #cartItems {
+  display:grid !important;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),280px)) !important;
+  justify-content:center !important;
+  gap:22px !important;
+}
+
+html body #cartItems .cart-row {
+  position:relative !important;
+  box-sizing:border-box !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  width:280px !important;
+  max-width:100% !important;
+  min-height:460px !important;
+  padding:24px 22px 48px !important;
+  margin:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  overflow:visible !important;
+  background:transparent url('/assets/tish-paper/paper/category-ivory.webp')
+    center/100% 100% no-repeat !important;
+}
+
+html body #cartItems .cart-row::before {
+  content:none !important;
+}
+
+html body #cartItems .cart-thumb {
+  display:grid !important;
+  place-items:center !important;
+  flex:0 0 145px !important;
+  width:145px !important;
+  height:145px !important;
+  min-width:145px !important;
+  min-height:145px !important;
+  margin:12px auto 18px !important;
+  padding:10px !important;
+  border:0 !important;
+  background:transparent url('/assets/tish-paper/paper/product-disc.webp')
+    center/100% 100% no-repeat !important;
+}
+
+html body #cartItems .cart-thumb img {
+  width:100% !important;
+  height:100% !important;
+  object-fit:contain !important;
+}
+
+html body #cartItems .row-copy {
+  width:100% !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  gap:18px !important;
+  text-align:center !important;
+  margin:0 !important;
+  padding:0 !important;
+  background:none !important;
+}
+
+html body #cartItems .row-copy > strong {
+  font-size:20px !important;
+  font-weight:900 !important;
+  line-height:1.25 !important;
+  text-align:center !important;
+}
+
+html body #cartItems .tish-cart-line-price {
+  display:grid !important;
+  place-items:center !important;
+  width:175px !important;
+  min-height:52px !important;
+  margin:0 auto !important;
+  padding:8px !important;
+  color:#fffaf1 !important;
+  font-size:21px !important;
+  font-weight:900 !important;
+  background:transparent url('/assets/tish-paper/paper/nav-active.webp')
+    center/100% 100% no-repeat !important;
+}
+
+/* A real control row with no transformed parent */
+html body #cartItems .row-actions {
+  position:static !important;
+  display:flex !important;
+  flex-direction:row !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:14px !important;
+  width:100% !important;
+  margin:auto 0 0 !important;
+  padding:0 !important;
+  transform:none !important;
+  filter:none !important;
+  perspective:none !important;
+  background:none !important;
+}
+
+/* Remove the inherited oval appearance completely */
+html body #cartItems .row-actions button[data-inc],
+html body #cartItems .row-actions button[data-dec],
+html body #cartItems button[data-remove] {
+  position:relative;
+  isolation:isolate !important;
+  display:grid !important;
+  place-items:center !important;
+  flex:0 0 55px !important;
+  width:55px !important;
+  height:55px !important;
+  min-width:55px !important;
+  min-height:55px !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+  clip-path:none !important;
+  background:none !important;
+  transform:none !important;
+  overflow:visible !important;
+  font:900 29px/1 Arial,sans-serif !important;
+  color:#aa211b !important;
+  cursor:pointer;
+}
+
+/* Actual torn paper shapes, independent of button borders */
+html body #cartItems .row-actions button[data-inc]::before,
+html body #cartItems .row-actions button[data-dec]::before,
+html body #cartItems button[data-remove]::before {
+  content:"" !important;
+  position:absolute !important;
+  inset:0 !important;
+  z-index:-1 !important;
+  display:block !important;
+  width:100% !important;
+  height:100% !important;
+  border-radius:0 !important;
+  background:#f5e3cb url('/assets/tish-paper/paper/category-ivory.webp')
+    center/100% 100% no-repeat !important;
+  clip-path:polygon(0 6%,19% 2%,37% 5%,56% 0,77% 4%,100% 2%,97% 30%,100% 54%,96% 82%,100% 96%,75% 99%,53% 95%,31% 100%,0 96%,4% 68%,0 39%) !important;
+  filter:drop-shadow(0 3px 3px #46251d38);
+}
+
+/* Red paper plus and delete */
+html body #cartItems .row-actions button[data-inc],
+html body #cartItems button[data-remove] {
+  color:#fffaf1 !important;
+}
+
+html body #cartItems .row-actions button[data-inc]::before,
+html body #cartItems button[data-remove]::before {
+  background:#af2019 url('/assets/tish-paper/paper/nav-active.webp')
+    center/100% 100% no-repeat !important;
+}
+
+/* Quantity */
+html body #cartItems .row-actions b,
+html body #cartItems .row-actions .tish-cart-qty {
+  display:grid !important;
+  place-items:center !important;
+  flex:0 0 32px !important;
+  min-width:32px !important;
+  height:55px !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:none !important;
+  box-shadow:none !important;
+  color:#382019 !important;
+  font-size:27px !important;
+  font-weight:900 !important;
+}
+
+/* Delete at upper left; supports both old and new HTML */
+html body #cartItems button[data-remove] {
+  position:absolute !important;
+  inset:auto !important;
+  top:9px !important;
+  left:9px !important;
+  z-index:10 !important;
+}
+
+html body #cartItems button[data-remove] i {
+  color:#fffaf1 !important;
+  font-family:"Font Awesome 6 Free" !important;
+  font-weight:900 !important;
+  font-size:20px !important;
+}
+
+html body #cartItems button:focus-visible {
+  outline:3px solid #af2019 !important;
+  outline-offset:4px !important;
+}
+
+@media(max-width:600px) {
+  html body #cartItems .cart-row {
+    min-height:430px !important;
+  }
+}
+</style>
+
 </head>
 <body class="crisp-customer-menu tish-paper tish-cart-page">
 <div class="app crisp-menu-app">
@@ -96,5 +308,8 @@ document.getElementById('checkoutStart').addEventListener('click', () => {
 
 renderCart();
 </script>
+
+
+
 </body>
 </html>

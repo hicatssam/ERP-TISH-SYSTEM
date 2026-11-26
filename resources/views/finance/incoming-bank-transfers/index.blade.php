@@ -100,6 +100,24 @@
     </div>
 @endif
 
+<div class="card" style="margin-bottom:1rem;border-inline-start:4px solid var(--gold);padding:1rem">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+        <div>
+            <strong>المبيعات البنكية والإلكترونية: {{ number_format($bankSalesCount) }} دفعة</strong>
+            <p class="text-muted" style="margin:.3rem 0 0">
+                هذه المدفوعات موجودة في سجل المبيعات البنكية، وهي ليست حوالات واردة مستقلة.
+                لا تتم إضافتها تلقائيًا إلى إجماليات الحوالات الواردة، حتى لا تُحتسب الأموال مرتين.
+            </p>
+            @if($unassignedBankSalesCount > 0)
+                <p style="margin:.4rem 0 0;color:var(--danger, #b91c1c)">
+                    {{ number_format($unassignedBankSalesCount) }} دفعة بدون حساب استلام محدد؛ يلزم فحص إثبات الدفع قبل ربطها بحساب فعلي.
+                </p>
+            @endif
+        </div>
+        <a class="btn btn-ghost btn-sm" href="{{ $bankSalesLink }}">عرض المبيعات البنكية المطابقة للفترة والفرع</a>
+    </div>
+</div>
+
 <div class="card incoming-filter-card incoming-filter-shell">
     <div class="incoming-filter-head">
         <div class="incoming-filter-head-copy">

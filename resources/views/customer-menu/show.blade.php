@@ -287,6 +287,58 @@ body.tish-paper.reference-home #bannerTrack > .banner-slide[data-banner-active]{
  .reference-home .cat.active{transform:none}
 }
 
+
+
+
+
+
+
+
+/* TISH cinematic intro: seamless paper surroundings */
+@media (min-width: 921px) {
+  body.tish-paper #intro.tish-reel-intro {
+    background:
+      url('{{ asset('assets/tish-paper/paper/background.webp') }}')
+      center center / cover no-repeat !important;
+  }
+
+  body.tish-paper #intro.tish-reel-intro .intro-reel {
+    object-fit: contain !important;
+    object-position: center center !important;
+  }
+}
+
+/* TISH unified desktop intro */
+@media (min-width: 921px) {
+  body.tish-paper #intro.tish-reel-intro {
+    position: fixed !important;
+    inset: 0 !important;
+    left: 50% !important;
+    right: auto !important;
+    width: 920px !important;
+    max-width: 100vw !important;
+    height: 100dvh !important;
+    margin: 0 !important;
+    transform: translateX(-50%) !important;
+    background: #f5e4cd
+      url('{{ asset('assets/tish-paper/paper/background.webp') }}')
+      center top / 540px auto repeat !important;
+    box-shadow: none !important;
+  }
+
+  body.tish-paper #intro.tish-reel-intro .intro-reel {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    object-position: center !important;
+  }
+
+  /* Hide the underlying menu during the intro */
+  body.tish-paper:has(#intro:not(.hide):not(.tish-booth-opening)) > .app {
+    visibility: hidden !important;
+  }
+}
+
 </style>
 <style>
 /* Prevent an already-dismissed intro from flashing during navigation. */
@@ -391,6 +443,258 @@ body.tish-paper #intro.tish-reel-intro .intro-enter:focus-visible{
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-drive-ui-fixes-v1.css') }}?v=1">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-drive-home-hero-v1.css') }}?v=3">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-menu-responsive-polish-v1.css') }}?v=4">
+
+<style>
+/* TISH-HOME-SEARCH-PAPER-UX-V1 */
+
+/* Search container */
+body.tish-paper .search {
+    position: relative !important;
+    min-width: 0 !important;
+    background: transparent !important;
+    border: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+}
+
+/* Paper search field */
+body.tish-paper .search input {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-height: 55px !important;
+    height: 55px !important;
+
+    padding: 0 52px 0 17px !important;
+
+    border: 0 !important;
+    outline: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+
+    color: #39291f !important;
+    font-size: 14px !important;
+    line-height: normal !important;
+    text-align: start !important;
+    background-color: transparent !important;
+
+    transition: filter .2s ease !important;
+}
+
+body.tish-paper .search input::placeholder {
+    color: #806d59 !important;
+    opacity: 1 !important;
+}
+
+body.tish-paper .search input:focus,
+body.tish-paper .search input:focus-visible {
+    outline: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    filter: brightness(1.025);
+}
+
+/* Center direct search icons or controls */
+body.tish-paper .search > :is(
+    .search-icon,
+    .search-btn,
+    button[type="submit"],
+    i.fa-search,
+    i.fa-magnifying-glass,
+    svg
+) {
+    position: absolute !important;
+    right: 13px !important;
+    left: auto !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    margin: 0 !important;
+    display: grid !important;
+    place-items: center !important;
+    color: #49382a !important;
+}
+
+/* Arabic layout */
+html[dir="rtl"] body.tish-paper .search input {
+    padding: 0 17px 0 52px !important;
+}
+
+html[dir="rtl"] body.tish-paper .search > :is(
+    .search-icon,
+    .search-btn,
+    button[type="submit"],
+    i.fa-search,
+    i.fa-magnifying-glass,
+    svg
+) {
+    left: 13px !important;
+    right: auto !important;
+}
+
+/* Keyboard accessibility */
+body.tish-paper .search:focus-within {
+    filter: drop-shadow(0 2px 3px rgba(93,65,38,.12));
+}
+
+@media (hover:hover) and (pointer:fine) {
+    body.tish-paper .search:hover input {
+        filter: brightness(1.035);
+    }
+}
+
+@media (max-width:480px) {
+    body.tish-paper .search input {
+        font-size: 13px !important;
+        min-height: 52px !important;
+        height: 52px !important;
+    }
+}
+</style>
+
+
+
+
+
+
+
+
+<style>
+/* TISH-SEARCH-ORIGINAL-PAPER-V4 */
+
+body.tish-paper .tools .search {
+    position: relative !important;
+    isolation: isolate !important;
+    display: flex !important;
+    align-items: center !important;
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+    height: 54px !important;
+    background: none !important;
+    border: 0 !important;
+    outline: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    filter: none !important;
+    clip-path: none !important;
+}
+
+/* Original TISH paper, cropped before the dark bottom edge */
+body.tish-paper .tools .search::before {
+    content: "" !important;
+    display: block !important;
+    position: absolute !important;
+    inset: 0 !important;
+    z-index: 0 !important;
+    pointer-events: none !important;
+    opacity: 1 !important;
+
+    background-image:
+        url('/assets/tish-paper/paper/category-ivory.webp') !important;
+    background-repeat: no-repeat !important;
+    background-position: center top !important;
+    background-size: 100% 175% !important;
+
+    clip-path: polygon(
+        0 6%, 8% 3%, 18% 5%, 29% 2%,
+        42% 4%, 55% 1%, 68% 4%,
+        81% 2%, 94% 4%, 100% 6%,
+        100% 94%, 94% 96%, 84% 94%,
+        74% 98%, 62% 95%, 49% 98%,
+        37% 95%, 25% 98%, 14% 95%,
+        5% 97%, 0 94%
+    ) !important;
+
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+body.tish-paper .tools .search::after {
+    content: none !important;
+    display: none !important;
+}
+
+body.tish-paper .tools .search input,
+body.tish-paper.tish-paper-products .tools .search input,
+body.tish-paper.reference-home .tools .search input {
+    position: relative !important;
+    z-index: 1 !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    height: 54px !important;
+    min-height: 54px !important;
+    margin: 0 !important;
+    padding: 0 53px 0 20px !important;
+
+    background: none !important;
+    background-image: none !important;
+    border: 0 !important;
+    outline: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    filter: none !important;
+
+    color: #3d2b20 !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    text-align: start !important;
+    direction: ltr;
+}
+
+body.tish-paper .tools .search input:focus,
+body.tish-paper .tools .search input:focus-visible {
+    outline: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+body.tish-paper .tools .search input::placeholder {
+    color: #806b55 !important;
+    opacity: 1 !important;
+}
+
+body.tish-paper .tools .search > i {
+    position: absolute !important;
+    z-index: 2 !important;
+    top: 50% !important;
+    right: 19px !important;
+    left: auto !important;
+    transform: translateY(-50%) !important;
+    translate: none !important;
+    margin: 0 !important;
+    font-size: 19px !important;
+    line-height: 1 !important;
+    pointer-events: none !important;
+    color: #35271e !important;
+}
+
+html[dir="rtl"] body.tish-paper .tools .search input {
+    direction: rtl !important;
+    padding: 0 20px 0 53px !important;
+}
+
+html[dir="rtl"] body.tish-paper .tools .search > i {
+    left: 19px !important;
+    right: auto !important;
+}
+
+body.tish-paper .tools .search input::-webkit-search-cancel-button,
+body.tish-paper .tools .search input::-webkit-search-decoration {
+    display: none;
+    -webkit-appearance: none;
+}
+
+body.tish-paper .tools .search:focus-within::before {
+    filter: brightness(1.035);
+}
+
+@media (max-width:480px) {
+    body.tish-paper .tools .search,
+    body.tish-paper .tools .search input {
+        height: 52px !important;
+        min-height: 52px !important;
+    }
+}
+</style>
+
 </head>
 <body class="crisp-customer-menu reference-home tish-paper">
 @php
@@ -399,6 +703,23 @@ body.tish-paper #intro.tish-reel-intro .intro-enter:focus-visible{
 @include('customer-menu.partials.brand-watermark')
 
 @if($introMode !== 'off')
+
+<!-- TISH-INTRO-24H-FIX-V2 -->
+<script>
+(function () {
+    const key = 'tish_intro_last_shown_v1';
+    const interval = 86400000;
+    try {
+        const last = Number(localStorage.getItem(key) || 0);
+        if (last > 0 && Date.now() >= last &&
+            Date.now() - last < interval) {
+            document.documentElement.classList.add(
+                'cm-skip-menu-intro'
+            );
+        }
+    } catch (e) {}
+})();
+</script>
 <div id="intro" class="intro tish-reel-intro" role="dialog" aria-modal="true" aria-label="{{ $introTitle }}" data-mode="{{ $introMode }}">
  <div class="tish-booth-panel tish-booth-panel--left" aria-hidden="true"></div>
  <div class="tish-booth-panel tish-booth-panel--right" aria-hidden="true"></div>
@@ -408,6 +729,14 @@ body.tish-paper #intro.tish-reel-intro .intro-enter:focus-visible{
       && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
       const reel = document.getElementById('introReel');
       reel.src = reel.dataset.src;
+
+      try {
+          localStorage.setItem(
+              'tish_intro_last_shown_v1',
+              String(Date.now())
+          );
+      } catch (e) {}
+
   }
  </script>
  <div class="intro-box">

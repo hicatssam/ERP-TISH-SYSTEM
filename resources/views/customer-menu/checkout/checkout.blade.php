@@ -1,3 +1,6 @@
+
+
+
 @php
     $menuCurrencySymbol = app(\App\Services\PrintThemeService::class)->settings()['currency_symbol'];
 @endphp
@@ -10,7 +13,7 @@
 <title>إتمام الطلب - {{ $branding['name'] ?? config('app.name') }}</title>
 @if(!empty($branding['favicon']))<link rel="icon" href="{{ $branding['favicon'] }}">@endif
 @include('customer-menu.partials.styles')
-<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-checkout-paper.css') }}?v=4">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-checkout-paper.css') }}?v=5">
 @include('customer-menu.partials.pwa-head')
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-drive-ui-fixes-v1.css') }}?v=1">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-ux-v2.css') }}?v=2">
@@ -20,6 +23,64 @@
 .table-card.table-once-locked:not(.selected){opacity:.43;pointer-events:none}
 .table-card.selected.table-once-locked{outline:3px solid #c7102b;outline-offset:2px}
 </style>
+
+
+<style>
+/* TISH-VEHICLE-EXACT-PAPER-V3 - PATH FIX */
+body.tish-paper.tish-checkout-page #checkoutForm #vehicleField[hidden] {
+    display: none !important;
+}
+
+body.tish-paper.tish-checkout-page #checkoutForm #vehicleField input {
+    display: block !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 60px !important;
+    height: 60px !important;
+    padding: 12px 17px 15px !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    appearance: none !important;
+
+    background-color: transparent !important;
+    background-image: url('/assets/tish-paper/paper/category-ivory.webp') !important;
+    background-position: center !important;
+    background-size: 100% 100% !important;
+    background-repeat: no-repeat !important;
+
+    color: #252525 !important;
+    font-family: inherit !important;
+    font-size: 16px !important;
+    font-weight: 800 !important;
+}
+
+body.tish-paper.tish-checkout-page #checkoutForm #vehicleField input::placeholder {
+    color: #71665d !important;
+    opacity: 1 !important;
+}
+
+body.tish-paper.tish-checkout-page #checkoutForm #vehicleField input:focus {
+    outline: 2px solid #a91f17 !important;
+    outline-offset: 2px;
+}
+</style>
+
+
+<style>
+/* TISH-VEHICLE-NO-RED-BOX-V1 */
+body.tish-paper.tish-checkout-page #checkoutForm #vehicleField input,
+body.tish-paper.tish-checkout-page #checkoutForm #vehicleField input:focus,
+body.tish-paper.tish-checkout-page #checkoutForm #vehicleField input:focus-visible,
+body.tish-paper.tish-checkout-page #checkoutForm #vehicleField input:invalid {
+    border: 0 !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+</style>
+
 </head>
 <body class="crisp-customer-menu tish-paper tish-checkout-page">
 <div class="app crisp-menu-app">
@@ -28,6 +89,7 @@
 <main class="menu-area">
  <div class="shell">
   <form id="checkoutForm" enctype="multipart/form-data">
+   <input type="hidden" name="qr_token" value="{{ $tableQrToken ?? '' }}">
    <section class="checkout-sheet checkout-details" aria-labelledby="checkoutDetailsTitle">
    <h2 id="checkoutDetailsTitle">بيانات الطلب</h2>
    <div class="checkout-grid">
@@ -46,7 +108,7 @@
            $serviceValue = $option['value'] ?? $option;
        @endphp
        <button class="checkout-paper-choice" type="button" data-service-choice="{{ $serviceValue }}" aria-pressed="false">
-        <i class="fa-solid {{ match($serviceValue) { 'dine_in' => 'fa-utensils', 'delivery' => 'fa-motorcycle', default => 'fa-bag-shopping' } }}" aria-hidden="true"></i>
+        <i class="fa-solid {{ match($serviceValue) { 'dine_in' => 'fa-utensils', 'delivery' => 'fa-motorcycle', 'outdoor' => 'fa-car-side', default => 'fa-bag-shopping' } }}" aria-hidden="true"></i>
         <span>{{ $option['label'] ?? $option }}</span>
        </button>
       @endforeach
@@ -55,12 +117,19 @@
     <label>الاسم<input name="name" autocomplete="name" required maxlength="120"></label>
     <label>رقم الجوال<input name="phone" type="tel" autocomplete="tel" required maxlength="20" inputmode="tel" dir="ltr"></label>
     <div id="tableField" class="full" role="group" aria-labelledby="checkoutTableTitle" hidden>
-     <span id="checkoutTableTitle">الطاولة</span>
+     {{-- TISH-QR-CHECKOUT-LOCK-V2 --}}
+      <span id="checkoutTableTitle">
+       @if($selectedTable ?? null)
+        طاولتك: {{ $selectedTable['name'] }}
+       @else
+        الطلب من الطاولة يتطلب مسح QR
+       @endif
+      </span>
      <div class="table-legend">
       <span><span class="dot" style="background:#22a35c"></span> متاحة</span>
       <span><span class="dot" style="background:#d64545"></span> مشغولة</span>
      </div>
-     <div class="table-grid" id="tableGrid">
+     <div class="table-grid" id="tableGrid" style="display:none!important">
       @forelse(($tables ?? []) as $table)
        @php
            $isAvailable = (bool) ($table['available'] ?? true);
@@ -81,6 +150,19 @@
      <p id="tableOneTimeHint" class="table-once-hint" role="status" hidden></p>
     </div>
     <label class="full" id="addressField" hidden>عنوان التوصيل<textarea name="address" autocomplete="street-address" maxlength="500"></textarea></label>
+    <div class="full" id="vehicleField" hidden>
+     <div class="checkout-grid">
+      <label>نوع السيارة
+       <input name="car_type" maxlength="80" placeholder="مثال: Toyota Corolla">
+      </label>
+      <label>لون السيارة
+       <input name="car_color" maxlength="80" placeholder="مثال: أسود">
+      </label>
+      <label class="full">مكان الوقوف
+       <input name="parking_spot" maxlength="120" placeholder="مثال: موقف 3">
+      </label>
+     </div>
+    </div>
     <label class="full">ملاحظات الطلب<textarea name="notes" maxlength="700"></textarea></label>
    </div>
 
@@ -173,46 +255,33 @@ function renderSummary() {
     document.getElementById('summaryTotal').textContent = CM.money(CM.cartTotal());
 }
 
-const tableVisitKey = 'tish_customer_selected_table_' + @json($location->code);
-let lockedTableId = '';
-try { lockedTableId = sessionStorage.getItem(tableVisitKey) || ''; } catch (_) {}
+// TISH-QR-ONLY-JS-V3
+// Only the server-resolved QR table may be used.
+const qrTable = @json($selectedTable ?? null);
+
 function showLockedTable() {
     const hint = document.getElementById('tableOneTimeHint');
-    const selected = Array.from(document.querySelectorAll('.table-card'))
-        .find(item => String(item.dataset.tableId) === lockedTableId);
-    const valid = !!selected && !selected.disabled;
-    document.querySelectorAll('.table-card').forEach(card => {
-        card.classList.toggle('table-once-locked', valid);
-        if (valid) card.disabled = String(card.dataset.tableId) !== lockedTableId;
-    });
-    if (valid) {
-        const service = document.getElementById('serviceType');
-        if (Array.from(service.options).some(option => option.value === 'dine_in')) {
-            service.value = 'dine_in';
-            selectCheckoutTable(selected);
-        }
-        hint.textContent = 'تم تثبيت ' + selected.textContent.replace(/\s+/g, ' ').trim()
-            + ' لهذا الطلب. إذا كان الرقم غير صحيح، اطلب التصحيح من الكاشير.';
-        hint.hidden = false;
-    } else {
-        if (lockedTableId) {
-            lockedTableId = '';
-            try { sessionStorage.removeItem(tableVisitKey); } catch (_) {}
-        }
-        hint.hidden = true;
-    }
+    if (!hint) return;
+
+    hint.hidden = !qrTable?.id;
+    hint.textContent = qrTable?.id
+        ? 'الطاولة محددة تلقائياً: ' + qrTable.name
+        : '';
 }
+
 function preselectQrTable() {
-    const table = CM.selectedTable();
     const service = document.getElementById('serviceType');
-    if (!table?.id || !Array.from(service.options).some(option => option.value === 'dine_in')) return;
-    const card = Array.from(document.querySelectorAll('.table-card'))
-        .find(item => String(item.dataset.tableId) === String(table.id) && !item.disabled);
-    if (!card) return;
-    if (!lockedTableId) {
-        lockedTableId = String(card.dataset.tableId);
-        try { sessionStorage.setItem(tableVisitKey, lockedTableId); } catch (_) {}
+    const tableInput = document.getElementById('tableIdInput');
+
+    tableInput.value = '';
+    if (!qrTable?.id) return;
+
+    if (![...service.options].some(option => option.value === 'dine_in')) {
+        return;
     }
+
+    tableInput.value = String(qrTable.id);
+    service.value = 'dine_in';
     showLockedTable();
 }
 
@@ -220,35 +289,32 @@ function serviceFields() {
     const value = document.getElementById('serviceType').value;
     const table = document.getElementById('tableField');
     const address = document.getElementById('addressField');
+    const vehicle = document.getElementById('vehicleField');
+    const tableInput = document.getElementById('tableIdInput');
+
     table.hidden = value !== 'dine_in';
-    document.getElementById('tableIdInput').disabled = table.hidden;
+    tableInput.disabled = value !== 'dine_in';
+
+    if (value === 'dine_in') {
+        tableInput.value = qrTable?.id ? String(qrTable.id) : '';
+    }
+
+    vehicle.hidden = value !== 'outdoor';
+    vehicle.querySelectorAll('input').forEach(input => {
+        input.disabled = vehicle.hidden;
+        input.required = !vehicle.hidden;
+    });
+
     address.hidden = value !== 'delivery';
     address.querySelector('textarea').disabled = address.hidden;
+
     document.querySelectorAll('[data-service-choice]').forEach(button => {
-        button.setAttribute('aria-pressed', String(button.dataset.serviceChoice === value));
+        button.setAttribute(
+            'aria-pressed',
+            String(button.dataset.serviceChoice === value)
+        );
     });
 }
-
-function selectCheckoutTable(card) {
-    document.querySelectorAll('.table-card').forEach(button => {
-        const selected = button === card;
-        button.classList.toggle('selected', selected);
-        button.setAttribute('aria-pressed', String(selected));
-    });
-    document.getElementById('tableIdInput').value = card.dataset.tableId;
-}
-
-document.getElementById('tableGrid').addEventListener('click', e => {
-    const card = e.target.closest('.table-card');
-    if (!card || card.disabled) return;
-    if (lockedTableId && String(card.dataset.tableId) !== lockedTableId) return;
-    selectCheckoutTable(card);
-    if (!lockedTableId) {
-        lockedTableId = String(card.dataset.tableId);
-        try { sessionStorage.setItem(tableVisitKey, lockedTableId); } catch (_) {}
-    }
-    showLockedTable();
-});
 
 async function loadPayments() {
     try {

@@ -11,7 +11,7 @@
 
     $labels = [
         'draft' => 'مسودة',
-        'pending_factory_review' => 'بانتظار مراجعة المصنع',
+        'pending_factory_review' => 'بانتظار مراجعة فرع التوريد',
         'accepted' => 'مقبول بالكامل',
         'partially_accepted' => 'مقبول جزئياً',
         'rejected' => 'مرفوض',
@@ -92,7 +92,7 @@
                         <td>{{ $stockRequest->branch?->name ?? '—' }}</td>
                     </tr>
                     <tr>
-                        <td style="color:var(--text-muted)">المصنع</td>
+                        <td style="color:var(--text-muted)">فرع التوريد</td>
                         <td>{{ $stockRequest->factory?->name ?? '—' }}</td>
                     </tr>
                     <tr>
@@ -281,7 +281,7 @@
 @elseif($statusValue === 'pending_factory_review')
     <div class="card" style="margin-top:1.25rem">
         <div class="card-body">
-            الطلب بانتظار مراجعة المصنع، ولا يملك المستخدم الحالي صلاحية اتخاذ القرار.
+            الطلب بانتظار مراجعة فرع التوريد، ولا يملك المستخدم الحالي صلاحية اتخاذ القرار.
         </div>
     </div>
 @endif

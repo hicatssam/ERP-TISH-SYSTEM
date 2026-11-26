@@ -127,6 +127,30 @@
                 @if($product->description)
                 <tr><td style="color:var(--text-muted)">الوصف</td><td>{{ $product->description }}</td></tr>
                 @endif
+
+                {{-- TISH-DESCRIPTION-EN-SHOW-V2 --}}
+                @if(filled($product->description_en))
+                <tr>
+                    <td style="color:var(--text-muted)">الوصف بالإنجليزية</td>
+                    <td dir="ltr">{{ $product->description_en }}</td>
+                </tr>
+                @endif
+
+
+                {{-- TISH-PRODUCT-INGREDIENTS-DETAILS-V1 --}}
+                @if(filled($product->ingredients_ar))
+                <tr>
+                    <td style="color:var(--text-muted)">المكونات بالعربية</td>
+                    <td style="white-space:pre-wrap">{{ $product->ingredients_ar }}</td>
+                </tr>
+                @endif
+                @if(filled($product->ingredients_en))
+                <tr>
+                    <td style="color:var(--text-muted)">المكونات بالإنجليزية</td>
+                    <td dir="ltr" style="text-align:start;white-space:pre-wrap">{{ $product->ingredients_en }}</td>
+                </tr>
+                @endif
+
                 <tr>
                     <td style="color:var(--text-muted)">الحالة</td>
                     <td><span class="badge {{ $product->is_active ? 'badge-active' : 'badge-inactive' }}">{{ $product->is_active ? 'نشط' : 'معطل' }}</span></td>

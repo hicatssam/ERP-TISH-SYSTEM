@@ -24,6 +24,151 @@
 @media(prefers-reduced-motion:reduce){.crisp-customer-menu .product.cm-card-motion{animation:none!important}.crisp-customer-menu .cat{transition:none!important}}
 </style>
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-drive-ui-fixes-v1.css') }}?v=1">
+
+
+
+
+
+
+
+<style>
+/* TISH-SEARCH-ORIGINAL-PAPER-V4 */
+
+body.tish-paper .tools .search {
+    position: relative !important;
+    isolation: isolate !important;
+    display: flex !important;
+    align-items: center !important;
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+    height: 54px !important;
+    background: none !important;
+    border: 0 !important;
+    outline: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    filter: none !important;
+    clip-path: none !important;
+}
+
+/* Original TISH paper, cropped before the dark bottom edge */
+body.tish-paper .tools .search::before {
+    content: "" !important;
+    display: block !important;
+    position: absolute !important;
+    inset: 0 !important;
+    z-index: 0 !important;
+    pointer-events: none !important;
+    opacity: 1 !important;
+
+    background-image:
+        url('/assets/tish-paper/paper/category-ivory.webp') !important;
+    background-repeat: no-repeat !important;
+    background-position: center top !important;
+    background-size: 100% 175% !important;
+
+    clip-path: polygon(
+        0 6%, 8% 3%, 18% 5%, 29% 2%,
+        42% 4%, 55% 1%, 68% 4%,
+        81% 2%, 94% 4%, 100% 6%,
+        100% 94%, 94% 96%, 84% 94%,
+        74% 98%, 62% 95%, 49% 98%,
+        37% 95%, 25% 98%, 14% 95%,
+        5% 97%, 0 94%
+    ) !important;
+
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+body.tish-paper .tools .search::after {
+    content: none !important;
+    display: none !important;
+}
+
+body.tish-paper .tools .search input,
+body.tish-paper.tish-paper-products .tools .search input,
+body.tish-paper.reference-home .tools .search input {
+    position: relative !important;
+    z-index: 1 !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    height: 54px !important;
+    min-height: 54px !important;
+    margin: 0 !important;
+    padding: 0 53px 0 20px !important;
+
+    background: none !important;
+    background-image: none !important;
+    border: 0 !important;
+    outline: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    filter: none !important;
+
+    color: #3d2b20 !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    text-align: start !important;
+    direction: ltr;
+}
+
+body.tish-paper .tools .search input:focus,
+body.tish-paper .tools .search input:focus-visible {
+    outline: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+body.tish-paper .tools .search input::placeholder {
+    color: #806b55 !important;
+    opacity: 1 !important;
+}
+
+body.tish-paper .tools .search > i {
+    position: absolute !important;
+    z-index: 2 !important;
+    top: 50% !important;
+    right: 19px !important;
+    left: auto !important;
+    transform: translateY(-50%) !important;
+    translate: none !important;
+    margin: 0 !important;
+    font-size: 19px !important;
+    line-height: 1 !important;
+    pointer-events: none !important;
+    color: #35271e !important;
+}
+
+html[dir="rtl"] body.tish-paper .tools .search input {
+    direction: rtl !important;
+    padding: 0 20px 0 53px !important;
+}
+
+html[dir="rtl"] body.tish-paper .tools .search > i {
+    left: 19px !important;
+    right: auto !important;
+}
+
+body.tish-paper .tools .search input::-webkit-search-cancel-button,
+body.tish-paper .tools .search input::-webkit-search-decoration {
+    display: none;
+    -webkit-appearance: none;
+}
+
+body.tish-paper .tools .search:focus-within::before {
+    filter: brightness(1.035);
+}
+
+@media (max-width:480px) {
+    body.tish-paper .tools .search,
+    body.tish-paper .tools .search input {
+        height: 52px !important;
+        min-height: 52px !important;
+    }
+}
+</style>
+
 </head>
 <body class="crisp-customer-menu tish-paper tish-paper-products">
 @include('customer-menu.partials.brand-watermark')

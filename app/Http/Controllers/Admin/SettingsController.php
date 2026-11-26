@@ -323,6 +323,7 @@ class SettingsController extends Controller
             'theme_font_family' => [
                 'nullable',
                 Rule::in([
+                    'TISH Noto',
                     'Cairo',
                     'Tajawal',
                     'Arial',

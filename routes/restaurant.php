@@ -200,6 +200,16 @@ Route::middleware([
                     ->name('store')
                     ->middleware('can:restaurant_tables.manage');
 
+                Route::get('/{restaurantTable}/qr/print',
+                    [\App\Http\Controllers\Restaurant\RestaurantTableQrController::class, 'print'])
+                    ->name('qr.print')
+                    ->middleware('can:restaurant_tables.manage');
+
+                Route::get('/{restaurantTable}/qr/png',
+                    [\App\Http\Controllers\Restaurant\RestaurantTableQrController::class, 'png'])
+                    ->name('qr.png')
+                    ->middleware('can:restaurant_tables.manage');
+
                 Route::post(
                     '/{restaurantTable}/toggle',
                     [RestaurantTableController::class, 'toggleTable']

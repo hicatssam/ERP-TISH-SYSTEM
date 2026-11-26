@@ -22,6 +22,9 @@ class StoreCustomerMenuOrderRequest extends FormRequest
             'phone' => $phone,
             'address' => trim((string) $this->input('address', '')),
             'notes' => trim((string) $this->input('notes', '')),
+            'car_type' => trim((string) $this->input('car_type', '')),
+            'car_color' => trim((string) $this->input('car_color', '')),
+            'parking_spot' => trim((string) $this->input('parking_spot', '')),
             'payment_reference' => trim((string) $this->input('payment_reference', '')),
         ]);
     }
@@ -38,7 +41,11 @@ class StoreCustomerMenuOrderRequest extends FormRequest
                 RestaurantServiceType::Outdoor->value,
                 RestaurantServiceType::Delivery->value,
             ])],
+            'qr_token' => ['nullable', 'string', 'size:48', 'regex:/^[A-Za-z0-9]+$/'],
             'restaurant_table_id' => ['nullable', 'integer', 'exists:restaurant_tables,id'],
+            'car_type' => ['required_if:service_type,outdoor', 'nullable', 'string', 'max:80'],
+            'car_color' => ['required_if:service_type,outdoor', 'nullable', 'string', 'max:80'],
+            'parking_spot' => ['required_if:service_type,outdoor', 'nullable', 'string', 'max:120'],
             'address' => ['nullable', 'string', 'max:500'],
             'notes' => ['nullable', 'string', 'max:700'],
             'items' => ['required', 'array', 'min:1', 'max:80'],
@@ -73,8 +80,8 @@ class StoreCustomerMenuOrderRequest extends FormRequest
         $validator->after(function ($validator): void {
             $serviceType = (string) $this->input('service_type');
 
-            if ($serviceType === RestaurantServiceType::DineIn->value && ! $this->filled('restaurant_table_id')) {
-                $validator->errors()->add('restaurant_table_id', 'اختر الطاولة لطلب داخل المطعم.');
+            if ($serviceType === RestaurantServiceType::DineIn->value && ! $this->filled('qr_token')) {
+                $validator->errors()->add('restaurant_table_id', 'يجب مسح QR الخاص بالطاولة لإتمام الطلب.');
             }
 
             if ($serviceType === RestaurantServiceType::Delivery->value && ! $this->filled('address')) {

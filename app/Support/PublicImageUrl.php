@@ -47,7 +47,7 @@ final class PublicImageUrl
         }
 
         if (self::allowedDiskPath($normalized) && Storage::disk('public')->exists($normalized)) {
-            return route('customer-menu.assets.show', ['path' => $normalized], false);
+            return Storage::disk('public')->url($normalized);
         }
 
         if (is_file(public_path($normalized))) {

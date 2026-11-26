@@ -8,9 +8,117 @@
 <title>{{ $product['name'] }} - {{ $branding['name'] ?? config('app.name') }}</title>
 @if(!empty($branding['favicon']))<link rel="icon" href="{{ $branding['favicon'] }}">@endif
 @include('customer-menu.partials.styles')
-<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-product-paper.css') }}?v=4">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-product-paper.css') }}?v=15">
 @include('customer-menu.partials.pwa-head')
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-menu-cinematic.css') }}">
+
+<style>
+/* TISH-INGREDIENT-CHIPS-V1 */
+.tish-ingredients-simple {
+    display: block !important;
+    margin: 12px 0 18px !important;
+    font-size: 13px !important;
+    line-height: 1.6 !important;
+}
+.tish-ingredients-simple > strong {
+    display: block;
+    margin-bottom: 9px;
+    color: #a3261d !important;
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: .025em;
+}
+.tish-ingredient-tags {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 7px;
+    align-items: center;
+}
+.tish-ingredient-tag {
+    display: inline-block;
+    padding: 6px 11px;
+    background: rgba(173, 117, 60, .12);
+    color: #493526;
+    border: 0;
+    border-radius: 3px;
+    box-shadow: none;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.5;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+}
+</style>
+
+
+<style>
+/* TISH-PRODUCT-HOVER-V1 */
+
+@media (hover: hover) and (pointer: fine) {
+    .detail-body button,
+    .detail-body a,
+    .detail-media .fav {
+        transition: transform .22s ease,
+                    filter .22s ease,
+                    color .22s ease,
+                    background-color .22s ease;
+    }
+
+    .detail-body button:hover:not(:disabled),
+    .detail-body a:hover,
+    .detail-media .fav:hover {
+        transform: translateY(-2px);
+        filter: brightness(1.09);
+    }
+
+    #detailMinus:hover:not(:disabled),
+    #detailPlus:hover:not(:disabled) {
+        transform: scale(1.12);
+    }
+
+    .detail-media .fav:hover {
+        transform: scale(1.12) rotate(-6deg);
+    }
+
+    .tish-ingredient-tag {
+        transition: transform .22s ease,
+                    background-color .22s ease;
+    }
+
+    .tish-ingredient-tag:hover {
+        transform: translateY(-2px);
+        background-color: rgba(173,117,60,.2);
+    }
+}
+
+.detail-body button:active:not(:disabled),
+.detail-media .fav:active {
+    transform: scale(.96);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .detail-body button,
+    .detail-body a,
+    .detail-media .fav,
+    .tish-ingredient-tag {
+        transition: none !important;
+        transform: none !important;
+    }
+}
+</style>
+
+
+<style>
+/* TISH-QUANTITY-ICONS-V1 */
+#detailMinus,
+#detailPlus {
+    font-size: 24px !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    text-align: center !important;
+}
+</style>
+
 </head>
 <body class="crisp-customer-menu tish-paper tish-product-page">
 <div class="app crisp-menu-app">
@@ -31,7 +139,91 @@
   <div class="detail-body">
    @if(!$product['available'])<div class="sold-out">غير متوفر حالياً</div>@endif
    <h1>{{ $product['name'] }}</h1>
-   <div class="detail-description">{{ $product['description'] ?: 'لا يوجد وصف إضافي لهذا الصنف.' }}</div>
+   {{-- TISH-DESCRIPTION-EN-MENU-V2 --}}
+   <?php
+       $tishDescIsEnglish = \App\Support\CustomerMenuLanguage::isEnglish();
+       $tishDescValue = trim((string) ($product['description'] ?? ''));
+
+       if ($tishDescIsEnglish) {
+           $tishDescId = $product['product_id'] ?? request()->route('product');
+           if (is_object($tishDescId)) {
+               $tishDescId = $tishDescId->id ?? null;
+           }
+
+           $tishDescId = filter_var(
+               $tishDescId, FILTER_VALIDATE_INT
+           );
+
+           $tishDescValue = $tishDescId
+               ? trim((string) (\App\Models\Product::query()
+                   ->whereKey($tishDescId)
+                   ->value('description_en') ?? ''))
+               : '';
+       }
+   ?>
+   @if($tishDescValue !== '')
+       <div class="detail-description">{{ $tishDescValue }}</div>
+   @endif
+
+   {{-- TISH-INGREDIENTS-SIMPLE-V2 --}}
+   <?php
+     $tishIngredientId = $product['product_id']
+         ?? request()->route('product');
+
+     if (is_object($tishIngredientId)) {
+         $tishIngredientId = $tishIngredientId->id ?? null;
+     }
+
+     $tishIngredientId = filter_var(
+         $tishIngredientId, FILTER_VALIDATE_INT
+     );
+
+     $tishIngredientEnglish =
+         \App\Support\CustomerMenuLanguage::isEnglish();
+
+     $tishIngredientColumn = $tishIngredientEnglish
+         ? 'ingredients_en'
+         : 'ingredients_ar';
+
+     $tishIngredientText = '';
+
+     if ($tishIngredientId) {
+         $tishIngredientText = trim((string) (
+             \App\Models\Product::query()
+                 ->whereKey($tishIngredientId)
+                 ->value($tishIngredientColumn) ?? ''
+         ));
+     }
+   ?>
+
+   @if($tishIngredientText !== '')
+     <div class="tish-ingredients-simple" style="
+         margin:8px 0 12px;
+         padding:0;
+         background:transparent;
+         border:0;
+         box-shadow:none;
+         font-size:12px;
+         line-height:1.8;
+         color:#594433;
+         overflow-wrap:anywhere;
+     ">
+       <strong style="color:#a3261d;font-weight:800;">
+         {{ $tishIngredientEnglish ? 'Ingredients:' : 'المكونات:' }}
+       </strong>
+       
+       {{-- TISH-INGREDIENT-CHIPS-V1 --}}
+       <span class="tish-ingredient-tags">
+         @foreach(explode(',', str_replace('،', ',', $tishIngredientText)) as $ingredient)
+           @if(trim($ingredient) !== '')
+             <span class="tish-ingredient-tag">{{ trim($ingredient) }}</span>
+           @endif
+         @endforeach
+       </span>
+
+     </div>
+   @endif
+
 
    <div id="pickerContainer"></div>
 

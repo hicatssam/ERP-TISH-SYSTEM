@@ -1,0 +1,20 @@
+@font-face {
+  font-family: "TISH Noto";
+  src: url("../fonts/tish/NotoSansArabic.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "TISH Oswald";
+  src: url("../fonts/tish/Oswald.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 200 700;
+  font-display: swap;
+}
+
+.tish-english-heading,
+[data-tish-english-title] {
+  font-family: "TISH Oswald", Arial, sans-serif !important;
+}

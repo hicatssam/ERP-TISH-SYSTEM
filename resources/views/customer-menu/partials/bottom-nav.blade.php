@@ -17,31 +17,29 @@
  <a class="nav-btn {{ $activeNav === 'orders' ? 'active' : '' }}" href="{{ route('customer-menu.my-orders', $location->code) }}"><i class="fa-solid fa-receipt"></i><img class="tish-paper-nav-icon" src="{{ asset('assets/tish-paper/icons/orders.svg') }}" alt="" aria-hidden="true"><span>طلباتي</span></a>
 </nav>
 <script>
-/* Minimal input-only motion; navigation remains normal <a> links (no delays). */
+/* TISH: native navigation without ripple or forced layout. */
 (function () {
-  'use strict';
   const nav = document.querySelector('[data-tish-nav-motion]');
-  if (!nav || nav.dataset.motionBound === '1') return;
-  nav.dataset.motionBound = '1';
-  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  nav.querySelectorAll('.nav-btn').forEach(function (link) {
-    if (link.classList.contains('active')) {
-      link.setAttribute('aria-current', 'page');
-    }
-    link.addEventListener('pointerdown', function () {
-      if (reduced) return;
-      link.classList.remove('is-pressing');
-      void link.offsetWidth;
-      link.classList.add('is-pressing');
-      const ripple = document.createElement('span');
-      ripple.className = 'tish-nav-ripple';
-      ripple.setAttribute('aria-hidden', 'true');
-      link.querySelector('.tish-nav-ripple')?.remove();
-      link.appendChild(ripple);
-      ripple.addEventListener('animationend', function () { ripple.remove(); }, { once: true });
-    }, { passive: true });
-    ['pointerup', 'pointercancel', 'pointerleave', 'blur'].forEach(function (type) {
-      link.addEventListener(type, function () { link.classList.remove('is-pressing'); });
+  if (!nav) return;
+
+  nav.querySelectorAll('.nav-btn.active').forEach(function (link) {
+    link.setAttribute('aria-current', 'page');
+  });
+
+  nav.addEventListener('pointerdown', function (event) {
+    const link = event.target.closest('.nav-btn');
+    if (!link || !nav.contains(link)) return;
+
+    nav.querySelectorAll('.nav-btn').forEach(function (item) {
+      item.classList.remove('tish-nav-pending');
+    });
+
+    link.classList.add('tish-nav-pending');
+  }, { passive: true });
+
+  window.addEventListener('pageshow', function () {
+    nav.querySelectorAll('.tish-nav-pending').forEach(function (item) {
+      item.classList.remove('tish-nav-pending');
     });
   });
 })();

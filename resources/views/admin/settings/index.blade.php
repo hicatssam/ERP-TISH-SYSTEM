@@ -790,7 +790,7 @@
                                                 name="{{ $setting->key }}"
                                                 class="form-input"
                                             >
-                                                @foreach(['Cairo', 'Tajawal', 'Arial', 'Tahoma'] as $font)
+                                                @foreach(['TISH Noto', 'Cairo', 'Tajawal', 'Arial', 'Tahoma'] as $font)
                                                     <option
                                                         value="{{ $font }}"
                                                         {{ $value === $font ? 'selected' : '' }}

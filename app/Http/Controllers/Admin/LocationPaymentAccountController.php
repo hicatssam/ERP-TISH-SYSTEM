@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Location;
 use App\Models\LocationPaymentAccount;
 use App\Models\PaymentMethod;
+use App\Models\SupplierPayment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -55,16 +56,19 @@ class LocationPaymentAccountController extends Controller
                 'required',
                 Rule::exists('payment_methods', 'id'),
             ],
+            'name_en' => ['nullable', 'string', 'max:190'],
             'name' => [
                 'required',
                 'string',
                 'max:190',
             ],
+            'provider_name_en' => ['nullable', 'string', 'max:190'],
             'provider_name' => [
                 'nullable',
                 'string',
                 'max:190',
             ],
+            'account_holder_name_en' => ['nullable', 'string', 'max:190'],
             'account_holder_name' => [
                 'nullable',
                 'string',
@@ -85,6 +89,7 @@ class LocationPaymentAccountController extends Controller
                 'string',
                 'max:50',
             ],
+            'instructions_en' => ['nullable', 'string', 'max:2000'],
             'instructions' => [
                 'nullable',
                 'string',
@@ -94,6 +99,8 @@ class LocationPaymentAccountController extends Controller
                 'nullable',
                 'boolean',
             ],
+            'can_disburse' => ['nullable', 'boolean'],
+            'is_customer_visible' => ['nullable', 'boolean'],
             'sort_order' => [
                 'nullable',
                 'integer',
@@ -103,6 +110,8 @@ class LocationPaymentAccountController extends Controller
 
         $data['location_id'] = $location->id;
         $data['is_active'] = $request->boolean('is_active');
+        $data['can_disburse'] = $request->boolean('can_disburse');
+        $data['is_customer_visible'] = $request->boolean('is_customer_visible');
         $data['sort_order'] = $data['sort_order'] ?? 0;
 
         LocationPaymentAccount::create($data);
@@ -128,16 +137,19 @@ class LocationPaymentAccountController extends Controller
                 'required',
                 Rule::exists('payment_methods', 'id'),
             ],
+            'name_en' => ['nullable', 'string', 'max:190'],
             'name' => [
                 'required',
                 'string',
                 'max:190',
             ],
+            'provider_name_en' => ['nullable', 'string', 'max:190'],
             'provider_name' => [
                 'nullable',
                 'string',
                 'max:190',
             ],
+            'account_holder_name_en' => ['nullable', 'string', 'max:190'],
             'account_holder_name' => [
                 'nullable',
                 'string',
@@ -158,6 +170,7 @@ class LocationPaymentAccountController extends Controller
                 'string',
                 'max:50',
             ],
+            'instructions_en' => ['nullable', 'string', 'max:2000'],
             'instructions' => [
                 'nullable',
                 'string',
@@ -167,6 +180,8 @@ class LocationPaymentAccountController extends Controller
                 'nullable',
                 'boolean',
             ],
+            'can_disburse' => ['nullable', 'boolean'],
+            'is_customer_visible' => ['nullable', 'boolean'],
             'sort_order' => [
                 'nullable',
                 'integer',
@@ -175,7 +190,14 @@ class LocationPaymentAccountController extends Controller
         ]);
 
         $data['is_active'] = $request->boolean('is_active');
+        $data['can_disburse'] = $request->boolean('can_disburse');
+        $data['is_customer_visible'] = $request->boolean('is_customer_visible');
         $data['sort_order'] = $data['sort_order'] ?? 0;
+
+        if (SupplierPayment::query()->where('source_payment_account_id', $account->id)->exists()
+            && (int) $data['payment_method_id'] !== (int) $account->payment_method_id) {
+            return back()->withErrors(['payment_method_id' => 'لا يمكن تغيير طريقة دفع حساب سبق استخدامه في حوالات الموردين.']);
+        }
 
         $account->update($data);
 
@@ -193,6 +215,10 @@ class LocationPaymentAccountController extends Controller
             $account->location_id === $location->id,
             404
         );
+
+        if (SupplierPayment::query()->where('source_payment_account_id', $account->id)->exists()) {
+            return back()->withErrors(['account' => 'هذا الحساب مرتبط بحوالات موردين. أوقفه بدل حذفه حفاظاً على السجل المالي.']);
+        }
 
         $account->delete();
 

@@ -172,6 +172,8 @@
                         <span class="badge badge-danger">موقوف</span>
                     @endif
 
+                    @if($account->can_disburse)<span class="badge badge-success">مسموح بالصرف</span>@endif
+                    @if($account->is_customer_visible)<span class="badge">يظهر للعملاء</span>@else<span class="badge">حساب داخلي</span>@endif
                     <span class="pa-sort-order">الترتيب: {{ $account->sort_order }}</span>
 
                 </div>
@@ -185,14 +187,20 @@
                             'id' => $account->id,
                             'payment_method_id' => $account->payment_method_id,
                             'name' => $account->name,
+                            'name_en' => $account->name_en,
                             'provider_name' => $account->provider_name,
+                            'provider_name_en' => $account->provider_name_en,
                             'account_holder_name' => $account->account_holder_name,
+                            'account_holder_name_en' => $account->account_holder_name_en,
                             'account_number' => $account->account_number,
                             'iban' => $account->iban,
                             'phone_number' => $account->phone_number,
                             'instructions' => $account->instructions,
+                            'instructions_en' => $account->instructions_en,
                             'sort_order' => $account->sort_order,
                             'is_active' => (bool) $account->is_active,
+                            'can_disburse' => (bool) $account->can_disburse,
+                            'is_customer_visible' => (bool) $account->is_customer_visible,
                             'updateUrl' => route('locations.payment-accounts.update', [$location, $account]),
                         ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) }}"
                         onclick="paOpenEditModal(JSON.parse(this.dataset.account))"
@@ -312,17 +320,17 @@
                     <div class="form-group">
 
                         <label class="form-label">
-                            الاسم الظاهر للعميل
+                            اسم الحساب
                         </label>
 
-                        <input
+                        <div class="pa-bilingual-grid"><div><label class="form-label">العربية</label><input
                             type="text"
                             name="name"
                             class="form-input"
                             placeholder="مثال: بنك فلسطين"
                             value="{{ old('name') }}"
                             required
-                        >
+                        ></div><div><label class="form-label">English</label><input type="text" name="name_en" class="form-input" value="{{ old("name_en") }}"></div></div>
 
                     </div>
 
@@ -333,13 +341,13 @@
                             اسم المزود
                         </label>
 
-                        <input
+                        <div class="pa-bilingual-grid"><div><label class="form-label">العربية</label><input
                             type="text"
                             name="provider_name"
                             class="form-input"
                             placeholder="مثال: Bank of Palestine"
                             value="{{ old('provider_name') }}"
-                        >
+                        ></div><div><label class="form-label">English</label><input type="text" name="provider_name_en" class="form-input" value="{{ old("provider_name_en") }}"></div></div>
 
                     </div>
 
@@ -356,12 +364,12 @@
                             اسم صاحب الحساب
                         </label>
 
-                        <input
+                        <div class="pa-bilingual-grid"><div><label class="form-label">العربية</label><input
                             type="text"
                             name="account_holder_name"
                             class="form-input"
                             value="{{ old('account_holder_name') }}"
-                        >
+                        ></div><div><label class="form-label">English</label><input type="text" name="account_holder_name_en" class="form-input" value="{{ old("account_holder_name_en") }}"></div></div>
 
                     </div>
 
@@ -435,11 +443,11 @@
                             تعليمات للعميل
                         </label>
 
-                        <textarea
+                        <div class="pa-bilingual-grid"><div><label class="form-label">العربية</label><textarea
                             name="instructions"
                             class="form-input"
                             rows="3"
-                        >{{ old('instructions') }}</textarea>
+                        >{{ old('instructions') }}</textarea></div><div><label class="form-label">English</label><textarea name="instructions_en" class="form-input" rows="3">{{ old('instructions_en') }}</textarea></div></div>
 
                     </div>
 
@@ -475,6 +483,20 @@
                             حساب فعال
 
                         </label>
+                    </div>
+                    <div class="form-group">
+                        <label class="pa-checkbox-label">
+                            <input type="checkbox" name="is_customer_visible" value="1" @checked(old('is_customer_visible', true))>
+                            إظهار الحساب للعملاء لاستقبال المدفوعات
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label class="pa-checkbox-label">
+                            <input type="checkbox" name="can_disburse" value="1" @checked(old('can_disburse', false))>
+                            السماح بالصرف من هذا الحساب إلى الموردين
+                        </label>
+                        <small class="form-hint">الافتراضي معطّل حفاظًا على الحسابات المستخدمة لاستقبال دفعات العملاء.</small>
+                    
 
                     </div>
 
@@ -563,13 +585,13 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">الاسم الظاهر للعميل</label>
-                        <input type="text" name="name" id="edit_name" class="form-input" required>
+                        <label class="form-label">اسم الحساب</label>
+                        <div class="pa-bilingual-grid"><div><label class="form-label">العربية</label><input type="text" name="name" id="edit_name" class="form-input" required></div><div><label class="form-label">English</label><input type="text" name="name_en" id="edit_name_en" class="form-input"></div></div>
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">اسم المزود</label>
-                        <input type="text" name="provider_name" id="edit_provider_name" class="form-input">
+                        <div class="pa-bilingual-grid"><div><label class="form-label">العربية</label><input type="text" name="provider_name" id="edit_provider_name" class="form-input"></div><div><label class="form-label">English</label><input type="text" name="provider_name_en" id="edit_provider_name_en" class="form-input"></div></div>
                     </div>
 
                 </fieldset>
@@ -580,7 +602,7 @@
 
                     <div class="form-group" data-field-group="account_holder_name">
                         <label class="form-label">اسم صاحب الحساب</label>
-                        <input type="text" name="account_holder_name" id="edit_account_holder_name" class="form-input">
+                        <div class="pa-bilingual-grid"><div><label class="form-label">العربية</label><input type="text" name="account_holder_name" id="edit_account_holder_name" class="form-input"></div><div><label class="form-label">English</label><input type="text" name="account_holder_name_en" id="edit_account_holder_name_en" class="form-input"></div></div>
                     </div>
 
                     <div class="form-group" data-field-group="account_number">
@@ -610,7 +632,7 @@
 
                     <div class="form-group">
                         <label class="form-label">تعليمات للعميل</label>
-                        <textarea name="instructions" id="edit_instructions" class="form-input" rows="3"></textarea>
+                        <div class="pa-bilingual-grid"><div><label class="form-label">العربية</label><textarea name="instructions" id="edit_instructions" class="form-input" rows="3"></textarea></div><div><label class="form-label">English</label><textarea name="instructions_en" id="edit_instructions_en" class="form-input" rows="3"></textarea></div></div>
                     </div>
 
                     <div class="form-group">
@@ -623,6 +645,19 @@
                             <input type="checkbox" name="is_active" id="edit_is_active" value="1">
                             حساب فعال
                         </label>
+                    </div>
+                    <div class="form-group">
+                        <label class="pa-checkbox-label">
+                            <input type="checkbox" name="is_customer_visible" id="edit_is_customer_visible" value="1">
+                            إظهار الحساب للعملاء
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label class="pa-checkbox-label">
+                            <input type="checkbox" name="can_disburse" id="edit_can_disburse" value="1">
+                            السماح بالصرف إلى الموردين
+                        </label>
+                    
                     </div>
 
                 </fieldset>
@@ -642,6 +677,18 @@
 
 
 <style>
+
+.pa-bilingual-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+.pa-bilingual-grid > div { min-width: 0; }
+.pa-bilingual-grid .form-input { width: 100%; }
+@media (max-width: 600px) {
+    .pa-bilingual-grid { grid-template-columns: 1fr; }
+}
+
     /* ===== شبكة بطاقات الحسابات ===== */
 
     .pa-accounts-grid {
@@ -1093,14 +1140,20 @@
         paSelectMethodCard('edit_payment_method_grid', data.payment_method_id, 'edit');
 
         document.getElementById('edit_name').value = data.name === 'null' ? '' : data.name;
+        document.getElementById('edit_name_en').value = data.name_en ?? '';
         document.getElementById('edit_provider_name').value = data.provider_name === 'null' ? '' : data.provider_name;
+        document.getElementById('edit_provider_name_en').value = data.provider_name_en ?? '';
         document.getElementById('edit_account_holder_name').value = data.account_holder_name === 'null' ? '' : data.account_holder_name;
+        document.getElementById('edit_account_holder_name_en').value = data.account_holder_name_en ?? '';
         document.getElementById('edit_account_number').value = data.account_number === 'null' ? '' : data.account_number;
         document.getElementById('edit_iban').value = data.iban === 'null' ? '' : data.iban;
         document.getElementById('edit_phone_number').value = data.phone_number === 'null' ? '' : data.phone_number;
         document.getElementById('edit_instructions').value = data.instructions === 'null' ? '' : data.instructions;
+        document.getElementById('edit_instructions_en').value = data.instructions_en ?? '';
         document.getElementById('edit_sort_order').value = data.sort_order || 0;
         document.getElementById('edit_is_active').checked = !!data.is_active;
+        document.getElementById('edit_is_customer_visible').checked = !!data.is_customer_visible;
+        document.getElementById('edit_can_disburse').checked = !!data.can_disburse;
 
         document.getElementById('paEditModalBackdrop').style.display = 'flex';
     }
@@ -1135,12 +1188,16 @@
                 id: '{{ old('account_id') }}',
                 payment_method_id: '{{ old('payment_method_id') }}',
                 name: {!! \Illuminate\Support\Js::from(old('name', '')) !!},
+                name_en: {!! \Illuminate\Support\Js::from(old('name_en', '')) !!},
                 provider_name: {!! \Illuminate\Support\Js::from(old('provider_name', '')) !!},
+                provider_name_en: {!! \Illuminate\Support\Js::from(old('provider_name_en', '')) !!},
                 account_holder_name: {!! \Illuminate\Support\Js::from(old('account_holder_name', '')) !!},
+                account_holder_name_en: {!! \Illuminate\Support\Js::from(old('account_holder_name_en', '')) !!},
                 account_number: {!! \Illuminate\Support\Js::from(old('account_number', '')) !!},
                 iban: {!! \Illuminate\Support\Js::from(old('iban', '')) !!},
                 phone_number: {!! \Illuminate\Support\Js::from(old('phone_number', '')) !!},
                 instructions: {!! \Illuminate\Support\Js::from(old('instructions', '')) !!},
+                instructions_en: {!! \Illuminate\Support\Js::from(old('instructions_en', '')) !!},
                 sort_order: '{{ old('sort_order', 0) }}',
                 is_active: {{ old('is_active') ? 'true' : 'false' }},
                 updateUrl: '{{ route('locations.payment-accounts.update', [$location, old('account_id')]) }}'

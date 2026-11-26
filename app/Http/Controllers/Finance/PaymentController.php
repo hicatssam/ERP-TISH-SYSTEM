@@ -347,6 +347,7 @@ class PaymentController extends Controller
             ->with('paymentMethod')
             ->whereIn('location_id', $locationIds)
             ->where('is_active', true)
+            ->where('is_customer_visible', true)
             ->whereHas('paymentMethod', function ($query): void {
                 $query
                     ->active()

@@ -90,7 +90,8 @@ class CustomerOrderingService
         $table = $this->resolveTable(
             $location,
             $serviceType,
-            $data['restaurant_table_id'] ?? null
+            $data['restaurant_table_id'] ?? null,
+            $data['qr_token'] ?? null
         );
 
         $items = $this->validatedMenuItems(
@@ -102,7 +103,9 @@ class CustomerOrderingService
         $channel = $this->resolveSalesChannel();
         $actor = $this->resolveInternalActor();
 
+        // QR-TABLE-SESSION-V1
         $openedSession = null;
+        $newlyOpened = false;
 
         $order = DB::transaction(function () use (
             $location,
@@ -113,7 +116,8 @@ class CustomerOrderingService
             $channel,
             $actor,
             $paymentContext,
-            &$openedSession
+            &$openedSession,
+            &$newlyOpened
         ): Order {
             $customer = $this->upsertCustomer(
                 $location,
@@ -129,6 +133,11 @@ class CustomerOrderingService
             $requestToken = (string) $data['request_token'];
 
             $notes = collect([
+                $serviceType === RestaurantServiceType::Outdoor
+                    ? 'بيانات السيارة: ' . ($data['car_type'] ?? '')
+                        . ' | اللون: ' . ($data['car_color'] ?? '')
+                        . ' | الموقف: ' . ($data['parking_spot'] ?? '')
+                    : null,
                 filled($data['notes'] ?? null)
                     ? 'ملاحظة العميل: ' . trim((string) $data['notes'])
                     : null,
@@ -150,11 +159,10 @@ class CustomerOrderingService
                  * table. RestaurantTableService::open() locks the table/session,
                  * so two customers cannot reserve the same table concurrently.
                  */
-                $openedSession = $this->tables->open(
+                [$openedSession, $newlyOpened] = $this->tables->resolveForOrder(
                     $table,
                     $actor,
-                    1,
-                    'حجز تلقائي من منيو العميل'
+                    1
                 );
             }
 
@@ -197,6 +205,13 @@ class CustomerOrderingService
                     'customer_name' => (string) $data['name'],
                     'customer_phone' => (string) $data['phone'],
                     'delivery_address' => $data['address'] ?? null,
+                    'vehicle' => $serviceType === RestaurantServiceType::Outdoor
+                        ? [
+                            'type' => $data['car_type'],
+                            'color' => $data['car_color'],
+                            'parking_spot' => $data['parking_spot'],
+                        ]
+                        : null,
                     'submitted_at' => now()->toIso8601String(),
                     'source' => 'customer_menu',
                     'restaurant_table_id' => $table?->id,
@@ -239,7 +254,7 @@ class CustomerOrderingService
             ]);
         });
 
-        if ($openedSession) {
+        if ($openedSession && $newlyOpened) {
             $this->tables->notifyOpened(
                 $openedSession->fresh([
                     'table.area',
@@ -588,28 +603,19 @@ class CustomerOrderingService
     private function resolveTable(
         Location $location,
         RestaurantServiceType $serviceType,
-        mixed $tableId
+        mixed $tableId,
+        mixed $qrToken
     ): ?RestaurantTable {
         if ($serviceType !== RestaurantServiceType::DineIn) {
             return null;
         }
 
-        $table = RestaurantTable::query()
-            ->forLocation((int) $location->id)
-            ->active()
-            ->with('activeSession')
-            ->find((int) $tableId);
+        $table = app(RestaurantTableQrResolver::class)
+            ->resolve($location, is_string($qrToken) ? $qrToken : null);
 
-        if (! $table) {
+        if ($tableId !== null && (int) $tableId !== (int) $table->id) {
             throw ValidationException::withMessages([
-                'restaurant_table_id' => 'الطاولة المحددة غير متاحة في هذا الفرع.',
-            ]);
-        }
-
-        if ($table->isOccupied()) {
-            throw ValidationException::withMessages([
-                'restaurant_table_id' =>
-                    'هذه الطاولة أصبحت مشغولة. اختر طاولة متاحة أخرى.',
+                'restaurant_table_id' => 'الطاولة لا تطابق رمز QR.',
             ]);
         }
 

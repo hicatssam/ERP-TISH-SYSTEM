@@ -160,6 +160,21 @@ class ProductController extends Controller
     public function store(StoreProductRequest $request)
     {
         $data = $request->validated();
+
+        // TISH-DESCRIPTION-EN-SAVE-V2
+        $data['description_en'] = $request->validate([
+            'description_en' => ['nullable', 'string', 'max:3000'],
+        ])['description_en'] ?? null;
+
+
+        // TISH-DISPLAY-INGREDIENTS-V1
+        if ($request->exists('ingredients_ar') || $request->exists('ingredients_en')) {
+            $data = array_merge($data, $request->validate([
+                'ingredients_ar' => ['nullable', 'string', 'max:2000'],
+                'ingredients_en' => ['nullable', 'string', 'max:2000'],
+            ]));
+        }
+
         $user = $request->user();
         $isAdmin = $this->isSystemAdmin($user);
         $locationIds = $isAdmin
@@ -287,6 +302,21 @@ class ProductController extends Controller
         $user = $request->user();
         $this->ensureProductAccess($product, $user);
         $data = $request->validated();
+
+        // TISH-DESCRIPTION-EN-SAVE-V2
+        $data['description_en'] = $request->validate([
+            'description_en' => ['nullable', 'string', 'max:3000'],
+        ])['description_en'] ?? null;
+
+
+        // TISH-DISPLAY-INGREDIENTS-V1
+        if ($request->exists('ingredients_ar') || $request->exists('ingredients_en')) {
+            $data = array_merge($data, $request->validate([
+                'ingredients_ar' => ['nullable', 'string', 'max:2000'],
+                'ingredients_en' => ['nullable', 'string', 'max:2000'],
+            ]));
+        }
+
         $isAdmin = $this->isSystemAdmin($user);
         $locationIds = $isAdmin
             ? $this->validatedAdminLocationIds(

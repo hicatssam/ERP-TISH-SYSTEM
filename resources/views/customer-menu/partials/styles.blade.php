@@ -391,13 +391,13 @@ body.tish-paper .page-head .tish-paper-sublogo img{
 [dir="ltr"] .crisp-customer-menu .page-back i { transform:scaleX(-1); }
 @media (max-width:420px){.cm-language-switch {padding:6px 9px;font-size:11px}}
 </style>
-<script src="{{ asset('assets/js/customer-menu/i18n.js') }}?v=4"></script>
+<script src="{{ asset('assets/js/customer-menu/i18n.js') }}?v=14"></script>
 
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/client-identity.css') }}?v=3">
 
 {{-- The last layer deliberately applies after the shared legacy/identity skins. --}}
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-circular-ui.css') }}?v=12">
-<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-v2.css') }}?v=1">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-v2.css') }}?v=2">
 <style id="tish-product-card-client-theme">
 /* TISH paper uses the same signature red for interactive accents. */
 body.tish-paper {
@@ -419,7 +419,8 @@ body.tish-paper {
 <script src="{{ asset('assets/js/customer-menu/tish-paper-controls-v12.js') }}?v=14" defer></script>
 
 {{-- Responsive nav motion is shared by all customer TISH pages. --}}
-<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-nav-motion-v1.css') }}?v=1">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-nav-motion-v1.css') }}?v=2">
 {{-- Common header shared by all customer-facing TISH subpages. --}}
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-unified-header-v1.css') }}?v=1">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-fonts-v1.css') }}?v=2">
 <script src="{{ asset('assets/js/customer-menu/tish-visuals.js') }}?v=3" defer></script>

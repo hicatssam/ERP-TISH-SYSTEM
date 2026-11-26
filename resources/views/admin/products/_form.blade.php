@@ -378,6 +378,53 @@
             >{{ old('description', $product->description ?? '') }}</textarea>
         </div>
 
+        <!-- TISH-DESCRIPTION-EN-FORM-V2 -->
+        <div class="form-group">
+            <label class="form-label" for="description_en">
+                الوصف بالإنجليزية
+            </label>
+            <textarea
+                id="description_en"
+                name="description_en"
+                class="form-textarea"
+                rows="3"
+                maxlength="3000"
+                placeholder="English product description"
+            >{{ old('description_en', $product->description_en ?? '') }}</textarea>
+            @error('description_en')
+                <small class="text-danger">{{ $message }}</small>
+            @enderror
+        </div>
+
+
+        <!-- TISH-DISPLAY-INGREDIENTS-FORM-V1 -->
+        <div class="product-form-grid">
+            <div class="form-group">
+                <label class="form-label" for="ingredients_ar">المكونات بالعربية</label>
+                <textarea id="ingredients_ar"
+                    name="ingredients_ar" class="form-textarea"
+                    rows="2" maxlength="2000"
+                    placeholder="بصل، بندورة، ثوم">{{ old('ingredients_ar', $product->ingredients_ar ?? '') }}</textarea>
+                @error('ingredients_ar')
+                    <small class="text-danger">{{ $message }}</small>
+                @enderror
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="ingredients_en">المكونات بالإنجليزية</label>
+                <textarea id="ingredients_en"
+                    name="ingredients_en" class="form-textarea"
+                    rows="2" maxlength="2000"
+                    placeholder="Onion, Tomato, Garlic">{{ old('ingredients_en', $product->ingredients_en ?? '') }}</textarea>
+                @error('ingredients_en')
+                    <small class="text-danger">{{ $message }}</small>
+                @enderror
+            </div>
+        </div>
+        <small class="product-form-help">
+            مكونات للعرض في المنيو فقط، ولا تؤثر على المخزون أو وصفات التحضير.
+        </small>
+
+
         <div class="product-form-grid">
             <div class="form-group">
                 <label class="form-label">صورة المنتج</label>

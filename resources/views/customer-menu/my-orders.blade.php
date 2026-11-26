@@ -28,18 +28,19 @@ main{padding:22px 0}.titleRow{margin-bottom:18px}.titleRow h1{margin:0 0 4px;fon
 @media(min-width:561px){body{padding-bottom:30px}}
 </style>
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-circular-ui.css') }}?v=12">
-<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-v2.css') }}?v=1">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-v2.css') }}?v=2">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-paper-polish-v13.css') }}?v=17">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-orders-paper.css') }}?v=5">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-drive-ui-fixes-v1.css') }}?v=1">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-orders-paper-touchup.css') }}?v=3">
+<link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-fonts-v1.css') }}?v=2">
 </head>
 <body class="cm-my-orders tish-paper">
 <header class="topbar cm-unified-header-outer"><div class="wrap">
 @include('customer-menu.partials.unified-header', ['backUrl' => route('customer-menu.show',$location->code)])
 </div></header>
 <main class="wrap">
-<div class="titleRow"><h1>طلباتي<span class="tish-orders-spark" aria-hidden="true"></span></h1><p>الطلبات التي أنشأتها من هذا الجهاز.</p></div>
+<div class="titleRow"><h1>طلباتي<span class="tish-orders-spark" aria-hidden="true"></span></h1></div>
 <section id="orders" class="orders" aria-live="polite"></section>
 </main>
 @include('customer-menu.partials.bottom-nav', ['activeNav' => 'orders'])

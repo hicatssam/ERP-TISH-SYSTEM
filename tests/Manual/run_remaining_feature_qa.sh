@@ -3,10 +3,10 @@
 # Runs only inside detached QA checkout and uses a fresh in-memory SQLite DB.
 set -euo pipefail
 
-QA="/tmp/tish-finance-qa-20261125"
+QA="/tmp/tish-production-integration-20261126"
 cd "$QA"
 [[ "$(pwd -P)" == "$QA" ]] || { echo "REFUSED: unexpected path"; exit 1; }
-[[ -d .git ]] || { echo "REFUSED: not a QA git checkout"; exit 1; }
+[[ -f .git ]] || { echo "REFUSED: not a QA git checkout"; exit 1; }
 [[ ! -e .env && ! -e bootstrap/cache/config.php ]] || { echo "REFUSED: existing .env or cached config"; exit 1; }
 [[ -f vendor/autoload.php && -f phpunit.xml ]] || { echo "REFUSED: dependencies missing"; exit 1; }
 [[ "$(git status --porcelain --untracked-files=no)" == "" ]] || { echo "REFUSED: tracked checkout modified"; exit 1; }

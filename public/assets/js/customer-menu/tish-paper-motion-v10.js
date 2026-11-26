@@ -26,7 +26,7 @@
                 card.classList.add('paper-motion-visible');
                 // Allow the staggered CTA to finish its own animation.
                 const delay = Number(card.dataset.paperDelay || 0);
-                window.setTimeout(function () { finish(card); }, 650 + delay);
+                window.setTimeout(function () { finish(card); }, 180 + delay);
             }
         }, { threshold: .15, rootMargin: '0px 0px 45px 0px' });
         return observer;

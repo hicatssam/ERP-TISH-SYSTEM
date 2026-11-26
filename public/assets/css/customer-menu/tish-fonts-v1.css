@@ -1,0 +1,79 @@
+@font-face {
+  font-family: "TISH Noto";
+  src: url("../../fonts/tish/NotoSansArabic.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "TISH Oswald";
+  src: url("../../fonts/tish/Oswald.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 200 700;
+  font-display: swap;
+}
+
+/* Default Arabic typography */
+body.tish-paper {
+  font-family: "TISH Noto", Arial, sans-serif !important;
+}
+
+body.tish-paper :is(
+  button, input, select, textarea
+) {
+  font-family: "TISH Noto", Arial, sans-serif !important;
+}
+
+/* English typography */
+body.tish-paper :lang(en) {
+  font-family: "TISH Oswald", "TISH Noto", sans-serif;
+}
+
+/* TISH: restore icon fonts after custom typography override */
+body.tish-paper i[class^="fa-"],
+body.tish-paper i[class*=" fa-"],
+body.tish-paper span[class^="fa-"],
+body.tish-paper span[class*=" fa-"],
+body.tish-paper .fa,
+body.tish-paper .fas,
+body.tish-paper .far,
+body.tish-paper .fab,
+body.tish-paper .fa-solid,
+body.tish-paper .fa-regular,
+body.tish-paper .fa-brands {
+  font-family: "Font Awesome 6 Free" !important;
+  font-style: normal !important;
+  font-variant: normal !important;
+  text-rendering: auto !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1;
+}
+
+body.tish-paper .fa-solid,
+body.tish-paper .fas {
+  font-weight: 900 !important;
+}
+
+body.tish-paper .fa-regular,
+body.tish-paper .far {
+  font-family: "Font Awesome 6 Free" !important;
+  font-weight: 400 !important;
+}
+
+body.tish-paper .fa-brands,
+body.tish-paper .fab {
+  font-family: "Font Awesome 6 Brands" !important;
+  font-weight: 400 !important;
+}
+
+/* Bootstrap icons, if any */
+body.tish-paper .bi,
+body.tish-paper [class^="bi-"],
+body.tish-paper [class*=" bi-"] {
+  font-family: "bootstrap-icons" !important;
+  font-style: normal !important;
+  font-weight: 400 !important;
+  line-height: 1;
+}

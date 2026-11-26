@@ -15,13 +15,19 @@ class LocationPaymentAccount extends Model
         'location_id',
         'payment_method_id',
         'name',
+        'name_en',
         'provider_name',
+        'provider_name_en',
         'account_holder_name',
+        'account_holder_name_en',
         'account_number',
         'iban',
         'phone_number',
         'instructions',
+        'instructions_en',
         'is_active',
+        'can_disburse',
+        'is_customer_visible',
         'sort_order',
     ];
 
@@ -29,6 +35,8 @@ class LocationPaymentAccount extends Model
     {
         return [
             'is_active' => 'boolean',
+            'can_disburse' => 'boolean',
+            'is_customer_visible' => 'boolean',
             'sort_order' => 'integer',
         ];
     }

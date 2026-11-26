@@ -375,3 +375,30 @@ body.tish-paper.tish-paper-products .product-price-row {min-width:74%}
 @media(prefers-reduced-motion:reduce){
  body.tish-paper.reference-home .tish-paper-top-ads .banner-track{transition:none!important}
 }
+
+/* TISH bottom navigation: remove unwanted touch focus borders */
+body.tish-paper .bottom-nav .nav-btn {
+  -webkit-tap-highlight-color: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-appearance: none;
+}
+
+body.tish-paper .bottom-nav .nav-btn:focus:not(:focus-visible),
+body.tish-paper .bottom-nav .nav-btn:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Keep keyboard navigation accessible without the large border */
+body.tish-paper .bottom-nav .nav-btn:focus-visible {
+  outline: 2px solid #f5e3d5 !important;
+  outline-offset: -3px;
+}
+
+/* Instant visual feedback before the next page loads */
+body.tish-paper .bottom-nav .nav-btn.tish-nav-pending {
+  background: url('../../tish-paper/paper/nav-active.webp')
+    center/100% 100% no-repeat !important;
+  color: #fff !important;
+}

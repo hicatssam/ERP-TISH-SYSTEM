@@ -959,6 +959,7 @@ a.app-page-btn:hover {
 
     {{-- الثيم الديناميكي يجب أن يكون آخر CSS حتى يطبق على النظام كاملاً --}}
 
+    <link rel="stylesheet" href="{{ asset('assets/css/tish-admin-fonts-v1.css') }}?v=1">
     @include('layouts.partials.dynamic-theme')
   
 
@@ -1151,7 +1152,7 @@ a.app-page-btn:hover {
 
                             </svg>
 
-                            <span>الفروع والمصنع</span>
+                            <span>الفروع والمطابخ</span>
 
                         </a>
 

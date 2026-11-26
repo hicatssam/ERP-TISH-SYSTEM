@@ -95,3 +95,46 @@
         object-fit: contain;
     }
 }
+
+/* TISH cinematic paper tear — integrated with existing booth animation */
+
+@media (prefers-reduced-motion: no-preference) {
+
+  body.tish-paper #intro.tish-reel-intro.tish-booth-opening {
+    background: transparent !important;
+  }
+
+  /* Torn inner edge of the left paper door */
+  #intro.tish-booth-opening .tish-booth-panel--left {
+    clip-path: polygon(
+      0 0, 100% 0,
+      97% 7%, 100% 14%,
+      96% 23%, 99% 32%,
+      96% 43%, 100% 53%,
+      97% 62%, 100% 72%,
+      96% 83%, 99% 92%,
+      100% 100%, 0 100%
+    );
+  }
+
+  /* Matching torn inner edge of the right paper door */
+  #intro.tish-booth-opening .tish-booth-panel--right {
+    clip-path: polygon(
+      0 0, 100% 0, 100% 100%,
+      0 100%, 3% 92%,
+      0 83%, 4% 72%,
+      1% 62%, 4% 53%,
+      0 43%, 3% 32%,
+      0 23%, 4% 14%,
+      1% 7%
+    );
+  }
+
+  /* Use the existing TISH paper texture if no video frame is captured */
+  #intro.tish-booth-opening:not(.tish-booth-has-frame)
+  .tish-booth-panel {
+    background: #f5e4cd
+      url('../../tish-paper/paper/background.webp')
+      center top / 540px auto repeat !important;
+  }
+}

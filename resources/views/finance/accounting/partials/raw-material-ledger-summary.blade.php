@@ -8,9 +8,9 @@
 <section class="{{ $printMode ?? false ? 'print-section' : 'card' }}" style="margin-top:1rem">
     <div class="{{ $printMode ?? false ? 'print-section-title' : 'card-header' }}">
         @if($printMode ?? false)
-            حركة المواد الخام بين المصنع والفروع (خارج قيود المبيعات والمصروفات)
+            حركة المواد الخام بين المطابخ والفروع (خارج قيود المبيعات والمصروفات)
         @else
-            <span class="card-title">تسوية المواد الخام بين المصنع والفروع</span>
+            <span class="card-title">تسوية المواد الخام بين المطابخ والفروع</span>
         @endif
     </div>
     <div class="{{ $printMode ?? false ? '' : 'card-body' }}">

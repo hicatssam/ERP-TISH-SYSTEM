@@ -231,6 +231,15 @@
                         @endif
 
                         <div class="table-card-actions">
+                            {{-- TABLE-QR-PRINT-V1 --}}
+                            @can('restaurant_tables.manage')
+                                <a class="btn btn-outline btn-sm"
+                                   target="_blank" rel="noopener"
+                                   href="{{ route('restaurant.tables.qr.print', ['restaurantTable' => $table, 'location_id' => $location->id]) }}">
+                                    QR الطاولة / طباعة
+                                </a>
+                            @endcan
+
                             @if($table->is_active && !$occupied)
                                 @can('restaurant_tables.open_session')
                                     <form method="POST" action="{{ route('restaurant.tables.open', $table) }}" class="inline-session-form">
@@ -300,6 +309,77 @@
 .table-management>summary strong,.table-management>summary small{display:block}.table-management>summary small{margin-top:.2rem;color:var(--text-muted);font-size:.67rem}.management-toggle{padding:.4rem .75rem;border-radius:10px;background:var(--off-white);color:#98143c;font-size:.68rem;font-weight:800}.table-management[open] .management-toggle{font-size:0}.table-management[open] .management-toggle::after{content:"إغلاق الإعدادات";font-size:.68rem}
 .restaurant-config-grid{display:grid;grid-template-columns:.75fr 1.55fr;border-top:1px solid var(--border)}.management-form{padding:1rem}.management-form+.management-form{border-inline-start:1px solid var(--border)}.management-form-title{font-weight:900;margin-bottom:.75rem}.compact-form-grid{display:grid;gap:.65rem;align-items:end}.area-form-grid{grid-template-columns:1.4fr 1fr auto}.table-create-grid{grid-template-columns:repeat(4,minmax(120px,1fr)) auto}.compact-form-grid .form-group{margin:0}
 .table-area-card{margin-top:1rem;overflow:hidden}.table-area-header{background:linear-gradient(90deg,rgba(152,20,60,.045),transparent)}.table-area-header .card-title{display:flex;align-items:center;gap:.45rem}.area-icon{display:grid;place-items:center;width:28px;height:28px;border-radius:9px;background:rgba(152,20,60,.09);color:#98143c}.area-count{padding:.3rem .65rem;border-radius:999px;background:var(--off-white);color:var(--text-muted);font-size:.66rem;font-weight:700}
+
+/* TISH-TABLES-UX-V2 */
+.restaurant-tables-grid{
+ display:grid!important;
+ grid-template-columns:repeat(auto-fill,minmax(290px,380px))!important;
+ gap:16px!important;
+ justify-content:start;
+ align-items:stretch;
+}
+.restaurant-table-card{
+ width:100%;min-width:0;min-height:245px;
+ padding:17px!important;border-radius:17px!important;
+ display:flex;flex-direction:column;gap:12px;
+}
+.restaurant-table-card .table-card-head{
+ display:flex;justify-content:space-between;align-items:flex-start;
+ gap:12px;padding-bottom:10px;
+ border-bottom:1px solid rgba(70,50,60,.10);
+}
+.restaurant-table-card .table-card-head strong{
+ font-size:16px;font-weight:900;line-height:1.5;
+}
+.restaurant-table-card .table-session-info{
+ padding:11px 12px;border-radius:10px;
+ font-size:12px;line-height:1.6;
+}
+.restaurant-table-card .table-card-actions{
+ display:grid!important;
+ grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ gap:9px!important;align-items:stretch;
+ margin-top:auto;padding-top:13px;
+}
+.restaurant-table-card .table-card-actions>*{
+ min-width:0;margin:0!important;
+}
+.restaurant-table-card .table-card-actions .btn{
+ display:inline-flex;align-items:center;justify-content:center;
+ width:100%;min-width:0;min-height:43px;
+ padding:9px 10px;border-radius:10px;
+ font-size:12px;font-weight:800;
+ line-height:1.5;text-align:center;white-space:normal;
+}
+.restaurant-table-card .inline-session-form{
+ grid-column:1/-1;
+ display:grid!important;
+ grid-template-columns:70px minmax(0,1fr);
+ gap:9px;align-items:center;
+}
+.restaurant-table-card .inline-session-form .mini-input{
+ width:70px;min-width:0;height:45px;
+ margin:0;text-align:center;border-radius:9px;
+}
+.restaurant-table-card .inline-session-form .btn{
+ min-height:45px;
+}
+.restaurant-table-card .table-card-actions>a[href*="/qr/print"]{
+ background:#fff!important;color:#a3153d!important;
+ border:1px solid #d7a9b4!important;
+}
+.restaurant-table-card .table-card-actions>form[action*="/close"]{
+ grid-column:1/-1;
+}
+@media(max-width:700px){
+ .restaurant-tables-grid{
+  grid-template-columns:minmax(0,1fr)!important;
+ }
+ .restaurant-table-card{
+  min-height:0;padding:14px!important;
+ }
+}
+
 .restaurant-tables-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(285px,1fr));gap:1rem}
 .restaurant-table-card{position:relative;overflow:hidden;min-height:190px;padding:1.05rem;border:1px solid var(--border);border-radius:16px;background:var(--surface);display:flex;flex-direction:column;transition:transform .2s,border-color .2s,background .2s,box-shadow .2s}
 .restaurant-table-card:hover{transform:translateY(-3px);box-shadow:0 12px 30px rgba(50,30,38,.08)}
@@ -321,6 +401,94 @@
 @media(max-width:1250px){.table-live-summary{grid-template-columns:repeat(4,1fr)}.table-live-connection{grid-column:1/-1;min-height:48px}.restaurant-config-grid{grid-template-columns:1fr}.management-form+.management-form{border-inline-start:0;border-top:1px solid var(--border)}.table-create-grid{grid-template-columns:repeat(2,minmax(150px,1fr)) auto}}
 @media(max-width:800px){.table-live-summary{grid-template-columns:repeat(2,1fr)}.restaurant-tables-grid{grid-template-columns:1fr}.area-form-grid,.table-create-grid{grid-template-columns:1fr}.compact-form-grid .btn{width:100%}.table-management>summary{align-items:flex-start;flex-direction:column}}
 @media(max-width:520px){.table-live-summary{grid-template-columns:1fr 1fr}.table-live-stat{padding:.75rem;min-height:75px}.table-live-stat strong{font-size:1.35rem}.page-actions{align-items:flex-start}.action-btns{width:100%;flex-wrap:wrap}}
+
+/* TISH-TABLES-FINAL-LAYOUT-V3 */
+.restaurant-tables-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(285px, 360px)) !important;
+    justify-content: start !important;
+    align-items: start !important;
+    gap: 16px !important;
+}
+
+.restaurant-tables-grid > .restaurant-table-card {
+    width: 100% !important;
+    max-width: 360px !important;
+    min-width: 0 !important;
+    min-height: 245px !important;
+    padding: 17px !important;
+    border-radius: 16px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+}
+
+.restaurant-table-card .table-card-actions {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 9px !important;
+    margin-top: auto !important;
+    align-items: stretch !important;
+}
+
+.restaurant-table-card .table-card-actions > * {
+    min-width: 0 !important;
+    margin: 0 !important;
+}
+
+.restaurant-table-card .table-card-actions .btn {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 43px !important;
+    padding: 9px 10px !important;
+    font-size: 12px !important;
+    border-radius: 9px !important;
+    line-height: 1.5 !important;
+    white-space: normal !important;
+    text-align: center !important;
+    justify-content: center !important;
+}
+
+.restaurant-table-card .table-card-actions > .inline-session-form {
+    grid-column: 1 / -1 !important;
+    display: grid !important;
+    grid-template-columns: 65px minmax(0, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+}
+
+.restaurant-table-card .inline-session-form .mini-input {
+    width: 65px !important;
+    height: 44px !important;
+    text-align: center !important;
+    margin: 0 !important;
+}
+
+.restaurant-table-card .table-card-head {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+    padding-bottom: 10px !important;
+    border-bottom: 1px solid #e5d8dc !important;
+}
+
+.restaurant-table-card .table-card-actions > a[href*="/qr/print"] {
+    background: #fff !important;
+    color: #a3153d !important;
+    border: 1px solid #d6a5b3 !important;
+}
+
+@media (max-width: 650px) {
+    .restaurant-tables-grid {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+    .restaurant-tables-grid > .restaurant-table-card {
+        max-width: none !important;
+        min-height: 0 !important;
+    }
+}
+
 </style>
 
 <script>

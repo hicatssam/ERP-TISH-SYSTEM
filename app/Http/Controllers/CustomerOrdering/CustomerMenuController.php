@@ -89,7 +89,40 @@ class CustomerMenuController extends Controller
     {
         $this->assertMenuAvailable($location);
 
-        $tables = $this->tableOptions($location);
+
+        // TISH-QR-CONTEXT-V1
+        $qrToken = (string) $request->query('qr', '');
+        $qrTable = null;
+
+        if (preg_match('/^[A-Za-z0-9]{48}$/D', $qrToken)) {
+            $qrTable = \App\Models\RestaurantTable::query()
+                ->forLocation((int) $location->id)
+                ->active()
+                ->where('qr_token', $qrToken)
+                ->first();
+        }
+
+        $sessionKey = 'tish_table_qr_' . $location->id;
+        if ($qrTable) {
+            $request->session()->put($sessionKey, $qrToken);
+        } else {
+            $request->session()->forget($sessionKey);
+        }
+
+        $selectedQrTable = $qrTable ? [
+            'id' => (int) $qrTable->id,
+            'code' => $qrTable->code,
+            'name' => $qrTable->displayName(),
+            'available' => true,
+            'status_label' => 'QR',
+        ] : null;
+
+        $tables = collect($selectedQrTable ? [$selectedQrTable] : []);
+        $qrServiceOptions = collect($this->serviceOptions())
+            ->filter(fn ($option) => $qrTable
+                || ($option['value'] ?? null) !== 'dine_in')
+            ->values()->all();
+
         $menuItems = $this->menuItemsFor($location);
         $theme = $this->theme();
 
@@ -102,11 +135,11 @@ class CustomerMenuController extends Controller
             'categories' => $this->categoriesFor($location),
             'banners' => $this->bannersFor($location),
             'tables' => $tables,
-            'selectedTable' => $this->resolveSelectedTable($tables, (string) $request->query('table', '')),
+            'selectedTable' => $selectedQrTable,
             'branding' => $this->branding($location),
             'theme' => $theme,
             'requestToken' => (string) Str::uuid(),
-            'serviceOptions' => $this->serviceOptions(),
+            'serviceOptions' => $qrServiceOptions,
             'team' => $this->teamMembers($location),
         ]);
     }
@@ -218,6 +251,7 @@ class CustomerMenuController extends Controller
                     ->where('location_id', $location->id)
                     ->where('payment_method_id', $method->id)
                     ->where('is_active', true)
+                    ->where('is_customer_visible', true)
                     ->orderBy('sort_order')
                     ->orderBy('id')
                     ->get()
