@@ -739,7 +739,10 @@
                                     class="btn btn-outline btn-xs"
                                     onclick="openRefundModal(
                                         {{ $payment->id }},
-                                        {{ $refundableAmount }}
+                                        {{ $refundableAmount }},
+                                        {{ $payment->location_id }},
+                                        {{ $payment->payment_method_id }},
+                                        {{ $payment->location_payment_account_id ?? 'null' }}
                                     )"
                                 >
                                     استرداد
@@ -818,7 +821,12 @@
                     </td>
 
                     <td>
-                        <span class="text-muted">—</span>
+                        @if($refund->sourcePaymentAccount)
+                            {{ $refund->sourcePaymentAccount->account_holder_name ?: $refund->sourcePaymentAccount->name }}
+                            <small class="payment-account-missing" dir="ltr">{{ $refund->sourcePaymentAccount->iban ?: $refund->sourcePaymentAccount->account_number ?: $refund->sourcePaymentAccount->phone_number }}</small>
+                        @else
+                            <span class="text-muted">—</span>
+                        @endif
                     </td>
 
                     <td>
@@ -900,11 +908,11 @@
 
                 <label class="form-label">طريقة الاسترداد</label>
 
-                <select name="payment_method_id" class="form-select" required>
+                <select name="payment_method_id" id="financeRefundMethod" class="form-select" onchange="syncFinanceRefundAccount()" required>
 
                     @foreach($paymentMethods as $pm)
 
-                        <option value="{{ $pm->id }}">{{ $pm->name_ar }}</option>
+                        <option value="{{ $pm->id }}" data-banking="{{ in_array($pm->type, ['bank_transfer', 'electronic_wallet'], true) ? '1' : '0' }}">{{ $pm->name_ar }}</option>
 
                     @endforeach
 
@@ -912,6 +920,19 @@
 
             </div>
 
+            <div class="form-group" id="financeRefundAccountField" style="display:none">
+                <label class="form-label" for="financeRefundAccount">حساب الصرف *</label>
+                <select name="source_payment_account_id" id="financeRefundAccount" class="form-select" disabled>
+                    <option value="">اختر حساب الصرف</option>
+                    @foreach($refundPaymentAccounts as $source)
+                        <option value="{{ $source->id }}" data-location="{{ $source->location_id }}" data-method="{{ $source->payment_method_id }}">
+                            {{ $source->account_holder_name ?: $source->name }} — {{ $source->provider_name ?: $source->name }} — {{ $source->iban ?: $source->account_number ?: $source->phone_number }}
+                        </option>
+                    @endforeach
+                </select>
+                <small id="financeRefundAccountHint" class="text-muted"></small>
+            </div>
+            <p class="text-muted">سجّل الاسترداد بعد إرجاع المبلغ فعليًا للعميل.</p>
             <div class="form-group">
 
                 <label class="form-label">سبب الاسترداد</label>
@@ -1128,7 +1149,31 @@
 
 <script>
 
-function openRefundModal(paymentId, refundableAmount) {
+function syncFinanceRefundAccount() {
+    const method = document.getElementById('financeRefundMethod');
+    const account = document.getElementById('financeRefundAccount');
+    const banking = method.selectedOptions[0]?.dataset.banking === '1';
+    document.getElementById('financeRefundAccountField').style.display = banking ? '' : 'none';
+    account.disabled = !banking;
+    account.required = banking;
+    const matches = Array.from(account.options).filter(option => {
+        if (!option.value) return false;
+        const match = banking && option.dataset.location === account.dataset.location
+            && option.dataset.method === method.value;
+        option.disabled = !match;
+        option.hidden = !match;
+        return match;
+    });
+    if (!matches.some(option => option.value === account.value)) {
+        account.value = matches.find(option => option.value === account.dataset.original)?.value
+            || (matches.length === 1 ? matches[0].value : '');
+    }
+    document.getElementById('financeRefundAccountHint').textContent = banking && !matches.length
+        ? 'لا يوجد حساب صرف مفعل لهذا الفرع وطريقة الدفع.' : '';
+    document.querySelector('#refundForm button[type=submit]').disabled = banking && !matches.length;
+}
+
+function openRefundModal(paymentId, refundableAmount, locationId, methodId, originalAccountId) {
     const modal =
         document.getElementById('refundModal');
 
@@ -1153,6 +1198,12 @@ function openRefundModal(paymentId, refundableAmount) {
         .textContent =
             `(المتاح للاسترداد ₪${Number(refundableAmount).toFixed(2)})`;
 
+    const account = document.getElementById('financeRefundAccount');
+    account.dataset.location = String(locationId);
+    account.dataset.original = String(originalAccountId ?? '');
+    account.value = '';
+    document.getElementById('financeRefundMethod').value = String(methodId);
+    syncFinanceRefundAccount();
     modal.style.display =
         'flex';
 }
