@@ -602,6 +602,82 @@ body.tish-paper.tish-paper-track .bottom-nav{max-width:650px}
  body.tish-paper.tish-paper-track .track-summary{padding-inline:9px}
 }
 @media print{body.tish-paper.tish-paper-track #trackingCard,body.tish-paper.tish-paper-track .track-summary{filter:none}}
+
+/* TISH-TRACK-REFERENCE-V2: real paper layers, distinct cards and compact mobile hierarchy. */
+body.tish-paper.tish-paper-track{
+ --track-paper:#faeddb;--track-red:#a71e15;--track-ink:#211f1b;
+ --track-grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.085' numOctaves='4' seed='12' result='noise'/%3E%3CfeDiffuseLighting in='noise' lighting-color='%23fff1d8' surfaceScale='2.5'%3E%3CfeDistantLight azimuth='225' elevation='47'/%3E%3C/feDiffuseLighting%3E%3C/filter%3E%3Crect width='150' height='150' filter='url(%23n)' opacity='.6'/%3E%3C/svg%3E");
+ --track-rays:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 45 40'%3E%3Cpath fill='%23ad2117' d='M40 15 16 0 30 18ZM29 24 0 12 18 25ZM27 31 5 36 23 34Z'/%3E%3C/svg%3E");
+ background:var(--track-grain),url('/assets/tish-paper/paper/background.webp') center/540px auto repeat,#f6e5cd!important;
+ background-blend-mode:multiply,soft-light,normal!important;
+ padding-bottom:calc(80px + env(safe-area-inset-bottom,0px))!important;
+}
+body.tish-paper.tish-paper-track::before{height:21px;background-color:#a71e15}
+body.tish-paper.tish-paper-track::after{width:70px;height:85px;top:12px}
+body.tish-paper.tish-paper-track .wrap{width:min(calc(100% - 18px),600px)}
+body.tish-paper.tish-paper-track .topbar{padding:12px 7px 8px!important;margin-top:4px!important}
+body.tish-paper.tish-paper-track .cm-unified-header{min-height:55px;gap:8px}
+body.tish-paper.tish-paper-track .cm-unified-header-logo{width:52px!important;height:52px!important;flex-basis:52px}
+body.tish-paper.tish-paper-track .cm-unified-header-brand-copy strong{font-size:clamp(15px,3.9vw,23px);font-weight:950}
+body.tish-paper.tish-paper-track .cm-unified-header-brand-copy small{font-size:clamp(10px,2.8vw,15px)}
+body.tish-paper.tish-paper-track .cm-unified-header-back{display:none}
+body.tish-paper.tish-paper-track .cm-language-switch{background:var(--track-grain),#faeddb!important;background-blend-mode:multiply!important;clip-path:var(--track-edge);font-size:clamp(12px,3vw,16px)!important;min-height:36px;padding:7px 14px!important;text-decoration-thickness:2px}
+body.tish-paper.tish-paper-track #trackingCard{padding:13px 11px 15px!important;filter:drop-shadow(0 4px 2px #69513766)}
+body.tish-paper.tish-paper-track #trackingCard::before,
+body.tish-paper.tish-paper-track .track-summary::before,
+body.tish-paper.tish-paper-track .paymentSummary::before{
+ background:var(--track-grain),url('/assets/tish-paper/paper/background.webp') center/540px auto repeat,#faeddb!important;
+ background-blend-mode:multiply,soft-light,normal!important;
+ clip-path:var(--track-edge);border:1px solid #fff4e6;
+}
+body.tish-paper.tish-paper-track #trackingCard::after{content:"";position:absolute;inset:5px -3px -5px;z-index:-2;background:#dfc7a8;clip-path:var(--track-edge);pointer-events:none}
+body.tish-paper.tish-paper-track .orderHead{padding:0 8px 2px;gap:7px}
+body.tish-paper.tish-paper-track .eyebrow{font-size:clamp(16px,4.1vw,26px);line-height:1.35;font-weight:950}
+body.tish-paper.tish-paper-track .orderHead h1{display:inline-block;max-width:100%;font-size:clamp(20px,5.35vw,36px);line-height:1.3;font-weight:950;margin:4px 0 0;letter-spacing:-.04em}
+html[dir="rtl"] body.tish-paper.tish-paper-track .orderHead h1{direction:rtl}
+body.tish-paper.tish-paper-track .orderHead h1::before{content:"";display:inline-block;width:26px;height:24px;background:var(--track-rays) center/contain no-repeat;vertical-align:middle;margin-inline:5px 0}
+body.tish-paper.tish-paper-track .track-status-trigger{background:none;border:0;padding:0;font:inherit;color:inherit;max-width:100%;cursor:pointer;justify-self:start}
+body.tish-paper.tish-paper-track #label{padding:8px 13px!important;font-size:clamp(14px,4vw,23px);min-height:33px;background:var(--track-grain),#a71e15!important;background-blend-mode:multiply!important;clip-path:var(--track-edge)}
+body.tish-paper.tish-paper-track #label:is([data-order-state="ready"],[data-order-state="completed"]){background:var(--track-grain),#24782c!important;background-blend-mode:multiply!important;clip-path:var(--track-edge)}
+body.tish-paper.tish-paper-track #label[data-order-state="loading"]{background:#765137!important}
+body.tish-paper.tish-paper-track .statusDot{width:19px;height:19px;flex-basis:19px;font-size:11px}
+body.tish-paper.tish-paper-track .progress{padding:17px 0 18px}
+body.tish-paper.tish-paper-track .progressLine{--track-dot:clamp(34px,10.6vw,60px)}
+body.tish-paper.tish-paper-track .progressLine::before{height:1.5px;background:#32251e}
+body.tish-paper.tish-paper-track .progressItem{font-size:clamp(10px,2.8vw,18px);color:#6a6055;line-height:1.45}
+body.tish-paper.tish-paper-track .progressItem .dot{background:var(--track-grain),#ebd9c1!important;background-blend-mode:multiply!important;border:2px solid #fff0dc!important;color:#786452!important}
+body.tish-paper.tish-paper-track .progressItem.on .dot{background:var(--track-grain),#b22016!important;background-blend-mode:multiply!important;border:3px solid #fcead2!important;color:#fff7e7!important}
+body.tish-paper.tish-paper-track .progressItem.current .dot{outline:2px solid #b22016;outline-offset:2px;position:relative}
+body.tish-paper.tish-paper-track .progressItem.current .dot::before{content:"";position:absolute;left:-13px;top:-12px;width:20px;height:19px;background:var(--track-rays) center/contain no-repeat;pointer-events:none}
+body.tish-paper.tish-paper-track .paymentSummary{position:relative;isolation:isolate;padding:10px 11px!important;margin:0 0 12px;gap:8px;background:none!important;filter:drop-shadow(0 4px 2px #6b4e304f)}
+body.tish-paper.tish-paper-track .paymentSummary::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none}
+body.tish-paper.tish-paper-track .paymentSummaryIcon{background:var(--track-grain),#f4e0c6!important;background-blend-mode:multiply;border:1px solid #fff7e9;width:40px;height:40px;flex-basis:40px;box-shadow:0 2px 3px #62492c44}
+body.tish-paper.tish-paper-track .paymentSummaryText strong{font-size:clamp(15px,4.1vw,25px);line-height:1.35}
+body.tish-paper.tish-paper-track .paymentSummaryText small{font-size:clamp(10px,2.8vw,15px)}
+body.tish-paper.tish-paper-track #paymentBadge[data-payment-state="paid"]{background:var(--track-grain),#24782c!important;background-blend-mode:multiply!important;clip-path:var(--track-edge);font-size:clamp(13px,3.7vw,21px);padding:7px 12px!important}
+body.tish-paper.tish-paper-track .notice.show,body.tish-paper.tish-paper-track .customer-status-alert.show{background:var(--track-grain),#f8d1cb!important;background-blend-mode:multiply!important;box-shadow:none!important;padding:9px 10px;font-size:clamp(12px,3.3vw,20px);margin:0 0 11px;line-height:1.5}
+body.tish-paper.tish-paper-track #eta.show{background:var(--track-grain),#f6e6ce!important;color:#69421e;font-size:clamp(10px,2.9vw,15px);margin-top:1px}
+body.tish-paper.tish-paper-track .customer-alert-controls{margin:9px 0 15px;gap:4px;justify-items:stretch}
+body.tish-paper.tish-paper-track .customer-alert-controls button{justify-self:center;max-width:100%;background:var(--track-grain),#faeddb!important;background-blend-mode:multiply!important;font-size:clamp(13px,3.6vw,21px);min-height:38px;padding:6px 12px!important;border-radius:13px 11px 14px 10px!important}
+body.tish-paper.tish-paper-track .customer-alert-controls small{font-size:clamp(10px,2.8vw,15px)}
+body.tish-paper.tish-paper-track .track-summary{padding:0 12px 10px;margin:0;filter:drop-shadow(0 5px 3px #63472955)}
+body.tish-paper.tish-paper-track .track-summary .sectionTitle{padding:10px 0 8px;border-bottom:1px solid #c3ad92}
+body.tish-paper.tish-paper-track .track-summary .sectionTitle h2{font-size:clamp(17px,4.6vw,28px);font-weight:950}
+body.tish-paper.tish-paper-track .track-summary .live{font-size:clamp(10px,2.8vw,15px)}
+body.tish-paper.tish-paper-track .track-summary .items{border-top:0}
+body.tish-paper.tish-paper-track .track-summary .item{padding:10px 0;line-height:1.4;font-size:clamp(13px,3.7vw,22px);font-weight:900}
+body.tish-paper.tish-paper-track .track-summary .item small{font-size:clamp(10px,2.8vw,15px);font-weight:600}
+body.tish-paper.tish-paper-track .track-summary .item b{font-size:clamp(15px,4.2vw,25px);font-weight:950;direction:ltr}
+body.tish-paper.tish-paper-track .track-summary .total{padding-top:11px;font-size:clamp(17px,4.7vw,28px)}
+body.tish-paper.tish-paper-track .track-summary .total span:last-child{background:var(--track-grain),#b22016!important;background-blend-mode:multiply!important;clip-path:var(--track-edge);font-size:clamp(17px,4.8vw,29px);padding:8px 13px;direction:ltr}
+body.tish-paper.tish-paper-track .footerActions{margin:11px 0 0}
+body.tish-paper.tish-paper-track #pwaInstallBtn{display:none!important}
+body.tish-paper.tish-paper-track .bottom-nav{max-width:600px;min-height:calc(63px + env(safe-area-inset-bottom,0px));padding:4px 3px calc(4px + env(safe-area-inset-bottom,0px));background:var(--track-grain),url('/assets/tish-paper/decor/nav-background.svg') center/100% 100% no-repeat,#242322!important;background-blend-mode:multiply,normal,normal!important}
+body.tish-paper.tish-paper-track .bottom-nav .nav-btn{height:55px!important;gap:3px;font-size:clamp(10px,2.9vw,16px);line-height:1.35}
+body.tish-paper.tish-paper-track .bottom-nav .nav-btn .tish-paper-nav-icon{width:28px;height:28px;max-height:28px}
+body.tish-paper.tish-paper-track .bottom-nav .nav-btn.active{background:var(--track-grain),#b22016!important;background-blend-mode:multiply!important;clip-path:var(--track-edge)}
+@media(min-width:600px){body.tish-paper.tish-paper-track #trackingCard{padding:22px!important}body.tish-paper.tish-paper-track .track-summary{padding:0 20px 17px}body.tish-paper.tish-paper-track .progress{padding-block:24px}body.tish-paper.tish-paper-track .bottom-nav .nav-btn{height:70px!important}body.tish-paper.tish-paper-track{padding-bottom:100px!important}}
+
 </style>
 
 </head>
@@ -642,12 +718,14 @@ body.tish-paper.tish-paper-track .bottom-nav{max-width:650px}
             <div class="orderHead">
                 <div>
                     <span class="eyebrow">تفاصيل الطلب</span>
-                    <h1>#{{ $order->order_number }}</h1>
+                    <h1><bdi>{{ $order->order_number }}#</bdi></h1>
                 </div>
+                <button class="track-status-trigger" id="tishStatusMini" type="button" aria-haspopup="dialog" aria-controls="tishStatusOverlay">
                 <span class="status" id="label" data-order-state="loading" aria-live="polite">
                     <span class="statusDot" aria-hidden="true"><i class="fa-solid fa-check"></i></span>
-                    <span>جاري تحديث الحالة</span>
+                    <span id="tishStatusMiniText">جاري تحديث الحالة</span>
                 </span>
+                </button>
             </div>
 
             <div class="progress" aria-label="مراحل الطلب">
@@ -671,8 +749,6 @@ body.tish-paper.tish-paper-track .bottom-nav{max-width:650px}
                 </div>
             </div>
 
-            <div class="notice" id="eta"></div>
-
             <div class="paymentSummary" id="paymentSummary" aria-live="polite" aria-atomic="true">
                 <div class="paymentSummaryIcon" aria-hidden="true"><i class="fa-solid fa-credit-card"></i></div>
                 <div class="paymentSummaryText">
@@ -682,7 +758,8 @@ body.tish-paper.tish-paper-track .bottom-nav{max-width:650px}
                 <span class="paymentSummaryBadge" id="paymentBadge" data-payment-state="unknown">جاري التحديث</span>
             </div>
 
-            <div class="notice show" id="statusDescription"></div>
+            <div class="notice" id="statusDescription"></div>
+            <div class="notice" id="eta"></div>
             <div class="customer-alert-controls">
                 <button type="button" id="enableOrderAlerts"><i class="fa-solid fa-bell"></i> تفعيل صوت وإشعارات الطلب</button>
                 <button type="button" id="disableOrderPush" hidden>إيقاف إشعارات الخلفية لهذا الطلب</button>
@@ -704,28 +781,25 @@ body.tish-paper.tish-paper-track .bottom-nav{max-width:650px}
                             {{ $item->product ? \App\Support\CustomerMenuLanguage::name($item->product->name, $item->product->name_ar) : $item->product_name }}
                             <small>{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Quantity' : 'الكمية' }}: {{ number_format((float) $item->quantity, 0) }}</small>
                         </span>
-                        <b>{{ number_format($item->line_total,2) }} {{ $menuCurrencySymbol }}</b>
+                        <b><bdi>{{ $menuCurrencySymbol }} {{ number_format($item->line_total,2) }}</bdi></b>
                     </div>
                 @endforeach
             </div>
             <div class="total">
                 <span>الإجمالي</span>
-                <span>{{ number_format($order->total_amount,2) }} {{ $menuCurrencySymbol }}</span>
+                <span><bdi>{{ $menuCurrencySymbol }} {{ number_format($order->total_amount,2) }}</bdi></span>
             </div>
 
             </div>
 
+            @if($order->invoice)
             <div class="footerActions">
-                <a class="action primary" href="{{ route('customer-menu.show',$order->location->code) }}">طلب جديد</a>
-                <a class="action secondary" href="{{ route('customer-menu.my-orders',$order->location->code) }}">كل طلباتي</a>
-                @if($order->invoice)
                     <button class="action secondary" id="saveInvoiceImage" type="button"><i class="fa-solid fa-image"></i> حفظ الفاتورة كصورة</button>
                     <a class="action secondary" href="{{ route('customer-menu.invoice', ['token' => $order->public_token]) }}">
                         عرض الفاتورة
                     </a>
-                @endif
             </div>
-        <button class="tish-status-mini" id="tishStatusMini" type="button" aria-label="افتح بطاقة متابعة الطلب"><span>🍔 <span id="tishStatusMiniText">متابعة الطلب</span></span><span>عرض التفاصيل</span></button>
+            @endif
         </section>
     </main>
 
