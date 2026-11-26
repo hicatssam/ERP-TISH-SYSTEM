@@ -12,6 +12,7 @@ class CancelOrderRequest extends FormRequest
     {
         return [
             'cancellation_reason' => ['required', 'string', 'min:5', 'max:500'],
+            'stock_disposition' => ['nullable', 'in:restore,retain'],
         ];
     }
 
