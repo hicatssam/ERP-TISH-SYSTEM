@@ -228,6 +228,31 @@ const CART_URL = @json(route('customer-menu.cart', $location->code));
 const TRACK_BASE = @json(route('customer-menu.show', $location->code));
 const REQUEST_TOKEN = @json($requestToken ?? '');
 const CSRF = document.querySelector('meta[name="csrf-token"]').content;
+// Only attach a browser subscription to the newly created token-scoped order
+// after an explicit opt-in on the cart. Failure never changes checkout success.
+async function attachPreparedTishPush(data) {
+    try {
+        if (localStorage.getItem('tish-future-order-push-v1') !== 'yes' ||
+            !('Notification' in window) || Notification.permission !== 'granted' ||
+            !('serviceWorker' in navigator) || !('PushManager' in window) ||
+            !/^[A-Za-z0-9_-]{20,80}$/.test(String(data.public_token || ''))) return;
+        const registration = await navigator.serviceWorker.getRegistration('/');
+        const subscription = await registration?.pushManager?.getSubscription();
+        if (!subscription || localStorage.getItem('tish-future-order-push-v1') !== 'yes') return;
+        const json = subscription.toJSON();
+        const endpoint = @json(route('customer-menu.push.save', ['token'=>'TISH_ORDER_TOKEN_PLACEHOLDER'])).replace('TISH_ORDER_TOKEN_PLACEHOLDER', encodeURIComponent(data.public_token));
+        const response = await fetch(endpoint, {
+            method:'POST', credentials:'same-origin',
+            headers:{'Content-Type':'application/json',Accept:'application/json','X-CSRF-TOKEN':CSRF},
+            body:JSON.stringify({endpoint:json.endpoint,keys:json.keys}),
+            signal:AbortSignal.timeout(4000)
+        });
+        if (!response.ok) throw new Error('Push registration failed: '+response.status);
+        if (data.status_url) localStorage.setItem('tish-push:'+data.status_url,'yes');
+    } catch (error) {
+        console.warn('TISH order push registration:',error);
+    }
+}
 let methods = [];
 let checkoutSubmitting = false;
 let checkoutSucceeded = false;
@@ -561,6 +586,7 @@ document.getElementById('checkoutForm').addEventListener('submit', async e => {
 
         CM.clearCart();
         CM.toast('تم استلام طلبك بنجاح');
+        await attachPreparedTishPush(data);
         setTimeout(() => { window.location.href = data.track_url || TRACK_BASE; }, 700);
     } catch (err) {
         error.textContent = menuT(err.message);
