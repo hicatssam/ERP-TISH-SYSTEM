@@ -458,21 +458,98 @@ class CustomerMenuBranchIsolationTest extends TestCase
         $this->assertSame(20.0, (float) Order::findOrFail($result['order_id'])->total_amount);
     }
 
-    public function test_dine_in_reserves_table_and_staff_can_close_it_after_cancellation(): void
+    public function test_dine_in_reuses_session_and_staff_can_close_after_cancellation(): void
     {
         [$branch, $product, $cash, $actor, $payload] = $this->orderFixture();
         $table = $this->table($branch);
-        $payload = array_replace($payload, ['service_type' => 'dine_in', 'restaurant_table_id' => $table->id, 'qr_token' => $table->qr_token]);
-        $result = $this->postJson(route('customer-menu.orders.store', $branch->code), $payload)->assertCreated()->json();
+
+        $payload = array_replace($payload, [
+            'service_type' => 'dine_in',
+            'restaurant_table_id' => $table->id,
+            'qr_token' => $table->qr_token,
+        ]);
+
+        $route = route('customer-menu.orders.store', $branch->code);
+
+        $result = $this->postJson($route, $payload)
+            ->assertCreated()->json();
+
         $order = Order::findOrFail($result['order_id']);
         $this->assertNotNull($order->restaurant_table_session_id);
-        $this->postJson(route('customer-menu.orders.store', $branch->code), array_replace($payload, ['request_token' => (string) Str::uuid()]))
-            ->assertUnprocessable()->assertJsonValidationErrors('restaurant_table_id');
-        $this->assertDatabaseCount('orders', 1);
-        app(\App\Services\Orders\OrderService::class)->cancelOrder($order, 'Cancelled reservation', $actor);
-        app(\App\Services\Restaurant\RestaurantTableService::class)->close($table, $actor, true);
+
+        $extra = array_replace($payload, [
+            'request_token' => (string) Str::uuid(),
+        ]);
+
+        $second = $this->postJson($route, $extra)
+            ->assertCreated()->json();
+
+        $secondOrder = Order::findOrFail($second['order_id']);
+
+        $this->assertNotSame($order->id, $secondOrder->id);
+        $this->assertSame(
+            $order->restaurant_table_session_id,
+            $secondOrder->restaurant_table_session_id
+        );
+
+        $this->assertDatabaseCount('restaurant_table_sessions', 1);
+        $this->assertDatabaseCount('orders', 2);
+
+        $this->postJson($route, $extra)
+            ->assertCreated()
+            ->assertJsonPath('order_id', $secondOrder->id);
+
+        $this->assertDatabaseCount('orders', 2);
+
+        $orders = app(\App\Services\Orders\OrderService::class);
+        $tables = app(\App\Services\Restaurant\RestaurantTableService::class);
+
+        $orders->cancelOrder($order->fresh(), 'Cancelled reservation', $actor);
+
+        try {
+            $tables->close($table, $actor, true);
+            $this->fail('Table closed while an order was still open.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $this->assertArrayHasKey('restaurant_table_id', $e->errors());
+        }
+
+        $orders->cancelOrder($secondOrder->fresh(), 'Cancelled extra order', $actor);
+        $tables->close($table, $actor, true);
+
         $this->assertFalse($table->fresh()->isOccupied());
-        $this->getJson($result['status_url'])->assertOk()->assertJsonPath('state', 'cancelled');
+
+        $this->getJson($result['status_url'])
+            ->assertOk()->assertJsonPath('state', 'cancelled');
+
+        $this->getJson($second['status_url'])
+            ->assertOk()->assertJsonPath('state', 'cancelled');
+    }
+
+    public function test_dine_in_rejects_missing_and_invalid_qr_tokens(): void
+    {
+        [$branch, $product, $cash, $actor, $payload] = $this->orderFixture();
+        $table = $this->table($branch);
+
+        $payload = array_replace($payload, [
+            'service_type' => 'dine_in',
+            'restaurant_table_id' => $table->id,
+        ]);
+
+        $route = route('customer-menu.orders.store', $branch->code);
+
+        $this->postJson($route, $payload)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('restaurant_table_id');
+
+        $payload['qr_token'] = Str::random(48);
+
+        $this->postJson($route, $payload)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('qr_token');
+
+        $this->assertDatabaseCount('orders', 0);
+        $this->assertDatabaseCount('restaurant_table_sessions', 0);
+        $this->assertDatabaseCount('payments', 0);
     }
 
     public function test_delivery_address_and_channel_availability_are_enforced(): void
