@@ -192,7 +192,89 @@ try {
     } catch (ValidationException $e) { $blocked=true; }
     if (!$blocked) throw new RuntimeException('INVALID FEFO QUANTITY WAS ACCEPTED');
     echo "INSUFFICIENT VALID BATCHES: BLOCKED\n";
-    echo "=== MYSQL LARAVEL FEFO SERVICE PASSED ===\n";
+
+    // A failed allocation must not leave movements or stock changes.
+    if (DB::table('stock_movements')->where('reference_type', 'qa_fefo')->count() !== 2
+        || abs((float) DB::table('inventories')->where('product_id', 999901)->value('quantity') - 9) > 0.001) {
+        throw new RuntimeException('MYSQL INSUFFICIENT ALLOCATION WAS NOT ATOMIC');
+    }
+    echo "FAILED ALLOCATION ROLLBACK: PASSED\n";
+
+    $directBlocked = false;
+    try {
+        app(InventoryService::class)->decrease(
+            locationId: 999901, productId: 999901, quantity: 1,
+            reason: MovementReason::OrderSale, userId: 999901,
+            referenceType: 'qa_fefo', referenceId: 999901,
+            idempotencyKey: 'mysql-qa-direct-without-batch-999901'
+        );
+    } catch (ValidationException $e) { $directBlocked = true; }
+    if (! $directBlocked
+        || DB::table('stock_movements')->where('reference_type', 'qa_fefo')->count() !== 2
+        || abs((float) DB::table('inventories')->where('product_id', 999901)->value('quantity') - 9) > 0.001) {
+        throw new RuntimeException('MYSQL DIRECT TRACKED SALE GUARD FAILED');
+    }
+    echo "DIRECT UNALLOCATED SALE: BLOCKED\n";
+
+    // Return 1kg to the actual sale batch, never to expired goods.
+    $returnArgs = [
+        'locationId' => 999901, 'productId' => 999901, 'quantity' => 1.0,
+        'userId' => 999901, 'referenceType' => 'qa_fefo', 'referenceId' => 999901,
+        'consumptionPrefix' => 'mysql-qa-fefo-consumption-999901',
+        'idempotencyKey' => 'mysql-qa-fefo-return-999901',
+    ];
+    $allocator->restore(...$returnArgs);
+    $restoredQuantity = (float) DB::table('inventories')->where('product_id', 999901)->value('quantity');
+    $restoredExpired = (float) DB::table('inventory_batches')->where('id', $ids['EXPIRED'])->value('available_quantity');
+    $restoredEarly = (float) DB::table('inventory_batches')->where('id', $ids['EARLY'])->value('available_quantity');
+    $restoredLater = (float) DB::table('inventory_batches')->where('id', $ids['LATER'])->value('available_quantity');
+    if (abs($restoredQuantity - 10) > 0.001
+        || abs($restoredExpired - 8) > 0.001
+        || abs($restoredEarly) > 0.001
+        || abs($restoredLater - 2) > 0.001
+        || DB::table('stock_movements')->where('reference_type', 'qa_fefo')->count() !== 3) {
+        throw new RuntimeException('MYSQL ORIGINAL BATCH RESTORATION FAILED');
+    }
+    echo "RESTORE TO ORIGINAL BATCH: PASSED\n";
+
+    $allocator->restore(...$returnArgs);
+    if (abs((float) DB::table('inventories')->where('product_id', 999901)->value('quantity') - 10) > 0.001
+        || abs((float) DB::table('inventory_batches')->where('id', $ids['LATER'])->value('available_quantity') - 2) > 0.001
+        || DB::table('stock_movements')->where('reference_type', 'qa_fefo')->count() !== 3) {
+        throw new RuntimeException('MYSQL RESTORE IDEMPOTENCY FAILED');
+    }
+    echo "RESTORE IDEMPOTENCY: PASSED\n";
+
+    // Resell all 2kg still valid; the remaining 8kg expired must stay untouched.
+    $allocator->consume(
+        locationId: 999901, productId: 999901, quantity: 2.0,
+        userId: 999901, referenceType: 'qa_fefo', referenceId: 999901,
+        idempotencyKey: 'mysql-qa-fefo-resell-999901'
+    );
+    if (abs((float) DB::table('inventories')->where('product_id', 999901)->value('quantity') - 8) > 0.001
+        || abs((float) DB::table('inventory_batches')->where('id', $ids['LATER'])->value('available_quantity')) > 0.001
+        || abs((float) DB::table('inventory_batches')->where('id', $ids['EXPIRED'])->value('available_quantity') - 8) > 0.001
+        || DB::table('stock_movements')->where('reference_type', 'qa_fefo')->count() !== 4) {
+        throw new RuntimeException('MYSQL RESALE AFTER RESTORE FAILED');
+    }
+    echo "RESALE AFTER RESTORE: PASSED\n";
+    echo "EXPIRED BATCH REMAINS UNTOUCHED: YES\n";
+
+    $exhaustedBlocked = false;
+    try {
+        $allocator->consume(
+            locationId: 999901, productId: 999901, quantity: 1.0,
+            userId: 999901, referenceType: 'qa_fefo', referenceId: 999901,
+            idempotencyKey: 'mysql-qa-fefo-exhausted-999901'
+        );
+    } catch (ValidationException $e) { $exhaustedBlocked = true; }
+    if (! $exhaustedBlocked
+        || abs((float) DB::table('inventories')->where('product_id', 999901)->value('quantity') - 8) > 0.001
+        || DB::table('stock_movements')->where('reference_type', 'qa_fefo')->count() !== 4) {
+        throw new RuntimeException('MYSQL EXHAUSTED VALID STOCK WAS NOT BLOCKED ATOMICALLY');
+    }
+    echo "EXPIRED-ONLY INVENTORY SALE: BLOCKED\n";
+    echo "=== MYSQL LARAVEL FEFO SERVICE AND RESTORE PASSED ===\n";
 } finally {
     DB::rollBack();
     echo "TEST DATA: ROLLED BACK\n";
