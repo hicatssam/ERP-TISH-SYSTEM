@@ -239,6 +239,76 @@ class TishRecipeStockFlowTest extends TestCase
         }
     }
 
+    public function test_auto_mode_blocks_draft_recipe_then_uses_ingredients_after_approval(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $branch = Location::query()->where('code', 'B01')->firstOrFail();
+        $admin = User::query()->where('username', 'admin')->firstOrFail();
+        $burger = Product::query()->where('sku', 'BRG-BEEF-CLASSIC')->firstOrFail();
+        $recipe = Recipe::query()->where('product_id', $burger->id)
+            ->whereNull('product_variant_id')->approved()->active()->firstOrFail();
+        $recipe->update(['status' => 'draft', 'is_active' => false]);
+        RestaurantMenuItem::query()->where('location_id', $branch->id)
+            ->where('product_id', $burger->id)->update(['inventory_mode' => 'auto']);
+        // Deliberately have sufficient finished stock: auto must still refuse.
+        Inventory::query()->updateOrCreate(
+            ['location_id' => $branch->id, 'product_id' => $burger->id],
+            ['quantity' => 20, 'reserved_quantity' => 0]
+        );
+        $order = app(OrderService::class)->createOrder([
+            'location_id' => $branch->id,
+            'sales_channel_id' => SalesChannel::query()->where('slug', 'tish-direct')->value('id'),
+            'restaurant_service_type' => 'takeaway',
+            'order_source' => 'customer_menu',
+            'payment_arrangement' => 'pay_on_pickup',
+            'items' => [['product_id' => $burger->id, 'quantity' => 1]],
+        ], $admin, false);
+
+        $preview = $this->actingAs($admin)->getJson(route('restaurant.pos.cart-availability', [
+            'location_id' => $branch->id,
+            'ids' => [$burger->id],
+            'items' => [['product_id' => $burger->id, 'quantity' => 1]],
+        ]))->assertOk();
+        $this->assertNotEmpty($preview->json('ingredient_shortages'));
+
+        try {
+            app(OrderService::class)->confirmOrder($order, $admin);
+            $this->fail('Auto mode must not consume finished stock when the recipe is draft.');
+        } catch (ValidationException $expected) {
+            $this->assertArrayHasKey('stock', $expected->errors());
+        }
+        $this->assertSame('draft', $order->fresh()->statusValue());
+        $this->assertDatabaseMissing('order_inventory_consumptions', ['order_id' => $order->id]);
+        $this->assertNull($order->fresh()->invoice);
+        $this->assertEquals(20, Inventory::query()->where('location_id', $branch->id)
+            ->where('product_id', $burger->id)->value('quantity'));
+
+        app(\App\Services\Production\RecipeService::class)->approve($recipe->fresh(), $admin);
+        $confirmed = app(OrderService::class)->confirmOrder($order->fresh(), $admin);
+        $this->assertSame('confirmed', $confirmed->statusValue());
+        $this->assertDatabaseHas('order_inventory_consumptions', [
+            'order_id' => $order->id, 'recipe_id' => $recipe->id, 'source' => 'recipe',
+        ]);
+        $this->assertDatabaseMissing('order_inventory_consumptions', [
+            'order_id' => $order->id, 'stock_product_id' => $burger->id,
+        ]);
+        $this->assertEquals(20, Inventory::query()->where('location_id', $branch->id)
+            ->where('product_id', $burger->id)->value('quantity'));
+    }
+
+    public function test_recipe_policy_preserves_explicit_direct_stock_and_no_recipe_auto(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $burger = Product::query()->where('sku', 'BRG-BEEF-CLASSIC')->firstOrFail();
+        $raw = Product::query()->where('sku', 'BRG-ING-BUN')->firstOrFail();
+        $service = app(\App\Services\Restaurant\RestaurantOrderInventoryService::class);
+        $this->assertNull($service->recipeForInventoryMode($burger->id, null, 'product'));
+        $this->assertNull($service->recipeForInventoryMode($raw->id, null, 'auto'));
+        $this->assertNotNull($service->recipeForInventoryMode($burger->id, null, 'auto'));
+        $this->expectException(ValidationException::class);
+        $service->recipeForInventoryMode($raw->id, null, 'recipe');
+    }
+
     public function test_safe_existing_database_seeder_preserves_stock_orders_and_recipe_quantities_on_rerun(): void
     {
         $this->seed(DatabaseSeeder::class);
