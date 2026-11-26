@@ -819,6 +819,11 @@ public function confirmOrder(Order $order, User $user): Order
                     ]);
                 }
             }
+            if ($stockDisposition === 'retain' && ! $order->isRestaurantOrder()) {
+                throw ValidationException::withMessages([
+                    'stock_disposition' => 'الإلغاء دون إرجاع المواد متاح لطلبات المطعم فقط.',
+                ]);
+            }
             $restoreStock = $oldStatus === 'confirmed' && $stockDisposition !== 'retain';
 
             // Restore exactly the frozen physical stock consumption only if unused.
