@@ -47,6 +47,17 @@ final class PublicImageUrl
         }
 
         if (self::allowedDiskPath($normalized) && Storage::disk('public')->exists($normalized)) {
+            // Prefer the already-public file when the deployment's storage
+            // mapping points to this exact disk file. Static-only web server
+            // rules may otherwise intercept image requests to the Laravel route.
+            $local = realpath(Storage::disk('public')->path($normalized));
+            $web = realpath(public_path('storage/'.$normalized));
+
+            if ($local !== false && $web === $local && is_file($web) && is_readable($web)) {
+                return '/storage/'.implode('/', array_map('rawurlencode', explode('/', $normalized)));
+            }
+
+            // Preserve delivery on installations without a working storage link.
             return route('customer-menu.assets.show', ['path' => $normalized], false);
         }
 
