@@ -20,15 +20,22 @@
         default => $sourceOrder ? 'طلب مطعم' : 'بيع مباشر'
     };
     $tableName = $sourceOrder?->restaurantTable?->displayName();
-    $status = $invoice->paymentStatusValue();
+    $refundSummary = $invoice->refundSummary();
+    $status = $refundSummary['state'] ?? $invoice->paymentStatusValue();
     $arrangement = $sourceOrder?->payment_arrangement;
     $arrangement = $arrangement instanceof \BackedEnum ? $arrangement->value : (string) $arrangement;
-    $stamp = ! $invoice->isActive() ? 'ملغاة'
-        : ($status === 'paid' ? 'مدفوعة'
-        : ($status === 'partially_paid' ? 'مدفوعة جزئيًا'
-        : ($arrangement === 'pending_verification' ? 'بانتظار التحقق' : 'غير مدفوعة')));
+    $stamp = match (true) {
+        ! $invoice->isActive() => 'ملغاة',
+        $status === 'refunded' => 'مستردة بالكامل',
+        $status === 'partially_refunded' => 'مستردة جزئيًا',
+        $status === 'paid' => 'مدفوعة',
+        $status === 'partially_paid' => 'مدفوعة جزئيًا',
+        $arrangement === 'pending_verification' => 'بانتظار التحقق',
+        default => 'غير مدفوعة',
+    };
     $stampClass = ! $invoice->isActive() ? 'unpaid'
-        : ($status === 'paid' ? 'paid' : ($status === 'partially_paid' || $arrangement === 'pending_verification' ? 'pending' : 'unpaid'));
+        : (in_array($status, ['refunded', 'partially_refunded'], true) ? 'refunded'
+        : ($status === 'paid' ? 'paid' : ($status === 'partially_paid' || $arrangement === 'pending_verification' ? 'pending' : 'unpaid')));
     // Actual approved PNG seals, stored in public/assets/print/stamps.
     // Data URIs guarantee the same local image is usable by browser printing
     // and mPDF without requiring an externally accessible host.
@@ -258,6 +265,7 @@
     transform:rotate(-14deg);-webkit-transform:rotate(-14deg);
 }
 .ci-payment-fallback-unpaid{color:#c81b28;border-color:#c81b28}
+.ci-payment-fallback-refunded{color:#9e133b;border-color:#9e133b;font-size:20pt;white-space:normal}
 @if($thermal)
 .ci-payment-image{
     width:116px;height:116px;margin-left:-58px;margin-top:-58px;
@@ -383,7 +391,14 @@
         <td>
             <div class="ci-notes">
                 <div class="ci-notes-title">ملاحظات ▤</div>
-                <div class="ci-notes-body">{{ $invoice->notes ?: ($theme['footer_text'] ?: 'شكرًا لزيارتكم، نتطلع لخدمتكم مرة أخرى.') }}</div>
+                <div class="ci-notes-body">{{ $invoice->notes ?: ($theme['footer_text'] ?: 'شكرًا لزيارتكم، نتطلع لخدمتكم مرة أخرى.') }}
+                    @if($refundSummary['refunded'] > 0)
+                        <div style="margin-top:8px;font-weight:bold;color:#9e133b">سجل الاسترداد</div>
+                        @foreach($refundSummary['rows'] as $refund)
+                            <div style="font-size:8pt">{{ $refund->processed_at?->format('Y-m-d H:i') }} — {{ $refund->paymentMethod?->name_ar ?: $refund->paymentMethod?->name }} — {{ number_format((float)$refund->amount, 2) }} {{ $currencySymbol }}</div>
+                        @endforeach
+                    @endif
+                </div>
             </div>
         </td>
         <td>
@@ -395,8 +410,15 @@
                 @if((float)$invoice->tax_amount > 0)
                     <tr><td>الضريبة</td><td>{{ number_format((float)$invoice->tax_amount, 2) }} {{ $currencySymbol }}</td></tr>
                 @endif
-                <tr><td>المدفوع</td><td>{{ number_format((float)$invoice->paid_amount, 2) }} {{ $currencySymbol }}</td></tr>
-                @if((float)$invoice->remaining_amount > 0)
+                @if($refundSummary['refunded'] > 0)
+                    <tr><td>إجمالي التحصيل قبل الاسترداد</td><td>{{ number_format($refundSummary['collected'], 2) }} {{ $currencySymbol }}</td></tr>
+                    <tr><td>المبلغ المسترد</td><td>-{{ number_format($refundSummary['refunded'], 2) }} {{ $currencySymbol }}</td></tr>
+                    <tr><td>صافي المدفوع</td><td>{{ number_format($refundSummary['net'], 2) }} {{ $currencySymbol }}</td></tr>
+                    @if(!$invoice->isActive())<tr><td>الحالة المالية</td><td>{{ $status === 'refunded' ? 'مستردة بالكامل' : 'مستردة جزئيًا' }}</td></tr>@endif
+                @else
+                    <tr><td>المدفوع</td><td>{{ number_format((float)$invoice->paid_amount, 2) }} {{ $currencySymbol }}</td></tr>
+                @endif
+                @if($invoice->isActive() && (float)$invoice->remaining_amount > 0)
                     <tr><td>المتبقي</td><td>{{ number_format((float)$invoice->remaining_amount, 2) }} {{ $currencySymbol }}</td></tr>
                 @endif
                 <tr class="ci-final"><td>الإجمالي النهائي</td><td>{{ number_format((float)$invoice->total_amount, 2) }} {{ $currencySymbol }}</td></tr>
