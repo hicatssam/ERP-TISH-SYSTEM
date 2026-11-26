@@ -754,24 +754,23 @@ class RestaurantPosController extends Controller
                     ->where('location_id', $location->id)
                     ->where('product_id', $productId)->first();
                 $mode = $menuItem?->inventory_mode ?: 'auto';
-                if ($mode === 'product') continue;
-
-                $base = \App\Models\Recipe::query()
-                    ->where('product_id', $productId)->approved()->active();
-                $variantId = (int) ($item['product_variant_id'] ?? 0);
-                $recipe = $variantId
-                    ? (clone $base)->where('product_variant_id', $variantId)
-                        ->orderByDesc('version')->first()
-                    : null;
-                $recipe ??= (clone $base)->whereNull('product_variant_id')
-                    ->orderByDesc('version')->first();
-                if (! $recipe || $recipe->items()->count() === 0) {
-                    if ($mode === 'recipe') $shortages[] = [
+                try {
+                    $recipe = app(\App\Services\Restaurant\RestaurantOrderInventoryService::class)
+                        ->recipeForInventoryMode(
+                            $productId,
+                            isset($item['product_variant_id']) ? (int) $item['product_variant_id'] : null,
+                            $mode,
+                            $menuItem?->displayName()
+                        );
+                } catch (ValidationException $exception) {
+                    $shortages[] = [
                         'product_id' => $productId,
-                        'ingredient' => 'لا توجد وصفة فعالة لهذا الصنف',
+                        'ingredient' => collect($exception->errors())->flatten()->first(),
                     ];
                     continue;
                 }
+                if (! $recipe) continue;
+
                 $yield = (float) $recipe->yield_quantity;
                 if ($yield <= 0) {
                     $shortages[] = [
