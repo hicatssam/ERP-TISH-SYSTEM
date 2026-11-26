@@ -28,6 +28,8 @@
                     <textarea name="description" class="form-textarea">{{ old('description', $category->description) }}</textarea>
                 </div>
 
+                @include('admin.categories.partials.icon-picker')
+
                 {{-- Image upload --}}
                 <div class="form-group">
                     <label class="form-label">صورة الفئة</label>
