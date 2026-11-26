@@ -276,6 +276,14 @@ class OrderBankTransferFlowTest extends TestCase
         $this->assertSame('confirmed', $payment->fresh()->statusValue());
         $this->assertEquals(25, $payment->refunds()->sum('amount'));
         $this->assertEquals($account->id, $payment->refunds()->sole()->source_payment_account_id);
+        $invoice = \App\Models\Invoice::make([
+            'order_type' => 'order', 'order_id' => $order->id,
+            'paid_amount' => 75, 'total_amount' => 100, 'remaining_amount' => 25,
+        ]);
+        $this->assertSame('partially_refunded', $invoice->refundSummary()['state']);
+        $this->assertEquals(25, $invoice->refundSummary()['refunded']);
+        $this->assertEquals(100, $invoice->refundSummary()['collected']);
+
 
         $this->post(route('payments.refund', $payment), array_replace($payload, ['amount' => 76]))
             ->assertSessionHasErrors('amount');
@@ -283,6 +291,10 @@ class OrderBankTransferFlowTest extends TestCase
             ->assertSessionHasNoErrors();
         $this->assertSame('refunded', $payment->fresh()->statusValue());
         $this->assertEquals(100, $payment->refunds()->sum('amount'));
+        $invoice->paid_amount = 0;
+        $this->assertSame('refunded', $invoice->refundSummary()['state']);
+        $this->assertEquals(100, $invoice->refundSummary()['refunded']);
+
         $this->assertSame('100.00', $payment->fresh()->amount);
         $this->assertSame('confirmed', $order->fresh()->statusValue());
     }
