@@ -1267,6 +1267,25 @@
                             @enderror
 
                         </div>
+                        @if($orderStatus === 'confirmed' && $order->isRestaurantOrder())
+                            @php
+                                $kitchenStarted = $order->kitchenTickets->contains(fn ($ticket) =>
+                                    $ticket->started_at || $ticket->ready_at || $ticket->served_at
+                                    || in_array($ticket->statusValue(), ['preparing', 'ready', 'served'], true));
+                            @endphp
+                            <div class="form-group">
+                                <label class="form-label" for="stock_disposition">معالجة المخزون *</label>
+                                <select name="stock_disposition" id="stock_disposition" class="form-select" required>
+                                    <option value="">اختر الحالة الفعلية للوجبة</option>
+                                    @unless($kitchenStarted)
+                                    <option value="restore" @selected(old('stock_disposition') === 'restore')>لم تُستهلك المواد — إرجاع المخزون</option>
+                                    @endunless
+                                    <option value="retain" @selected(old('stock_disposition') === 'retain')>تم استهلاك المواد — إلغاء دون إرجاع المخزون</option>
+                                </select>
+                                <small class="text-muted">الإلغاء لا يعيد أموال العميل تلقائيًا. يجب استرداد صافي التحصيل أولًا. عند عدم الإرجاع تبقى التكلفة المسجلة للمواد المستهلكة.</small>
+                                @error('stock_disposition')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                        @endif
 
                     </div>
 
