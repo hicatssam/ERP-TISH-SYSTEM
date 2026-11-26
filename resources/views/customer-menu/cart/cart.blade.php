@@ -460,6 +460,32 @@ html body#tishCart #pwaInstallBtn.tish-paper-pin-control:not([hidden]) :is(i,spa
  html body#tishCart #pwaInstallBtn.tish-paper-pin-control:not([hidden]){width:74px!important;height:74px!important;min-width:74px!important;min-height:74px!important}
 }
 
+
+/* CART V3: a gentle empty-bag invitation. No motion for populated carts.
+   Independent translate/rotate/scale avoid legacy transform overrides. */
+@keyframes tish-cart-empty-hop{
+ 0%, 10%, 30%, 100%{translate:0 0;rotate:0deg;scale:1}
+ 4%{translate:0 0;rotate:0deg;scale:1.035 .965}
+ 8%{translate:0 -9px;rotate:-3deg;scale:.99 1.015}
+ 14%{translate:0 -5px;rotate:2deg;scale:1}
+ 18%{translate:0 0;rotate:0deg;scale:1.025 .98}
+ 22%{translate:0 -2px;rotate:0deg;scale:1}
+}
+@media(prefers-reduced-motion:no-preference){
+ html body#tishCart #cartItems>.tish-cart-empty-paper .tish-cart-bag-illustration{
+  transform-origin:50% 90%!important;
+  animation:tish-cart-empty-hop 5.5s ease-in-out 700ms 3 both!important;
+ }
+ html body#tishCart #cartItems>.tish-cart-empty-paper:focus-within .tish-cart-bag-illustration{
+  animation-play-state:paused!important;
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ html body#tishCart #cartItems>.tish-cart-empty-paper .tish-cart-bag-illustration{
+  animation:none!important;translate:none;rotate:none;scale:none;
+ }
+}
+
 </style>
 
 </head>
