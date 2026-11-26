@@ -224,6 +224,7 @@ class OrderBankTransferFlowTest extends TestCase
     {
         [$user, $location] = $this->makeFinanceUser();
         [$method, $account] = $this->makeBankMethodAndAccount($location);
+        $account->update(['can_disburse' => true]);
         $order = Order::query()->create([
             'order_number' => 'ORD-REFUND-' . Str::upper(Str::random(6)),
             'location_id' => $location->id,
@@ -255,10 +256,18 @@ class OrderBankTransferFlowTest extends TestCase
             'amount' => 25,
             'payment_method_id' => $method->id,
             'reason' => 'Partial refund recorded',
+            'source_payment_account_id' => $account->id,
         ];
         $this->post(route('payments.refund', $payment), $payload)->assertForbidden();
         $user->givePermissionTo(Permission::findOrCreate('payments.refund', 'web'));
         app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        $this->actingAs($user->fresh())->post(route('payments.refund', $payment), array_replace($payload, [
+            'source_payment_account_id' => null,
+        ]))->assertSessionHasErrors('source_payment_account_id');
+        $account->update(['can_disburse' => false]);
+        $this->post(route('payments.refund', $payment), $payload)->assertSessionHasErrors('source_payment_account_id');
+        $account->update(['can_disburse' => true]);
 
         $this->actingAs($user->fresh())->from(route('orders.show', $order))
             ->post(route('payments.refund', $payment), $payload)
@@ -266,6 +275,7 @@ class OrderBankTransferFlowTest extends TestCase
         $this->assertSame('100.00', $payment->fresh()->amount);
         $this->assertSame('confirmed', $payment->fresh()->statusValue());
         $this->assertEquals(25, $payment->refunds()->sum('amount'));
+        $this->assertEquals($account->id, $payment->refunds()->sole()->source_payment_account_id);
 
         $this->post(route('payments.refund', $payment), array_replace($payload, ['amount' => 76]))
             ->assertSessionHasErrors('amount');
