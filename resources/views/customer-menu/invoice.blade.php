@@ -64,6 +64,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Tajawal:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-invoice-v2.css') }}?v=6">
+@include('customer-menu.partials.order-alert-toggle')
 </head>
 <body class="tish-customer-invoice">
 <div class="tish-invoice-toolbar" aria-label="{{ $english ? 'Invoice actions' : 'إجراءات الفاتورة' }}">
