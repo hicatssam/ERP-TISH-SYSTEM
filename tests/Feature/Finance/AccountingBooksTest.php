@@ -418,6 +418,13 @@ class AccountingBooksTest extends TestCase
             'effective_date' => '2026-10-02', 'created_by' => $user->id,
         ]);
         $bank = $this->method('bank_transfer');
+        $sourceAccount = \App\Models\LocationPaymentAccount::query()->create([
+            'location_id' => $branch->id,
+            'payment_method_id' => $bank->id,
+            'name' => 'QA Bank Account',
+            'is_active' => true,
+            'can_disburse' => true,
+        ]);
         $supplier = \App\Models\Supplier::query()->create([
             'supplier_code' => 'FX-SUP-001', 'name' => 'FX supplier',
             'currency_id' => $usd->id, 'status' => 'active', 'created_by' => $user->id,
@@ -438,6 +445,10 @@ class AccountingBooksTest extends TestCase
                 'location_id' => $branch->id, 'currency_id' => $paymentCurrencyId,
                 'amount' => $paid, 'payment_date' => '2026-10-02',
                 'payment_method_id' => $bank->id,
+                'source_payment_account_id' => $sourceAccount->id,
+                'reference_number' => 'QA-FX-'.$invoiceNumber,
+                'beneficiary_name' => 'QA Supplier',
+                'beneficiary_account' => 'QA-123456',
             ], $user);
 
             $this->assertEquals(100, (float) $payment->applied_amount);

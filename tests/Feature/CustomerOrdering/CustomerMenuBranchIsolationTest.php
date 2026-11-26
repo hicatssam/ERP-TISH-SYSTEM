@@ -266,7 +266,12 @@ class CustomerMenuBranchIsolationTest extends TestCase
         $this->get(route('customer-menu.checkout', $branch->code))
             ->assertOk()->assertSee('value="outdoor"', false);
         $this->postJson(route('customer-menu.orders.store', $branch->code),
-            array_replace($this->payload($product, $cash), ['service_type' => 'outdoor']))
+            array_replace($this->payload($product, $cash), [
+                'service_type' => 'outdoor',
+                'car_type' => 'Toyota',
+                'car_color' => 'White',
+                'parking_spot' => 'A1',
+            ]))
             ->assertCreated();
     }
 
@@ -409,7 +414,7 @@ class CustomerMenuBranchIsolationTest extends TestCase
         LocationPaymentMethod::create(['location_id' => $branch->id, 'payment_method_id' => $bank->id, 'is_active' => true]);
         $table = $this->table($branch);
         $payload = array_replace($payload, ['payment_method_id' => $bank->id, 'service_type' => 'dine_in',
-            'restaurant_table_id' => $table->id, 'payment_proof' => \Illuminate\Http\UploadedFile::fake()->image('proof.jpg')]);
+            'restaurant_table_id' => $table->id, 'qr_token' => $table->qr_token, 'payment_proof' => \Illuminate\Http\UploadedFile::fake()->image('proof.jpg')]);
         $disk = \Mockery::mock(\Illuminate\Contracts\Filesystem\Filesystem::class);
         $disk->shouldReceive('putFileAs')->once()->andReturn(false);
         \Illuminate\Support\Facades\Storage::shouldReceive('disk')->with('local')->once()->andReturn($disk);
@@ -457,7 +462,7 @@ class CustomerMenuBranchIsolationTest extends TestCase
     {
         [$branch, $product, $cash, $actor, $payload] = $this->orderFixture();
         $table = $this->table($branch);
-        $payload = array_replace($payload, ['service_type' => 'dine_in', 'restaurant_table_id' => $table->id]);
+        $payload = array_replace($payload, ['service_type' => 'dine_in', 'restaurant_table_id' => $table->id, 'qr_token' => $table->qr_token]);
         $result = $this->postJson(route('customer-menu.orders.store', $branch->code), $payload)->assertCreated()->json();
         $order = Order::findOrFail($result['order_id']);
         $this->assertNotNull($order->restaurant_table_session_id);
