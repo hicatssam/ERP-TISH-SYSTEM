@@ -229,6 +229,7 @@
                     value="{{ old('base_selling_price', $product->base_selling_price ?? '') }}"
                     required
                 >
+                <small class="text-muted">يُستخدم في المنيو والفروع التي لا تمتلك سعرًا خاصًا.</small>
             </div>
 
         </div>
