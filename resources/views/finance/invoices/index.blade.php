@@ -65,9 +65,11 @@
                 <td>{{ $currencySymbol }}{{ number_format((float) $inv->paid_amount, 2) }}</td>
                 <td>{{ $currencySymbol }}{{ number_format((float) $inv->remaining_amount, 2) }}</td>
                 <td>
-                    <span class="badge {{ $inv->paymentStatusBadgeClass() }}">
-                        {{ $inv->paymentStatusLabel() }}
+                    @php($refundSummary = $inv->refundSummary())
+                    <span class="badge {{ $refundSummary['state'] ? 'badge-pending' : $inv->paymentStatusBadgeClass() }}">
+                        {{ match($refundSummary['state']) { 'refunded' => 'مستردة بالكامل', 'partially_refunded' => 'مستردة جزئيًا', default => $inv->paymentStatusLabel() } }}
                     </span>
+                    @if($refundSummary['refunded'] > 0)<small style="display:block">المسترد: {{ $currencySymbol }}{{ number_format($refundSummary['refunded'], 2) }}</small>@endif
                 </td>
                 <td>
                     <span class="badge {{ $inv->statusBadgeClass() }}">
