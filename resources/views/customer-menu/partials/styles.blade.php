@@ -424,3 +424,5 @@ body.tish-paper {
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-unified-header-v1.css') }}?v=1">
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/tish-fonts-v1.css') }}?v=2">
 <script src="{{ asset('assets/js/customer-menu/tish-visuals.js') }}?v=3" defer></script>
+
+@include('customer-menu.partials.order-alert-toggle')
