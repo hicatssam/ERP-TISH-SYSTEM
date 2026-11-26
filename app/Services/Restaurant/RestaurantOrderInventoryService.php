@@ -32,7 +32,8 @@ class RestaurantOrderInventoryService
      * Restaurant orders can use menu inventory_mode:
      * - product: deduct sold Product itself
      * - recipe: deduct active recipe ingredients
-     * - auto: recipe when available, otherwise Product itself
+     * - auto: approved active recipe when defined; never silently fall back
+     *   to finished stock for a product with a recipe definition.
      */
     public function consumeForConfirmation(Order $order, User $user): void
     {
@@ -407,35 +408,16 @@ class RestaurantOrderInventoryService
                 $inventoryMode = $menuItem?->inventory_mode ?: 'auto';
             }
 
-            $recipe = null;
+            $recipe = $isRestaurant
+                ? $this->recipeForInventoryMode(
+                    (int) $product->id,
+                    $orderItem->product_variant_id,
+                    $inventoryMode,
+                    $menuItem?->displayName() ?: $product->name_ar ?: $product->name
+                )
+                : null;
 
-            if ($isRestaurant && $inventoryMode !== 'product') {
-                $recipe = $this->resolveActiveRecipe(
-                    $product->id,
-                    $orderItem->product_variant_id
-                );
-            }
-
-            $useRecipe = $isRestaurant
-                && $inventoryMode !== 'product'
-                && $recipe
-                && $recipe->items->isNotEmpty();
-
-            if (
-                $isRestaurant
-                && $inventoryMode === 'recipe'
-                && ! $useRecipe
-            ) {
-                throw ValidationException::withMessages([
-                    'stock' => [
-                        'صنف المنيو "'
-                        . ($menuItem?->displayName()
-                            ?: $product->name_ar
-                            ?: $product->name)
-                        . '" مضبوط على خصم الوصفة، لكن لا توجد وصفة فعالة تحتوي مكونات للحجم المحدد.',
-                    ],
-                ]);
-            }
+            $useRecipe = $recipe !== null;
 
             /** @var array<int, array<string, mixed>> $itemPlan */
             $itemPlan = [];
@@ -598,6 +580,46 @@ class RestaurantOrderInventoryService
         }
 
         return $plan;
+    }
+
+    /**
+     * Single recipe policy for stock confirmation and POS advisory checks.
+     * Explicit product mode remains available for genuine ready-stock sales.
+     * Auto may use direct stock only when no recipe definition exists at all.
+     */
+    public function recipeForInventoryMode(
+        int $productId,
+        ?int $variantId,
+        string $mode,
+        ?string $productName = null
+    ): ?Recipe {
+        if ($mode === 'product') {
+            return null;
+        }
+
+        $recipe = $this->resolveActiveRecipe($productId, $variantId);
+
+        if ($recipe && $recipe->items->isNotEmpty()) {
+            if ((float) $recipe->yield_quantity <= 0) {
+                throw ValidationException::withMessages([
+                    'stock' => 'كمية إنتاج الوصفة غير صالحة: '.($productName ?: " #{$productId}"),
+                ]);
+            }
+
+            return $recipe;
+        }
+
+        // Include archived and deleted definitions: deleting or archiving a
+        // recipe must not silently convert a prepared item into a stock sale.
+        if ($mode === 'recipe' || Recipe::withTrashed()->where('product_id', $productId)->exists()) {
+            throw ValidationException::withMessages([
+                'stock' => 'الصنف "'.($productName ?: " #{$productId}")
+                    .'" يحتاج إلى وصفة معتمدة وفعالة تحتوي على مكونات للحجم المحدد. '
+                    .'راجع الوصفات قبل تأكيد الطلب؛ لن يتم خصم المنتج النهائي تلقائيًا.',
+            ]);
+        }
+
+        return null;
     }
 
     private function resolveActiveRecipe(
