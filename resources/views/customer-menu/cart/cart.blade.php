@@ -356,6 +356,110 @@ html body#tishCart #pwaInstallBtn.tish-paper-pin-control:not([hidden]){left:10px
  body#tishCart .cart-reference-brand img{width:46px;height:46px}
 }
 
+
+/* CART REFERENCE V2 — stronger irregular torn silhouette, correct bottom artwork and compact mobile ratios. */
+body#tishCart{
+ --tp-mask:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20400%2015%22%20preserveAspectRatio%3D%22none%22%3E%3Cpath%20fill%3D%22black%22%20d%3D%22M0%2015%20L1%2011%20L4%207%20L8%204%20L12%207.14%20L14%205.72%20L16%204.93%20L18%206.22%20L20%204.94%20L22%206.91%20L24%205.19%20L26%204.45%20L28%206.02%20L30%203.76%20L32%205.64%20L34%204.05%20L36%203.68%20L38%205.78%20L40%206.15%20L42%206.16%20L44%205.61%20L46%206.63%20L48%206.6%20L50%207.24%20L52%207.95%20L54%206.85%20L56%207.6%20L58%205.8%20L60%206.65%20L62%205.55%20L64%204.53%20L66%206.05%20L68%203.95%20L70%205.57%20L72%204.58%20L74%202.41%20L76%202.55%20L78%204.65%20L80%202.44%20L82%202.35%20L84%202.24%20L86%202.62%20L88%202.78%20L90%205.26%20L92%203.77%20L94%203.13%20L96%204.36%20L98%205.57%20L100%203.77%20L102%205.01%20L104%204.05%20L106%202.48%20L108%203.07%20L110%202.26%20L112%201.76%20L114%202.74%20L116%203.45%20L118%202.5%20L120%201.8%20L122%200.98%20L124%203.48%20L126%202.59%20L128%202.12%20L130%201.96%20L132%203.52%20L134%204.43%20L136%205.39%20L138%205.57%20L140%204.25%20L142%205.64%20L144%203.64%20L146%204.62%20L148%204.87%20L150%205.59%20L152%205.42%20L154%205.79%20L156%204.93%20L158%204.46%20L160%204.82%20L162%205.21%20L164%202.79%20L166%203.1%20L168%204.85%20L170%205.3%20L172%205.05%20L174%204.11%20L176%206.39%20L178%205.15%20L180%205.64%20L182%207.67%20L184%208.08%20L186%206.31%20L188%208.08%20L190%205.62%20L192%205.82%20L194%207.84%20L196%206.16%20L198%207.39%20L200%204.82%20L202%206.1%20L204%205.06%20L206%206.02%20L208%204.71%20L210%203.79%20L212%204.02%20L214%205.87%20L216%204.68%20L218%205.97%20L220%205.51%20L222%206.27%20L224%207.07%20L226%204.89%20L228%206.31%20L230%206.58%20L232%206.18%20L234%206.59%20L236%205.65%20L238%206.16%20L240%205.09%20L242%205.26%20L244%202.6%20L246%203.37%20L248%203.36%20L250%202.08%20L252%201.45%20L254%203.75%20L256%201.35%20L258%201.67%20L260%202.2%20L262%203.68%20L264%202%20L266%202.17%20L268%204.07%20L270%203.32%20L272%203.34%20L274%203.82%20L276%202.93%20L278%203.44%20L280%205.04%20L282%203.8%20L284%202.24%20L286%202.17%20L288%204.29%20L290%201.61%20L292%203.55%20L294%201.42%20L296%202.51%20L298%202.17%20L300%202.02%20L302%202.49%20L304%203.03%20L306%202.92%20L308%205.56%20L310%204.1%20L312%204.36%20L314%204.59%20L316%206.89%20L318%207.19%20L320%204.81%20L322%205.73%20L324%204.58%20L326%206.14%20L328%206.07%20L330%205.93%20L332%204.58%20L334%204.86%20L336%205.07%20L338%204.14%20L340%203.72%20L342%204.63%20L344%205.4%20L346%206.54%20L348%204.63%20L350%204.85%20L352%205.83%20L354%207.77%20L356%206.03%20L358%207.21%20L360%205.74%20L362%208.07%20L364%207.31%20L366%206.52%20L368%207.14%20L370%204.98%20L372%206.16%20L374%204.68%20L376%205.97%20L378%204.38%20L380%204.86%20L382%205.29%20L384%203.07%20L386%203.08%20L388%204.18%20L392%205%20L397%209%20L400%2015%20Z%22%2F%3E%3C%2Fsvg%3E"),url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20400%2015%22%20preserveAspectRatio%3D%22none%22%3E%3Cpath%20fill%3D%22black%22%20d%3D%22M0%200%20H400%20L398%206%20L394%2010%20L388%2011.62%20L386%2011.96%20L384%2011.67%20L382%2012.06%20L380%2010.36%20L378%2011.47%20L376%209.84%20L374%209.94%20L372%2010.11%20L370%209.31%20L368%208.89%20L366%208.86%20L364%209.45%20L362%207.77%20L360%208.51%20L358%208.15%20L356%208.43%20L354%208.35%20L352%209.58%20L350%208.62%20L348%208.09%20L346%207.57%20L344%208.58%20L342%207.7%20L340%208.47%20L338%207.36%20L336%207.52%20L334%208.95%20L332%207.85%20L330%209.55%20L328%209.59%20L326%209.78%20L324%2011.06%20L322%2010.96%20L320%209.31%20L318%209.75%20L316%2011.52%20L314%208.99%20L312%209.03%20L310%2010.28%20L308%2010.89%20L306%2011.03%20L304%2010.33%20L302%2010.38%20L300%2012.21%20L298%2010.47%20L296%2011.29%20L294%2011.29%20L292%2012.83%20L290%2011.54%20L288%2011.53%20L286%2012.29%20L284%2011.31%20L282%2012.17%20L280%2010.84%20L278%2012.13%20L276%2011.21%20L274%209.9%20L272%2011.9%20L270%2011.22%20L268%2010.62%20L266%2011.8%20L264%2011.71%20L262%2010.55%20L260%2012.2%20L258%2011.7%20L256%2011.53%20L254%209.98%20L252%209.89%20L250%2010.16%20L248%2010.06%20L246%208.92%20L244%209.3%20L242%209.31%20L240%207.34%20L238%209.81%20L236%208.57%20L234%209.33%20L232%208.06%20L230%209.01%20L228%208.15%20L226%207.94%20L224%208.84%20L222%207.51%20L220%207.27%20L218%207.64%20L216%208.36%20L214%208.38%20L212%208.43%20L210%206.83%20L208%207.66%20L206%209%20L204%209.66%20L202%2010.49%20L200%2010.16%20L198%209.13%20L196%209.06%20L194%209.56%20L192%2011.56%20L190%2011.48%20L188%2011.17%20L186%2010.31%20L184%209.27%20L182%2010.87%20L180%2010.36%20L178%209.33%20L176%2011.59%20L174%2010.35%20L172%2012.14%20L170%2010.91%20L168%2012.13%20L166%2011.38%20L164%2012.54%20L162%2011.33%20L160%2012.17%20L158%2011.81%20L156%2011.65%20L154%2010.31%20L152%2011.9%20L150%2011.62%20L148%2011.02%20L146%2012.27%20L144%2010.9%20L142%2010.44%20L140%2011.43%20L138%2010.48%20L136%2012.03%20L134%2012.36%20L132%2012.1%20L130%2011.24%20L128%2011.15%20L126%2011.23%20L124%208.92%20L122%209.74%20L120%2010.15%20L118%207.94%20L116%208.19%20L114%207.7%20L112%208.66%20L110%209.33%20L108%208.47%20L106%209.21%20L104%2010.02%20L102%2010.21%20L100%209.63%20L98%209.92%20L96%208.38%20L94%208.49%20L92%208.27%20L90%207.26%20L88%208.38%20L86%208.93%20L84%207.72%20L82%209.41%20L80%208.32%20L78%208.51%20L76%209.18%20L74%2010.55%20L72%2010.62%20L70%2010.81%20L68%2010.62%20L66%209.96%20L64%2011.43%20L62%2010.89%20L60%209.29%20L58%209.19%20L56%209.43%20L54%2010.49%20L52%2010.62%20L50%209.81%20L48%2010.35%20L46%2012.5%20L44%2011.07%20L42%2013.11%20L40%2012.2%20L38%2012.63%20L36%2011.95%20L34%2011.7%20L32%2012.15%20L30%2011.47%20L28%2011.48%20L26%2010.89%20L24%2011.93%20L22%2011.19%20L20%209.97%20L18%2010.28%20L16%2011.29%20L14%2011.49%20L12%2011.91%20L6%2010%20L2%206%20Z%22%2F%3E%3C%2Fsvg%3E"),url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2014%20220%22%20preserveAspectRatio%3D%22none%22%3E%3Cpath%20fill%3D%22black%22%20d%3D%22M2.82%200%20L2.71%202%20L4.05%204%20L3.14%206%20L2.95%208%20L4.89%2010%20L3.93%2012%20L4.97%2014%20L5.16%2016%20L3.87%2018%20L5.39%2020%20L5.35%2022%20L3.91%2024%20L5.28%2026%20L3.07%2028%20L4.17%2030%20L3.81%2032%20L2.86%2034%20L4.43%2036%20L2.19%2038%20L2.8%2040%20L3.06%2042%20L2.65%2044%20L3.37%2046%20L2.03%2048%20L1.95%2050%20L1.53%2052%20L3.02%2054%20L2.77%2056%20L2.57%2058%20L2.28%2060%20L1.93%2062%20L2.9%2064%20L1.53%2066%20L2.41%2068%20L2.18%2070%20L3.66%2072%20L3.66%2074%20L2.87%2076%20L3.81%2078%20L3.38%2080%20L3.74%2082%20L4.26%2084%20L4.27%2086%20L3.62%2088%20L4.74%2090%20L4.91%2092%20L4.89%2094%20L4.3%2096%20L5.17%2098%20L4.76%20100%20L3.25%20102%20L4.86%20104%20L3.83%20106%20L4.65%20108%20L3.01%20110%20L2.74%20112%20L3.08%20114%20L3.02%20116%20L3.23%20118%20L1.86%20120%20L2.14%20122%20L2.59%20124%20L3%20126%20L1.84%20128%20L1.45%20130%20L1.96%20132%20L2.47%20134%20L1.4%20136%20L1.55%20138%20L1.49%20140%20L2.57%20142%20L3.62%20144%20L2.44%20146%20L2.62%20148%20L3.23%20150%20L4.02%20152%20L3.95%20154%20L4.72%20156%20L4.55%20158%20L3.6%20160%20L4.51%20162%20L3.78%20164%20L4.47%20166%20L4.65%20168%20L5%20170%20L5.37%20172%20L3.38%20174%20L4.16%20176%20L4.72%20178%20L3.66%20180%20L3.04%20182%20L3.5%20184%20L4.29%20186%20L3.94%20188%20L3.97%20190%20L2.91%20192%20L2.78%20194%20L2.76%20196%20L3.43%20198%20L1.88%20200%20L1.76%20202%20L1.12%20204%20L2.38%20206%20L1.12%20208%20L1.58%20210%20L2.7%20212%20L2.57%20214%20L2.15%20216%20L2.47%20218%20L3.15%20220%20L14%20220%20V0%20Z%22%2F%3E%3C%2Fsvg%3E"),url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2014%20220%22%20preserveAspectRatio%3D%22none%22%3E%3Cpath%20fill%3D%22black%22%20d%3D%22M0%200%20L10.58%200%20L9.86%202%20L11.38%204%20L9.69%206%20L10.49%208%20L9.04%2010%20L9.31%2012%20L9.31%2014%20L10.15%2016%20L8.97%2018%20L10.32%2020%20L9.62%2022%20L8.85%2024%20L9.15%2026%20L10.48%2028%20L9.55%2030%20L8.98%2032%20L9.74%2034%20L9.33%2036%20L9.8%2038%20L10.72%2040%20L10.61%2042%20L10.9%2044%20L11.27%2046%20L11.94%2048%20L12.33%2050%20L10.87%2052%20L11.39%2054%20L11.15%2056%20L10.87%2058%20L12.13%2060%20L12.81%2062%20L11.37%2064%20L10.99%2066%20L11.72%2068%20L11.05%2070%20L12.24%2072%20L12.15%2074%20L11.79%2076%20L11.29%2078%20L11.49%2080%20L11.11%2082%20L10.45%2084%20L9.33%2086%20L9.27%2088%20L10.55%2090%20L10.26%2092%20L10.11%2094%20L9.25%2096%20L8.68%2098%20L8.67%20100%20L10.43%20102%20L10.04%20104%20L9.74%20106%20L10.45%20108%20L8.84%20110%20L10.26%20112%20L9.12%20114%20L9.6%20116%20L11.26%20118%20L10.27%20120%20L10.01%20122%20L9.94%20124%20L11.31%20126%20L10.75%20128%20L10.47%20130%20L11.08%20132%20L12.54%20134%20L12.24%20136%20L11.52%20138%20L12.03%20140%20L12.82%20142%20L11.39%20144%20L12.39%20146%20L11.66%20148%20L11.61%20150%20L10.68%20152%20L11.97%20154%20L11.99%20156%20L10.76%20158%20L10.18%20160%20L10.08%20162%20L9.85%20164%20L11%20166%20L10.6%20168%20L10.59%20170%20L10.34%20172%20L10.22%20174%20L8.81%20176%20L9.77%20178%20L9.74%20180%20L10.1%20182%20L9.08%20184%20L9.58%20186%20L8.64%20188%20L9.97%20190%20L9.88%20192%20L9.96%20194%20L9.37%20196%20L11.11%20198%20L10.68%20200%20L11.49%20202%20L10.03%20204%20L10.46%20206%20L11.31%20208%20L11.69%20210%20L12.28%20212%20L11.01%20214%20L12.21%20216%20L11.75%20218%20L11.03%20220%20L0%20220%20Z%22%2F%3E%3C%2Fsvg%3E"),linear-gradient(#000,#000);
+ --tp-mask-size:100% 15px,100% 15px,14px calc(100% - 28px),14px calc(100% - 28px),calc(100% - 25px) calc(100% - 28px);
+ --tp-mask-position:top center,bottom center,left center,right center,center;
+ --cart-disc:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%20preserveAspectRatio%3D%22none%22%3E%3Cpath%20fill%3D%22black%22%20d%3D%22M97.34%2050%20L98.69%2051.91%20L97.56%2053.74%20L98.71%2055.76%20L97.48%2057.52%20L97.53%2059.45%20L96.85%2061.25%20L96.76%2063.19%20L96.71%2065.18%20L96.6%2067.19%20L95.04%2068.66%20L94.1%2070.33%20L92.38%2071.59%20L92.23%2073.65%20L90.16%2074.61%20L89.6%2076.46%20L87.06%2076.93%20L86.95%2079.13%20L86.03%2080.77%20L84.46%2081.86%20L82.45%2082.45%20L81.54%2084.12%20L80.84%2086.11%20L79.46%2087.37%20L77.84%2088.32%20L76.9%2090.25%20L75.06%2090.89%20L73.7%2092.32%20L72%2093.17%20L70.66%2094.83%20L68.95%2095.75%20L67.09%2096.32%20L65.19%2096.74%20L63.14%2096.6%20L61.6%2098.3%20L59.34%2096.98%20L57.5%2097.33%20L55.6%2097.31%20L53.8%2098.32%20L51.84%2096.91%20L50%2097.68%20L48.17%2096.59%20L46.28%2097.32%20L44.57%2095.89%20L42.73%2095.88%20L41.07%2094.91%20L39.11%2095.37%20L37.48%2094.4%20L35.59%2094.34%20L33.59%2094.47%20L32.02%2093.4%20L29.59%2094.27%20L27.83%2093.5%20L26.48%2092%20L24.2%2092.11%20L23.23%2090.07%20L20.61%2090.45%20L19.84%2088.26%20L18.26%2087.17%20L17.04%2085.66%20L15.19%2084.81%20L14.02%2083.26%20L13.69%2081.01%20L12.25%2079.76%20L11.14%2078.23%20L10.1%2076.66%20L10.26%2074.36%20L9.53%2072.66%20L9.37%2070.7%20L7.28%2069.69%20L6.68%2067.95%20L6.25%2066.14%20L5.58%2064.43%20L3.89%2063.01%20L4.65%2060.89%20L3.78%2059.19%20L3.36%2057.39%20L2.48%2055.62%20L1.76%2053.8%20L1.21%2051.92%20L1.58%2050%20L0.78%2048.07%20L1.89%2046.21%20L0.93%2044.19%20L0.83%2042.21%20L1.54%2040.36%20L2.65%2038.63%20L2.89%2036.71%20L4.51%2035.22%20L4.94%2033.37%20L6.69%2032.06%20L6.86%2030.11%20L8.84%2029.03%20L9.17%2027.14%20L10.56%2025.83%20L11.49%2024.27%20L13.07%2023.17%20L13.62%2021.32%20L14.01%2019.26%20L15.67%2018.27%20L17%2017%20L17.43%2014.76%20L18.32%2012.91%20L19.49%2011.3%20L21.64%2010.97%20L23.18%209.85%20L24.8%208.88%20L25.91%206.98%20L27.73%206.28%20L29.87%206.33%20L31.45%205.22%20L33.27%204.65%20L35.38%204.99%20L37.27%204.88%20L39.13%204.72%20L40.88%204.17%20L42.62%203.4%20L44.57%204.13%20L46.35%203.57%20L48.15%203.02%20L50%203.13%20L51.81%204.06%20L53.68%203.28%20L55.41%204.26%20L57.43%203.1%20L59.24%203.55%20L61.11%203.74%20L62.91%204.21%20L64.94%204.01%20L67.02%203.87%20L68.88%204.43%20L70.61%205.3%20L72.47%205.89%20L74.41%206.41%20L75.43%208.5%20L77.25%209.21%20L78.89%2010.24%20L79.73%2012.28%20L81.42%2013.21%20L82.22%2015.14%20L83.35%2016.65%20L84.56%2018.06%20L85.21%2019.93%20L86.49%2021.24%20L88.04%2022.36%20L88.48%2024.29%20L88.92%2026.15%20L91.33%2026.86%20L91.82%2028.69%20L92.08%2030.6%20L93.83%2031.85%20L94.7%2033.51%20L95.16%2035.33%20L96.21%2036.97%20L97.44%2038.61%20L97.98%2040.46%20L97.72%2042.44%20L98.77%2044.23%20L99.78%2046.08%20L98.07%2048.11%20Z%22%2F%3E%3C%2Fsvg%3E");
+ --cart-side:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2040%20160%22%20preserveAspectRatio%3D%22none%22%3E%3Cpath%20fill%3D%22black%22%20d%3D%22M40%200%20L35%2010%2036%2018%2030%2026%2031%2035%2025%2040%2026%2049%2020%2056%2022%2064%2017%2072%2019%2080%2012%2087%2013%2095%207%20103%2010%20112%204%20119%207%20128%202%20137%203%20144%200%20152%203%20160%20H40%20Z%22%2F%3E%3C%2Fsvg%3E");
+ --cart-nav-height:76px;
+}
+body#tishCart::before{height:27px!important}
+body#tishCart::after{
+ width:min(18vw,86px)!important;height:155px!important;bottom:calc(var(--cart-nav-height) - 3px + env(safe-area-inset-bottom,0px))!important;
+ background:url('/assets/tish-paper/decor/halftone-bottom-flipped.svg') right bottom/100% 100% no-repeat!important;
+}
+body#tishCart .app::after{
+ content:"";position:fixed;right:0;bottom:calc(var(--cart-nav-height) - 3px + env(safe-area-inset-bottom,0px));
+ width:clamp(9px,3.8vw,20px);height:114px;z-index:0;pointer-events:none;
+ background:linear-gradient(#b61c0ddd,#b61c0ddd),url('/assets/tish-paper/paper/background.webp') center/200px auto;
+ background-blend-mode:multiply;
+ -webkit-mask:var(--cart-side) center/100% 100% no-repeat;mask:var(--cart-side) center/100% 100% no-repeat;
+}
+body#tishCart .cart-reference-header{min-height:99px;padding:14px 0 8px;gap:5px}
+body#tishCart .cart-reference-brand{gap:5px}
+body#tishCart .cart-reference-brand img{width:clamp(56px,16vw,80px);height:clamp(56px,16vw,80px)}
+body#tishCart .cart-reference-copy h1{font-size:clamp(15px,3.9vw,23px)!important}
+body#tishCart .cart-reference-copy small{font-size:clamp(9px,2.3vw,12px)!important}
+body#tishCart .cart-reference-back{
+ background:none!important;position:relative;isolation:isolate;flex:0 0 41px;width:41px;height:41px;
+}
+body#tishCart .cart-reference-back::before{
+ content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+ background:var(--cart-paper);border:1px solid #fff8ee;
+ -webkit-mask:var(--cart-disc) center/100% 100% no-repeat;mask:var(--cart-disc) center/100% 100% no-repeat;
+}
+body#tishCart .cart-reference-actions :is(.cm-language-switch,.cart-branch-link){
+ position:relative!important;isolation:isolate;min-height:38px!important;background:none!important;
+}
+body#tishCart .cart-reference-actions :is(.cm-language-switch,.cart-branch-link)::before{
+ content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:var(--cart-paper);
+ -webkit-mask-image:var(--tp-mask);mask-image:var(--tp-mask);
+ -webkit-mask-size:100% 8px,100% 8px,7px calc(100% - 14px),7px calc(100% - 14px),calc(100% - 12px) calc(100% - 14px);mask-size:100% 8px,100% 8px,7px calc(100% - 14px),7px calc(100% - 14px),calc(100% - 12px) calc(100% - 14px);
+ -webkit-mask-position:var(--tp-mask-position);mask-position:var(--tp-mask-position);-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+}
+html body#tishCart #cartItems>.tish-cart-empty-paper,
+html body#tishCart .menu-area .shell>.order-summary{
+ filter:drop-shadow(0 4px 2px #51341d55) drop-shadow(0 6px 4px #51341d20)!important;
+}
+html body#tishCart #cartItems>.tish-cart-empty-paper::after,
+html body#tishCart .menu-area .shell>.order-summary::after{
+ background:linear-gradient(#fff9f024,#fff5e51a),url('/assets/tish-paper/paper/background.webp') center top/540px auto repeat!important;
+}
+html body#tishCart #cartItems>.tish-cart-empty-paper::before,
+html body#tishCart .menu-area .shell>.order-summary::before{inset:-1.5px!important;background:#fff7ea!important}
+html body#tishCart #cartItems>.tish-cart-empty-paper{min-height:clamp(220px,52vw,310px)!important;margin:0 0 13px!important;padding:8px 16px 16px!important;gap:2px!important}
+html body#tishCart #cartItems .tish-cart-bag-art{
+ width:clamp(125px,31vw,185px)!important;height:clamp(120px,30vw,180px)!important;
+}
+html body#tishCart #cartItems .tish-cart-empty-paper>h2{font-size:clamp(23px,5.7vw,33px)!important;line-height:1.25!important;margin:2px 0 3px!important}
+html body#tishCart #cartItems .tish-cart-empty-paper>.tish-cart-browse{min-height:46px!important;width:clamp(175px,43vw,245px)!important;font-size:clamp(18px,4.7vw,25px)!important}
+html body#tishCart .menu-area .shell>.order-summary{min-height:clamp(146px,36vw,205px)!important;padding:18px 20px 19px!important;row-gap:6px!important;margin:0 0 15px!important}
+html body#tishCart .menu-area .shell>.order-summary>.summary-row{border-bottom:1.5px dashed #b7a48c!important}
+html body#tishCart .menu-area .shell>.order-summary>.cart-total{font-size:clamp(19px,4.8vw,27px)!important}
+html body#tishCart .menu-area .shell>.order-summary>.cart-note{font-weight:500!important;font-size:clamp(11px,2.8vw,14px)!important;color:#66574a!important}
+html body#tishCart .menu-area .shell>#checkoutStart{min-height:55px!important;filter:drop-shadow(0 3px 2px #54362255)!important}
+html body#tishCart .menu-area .shell>#checkoutStart::before{inset:1px!important}
+html body#tishCart .menu-area .shell>#checkoutStart::after{
+ content:""!important;position:absolute!important;inset:-1px!important;z-index:-2!important;pointer-events:none!important;
+ background:#fff7ea!important;
+ -webkit-mask-image:var(--tp-mask);mask-image:var(--tp-mask);-webkit-mask-size:var(--tp-mask-size);mask-size:var(--tp-mask-size);
+ -webkit-mask-position:var(--tp-mask-position);mask-position:var(--tp-mask-position);-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+}
+html body#tishCart .menu-area .shell>#checkoutStart:disabled::before{background:linear-gradient(#8b8580a6,#8b8580a6),url('/assets/tish-paper/paper/background.webp') center/540px auto repeat!important;background-blend-mode:multiply!important}
+html body#tishCart .bottom-nav{
+ min-height:calc(var(--cart-nav-height) + env(safe-area-inset-bottom,0px))!important;
+ background:url('/assets/tish-paper/paper/nav-charcoal.webp') center/100% 100% no-repeat!important;
+ -webkit-mask:url('/assets/tish-paper/decor/nav-background.svg') center/100% 100% no-repeat;mask:url('/assets/tish-paper/decor/nav-background.svg') center/100% 100% no-repeat;
+ padding-top:9px!important;
+}
+html body#tishCart .bottom-nav .nav-btn{min-height:60px!important;height:60px!important;font-size:clamp(12px,3.15vw,16px)!important;gap:3px!important}
+html body#tishCart .bottom-nav .nav-btn .tish-paper-nav-icon{width:clamp(27px,7.4vw,36px)!important;height:clamp(27px,7.4vw,36px)!important;max-height:none!important}
+html body#tishCart #pwaInstallBtn.tish-paper-pin-control:not([hidden]){
+ isolation:isolate!important;width:82px!important;height:82px!important;min-width:82px!important;min-height:82px!important;
+ left:9px!important;bottom:calc(var(--cart-nav-height) + 10px + env(safe-area-inset-bottom,0px))!important;
+ border:0!important;background:none!important;clip-path:none!important;
+ color:#fff5e7!important;filter:drop-shadow(0 4px 3px #4e281b66)!important;
+}
+html body#tishCart #pwaInstallBtn.tish-paper-pin-control:not([hidden])::before,
+html body#tishCart #pwaInstallBtn.tish-paper-pin-control:not([hidden])::after{
+ content:""!important;display:block!important;position:absolute!important;inset:0!important;z-index:-1!important;
+ -webkit-mask:var(--cart-disc) center/100% 100% no-repeat;mask:var(--cart-disc) center/100% 100% no-repeat;
+ pointer-events:none!important;border:0!important;
+ background:linear-gradient(#ba2014dd,#ba2014dd),url('/assets/tish-paper/paper/background.webp') center/200px auto repeat!important;background-blend-mode:multiply!important;
+}
+html body#tishCart #pwaInstallBtn.tish-paper-pin-control:not([hidden])::after{inset:-2px!important;z-index:-2!important;background:#fff5e7!important}
+html body#tishCart #pwaInstallBtn.tish-paper-pin-control:not([hidden]) :is(i,span){color:#fff7e8!important}
+@media(max-width:365px){
+ body#tishCart .cart-reference-header{gap:3px;min-height:87px}
+ body#tishCart .cart-reference-brand img{width:48px;height:48px}
+ body#tishCart .cart-reference-back{width:34px;flex-basis:34px;height:37px}
+ body#tishCart .cart-reference-copy h1{font-size:13px!important}
+ html body#tishCart #pwaInstallBtn.tish-paper-pin-control:not([hidden]){width:74px!important;height:74px!important;min-width:74px!important;min-height:74px!important}
+}
+
 </style>
 
 </head>
