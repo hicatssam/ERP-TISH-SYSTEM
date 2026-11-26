@@ -219,6 +219,64 @@ class OrderBankTransferFlowTest extends TestCase
         $this->assertSame('cancelled', $order->fresh()->statusValue());
     }
 
+    #[Test]
+    public function confirmed_bank_transfer_can_be_partially_and_fully_refunded_without_changing_original_amount(): void
+    {
+        [$user, $location] = $this->makeFinanceUser();
+        [$method, $account] = $this->makeBankMethodAndAccount($location);
+        $order = Order::query()->create([
+            'order_number' => 'ORD-REFUND-' . Str::upper(Str::random(6)),
+            'location_id' => $location->id,
+            'created_by' => $user->id,
+            'status' => 'confirmed',
+            'payment_status' => 'payment_pending',
+            'payment_arrangement' => 'pay_on_pickup',
+            'subtotal' => 100,
+            'total_amount' => 100,
+            'confirmed_at' => now(),
+        ]);
+        $this->mock(FinancialPostingService::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('collection')->once()->andReturnNull();
+            $mock->shouldReceive('refund')->twice()->andReturnNull();
+        });
+        $this->actingAs($user)->post(route('payments.store'), [
+            'entry_context' => 'order_bank_transfer',
+            'order_type' => 'order',
+            'order_id' => $order->id,
+            'payment_method_id' => $method->id,
+            'location_payment_account_id' => $account->id,
+            'amount' => 100,
+            'sender_name' => 'Refund test',
+            'sender_account_number' => 'TEST-REFUND',
+        ])->assertSessionHasNoErrors();
+        $payment = Payment::query()->sole();
+        $this->post(route('payments.verify', $payment), ['action' => 'verify'])->assertSessionHasNoErrors();
+        $payload = [
+            'amount' => 25,
+            'payment_method_id' => $method->id,
+            'reason' => 'Partial refund recorded',
+        ];
+        $this->post(route('payments.refund', $payment), $payload)->assertForbidden();
+        $user->givePermissionTo(Permission::findOrCreate('payments.refund', 'web'));
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        $this->actingAs($user->fresh())->from(route('orders.show', $order))
+            ->post(route('payments.refund', $payment), $payload)
+            ->assertRedirect(route('orders.show', $order))->assertSessionHasNoErrors();
+        $this->assertSame('100.00', $payment->fresh()->amount);
+        $this->assertSame('confirmed', $payment->fresh()->statusValue());
+        $this->assertEquals(25, $payment->refunds()->sum('amount'));
+
+        $this->post(route('payments.refund', $payment), array_replace($payload, ['amount' => 76]))
+            ->assertSessionHasErrors('amount');
+        $this->post(route('payments.refund', $payment), array_replace($payload, ['amount' => 75]))
+            ->assertSessionHasNoErrors();
+        $this->assertSame('refunded', $payment->fresh()->statusValue());
+        $this->assertEquals(100, $payment->refunds()->sum('amount'));
+        $this->assertSame('100.00', $payment->fresh()->amount);
+        $this->assertSame('confirmed', $order->fresh()->statusValue());
+    }
+
     private function makeFinanceUser(): array
     {
         $location = Location::query()->create([
