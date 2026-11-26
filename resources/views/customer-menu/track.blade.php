@@ -715,37 +715,31 @@ body#tishTrack::before{
 }
 
 
-/* TISH-TRACK-V9: notification preferences live in the top navigation, not the order sheet. */
+/* TISH-TRACK-V10: one torn-paper bell, direct on/off control, no popover. */
 body#tishTrack .track-header-actions{display:flex;align-items:center;gap:5px;flex:0 0 auto}
-body#tishTrack .track-alert-menu{position:relative;flex-shrink:0}
-body#tishTrack .track-alert-menu>summary{
- list-style:none;cursor:pointer;position:relative;display:grid;place-items:center;
- width:44px;height:44px;color:var(--tp-red);
- background:url('/assets/tish-paper/paper/favorite-disc.webp') center/100% 100% no-repeat;
- font-size:20px;filter:drop-shadow(0 3px 2px #54362235);
+body#tishTrack #enableOrderAlerts{
+ appearance:none;position:relative;isolation:isolate;display:grid;place-items:center;
+ flex:0 0 44px;width:44px;height:44px;padding:0;border:0!important;
+ background:none!important;box-shadow:none!important;cursor:pointer;
+ color:#ad2117;font-size:23px;filter:drop-shadow(0 3px 2px #5436224a);
 }
-body#tishTrack .track-alert-menu>summary::-webkit-details-marker{display:none}
-body#tishTrack .track-alert-menu>summary:focus-visible{outline:2px solid var(--tp-red);outline-offset:2px}
-body#tishTrack .track-alert-indicator{position:absolute;top:3px;inset-inline-end:3px;width:11px;height:11px;border:2px solid #fff4e5;background:#8b7966;border-radius:50%}
-body#tishTrack .track-alert-menu[data-alert-state="audio"] .track-alert-indicator{background:#bc780b}
-body#tishTrack .track-alert-menu[data-alert-state="push"] .track-alert-indicator{background:#257d35}
-body#tishTrack .track-alert-panel{
- position:absolute;z-index:55;top:calc(100% + 8px);inset-inline-end:-30px;
- width:min(270px,calc(100vw - 42px));padding:16px 14px;display:grid;gap:10px;
- background:var(--tish-paper-ivory,#f3eee6) url('/assets/tish-paper/paper/background.webp') center/540px auto repeat;
- border:1px solid #ddc7ac;border-radius:12px;box-shadow:0 6px 18px #50342040;text-align:start;
+body#tishTrack #enableOrderAlerts::before{
+ content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+ background:url('/assets/tish-paper/paper/product-disc.webp') center/100% 100% no-repeat;
 }
-body#tishTrack .track-alert-menu:not([open]) .track-alert-panel{display:none}
-body#tishTrack .track-alert-panel>strong{font-size:15px;font-weight:900}
-body#tishTrack .track-alert-panel button{min-height:44px;border:1px solid var(--tp-red);border-radius:8px;background:#fff4e4;color:var(--tp-red);font-size:12px;font-weight:800;padding:8px}
-body#tishTrack .track-alert-panel button[hidden]{display:none!important}
-body#tishTrack .track-alert-panel small{font-size:12px;line-height:1.6;color:#51473e}
+body#tishTrack #enableOrderAlerts[data-alert-state="off"]{color:#8b3026}
+body#tishTrack #enableOrderAlerts i{line-height:1}
+body#tishTrack #enableOrderAlerts:focus-visible{outline:2px solid var(--tp-red);outline-offset:2px;border-radius:50%}
+body#tishTrack #enableOrderAlerts:active{transform:scale(.94)}
+body#tishTrack #enableOrderAlerts:disabled{cursor:wait;opacity:.65}
+body#tishTrack .track-alert-sr{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 @media(max-width:370px){
  body#tishTrack .track-header{gap:5px;padding-inline:3px}
  body#tishTrack .track-header-actions{gap:2px}
  body#tishTrack .track-language .cm-language-switch{min-width:57px;padding-inline:7px!important;font-size:12px!important}
  body#tishTrack .track-brand img{width:46px;height:46px}
 }
+@media(prefers-reduced-motion:reduce){body#tishTrack #enableOrderAlerts:active{transform:none}}
 </style>
 
 </head>
@@ -784,18 +778,10 @@ body#tishTrack .track-alert-panel small{font-size:12px;line-height:1.6;color:#51
             </span>
         </a>
         <div class="track-header-actions">
-            <details class="track-alert-menu" id="trackAlertMenu" data-alert-state="off">
-                <summary aria-label="إشعارات الطلب" title="إشعارات الطلب" id="trackAlertToggle">
-                    <i class="fa-solid fa-bell" aria-hidden="true"></i>
-                    <span class="track-alert-indicator" aria-hidden="true"></span>
-                </summary>
-                <div class="track-alert-panel">
-                    <strong>إشعارات الطلب</strong>
-                    <button type="button" id="enableOrderAlerts"><i class="fa-solid fa-bell"></i> تفعيل صوت وإشعارات الطلب</button>
-                    <button type="button" id="disableOrderPush" hidden>إيقاف إشعارات الخلفية لهذا الطلب</button>
-                    <small id="alertPermissionHint" aria-live="polite">ستصلك التنبيهات أثناء فتح صفحة الطلب.</small>
-                </div>
-            </details>
+            <button type="button" id="enableOrderAlerts" data-alert-state="off" aria-pressed="false" aria-label="تفعيل صوت وإشعارات الطلب" title="تفعيل صوت وإشعارات الطلب" aria-describedby="alertPermissionHint">
+                <i class="fa-solid fa-bell-slash" aria-hidden="true"></i>
+            </button>
+            <span class="track-alert-sr" id="alertPermissionHint" role="status" aria-live="polite">التنبيهات غير مفعّلة.</span>
             <div class="track-language" data-cm-language-host></div>
         </div>
     </header>
@@ -946,17 +932,6 @@ body#tishTrack .track-alert-panel small{font-size:12px;line-height:1.6;color:#51
             canceled: 'تم إلغاء الطلب'
         };
 
-        const trackAlertMenu = document.getElementById('trackAlertMenu');
-        const trackAlertToggle = document.getElementById('trackAlertToggle');
-        document.addEventListener('click', event => {
-            if (trackAlertMenu?.open && !trackAlertMenu.contains(event.target)) trackAlertMenu.open = false;
-        });
-        document.addEventListener('keydown', event => {
-            if (event.key === 'Escape' && trackAlertMenu?.open) {
-                trackAlertMenu.open = false;
-                trackAlertToggle?.focus();
-            }
-        });
         const alertsButton = document.getElementById('enableOrderAlerts');
         const alertsHint = document.getElementById('alertPermissionHint');
         const alertBox = document.getElementById('customerStatusAlert');
@@ -973,7 +948,7 @@ body#tishTrack .track-alert-panel small{font-size:12px;line-height:1.6;color:#51
         const pushEnabledKey = 'tish-push:' + url;
         let pushSubscribed = localStorage.getItem(pushEnabledKey) === 'yes';
         let pushErrorMessage = '';
-        const disablePushButton = document.getElementById('disableOrderPush');
+        let alertsBusy = false;
         function base64UrlToBytes(base64) {
             const binary = atob(base64.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - base64.length % 4) % 4));
             return Uint8Array.from(binary, char => char.charCodeAt(0));
@@ -1141,60 +1116,80 @@ body#tishTrack .track-alert-panel small{font-size:12px;line-height:1.6;color:#51
 
         function refreshAlertsHint() {
             if (!alertsButton || !alertsHint) return;
-            alertsButton.textContent = menuT(alertsEnabled ? '🔔 إشعارات الطلب مفعّلة' : '🔔 تفعيل صوت وإشعارات الطلب');
-            if (disablePushButton) disablePushButton.hidden = !pushSubscribed;
-            if (trackAlertMenu) trackAlertMenu.dataset.alertState = pushSubscribed ? 'push' : (alertsEnabled ? 'audio' : 'off');
-            if (trackAlertToggle) {
-                const hint = menuT(pushSubscribed ? 'الصوت وإشعارات الخلفية مفعّلان على هذا الجهاز.' : (alertsEnabled ? 'إشعارات الطلب مفعّلة' : 'تفعيل صوت وإشعارات الطلب'));
-                trackAlertToggle.setAttribute('aria-label', hint);
-                trackAlertToggle.title = hint;
+            const enabled = alertsEnabled || pushSubscribed;
+            alertsButton.dataset.alertState = enabled ? 'on' : 'off';
+            alertsButton.setAttribute('aria-pressed', String(enabled));
+            const icon = alertsButton.querySelector('i');
+            if (icon) icon.className = 'fa-solid ' + (enabled ? 'fa-bell' : 'fa-bell-slash');
+            const action = menuT(enabled ? 'إيقاف صوت وإشعارات الطلب' : 'تفعيل صوت وإشعارات الطلب');
+            const detail = pushErrorMessage
+                ? menuT(enabled && alertsEnabled && !pushSubscribed
+                    ? 'التنبيهات داخل الصفحة مفعّلة. إشعارات الخلفية غير متاحة حاليًا.'
+                    : 'تعذر تحديث إشعارات الخلفية. حاول مرة أخرى.')
+                : menuT(pushSubscribed && alertsEnabled
+                    ? 'الصوت وإشعارات الخلفية مفعّلان على هذا الجهاز.'
+                    : (pushSubscribed ? 'إشعارات الخلفية مفعّلة.' : (alertsEnabled ? 'التنبيهات داخل الصفحة مفعّلة.' : 'التنبيهات غير مفعّلة.')));
+            alertsButton.setAttribute('aria-label', action);
+            alertsButton.title = action + ' — ' + detail;
+            alertsHint.textContent = detail;
+            alertsButton.disabled = alertsBusy;
+            alertsButton.setAttribute('aria-busy', String(alertsBusy));
+        }
+
+        async function disableTishOrderPush() {
+            if (!pushSubscribed) return;
+            if (!('serviceWorker' in navigator)) throw new Error('Service worker unavailable');
+            const registration = await navigator.serviceWorker.getRegistration('/');
+            const subscription = await registration?.pushManager?.getSubscription();
+            if (subscription) {
+                const response = await fetch(pushDeleteUrl, {
+                    method:'DELETE', credentials:'same-origin',
+                    headers:{'Content-Type':'application/json', Accept:'application/json', 'X-CSRF-TOKEN':csrfToken},
+                    body:JSON.stringify({endpoint:subscription.endpoint})
+                });
+                if (!response.ok) throw new Error('Order push removal failed');
             }
-            alertsHint.textContent = menuT(pushErrorMessage || (alertsEnabled
-                ? ('Notification' in window && Notification.permission === 'granted'
-                    ? (pushSubscribed ? 'الصوت وإشعارات الخلفية مفعّلان على هذا الجهاز.' : 'الصوت مفعّل. إشعارات الخلفية تحتاج إعدادًا إضافيًا.')
-                    : 'الصوت مفعّل. إشعارات الجهاز تحتاج إذن المتصفح.')
-                : 'فعّل التنبيهات لتسمع صوتًا عند تغيّر حالة الطلب.'));
+            // Remove this order only; the shared browser subscription is used by other orders.
+            pushSubscribed = false;
+            localStorage.removeItem(pushEnabledKey);
         }
 
         alertsButton?.addEventListener('click', async () => {
-            alertsEnabled = true;
-            sessionStorage.setItem(alertKey, 'enabled');
-            try {
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                if (AudioContext) {
-                    audioContext = audioContext || new AudioContext();
-                    await audioContext.resume();
-                }
-            } catch (error) { console.warn('Audio could not start:', error); }
-            if ('Notification' in window && Notification.permission === 'default' && window.isSecureContext) {
-                try { await Notification.requestPermission(); } catch (error) {}
-            }
+            if (alertsBusy) return;
+            const turningOff = alertsEnabled || pushSubscribed;
+            alertsBusy = true;
             pushErrorMessage = '';
-            try {
-                await enableTishBackgroundPush();
-            } catch (error) {
-                pushErrorMessage = String(error.message || error);
+            if (turningOff) {
+                alertsEnabled = false;
+                sessionStorage.removeItem(alertKey);
+            } else {
+                alertsEnabled = true;
+                sessionStorage.setItem(alertKey, 'enabled');
             }
             refreshAlertsHint();
-        });
-        disablePushButton?.addEventListener('click', async () => {
             try {
-                const subscription = await (await navigator.serviceWorker.ready).pushManager.getSubscription();
-                if (subscription) {
-                    const response = await fetch(pushDeleteUrl, {
-                        method:'DELETE', credentials:'same-origin',
-                        headers:{'Content-Type':'application/json', Accept:'application/json', 'X-CSRF-TOKEN':csrfToken},
-                        body:JSON.stringify({endpoint:subscription.endpoint})
-                    });
-                    if (!response.ok) throw new Error('تعذر إلغاء اشتراك هذا الطلب.');
+                if (turningOff) {
+                    await disableTishOrderPush();
+                } else {
+                    try {
+                        const AudioContext = window.AudioContext || window.webkitAudioContext;
+                        if (AudioContext) {
+                            audioContext = audioContext || new AudioContext();
+                            await audioContext.resume();
+                        }
+                    } catch (error) { console.warn('Audio could not start:', error); }
+                    if ('Notification' in window && Notification.permission === 'default' && window.isSecureContext) {
+                        try { await Notification.requestPermission(); } catch (error) {}
+                    }
+                    await enableTishBackgroundPush();
                 }
-                pushSubscribed = false;
-                localStorage.removeItem(pushEnabledKey);
-                pushErrorMessage = '';
             } catch (error) {
                 pushErrorMessage = String(error.message || error);
+                console.warn('TISH order notification update:', error);
+            } finally {
+                alertsBusy = false;
+                refreshAlertsHint();
             }
-            refreshAlertsHint();
         });
         refreshAlertsHint();
 
