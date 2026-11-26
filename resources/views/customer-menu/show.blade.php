@@ -56,27 +56,7 @@
         'deep' => '0 18px 44px rgba(27, 19, 22, .16)',
         default => '0 10px 28px rgba(27, 19, 22, .08)',
     };
-    $categoryIconClasses = [
-        'burger' => 'fa-burger',
-        'pizza' => 'fa-pizza-slice',
-        'coffee' => 'fa-mug-hot',
-        'cake' => 'fa-cake-candles',
-        'croissant' => 'fa-bread-slice',
-        'donut' => 'fa-cookie-bite',
-        'icecream' => 'fa-ice-cream',
-        'juice' => 'fa-glass-water',
-        'drink' => 'fa-bottle-water',
-        'fries' => 'fa-box',
-        'chicken' => 'fa-drumstick-bite',
-        'salad' => 'fa-bowl-food',
-        'sandwich' => 'fa-burger',
-        'chocolate' => 'fa-cookie',
-        'tea' => 'fa-mug-saucer',
-        'breakfast' => 'fa-egg',
-        'gift' => 'fa-gift',
-        'dessert' => 'fa-cookie-bite',
-        'sparkles' => 'fa-wand-magic-sparkles',
-    ];
+    
 @endphp
 <style>
 .reference-home{
@@ -906,7 +886,7 @@ html body.tish-paper.reference-home #homePromotion{margin-top:8px!important;marg
     </button>
     @foreach($homeCategories as $category)
      @php
-      $iconClass = $categoryIconClasses[$category['icon_key'] ?? 'sparkles'] ?? 'fa-wand-magic-sparkles';
+      $iconClass = \App\Support\MenuIconLibrary::fontAwesome($category['icon_key'] ?? null);
      @endphp
      <button class="cat" type="button" data-cat="{{ $category['id'] }}" data-cat-name="{{ $category['name'] }}">
       <span class="cat-visual" style="--category-color:var(--tish-paper-red)">
