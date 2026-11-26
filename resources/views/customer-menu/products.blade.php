@@ -169,7 +169,7 @@ body.tish-paper .tools .search:focus-within::before {
 }
 </style>
 
-@include('customer-menu.partials.round-categories')
+<link rel="stylesheet" href="/assets/css/customer-menu/tish-round-categories-v2.css?v=2">
 </head>
 <body class="crisp-customer-menu tish-paper tish-paper-products">
 @include('customer-menu.partials.brand-watermark')
@@ -199,39 +199,16 @@ body.tish-paper .tools .search:focus-within::before {
    <button class="filter-square" type="button" id="openFilters" aria-label="تصفية الأصناف"><i class="fa-solid fa-sliders"></i></button>
   </div>
 
-  <div class="categories tish-round-categories" id="categories">
+  <div class="categories tish-round-reference" id="categories">
    <button class="cat {{ $initialCategory === 'all' || $initialCategory === '' ? 'active' : '' }}" type="button" data-cat="all"><span class="cat-visual"><i class="fa-solid fa-utensils" aria-hidden="true"></i></span><b>الكل</b></button>
    @foreach(($categories ?? []) as $category)
     <button class="cat {{ (string) $initialCategory === (string) $category['id'] ? 'active' : '' }}" type="button" data-cat="{{ $category['id'] }}">
-     @php
-       $categoryIconClasses = [
-        'burger' => 'fa-burger',
-        'pizza' => 'fa-pizza-slice',
-        'coffee' => 'fa-mug-hot',
-        'cake' => 'fa-cake-candles',
-        'croissant' => 'fa-bread-slice',
-        'donut' => 'fa-cookie-bite',
-        'icecream' => 'fa-ice-cream',
-        'juice' => 'fa-glass-water',
-        'drink' => 'fa-bottle-water',
-        'fries' => 'fa-box',
-        'chicken' => 'fa-drumstick-bite',
-        'salad' => 'fa-bowl-food',
-        'sandwich' => 'fa-burger',
-        'chocolate' => 'fa-cookie',
-        'tea' => 'fa-mug-saucer',
-        'breakfast' => 'fa-egg',
-        'gift' => 'fa-gift',
-        'dessert' => 'fa-cookie-bite',
-        'sparkles' => 'fa-wand-magic-sparkles',
-    ];
-       $iconClass = $categoryIconClasses[$category['icon_key'] ?? 'sparkles'] ?? 'fa-wand-magic-sparkles';
-     @endphp
      <span class="cat-visual">
-       <i class="fa-solid {{ $iconClass }}" aria-hidden="true"></i>
-       @if(($theme['category_visual'] ?? 'icons') === 'images' && !empty($category['image']))
-         <img src="{{ $category['image'] }}" alt="" onerror="this.remove()">
-       @endif
+      @if(($theme['category_visual'] ?? 'icons') === 'images' && !empty($category['image']))
+       <img src="{{ $category['image'] }}" alt="">
+      @else
+       <i class="fa-solid {{ ['burger'=>'fa-burger','pizza'=>'fa-pizza-slice','coffee'=>'fa-mug-hot','cake'=>'fa-cake-candles','croissant'=>'fa-bread-slice','donut'=>'fa-cookie-bite','icecream'=>'fa-ice-cream','juice'=>'fa-glass-water','drink'=>'fa-bottle-water','fries'=>'fa-box','chicken'=>'fa-drumstick-bite','salad'=>'fa-bowl-food','sandwich'=>'fa-burger','chocolate'=>'fa-cookie','tea'=>'fa-mug-saucer','breakfast'=>'fa-egg','gift'=>'fa-gift','dessert'=>'fa-cookie-bite'][$category['icon_key'] ?? 'sparkles'] ?? 'fa-utensils' }}" aria-hidden="true"></i>
+      @endif
      </span>
      <b>{{ $category['name'] }}</b>
     </button>

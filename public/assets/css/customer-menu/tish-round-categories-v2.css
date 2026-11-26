@@ -1,0 +1,50 @@
+/* TISH category reference V2. Loaded last, independent of Blade partials. */
+html body.tish-paper:is(.reference-home,.tish-paper-products) #categories.tish-round-reference{
+ display:flex!important;flex-direction:row!important;direction:inherit!important;
+ align-items:flex-start!important;justify-content:flex-start!important;gap:10px!important;
+ padding:8px 2px 13px!important;overflow-x:auto!important;overflow-y:hidden!important;
+ scrollbar-width:none;scroll-snap-type:x proximity;overscroll-behavior-x:contain;
+}
+html body.tish-paper:is(.reference-home,.tish-paper-products) #categories.tish-round-reference .cat{
+ display:flex!important;flex-direction:column!important;justify-content:flex-start!important;align-items:center!important;
+ flex:0 0 clamp(68px,20.7%,92px)!important;width:clamp(68px,20.7%,92px)!important;min-width:0!important;max-width:none!important;
+ height:auto!important;min-height:94px!important;max-height:none!important;gap:6px!important;padding:2px 0 0!important;margin:0!important;
+ background:none!important;border:0!important;box-shadow:none!important;filter:none!important;clip-path:none!important;
+ border-radius:0!important;overflow:visible!important;transform:none!important;translate:none!important;scroll-snap-align:start;
+}
+html body.tish-paper:is(.reference-home,.tish-paper-products) #categories.tish-round-reference .cat::before,
+html body.tish-paper:is(.reference-home,.tish-paper-products) #categories.tish-round-reference .cat::after{content:none!important;display:none!important}
+html body.tish-paper:is(.reference-home,.tish-paper-products) #categories.tish-round-reference .cat .cat-visual{
+ position:relative!important;isolation:isolate!important;display:grid!important;place-items:center!important;
+ width:clamp(62px,16vw,79px)!important;height:clamp(62px,16vw,79px)!important;min-width:0!important;min-height:0!important;
+ flex:none!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;
+ background:transparent url('/assets/tish-paper/paper/product-disc.webp') center/100% 100% no-repeat!important;
+ color:#a91f17!important;overflow:visible!important;box-shadow:none!important;
+ filter:drop-shadow(0 3px 2px #67412b48)!important;transform:none!important;
+}
+html body.tish-paper:is(.reference-home,.tish-paper-products) #categories.tish-round-reference .cat .cat-visual::before{content:none!important;display:none!important}
+html body.tish-paper:is(.reference-home,.tish-paper-products) #categories.tish-round-reference .cat.active .cat-visual::before{
+ content:""!important;display:block!important;position:absolute!important;inset:4px!important;z-index:-1!important;pointer-events:none!important;
+ background:#ad2117 url('/assets/tish-paper/paper/nav-active.webp') center/150% 150% no-repeat!important;
+ clip-path:polygon(50% 0%,57% 2%,64% 1%,70% 5%,77% 7%,83% 12%,88% 19%,92% 23%,95% 31%,98% 38%,97% 44%,100% 51%,97% 58%,98% 65%,94% 72%,90% 77%,86% 84%,78% 88%,72% 93%,65% 96%,58% 96%,50% 100%,42% 98%,35% 97%,29% 94%,21% 90%,16% 85%,10% 78%,6% 71%,3% 65%,2% 58%,0% 51%,2% 44%,1% 38%,5% 31%,8% 24%,13% 18%,18% 12%,25% 8%,31% 4%,38% 3%,44% 1%)!important;
+}
+html body.tish-paper:is(.reference-home,.tish-paper-products) #categories.tish-round-reference .cat .cat-visual i{
+ display:block!important;position:relative!important;z-index:1!important;margin:0!important;
+ color:#a91f17!important;font-size:clamp(26px,7vw,32px)!important;line-height:1!important;
+}
+html body.tish-paper:is(.reference-home,.tish-paper-products) #categories.tish-round-reference .cat.active .cat-visual i{color:#fff2dc!important}
+html body.tish-paper:is(.reference-home,.tish-paper-products) #categories.tish-round-reference .cat .cat-visual img{
+ display:block!important;width:64%!important;height:64%!important;object-fit:contain!important;
+ margin:0!important;padding:0!important;border:0!important;background:none!important;box-shadow:none!important;border-radius:0!important;
+}
+html body.tish-paper:is(.reference-home,.tish-paper-products) #categories.tish-round-reference .cat>b{
+ display:block!important;max-width:100%!important;width:100%!important;min-height:0!important;
+ font-size:clamp(11px,3vw,14px)!important;font-weight:800!important;line-height:1.35!important;text-align:center!important;
+ color:#2c221a!important;white-space:normal!important;overflow-wrap:normal!important;overflow:visible!important;
+}
+html body.tish-paper:is(.reference-home,.tish-paper-products) #categories.tish-round-reference .cat.active>b{color:#a91f17!important}
+html body.tish-paper:is(.reference-home,.tish-paper-products) #categories.tish-round-reference .paper-category-indicator{display:none!important}
+html body.tish-paper:is(.reference-home,.tish-paper-products) #categories.tish-round-reference .cat:focus-visible{outline:2px solid #a91f17!important;outline-offset:2px!important}
+@media(prefers-reduced-motion:no-preference){
+ html body.tish-paper:is(.reference-home,.tish-paper-products) #categories.tish-round-reference .cat:active .cat-visual{scale:.94}
+}
