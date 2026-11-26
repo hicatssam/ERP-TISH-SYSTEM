@@ -772,9 +772,9 @@ public function confirmOrder(Order $order, User $user): Order
         return $product;
     }
 
-    public function cancelOrder(Order $order, string $reason, User $user): Order
+    public function cancelOrder(Order $order, string $reason, User $user, ?string $stockDisposition = null): Order
     {
-        $order = DB::transaction(function () use ($order, $reason, $user) {
+        $order = DB::transaction(function () use ($order, $reason, $user, $stockDisposition) {
             $order = Order::query()
                 ->with(['items.product', 'invoice.customerPaymentAllocations'])
                 ->lockForUpdate()
@@ -805,8 +805,24 @@ public function confirmOrder(Order $order, User $user): Order
                 ]);
             }
 
-            // Restore exactly the frozen physical stock consumption.
-            if ($oldStatus === 'confirmed') {
+            // Lock current kitchen tickets before deciding whether stock can return.
+            // A started ticket is proof of consumption even if later cancelled.
+            $kitchenStarted = false;
+            if ($oldStatus === 'confirmed' && $order->isRestaurantOrder()) {
+                $tickets = $order->kitchenTickets()->orderBy('id')->lockForUpdate()->get();
+                $kitchenStarted = $tickets->contains(fn ($ticket) =>
+                    $ticket->started_at || $ticket->ready_at || $ticket->served_at
+                    || in_array($ticket->statusValue(), ['preparing', 'ready', 'served'], true));
+                if ($kitchenStarted && $stockDisposition !== 'retain') {
+                    throw ValidationException::withMessages([
+                        'stock_disposition' => 'بدأ تحضير الطلب. اختر الإلغاء دون إرجاع المواد المستهلكة؛ لا يمكن إعادتها للمخزون تلقائيًا.',
+                    ]);
+                }
+            }
+            $restoreStock = $oldStatus === 'confirmed' && $stockDisposition !== 'retain';
+
+            // Restore exactly the frozen physical stock consumption only if unused.
+            if ($restoreStock) {
                 $this->restaurantOrderInventoryService
                     ->restoreForCancellation(
                         $order,
@@ -834,7 +850,7 @@ public function confirmOrder(Order $order, User $user): Order
                 $this->financialPosting->saleCancellation($order->invoice, $user);
             }
 
-            if ($oldStatus === 'confirmed') {
+            if ($restoreStock) {
                 app(\App\Services\Finance\GeneralLedgerIntegrationService::class)
                     ->cancelOrderCost($order, $user);
             }
@@ -861,7 +877,12 @@ public function confirmOrder(Order $order, User $user): Order
                 recordId:   $order->id,
                 oldValues:  ['status' => $oldStatus],
                 newValues:  ['status' => 'cancelled'],
-                metadata:   ['location_id' => $order->location_id, 'reason' => $reason],
+                metadata:   [
+                    'location_id' => $order->location_id,
+                    'reason' => $reason,
+                    'stock_disposition' => $oldStatus === 'draft' ? 'not_consumed' : ($restoreStock ? 'restored' : 'retained_consumption'),
+                    'kitchen_started' => $kitchenStarted,
+                ],
             );
 
             $fresh = $order->fresh();
