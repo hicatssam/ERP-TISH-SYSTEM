@@ -714,6 +714,38 @@ body#tishTrack::before{
  background-blend-mode:normal!important;clip-path:none!important;
 }
 
+
+/* TISH-TRACK-V9: notification preferences live in the top navigation, not the order sheet. */
+body#tishTrack .track-header-actions{display:flex;align-items:center;gap:5px;flex:0 0 auto}
+body#tishTrack .track-alert-menu{position:relative;flex-shrink:0}
+body#tishTrack .track-alert-menu>summary{
+ list-style:none;cursor:pointer;position:relative;display:grid;place-items:center;
+ width:44px;height:44px;color:var(--tp-red);
+ background:url('/assets/tish-paper/paper/favorite-disc.webp') center/100% 100% no-repeat;
+ font-size:20px;filter:drop-shadow(0 3px 2px #54362235);
+}
+body#tishTrack .track-alert-menu>summary::-webkit-details-marker{display:none}
+body#tishTrack .track-alert-menu>summary:focus-visible{outline:2px solid var(--tp-red);outline-offset:2px}
+body#tishTrack .track-alert-indicator{position:absolute;top:3px;inset-inline-end:3px;width:11px;height:11px;border:2px solid #fff4e5;background:#8b7966;border-radius:50%}
+body#tishTrack .track-alert-menu[data-alert-state="audio"] .track-alert-indicator{background:#bc780b}
+body#tishTrack .track-alert-menu[data-alert-state="push"] .track-alert-indicator{background:#257d35}
+body#tishTrack .track-alert-panel{
+ position:absolute;z-index:55;top:calc(100% + 8px);inset-inline-end:-30px;
+ width:min(270px,calc(100vw - 42px));padding:16px 14px;display:grid;gap:10px;
+ background:var(--tish-paper-ivory,#f3eee6) url('/assets/tish-paper/paper/background.webp') center/540px auto repeat;
+ border:1px solid #ddc7ac;border-radius:12px;box-shadow:0 6px 18px #50342040;text-align:start;
+}
+body#tishTrack .track-alert-menu:not([open]) .track-alert-panel{display:none}
+body#tishTrack .track-alert-panel>strong{font-size:15px;font-weight:900}
+body#tishTrack .track-alert-panel button{min-height:44px;border:1px solid var(--tp-red);border-radius:8px;background:#fff4e4;color:var(--tp-red);font-size:12px;font-weight:800;padding:8px}
+body#tishTrack .track-alert-panel button[hidden]{display:none!important}
+body#tishTrack .track-alert-panel small{font-size:12px;line-height:1.6;color:#51473e}
+@media(max-width:370px){
+ body#tishTrack .track-header{gap:5px;padding-inline:3px}
+ body#tishTrack .track-header-actions{gap:2px}
+ body#tishTrack .track-language .cm-language-switch{min-width:57px;padding-inline:7px!important;font-size:12px!important}
+ body#tishTrack .track-brand img{width:46px;height:46px}
+}
 </style>
 
 </head>
@@ -751,7 +783,21 @@ body#tishTrack::before{
                 <small>{{ $location->name }}</small>
             </span>
         </a>
-        <div class="track-language" data-cm-language-host></div>
+        <div class="track-header-actions">
+            <details class="track-alert-menu" id="trackAlertMenu" data-alert-state="off">
+                <summary aria-label="إشعارات الطلب" title="إشعارات الطلب" id="trackAlertToggle">
+                    <i class="fa-solid fa-bell" aria-hidden="true"></i>
+                    <span class="track-alert-indicator" aria-hidden="true"></span>
+                </summary>
+                <div class="track-alert-panel">
+                    <strong>إشعارات الطلب</strong>
+                    <button type="button" id="enableOrderAlerts"><i class="fa-solid fa-bell"></i> تفعيل صوت وإشعارات الطلب</button>
+                    <button type="button" id="disableOrderPush" hidden>إيقاف إشعارات الخلفية لهذا الطلب</button>
+                    <small id="alertPermissionHint" aria-live="polite">ستصلك التنبيهات أثناء فتح صفحة الطلب.</small>
+                </div>
+            </details>
+            <div class="track-language" data-cm-language-host></div>
+        </div>
     </header>
 
     <main class="wrap" style="padding-bottom:12px">
@@ -801,11 +847,6 @@ body#tishTrack::before{
 
             <div class="notice" id="statusDescription"></div>
             <div class="notice" id="eta"></div>
-            <div class="customer-alert-controls">
-                <button type="button" id="enableOrderAlerts"><i class="fa-solid fa-bell"></i> تفعيل صوت وإشعارات الطلب</button>
-                <button type="button" id="disableOrderPush" hidden>إيقاف إشعارات الخلفية لهذا الطلب</button>
-                <small id="alertPermissionHint" aria-live="polite">ستصلك التنبيهات أثناء فتح صفحة الطلب.</small>
-            </div>
             <div class="customer-status-alert" id="customerStatusAlert" role="status" aria-live="polite"></div>
 
             <div class="notice" id="customerMessage"></div>
@@ -905,6 +946,17 @@ body#tishTrack::before{
             canceled: 'تم إلغاء الطلب'
         };
 
+        const trackAlertMenu = document.getElementById('trackAlertMenu');
+        const trackAlertToggle = document.getElementById('trackAlertToggle');
+        document.addEventListener('click', event => {
+            if (trackAlertMenu?.open && !trackAlertMenu.contains(event.target)) trackAlertMenu.open = false;
+        });
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape' && trackAlertMenu?.open) {
+                trackAlertMenu.open = false;
+                trackAlertToggle?.focus();
+            }
+        });
         const alertsButton = document.getElementById('enableOrderAlerts');
         const alertsHint = document.getElementById('alertPermissionHint');
         const alertBox = document.getElementById('customerStatusAlert');
@@ -1091,6 +1143,12 @@ body#tishTrack::before{
             if (!alertsButton || !alertsHint) return;
             alertsButton.textContent = menuT(alertsEnabled ? '🔔 إشعارات الطلب مفعّلة' : '🔔 تفعيل صوت وإشعارات الطلب');
             if (disablePushButton) disablePushButton.hidden = !pushSubscribed;
+            if (trackAlertMenu) trackAlertMenu.dataset.alertState = pushSubscribed ? 'push' : (alertsEnabled ? 'audio' : 'off');
+            if (trackAlertToggle) {
+                const hint = menuT(pushSubscribed ? 'الصوت وإشعارات الخلفية مفعّلان على هذا الجهاز.' : (alertsEnabled ? 'إشعارات الطلب مفعّلة' : 'تفعيل صوت وإشعارات الطلب'));
+                trackAlertToggle.setAttribute('aria-label', hint);
+                trackAlertToggle.title = hint;
+            }
             alertsHint.textContent = menuT(pushErrorMessage || (alertsEnabled
                 ? ('Notification' in window && Notification.permission === 'granted'
                     ? (pushSubscribed ? 'الصوت وإشعارات الخلفية مفعّلان على هذا الجهاز.' : 'الصوت مفعّل. إشعارات الخلفية تحتاج إعدادًا إضافيًا.')
