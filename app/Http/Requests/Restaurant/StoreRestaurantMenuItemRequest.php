@@ -32,7 +32,7 @@ class StoreRestaurantMenuItemRequest extends FormRequest
             'inventory_mode' => ['nullable', 'in:auto,product,recipe'],
 
             // Price / availability are stored in location_products, not duplicated in the menu.
-            'selling_price' => ['required', 'numeric', 'min:0', 'max:999999999.99'],
+            'selling_price' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:999999999.99'],
             'is_available' => ['nullable', 'boolean'],
         ];
     }
