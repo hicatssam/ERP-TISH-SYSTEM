@@ -52,6 +52,16 @@ class PosCashierShiftSimulationTest extends TestCase
         $employee->locations()->attach($branch->id, ['is_primary' => true]);
         $cashier = User::factory()->create(['employee_id' => $employee->id]);
 
+
+        \App\Models\Currency::query()->firstOrCreate(
+            ['code' => 'ILS'],
+            [
+                'name' => 'Shekel',
+                'is_base' => true,
+                'is_active' => true,
+            ]
+        );
+
         \App\Models\FinancialPeriod::query()->firstOrCreate(
             ['year' => (int) now()->year, 'month' => (int) now()->month],
             [

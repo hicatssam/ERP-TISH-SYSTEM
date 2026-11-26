@@ -287,6 +287,16 @@ class CustomerMenuBranchIsolationTest extends TestCase
     {
         [$branch, $product, $cash, $actor, $payload] = $this->orderFixture();
 
+
+        \App\Models\Currency::query()->firstOrCreate(
+            ['code' => 'ILS'],
+            [
+                'name' => 'Shekel',
+                'is_base' => true,
+                'is_active' => true,
+            ]
+        );
+
         \App\Models\FinancialPeriod::query()->firstOrCreate(
             ['year' => (int) now()->year, 'month' => (int) now()->month],
             [
@@ -336,6 +346,16 @@ class CustomerMenuBranchIsolationTest extends TestCase
     public function test_cancellation_restores_stock_and_cancels_invoice_and_kitchen(): void
     {
         [$branch, $product, $cash, $actor, $payload] = $this->orderFixture();
+
+
+        \App\Models\Currency::query()->firstOrCreate(
+            ['code' => 'ILS'],
+            [
+                'name' => 'Shekel',
+                'is_base' => true,
+                'is_active' => true,
+            ]
+        );
 
         \App\Models\FinancialPeriod::query()->firstOrCreate(
             ['year' => (int) now()->year, 'month' => (int) now()->month],
