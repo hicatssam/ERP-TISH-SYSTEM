@@ -788,6 +788,7 @@ html body.tish-paper.reference-home #homePromotion{margin-top:8px!important;marg
 }
 </style>
 
+@include('customer-menu.partials.round-categories')
 </head>
 <body class="crisp-customer-menu reference-home tish-paper">
 @php
@@ -898,7 +899,7 @@ html body.tish-paper.reference-home #homePromotion{margin-top:8px!important;marg
     </div>
     <button class="reference-see-all" type="button" data-show-all>عرض الكل <i class="fa-solid fa-chevron-left"></i></button>
    </div>
-   <div class="categories" id="categories">
+   <div class="categories tish-round-categories" id="categories">
     <button class="cat active" type="button" data-cat="all">
      <span class="cat-visual" style="--category-color:var(--primary)"><i class="fa-solid fa-utensils"></i></span>
      <b>الكل</b>
@@ -909,10 +910,9 @@ html body.tish-paper.reference-home #homePromotion{margin-top:8px!important;marg
      @endphp
      <button class="cat" type="button" data-cat="{{ $category['id'] }}" data-cat-name="{{ $category['name'] }}">
       <span class="cat-visual" style="--category-color:var(--tish-paper-red)">
+       <i class="fa-solid {{ $iconClass }}" aria-hidden="true"></i>
        @if(($theme['category_visual'] ?? 'icons') === 'images' && !empty($category['image']))
-        <img src="{{ $category['image'] }}" alt="" loading="lazy" onerror="this.outerHTML='<i class=&quot;fa-solid {{ $iconClass }}&quot;></i>'">
-       @else
-        <i class="fa-solid {{ $iconClass }}"></i>
+        <img src="{{ $category['image'] }}" alt="" loading="lazy" onerror="this.remove()">
        @endif
       </span>
       <b>{{ $category['name'] }}</b>
@@ -1147,7 +1147,6 @@ html body.tish-paper.reference-home #homePromotion{margin-top:8px!important;marg
             item.classList.toggle('active', item === button);
         });
         render();
-        window.TishPaperMotion?.categories(document.getElementById('categories'), button);
         document.getElementById('menuCatalog').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
@@ -1384,7 +1383,6 @@ html body.tish-paper.reference-home #homePromotion{margin-top:8px!important;marg
     } else {
         revealFirstProduct();
     }
-    window.TishPaperMotion?.categories(document.getElementById('categories'));
 })();
 </script>
 @include('customer-menu.partials.pwa-install')
