@@ -606,7 +606,7 @@ body#tishTrack #pwaInstallBtn.tish-paper-pin-control:not([hidden]){display:none!
 /* All paper finishes use the same seamless tile size; no grid from stretching/repeat boundaries. */
 body#tishTrack :is(.statusDot,.progressItem .dot,.paymentSummaryIcon,#paymentBadge,.notice.show,.customer-status-alert.show,.customer-alert-controls button,.total span:last-child,.bottom-nav,.bottom-nav .nav-btn.active){background-size:172px 168px,auto!important}
 body#tishTrack .track-language{filter:drop-shadow(0 3px 2px #65402444)}
-body#tishTrack .customer-alert-controls #enableOrderAlerts{position:relative;justify-self:end;margin-inline-end:4px;filter:drop-shadow(0 2px 2px #795a3726)}
+body#tishTrack .customer-alert-controls #enableOrderAlerts{position:relative;justify-self:start;margin-inline-start:4px;filter:drop-shadow(0 2px 2px #795a3726)}
 body#tishTrack .customer-alert-controls #enableOrderAlerts::before{content:"";position:absolute;left:-25px;top:-9px;width:23px;height:25px;background:var(--tp-rays) center/contain no-repeat;pointer-events:none}
 html[dir="ltr"] body#tishTrack .customer-alert-controls #enableOrderAlerts::before{left:auto;right:-25px;transform:scaleX(-1)}
 body#tishTrack .customer-alert-controls small{text-align:start;margin-inline:6px}
