@@ -89,7 +89,7 @@ class UnifiedInvoiceDocumentTest extends TestCase
         foreach ([
             ['paid_amount' => 49, 'remaining_amount' => 0, 'label' => 'مدفوعة', 'class' => 'invoice-watermark-paid'],
             ['paid_amount' => 0, 'remaining_amount' => 49, 'label' => 'غير مدفوعة', 'class' => 'invoice-watermark-unpaid'],
-            ['paid_amount' => 20, 'remaining_amount' => 29, 'label' => 'مدفوعة جزئيًا', 'class' => 'invoice-watermark-partial'],
+            ['paid_amount' => 20, 'remaining_amount' => 29, 'label' => 'مدفوعة جزئيًا', 'class' => 'invoice-watermark-pending'],
         ] as $case) {
             $invoice = Invoice::make([
                 'invoice_number' => 'TSH-STAMP-TEST',
