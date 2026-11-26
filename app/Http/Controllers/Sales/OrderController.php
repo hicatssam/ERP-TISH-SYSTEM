@@ -396,6 +396,7 @@ class OrderController extends Controller
             'payments.receivedBy',
             'payments.verifiedBy',
             'payments.refunds.paymentMethod',
+            'payments.refunds.sourcePaymentAccount',
             'restaurantTable.area',
             'restaurantTableSession',
             'waiter.employee',
@@ -412,6 +413,12 @@ class OrderController extends Controller
                         $assignment->where('location_id', $order->location_id)
                             ->where('is_active', true));
             })
+            ->orderBy('sort_order')->orderBy('name')->get();
+
+        $refundPaymentAccounts = LocationPaymentAccount::query()
+            ->where('location_id', $order->location_id)
+            ->where('is_active', true)->where('can_disburse', true)
+            ->whereIn('payment_method_id', $refundPaymentMethods->pluck('id'))
             ->orderBy('sort_order')->orderBy('name')->get();
 
         $bankPaymentMethods = PaymentMethod::query()
@@ -456,7 +463,8 @@ class OrderController extends Controller
             'order',
             'bankPaymentMethods',
             'bankPaymentAccounts',
-            'refundPaymentMethods'
+            'refundPaymentMethods',
+            'refundPaymentAccounts'
         ));
     }
 
