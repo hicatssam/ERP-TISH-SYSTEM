@@ -600,7 +600,20 @@ class PaymentController extends Controller
             | الاسترداد يسجل كسجل مستقل في refunds.
             |
             */
-            $refundMethod = PaymentMethod::query()->active()->findOrFail($validated['payment_method_id']);
+            $refundMethod = PaymentMethod::query()->active()
+                ->where(function ($query) use ($payment): void {
+                    $query->whereDoesntHave('locationPaymentMethods')
+                        ->orWhereHas('locationPaymentMethods', fn ($assignment) =>
+                            $assignment->where('location_id', $payment->location_id)
+                                ->where('is_active', true));
+                })
+                ->find($validated['payment_method_id']);
+
+            if (! $refundMethod) {
+                throw ValidationException::withMessages([
+                    'payment_method_id' => 'طريقة الاسترداد غير مفعلة لهذا الفرع.',
+                ]);
+            }
             app(CashDayGuard::class)->forMethod((int) $payment->location_id, $refundMethod);
 
             $refund = Refund::create([
