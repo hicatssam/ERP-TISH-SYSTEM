@@ -510,7 +510,7 @@
 
 
 <style>
-/* TISH-TRACK-REFERENCE-V5. Reuse the original menu canvas; preserve tracking layout and card styling.
+/* TISH-TRACK-REFERENCE-V6. Preserve the original menu canvas and reuse the menu's actual torn-paper artwork for card edges.
    All tracking, payment, notification and invoice values remain server driven. */
 body#tishTrack{
  --tp-ink:#211e1a;--tp-red:#b51c11;--tp-cream:#fff0df;--tp-green:#21742b;
@@ -536,15 +536,27 @@ body#tishTrack .track-language{flex-shrink:0;display:flex;align-items:center}
 body#tishTrack .track-language .cm-language-switch{border:0!important;border-radius:0!important;min-width:76px;min-height:40px;font-size:clamp(14px,3.4vw,19px)!important;font-weight:900!important;color:var(--tp-ink)!important;background:var(--tp-paper)!important;background-blend-mode:multiply!important;background-size:172px 168px,100%!important;clip-path:var(--tp-ticket);padding:8px 12px!important;text-decoration:underline;text-decoration-color:var(--tp-red);text-underline-offset:5px;text-decoration-thickness:2px}
 body#tishTrack #trackingCard,body#tishTrack .track-summary,body#tishTrack #paymentSummary{position:relative;isolation:isolate;background:none!important;border:0!important;border-radius:0!important;clip-path:none!important;box-shadow:none!important;filter:drop-shadow(0 4px 2px #795a3766) drop-shadow(0 7px 5px #6b452526)}
 body#tishTrack main.wrap{position:relative;isolation:isolate}
-body#tishTrack main.wrap::before{content:"";position:absolute;inset:4px -3px 5px;z-index:-2;background:var(--tish-paper-ivory,#f3eee6) url('/assets/tish-paper/paper/background.webp') center top / 540px auto repeat; background-blend-mode:normal;clip-path:var(--tp-edge);pointer-events:none}
-body#tishTrack #trackingCard::before,body#tishTrack .track-summary::before,body#tishTrack #paymentSummary::before{
- content:"";position:absolute;inset:-1px;z-index:-2;pointer-events:none;background:#fffaf0;clip-path:var(--tp-edge)
+/* Use the exact same transparent torn-paper artwork as the menu cards.
+   Mask only the decorative layers, never text, controls or the live content. */
+body#tishTrack main.wrap::before{
+ content:"";position:absolute;inset:4px -3px 5px;z-index:-2;pointer-events:none;
+ background:transparent url('/assets/tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat;
+ clip-path:none;
 }
+body#tishTrack #trackingCard::before,body#tishTrack .track-summary::before,body#tishTrack #paymentSummary::before{content:none}
 body#tishTrack #trackingCard::after,body#tishTrack .track-summary::after,body#tishTrack #paymentSummary::after{
- content:"";position:absolute;inset:1px;z-index:-1;pointer-events:none;background:var(--tp-paper);background-blend-mode:multiply;background-size:172px 168px,100%;clip-path:var(--tp-edge)
+ content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+ background:transparent url('/assets/tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat;
+ background-blend-mode:normal;clip-path:none;
 }
-body#tishTrack #trackingCard::after{background:var(--tish-paper-ivory,#f3eee6) url('/assets/tish-paper/paper/background.webp') center top / 540px auto repeat;background-blend-mode:normal}
-body#tishTrack .track-summary::after{background-image:var(--tp-texture),linear-gradient(160deg,#fff5e8,#fcead5)}
+body#tishTrack #trackingCard::after{
+ background:var(--tish-paper-ivory,#f3eee6) url('/assets/tish-paper/paper/background.webp') center top / 540px auto repeat;
+ -webkit-mask:url('/assets/tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat;
+ mask:url('/assets/tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat;
+}
+body#tishTrack #trackingCard,body#tishTrack .track-summary,body#tishTrack #paymentSummary{
+ filter:drop-shadow(0 5px 3px #54362235);
+}
 body#tishTrack #trackingCard{padding:12px 12px 18px!important;margin-bottom:10px}
 body#tishTrack .orderHead{display:block!important;padding:0 7px!important;border:0!important;text-align:start;line-height:1.35!important}
 body#tishTrack .orderHead .eyebrow{display:block!important;font-size:clamp(17px,4.5vw,28px)!important;font-weight:900!important;color:var(--tp-ink)!important}
