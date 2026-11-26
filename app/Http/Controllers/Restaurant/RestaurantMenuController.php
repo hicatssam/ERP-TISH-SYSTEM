@@ -187,7 +187,10 @@ class RestaurantMenuController extends Controller
                 ->where('product_id', $product->id)
                 ->firstOrFail();
 
-            $locationProduct->local_selling_price = $data['selling_price'];
+            // Blank restores inheritance; an omitted field preserves the existing override.
+            if (array_key_exists('selling_price', $data)) {
+                $locationProduct->local_selling_price = $data['selling_price'];
+            }
             $locationProduct->is_available = $request->boolean('is_available', true);
             $locationProduct->save();
         });
@@ -236,7 +239,10 @@ class RestaurantMenuController extends Controller
                 ->where('product_id', $menuItem->product_id)
                 ->firstOrFail();
 
-            $locationProduct->local_selling_price = $data['selling_price'];
+            // Blank restores inheritance; an omitted field preserves the existing override.
+            if (array_key_exists('selling_price', $data)) {
+                $locationProduct->local_selling_price = $data['selling_price'];
+            }
             $locationProduct->is_available = $request->boolean('is_available');
             $locationProduct->save();
         });
