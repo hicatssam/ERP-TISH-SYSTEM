@@ -1387,5 +1387,6 @@ html body.tish-paper.reference-home #homePromotion{margin-top:8px!important;marg
     window.TishPaperMotion?.categories(document.getElementById('categories'));
 })();
 </script>
+@include('customer-menu.partials.pwa-install')
 </body>
 </html>
