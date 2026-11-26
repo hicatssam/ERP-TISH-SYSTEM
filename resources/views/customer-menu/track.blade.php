@@ -508,6 +508,102 @@
 }
 </style>
 
+
+<style>
+/* TISH-TRACK-REFERENCE-V1 — page-local presentation; no changes to order data. */
+body.tish-paper.tish-paper-track{
+    --track-red:#a91f17;--track-ink:#24211e;--track-paper:#f7e9d5;
+    --track-edge:polygon(0 2%,2% 1%,5% 2%,8% 0,12% 1%,16% 0,20% 1%,24% 0,28% 1%,32% 0,36% 1%,40% 0,44% 1%,49% 0,54% 1%,59% 0,63% 1%,68% 0,73% 1%,78% 0,83% 1%,88% 0,93% 1%,97% 0,100% 2%,99.5% 12%,100% 22%,99.5% 35%,100% 47%,99.5% 60%,100% 73%,99.5% 85%,100% 97%,97% 99%,94% 98%,90% 100%,86% 99%,81% 100%,76% 99%,71% 100%,66% 99%,61% 100%,56% 99%,51% 100%,46% 99%,41% 100%,36% 99%,31% 100%,26% 99%,21% 100%,16% 99%,11% 100%,6% 99%,2% 100%,0 97%,.5% 84%,0 71%,.5% 58%,0 45%,.5% 32%,0 20%,.5% 9%);
+    padding-bottom:calc(100px + env(safe-area-inset-bottom,0px));
+}
+body.tish-paper.tish-paper-track::before{height:23px}
+body.tish-paper.tish-paper-track::after{content:"";position:absolute;inset:10px auto auto 0;width:83px;height:100px;background:url('/assets/tish-paper/decor/halftone.svg') center/contain no-repeat;pointer-events:none;z-index:0}
+body.tish-paper.tish-paper-track .wrap{width:min(100% - 24px,650px)}
+body.tish-paper.tish-paper-track .topbar{margin-top:6px;padding:10px 0 12px}
+body.tish-paper.tish-paper-track .cm-unified-header{display:flex;justify-content:space-between;align-items:center;gap:10px}
+body.tish-paper.tish-paper-track .cm-unified-header-brand{display:flex;align-items:center;gap:9px;min-width:0}
+body.tish-paper.tish-paper-track .cm-unified-header-logo{width:65px!important;height:65px!important;flex:0 0 65px;object-fit:contain;filter:drop-shadow(0 3px 3px #48311e55)}
+body.tish-paper.tish-paper-track .cm-unified-header-brand-copy{display:grid;gap:2px;min-width:0;line-height:1.4}
+body.tish-paper.tish-paper-track .cm-unified-header-brand-copy strong{font-size:clamp(1rem,4vw,1.4rem);font-weight:900;overflow-wrap:anywhere}
+body.tish-paper.tish-paper-track .cm-unified-header-brand-copy small{font-size:.78rem;color:#4e4640;overflow-wrap:anywhere}
+body.tish-paper.tish-paper-track .cm-unified-header-actions{display:flex;align-items:center;gap:4px;flex-shrink:0}
+body.tish-paper.tish-paper-track .cm-language-switch{font-size:.88rem!important;min-height:40px;padding:8px 12px!important;filter:drop-shadow(0 3px 3px #4b302740);text-decoration:underline;text-decoration-color:var(--track-red);text-underline-offset:5px}
+body.tish-paper.tish-paper-track #trackingCard,
+body.tish-paper.tish-paper-track .track-summary{
+    position:relative;isolation:isolate;clip-path:none!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;
+}
+body.tish-paper.tish-paper-track #trackingCard::before,
+body.tish-paper.tish-paper-track .track-summary::before{
+    content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+    background:var(--track-paper) url('/assets/tish-paper/paper/background.webp') center/540px auto repeat;
+    clip-path:var(--track-edge);
+}
+body.tish-paper.tish-paper-track #trackingCard{padding:18px 13px 20px!important;filter:drop-shadow(0 4px 3px #6c492b3b)}
+body.tish-paper.tish-paper-track .orderHead{display:grid;grid-template-columns:minmax(0,1fr);justify-items:start;gap:8px;padding:0 7px 4px;border:0}
+body.tish-paper.tish-paper-track .orderHead>div{width:100%;min-width:0}
+body.tish-paper.tish-paper-track .eyebrow{font-size:clamp(1.05rem,4.2vw,1.45rem);font-weight:900;color:var(--track-ink)}
+body.tish-paper.tish-paper-track .orderHead h1{position:relative;margin:2px 0 0;direction:ltr;text-align:end;font-size:clamp(1.35rem,5.2vw,2.2rem);line-height:1.45;font-weight:950;letter-spacing:-.025em;overflow-wrap:anywhere}
+html[dir="rtl"] body.tish-paper.tish-paper-track .orderHead h1{text-align:right}
+html[dir="ltr"] body.tish-paper.tish-paper-track .orderHead h1{text-align:left}
+body.tish-paper.tish-paper-track #label{max-width:100%;gap:8px;padding:9px 16px!important;font-size:clamp(.9rem,4vw,1.3rem);line-height:1.35;align-self:start;filter:drop-shadow(0 3px 2px #49372942);white-space:normal;background:#8b5b34 url('/assets/tish-paper/paper/background.webp') center/cover!important;background-blend-mode:multiply;clip-path:var(--track-edge)}
+body.tish-paper.tish-paper-track #label[data-order-state="ready"],
+body.tish-paper.tish-paper-track #label[data-order-state="completed"]{background:transparent url('/assets/tish-paper/paper/availability-green.webp') center/100% 100% no-repeat!important;clip-path:none}
+body.tish-paper.tish-paper-track #label[data-order-state="cancelled"],
+body.tish-paper.tish-paper-track #label[data-order-state="canceled"]{background:transparent url('/assets/tish-paper/paper/price-ticket.webp') center/100% 100% no-repeat!important}
+body.tish-paper.tish-paper-track .statusDot{display:grid;place-items:center;flex:0 0 21px;width:21px;height:21px;background:#fff9ee;color:#76502e;border-radius:50%;font-size:12px}
+body.tish-paper.tish-paper-track #label[data-order-state="ready"] .statusDot,
+body.tish-paper.tish-paper-track #label[data-order-state="completed"] .statusDot{color:#236524}
+body.tish-paper.tish-paper-track .statusDot i{display:none}
+body.tish-paper.tish-paper-track #label:is([data-order-state="ready"],[data-order-state="completed"]) .statusDot i{display:block}
+body.tish-paper.tish-paper-track .progress{padding:15px 0 19px}
+body.tish-paper.tish-paper-track .progressLine{--track-dot:clamp(38px,11vw,57px);gap:0;align-items:start}
+body.tish-paper.tish-paper-track .progressLine::before{top:calc(var(--track-dot) / 2);height:2px;background:#655247}
+body.tish-paper.tish-paper-track .progressItem{font-size:clamp(.66rem,2.9vw,1rem);font-weight:900;line-height:1.4;color:#62584f;min-width:0}
+body.tish-paper.tish-paper-track .progressItem.on{color:var(--track-ink)}
+body.tish-paper.tish-paper-track .progressItem .dot{width:var(--track-dot);height:var(--track-dot);margin:0 auto 6px;background:url('/assets/tish-paper/paper/favorite-disc.webp') center/100% 100% no-repeat!important;border-radius:50%;border:0!important;color:#7d6552!important;font-size:clamp(17px,4.5vw,25px);filter:drop-shadow(0 3px 2px #46251750)}
+body.tish-paper.tish-paper-track .progressItem.on .dot{background:var(--track-red) url('/assets/tish-paper/paper/nav-active.webp') center/100% 100% no-repeat!important;border:3px solid #fff1dc!important;color:#fff9ed!important}
+body.tish-paper.tish-paper-track .progressItem.current .dot{outline:2px solid var(--track-red);outline-offset:2px;box-shadow:none}
+body.tish-paper.tish-paper-track .paymentSummary{margin:0 0 12px;padding:13px 10px!important;gap:9px;background:transparent url('/assets/tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;box-shadow:none!important;filter:drop-shadow(0 4px 3px #62412742)}
+body.tish-paper.tish-paper-track .paymentSummaryIcon{width:45px;height:45px;flex:0 0 45px;font-size:20px;color:var(--track-red)}
+body.tish-paper.tish-paper-track .paymentSummaryText{gap:2px}
+body.tish-paper.tish-paper-track .paymentSummaryText strong{font-size:clamp(.95rem,4vw,1.32rem);line-height:1.4;font-weight:900}
+body.tish-paper.tish-paper-track .paymentSummaryText small{font-size:.76rem;line-height:1.6;color:#4e4640}
+body.tish-paper.tish-paper-track #paymentBadge{padding:9px 13px!important;font-size:clamp(.73rem,3.3vw,1rem);max-width:42%;border-radius:0;line-height:1.45}
+body.tish-paper.tish-paper-track #paymentBadge[data-payment-state="paid"]{filter:drop-shadow(0 3px 2px #48311e40)}
+body.tish-paper.tish-paper-track #paymentBadge:is([data-payment-state="partial"],[data-payment-state="review"]){background:#fff1d5;color:#875300}
+body.tish-paper.tish-paper-track #paymentBadge[data-payment-state="refunded"]{background:#e9e9f4;color:#514d79}
+body.tish-paper.tish-paper-track .notice.show,body.tish-paper.tish-paper-track .customer-status-alert.show{padding:11px 10px;margin:0 0 12px;line-height:1.6;text-align:center;font-size:clamp(.77rem,3.25vw,1.05rem);font-weight:900;background:#f7d6d0 url('/assets/tish-paper/paper/background.webp') center/540px auto repeat;background-blend-mode:multiply;clip-path:var(--track-edge)}
+body.tish-paper.tish-paper-track .customer-alert-controls{display:grid;justify-items:center;gap:5px;margin:8px 0 14px;text-align:center}
+body.tish-paper.tish-paper-track .customer-alert-controls button{border:2px solid var(--track-red)!important;border-radius:18px 15px 20px 13px!important;min-height:42px;padding:7px 12px!important;font-size:clamp(.8rem,3.5vw,1.13rem);line-height:1.5;box-shadow:0 3px 4px #55311e35}
+body.tish-paper.tish-paper-track .customer-alert-controls button[hidden]{display:none!important}
+body.tish-paper.tish-paper-track .customer-alert-controls small{font-size:.75rem;line-height:1.5;color:#4e4640}
+body.tish-paper.tish-paper-track .track-summary{padding:0 12px 12px;margin:12px 0 0;filter:drop-shadow(0 4px 3px #67472a40)}
+body.tish-paper.tish-paper-track .track-summary .sectionTitle{padding:11px 0 8px;margin:0;gap:6px}
+body.tish-paper.tish-paper-track .track-summary .sectionTitle h2{font-size:clamp(1.04rem,4.5vw,1.5rem);line-height:1.45}
+body.tish-paper.tish-paper-track .track-summary .live{font-size:.7rem;color:#4e4640}
+body.tish-paper.tish-paper-track .track-summary .items{border-color:#b5a48f}
+body.tish-paper.tish-paper-track .track-summary .item{align-items:center;padding:9px 0;gap:10px;border-color:#b5a48f;font-weight:850;line-height:1.4;font-size:clamp(.84rem,3.5vw,1.15rem)}
+body.tish-paper.tish-paper-track .track-summary .item>span{min-width:0;overflow-wrap:anywhere}
+body.tish-paper.tish-paper-track .track-summary .item small{font-size:.74rem;font-weight:550;margin-top:2px}
+body.tish-paper.tish-paper-track .track-summary .item b{font-size:clamp(.95rem,4vw,1.3rem);font-weight:950;flex-shrink:0}
+body.tish-paper.tish-paper-track .track-summary .total{align-items:center;padding-top:11px;font-size:clamp(1.05rem,4.5vw,1.5rem)}
+body.tish-paper.tish-paper-track .track-summary .total span:last-child{background:url('/assets/tish-paper/paper/price-ticket.webp') center/100% 100% no-repeat;color:#fff9ed!important;padding:8px 15px;white-space:nowrap;font-weight:950;filter:drop-shadow(0 3px 2px #4c2b2240)}
+body.tish-paper.tish-paper-track .footerActions{margin-top:15px;grid-template-columns:repeat(2,minmax(0,1fr))}
+body.tish-paper.tish-paper-track .footerActions .action{min-height:44px;font-size:.75rem;padding:7px 8px;line-height:1.45}
+body.tish-paper.tish-paper-track #tishStatusMini.tish-status-mini{position:static!important;display:none!important;margin:10px auto 0;max-width:100%;width:100%;min-height:42px!important;padding:9px 12px!important}
+body.tish-paper.tish-paper-track #tishStatusMini.tish-status-mini.is-visible{display:flex!important}
+body.tish-paper.tish-paper-track #tishStatusMini.tish-status-mini:focus-visible{outline:3px solid var(--track-red)!important;outline-offset:2px!important}
+body.tish-paper.tish-paper-track .bottom-nav{max-width:650px}
+@media(max-width:350px){
+ body.tish-paper.tish-paper-track .wrap{width:calc(100% - 16px)}
+ body.tish-paper.tish-paper-track #trackingCard{padding-inline:9px!important}
+ body.tish-paper.tish-paper-track .cm-unified-header-logo{width:49px!important;height:49px!important;flex-basis:49px}
+ body.tish-paper.tish-paper-track .paymentSummaryIcon{width:35px;height:35px;flex-basis:35px;font-size:17px}
+ body.tish-paper.tish-paper-track .track-summary{padding-inline:9px}
+}
+@media print{body.tish-paper.tish-paper-track #trackingCard,body.tish-paper.tish-paper-track .track-summary{filter:none}}
+</style>
+
 </head>
 <body class="tish-paper tish-paper-track">
     @if($appDownloadUrl || $websiteUrl)
@@ -541,15 +637,15 @@
         </div>
     </header>
 
-    <main class="wrap" style="padding-bottom:60px">
+    <main class="wrap" style="padding-bottom:12px">
         <section class="card" id="trackingCard">
             <div class="orderHead">
                 <div>
                     <span class="eyebrow">تفاصيل الطلب</span>
                     <h1>#{{ $order->order_number }}</h1>
                 </div>
-                <span class="status" id="label">
-                    <span class="statusDot"></span>
+                <span class="status" id="label" data-order-state="loading" aria-live="polite">
+                    <span class="statusDot" aria-hidden="true"><i class="fa-solid fa-check"></i></span>
                     <span>جاري تحديث الحالة</span>
                 </span>
             </div>
@@ -596,6 +692,7 @@
 
             <div class="notice" id="customerMessage"></div>
 
+            <div class="track-summary">
             <div class="sectionTitle">
                 <h2>ملخص الطلب</h2>
                 <span class="live">التحديث تلقائيًا</span>
@@ -616,6 +713,8 @@
                 <span>{{ number_format($order->total_amount,2) }} {{ $menuCurrencySymbol }}</span>
             </div>
 
+            </div>
+
             <div class="footerActions">
                 <a class="action primary" href="{{ route('customer-menu.show',$order->location->code) }}">طلب جديد</a>
                 <a class="action secondary" href="{{ route('customer-menu.my-orders',$order->location->code) }}">كل طلباتي</a>
@@ -626,6 +725,7 @@
                     </a>
                 @endif
             </div>
+        <button class="tish-status-mini" id="tishStatusMini" type="button" aria-label="افتح بطاقة متابعة الطلب"><span>🍔 <span id="tishStatusMiniText">متابعة الطلب</span></span><span>عرض التفاصيل</span></button>
         </section>
     </main>
 
@@ -649,7 +749,6 @@
             </div>
         </div>
     </div>
-    <button class="tish-status-mini" id="tishStatusMini" type="button" aria-label="افتح بطاقة متابعة الطلب"><span>🍔 <span id="tishStatusMiniText">متابعة الطلب</span></span><span>عرض التفاصيل</span></button>
 
     {{-- Tracking belongs to My Orders; all destinations use the order's branch. --}}
     @include('customer-menu.partials.bottom-nav', ['activeNav' => 'orders'])
@@ -996,6 +1095,7 @@
             });
 
             card.classList.toggle('cancelled', cancelled);
+            document.getElementById('label').dataset.orderState = state;
             label.textContent = menuT(data.label || statusText[state] || 'جاري تجهيز طلبك');
             statusDescription.textContent = menuT(data.description || '');
             statusDescription.classList.toggle('show', Boolean(data.description));
