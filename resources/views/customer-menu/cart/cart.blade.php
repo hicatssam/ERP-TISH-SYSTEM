@@ -519,10 +519,6 @@ body#tishCart .cart-alert-sr{position:absolute!important;width:1px;height:1px;ov
   <span class="cart-reference-copy"><h1>سلة الطلب</h1><small>{{ $location->name }}</small></span>
  </a>
  <div class="cart-reference-actions">
-  <button type="button" id="cartOrderAlerts" aria-pressed="false" aria-label="تفعيل إشعارات الطلبات الجديدة" title="تفعيل إشعارات الطلبات الجديدة">
-   <i class="fa-solid fa-bell-slash" aria-hidden="true"></i>
-  </button>
-  <span id="cartOrderAlertsHint" class="cart-alert-sr" role="status" aria-live="polite"></span>
   <div data-cm-language-host></div>
  </div>
 </nav>
@@ -548,83 +544,6 @@ body#tishCart .cart-alert-sr{position:absolute!important;width:1px;height:1px;ov
 
 <script>
 const CM = window.CustomerMenu;
-
-// This preference applies only to future orders. Existing order subscriptions
-// remain managed on their own tracking pages.
-(function () {
-    const button = document.getElementById('cartOrderAlerts');
-    const hint = document.getElementById('cartOrderAlertsHint');
-    const key = 'tish-future-order-push-v1';
-    const t = (ar, en) => document.documentElement.lang === 'en' ? en : ar;
-    const supported = () => window.isSecureContext && 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
-    let enabled = false;
-    let busy = false;
-    function preference() { try { return localStorage.getItem(key) === 'yes'; } catch (_) { return false; } }
-    function render(message = '') {
-        button.setAttribute('aria-pressed', String(enabled));
-        button.querySelector('i').className = 'fa-solid ' + (enabled ? 'fa-bell' : 'fa-bell-slash');
-        button.disabled = busy;
-        button.setAttribute('aria-busy', String(busy));
-        const label = enabled ? t('إيقاف إشعارات الطلبات الجديدة','Turn off notifications for new orders') : t('تفعيل إشعارات الطلبات الجديدة','Turn on notifications for new orders');
-        button.setAttribute('aria-label', label);
-        button.title = message || label;
-        hint.textContent = message || (enabled ? t('سيتم تسجيل اشتراك الطلب الجديد عند إرساله.','New orders will be subscribed when placed.') : label);
-    }
-    async function sync() {
-        if (busy) return;
-        enabled = false;
-        if (preference() && supported() && Notification.permission === 'granted') {
-            try {
-                const registration = await navigator.serviceWorker.getRegistration('/');
-                enabled = !!(await registration?.pushManager?.getSubscription()) && preference() && !busy;
-            } catch (_) {}
-        }
-        if (!busy) render();
-    }
-    button.addEventListener('click', async () => {
-        if (busy) return;
-        busy = true;
-        render();
-        let message = '';
-        try {
-            if (enabled) {
-                localStorage.removeItem(key);
-                enabled = false;
-            } else {
-                if (!supported()) throw new Error(t('الإشعارات غير مدعومة هنا. على iPhone ثبّت المنيو على الشاشة الرئيسية أولاً.','Notifications are unavailable here. On iPhone, install the menu on your Home Screen first.'));
-                // Ask while the user's tap is still active.
-                const permission = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
-                if (permission !== 'granted') throw new Error(t('لم يتم منح إذن الإشعارات.','Notification permission was not granted.'));
-                const response = await fetch(@json(route('customer-menu.push.public-key')), {cache:'no-store', credentials:'same-origin', signal:AbortSignal.timeout(8000)});
-                if (!response.ok) throw new Error(t('تعذر قراءة إعدادات الإشعارات.','Could not load notification settings.'));
-                const config = await response.json();
-                if (!config.enabled || !config.public_key) throw new Error(t('خدمة الإشعارات غير متاحة.','Notification service unavailable.'));
-                await navigator.serviceWorker.register('/sw.js', {scope:'/'});
-                const registration = await Promise.race([
-                    navigator.serviceWorker.ready,
-                    new Promise((_, reject) => setTimeout(() => reject(new Error(t('تعذر تجهيز الإشعارات.','Notification setup timed out.'))),8000))
-                ]);
-                const raw = config.public_key;
-                const bytes = Uint8Array.from(atob(raw.replace(/-/g,'+').replace(/_/g,'/') + '='.repeat((4-raw.length%4)%4)), c=>c.charCodeAt(0));
-                const subscription = await registration.pushManager.getSubscription() || await registration.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:bytes});
-                if (!subscription) throw new Error(t('تعذر تجهيز اشتراك الجهاز.','Could not prepare device subscription.'));
-                localStorage.setItem(key,'yes');
-                enabled = true;
-            }
-        } catch (error) {
-            enabled = false;
-            message = String(error.message || error);
-            if (typeof CM.toast === 'function') CM.toast(message);
-            console.warn('TISH cart notification preference:', error);
-        } finally {
-            busy = false;
-            render(message);
-        }
-    });
-    window.addEventListener('pageshow',sync);
-    window.addEventListener('storage',event=>{if(event.key===key) sync();});
-    sync();
-})();
 
 function renderCart() {
     const rows = CM.cartRows();
