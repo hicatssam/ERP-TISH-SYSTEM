@@ -58,6 +58,6 @@ env -u DB_URL -u DATABASE_URL \
     -u DB_HOST -u DB_PORT -u DB_USERNAME -u DB_PASSWORD \
     APP_ENV=testing APP_KEY="$key" DB_CONNECTION=sqlite DB_DATABASE=:memory: \
     CACHE_STORE=array SESSION_DRIVER=array QUEUE_CONNECTION=sync MAIL_MAILER=array \
-    php8.4 artisan test "${remaining[@]}" --stop-on-failure --no-ansi
+    php8.4 artisan test "${remaining[@]}"  --no-ansi
 
 echo "=== REMAINING FEATURE AND UNIT QA PASSED ==="
