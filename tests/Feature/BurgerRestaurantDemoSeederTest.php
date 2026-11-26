@@ -27,8 +27,8 @@ class BurgerRestaurantDemoSeederTest extends TestCase
         $this->assertSame(76, Product::where('is_raw_material', false)->count());
         $this->assertSame(76, Recipe::where('status', 'approved')->count());
         $this->assertSame(76, RestaurantMenuItem::count());
-        $this->assertSame(12, Order::count());
-        $this->assertSame(12, Invoice::count());
+        $this->assertSame(13, Order::count());
+        $this->assertSame(13, Invoice::count());
         $this->assertSame(8, Product::where('sku', 'like', 'BRG-SAUCES-%')->count());
         $this->assertSame(['B01'], Location::query()->orderBy('code')->pluck('code')->all());
         $branchId = Location::query()->where('code', 'B01')->value('id');
@@ -37,7 +37,9 @@ class BurgerRestaurantDemoSeederTest extends TestCase
         $this->assertSame(['KITCHEN', 'PREP'], \App\Models\KitchenStation::query()
             ->where('location_id', $branchId)->orderBy('code')->pluck('code')->all());
         $this->assertSame(6, Order::where('restaurant_service_type', 'dine_in')->count());
-        $this->assertSame(6, Order::where('restaurant_service_type', 'takeaway')->count());
+        $this->assertSame(7, Order::where('restaurant_service_type', 'takeaway')->count());
+        // The thirteenth fixture is the intentionally confirmed bank advance order.
+        $this->assertSame(1, Order::where('notes', 'TISH-DEMO-BANK-ADVANCE-B01')->count());
         $this->assertFalse((bool) SystemSetting::get('customer_menu_allow_delivery'));
         $this->assertDatabaseHas('recipe_items', [
             'recipe_id' => Recipe::where('code', 'RCP-BRG-SAUCES-RANCH')->value('id'),
@@ -74,7 +76,7 @@ class BurgerRestaurantDemoSeederTest extends TestCase
 
         $quantities = DB::table('inventories')->orderBy('id')->pluck('quantity', 'id')->all();
         $this->seed(DatabaseSeeder::class);
-        $this->assertSame(12, Order::count());
+        $this->assertSame(13, Order::count());
         $this->assertSame($quantities, DB::table('inventories')->orderBy('id')->pluck('quantity', 'id')->all());
         $this->assertSame(76, Recipe::count());
     }
