@@ -323,16 +323,17 @@
                                     </div>
 
                                     <div>
-                                        <label>سعر البيع في هذا الفرع</label>
+                                        <label>سعر خاص لهذا الفرع (اختياري)</label>
                                         <input
                                             class="rm-control"
                                             type="number"
                                             name="selling_price"
                                             step="0.01"
                                             min="0"
-                                            required
-                                            value="{{ $price }}"
+                                            value="{{ $locationProduct?->local_selling_price }}"
+                                            placeholder="{{ $product->base_selling_price }}"
                                         >
+                                        <small>اتركه فارغًا لاستخدام السعر الأساسي ({{ $product->base_selling_price }}).</small>
                                     </div>
 
                                     <div>
@@ -472,7 +473,8 @@
                             @foreach($availableProducts as $product)
                                 <option
                                     value="{{ $product->id }}"
-                                    data-price="{{ $product->locationProducts->first()?->local_selling_price ?? $product->base_selling_price }}"
+                                    data-price="{{ $product->locationProducts->first()?->local_selling_price }}"
+                                    data-base-price="{{ $product->base_selling_price }}"
                                     data-name-ar="{{ $product->name_ar }}"
                                     data-name="{{ $product->name }}"
                                 >
@@ -494,7 +496,7 @@
                     </div>
 
                     <div>
-                        <label>سعر البيع في الفرع *</label>
+                        <label>سعر خاص للفرع (اختياري)</label>
                         <input
                             class="rm-control"
                             name="selling_price"
@@ -502,8 +504,10 @@
                             type="number"
                             step="0.01"
                             min="0"
-                            required
+                            value="{{ old('selling_price') }}"
+                            placeholder="السعر الأساسي"
                         >
+                        <small>اتركه فارغًا لاستخدام السعر الأساسي.</small>
                     </div>
 
                     <div>
@@ -1476,7 +1480,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const option = productSelect.options[productSelect.selectedIndex];
 
         if (!option?.value) {
-            if (sellingPrice) sellingPrice.value = '';
+            if (sellingPrice) { sellingPrice.value = ''; sellingPrice.placeholder = 'السعر الأساسي'; }
             return;
         }
 
@@ -1490,6 +1494,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (sellingPrice) {
             sellingPrice.value = option.dataset.price || '';
+            sellingPrice.placeholder = option.dataset.basePrice || 'السعر الأساسي';
         }
     });
 
