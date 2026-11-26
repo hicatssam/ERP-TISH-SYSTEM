@@ -183,7 +183,7 @@ body.tish-paper .tools .search:focus-within::before {
      <img src="{{ asset('assets/tish-paper/brand/telephone.webp') }}" alt="" class="tish-paper-products-booth">
      <div class="tish-paper-products-brandline">
       <img src="{{ asset('assets/tish-paper/brand/slogan.svg') }}" alt="Hear it, Feel it!" class="tish-paper-products-slogan">
-      <button type="button" class="tish-paper-products-pin" id="tishPaperPin" aria-label="ثبّت المنيو"><i class="fa-solid fa-thumbtack" aria-hidden="true"></i> ثبّت المنيو</button>
+
      </div>
     </div>
     <img src="{{ asset('assets/tish-paper/brand/logo-disc.webp') }}" alt="{{ $branding['name'] ?? 'Tish' }}" class="tish-paper-products-logo">
@@ -355,7 +355,6 @@ document.getElementById('resetFilters').addEventListener('click', () => {
 
 renderProducts();
 window.TishPaperMotion?.categories(document.getElementById('categories'));
-document.getElementById('tishPaperPin')?.addEventListener('click', () => document.getElementById('pwaInstallBtn')?.click());
 </script>
 </body>
 </html>

@@ -48,6 +48,41 @@ html body .tish-invoice-toolbar .tish-future-alert{color:#ad2117!important}
 }
 @media(prefers-reduced-motion:reduce){html body .tish-future-alert:active{scale:1}}
 @media print{html body .tish-future-alert,html body .tish-future-alert-hint,html body .tish-future-alert-error{display:none!important}}
+
+/* Compact unified top bar: brand, language, bell and back in one row. */
+html[dir] body.tish-paper .cm-unified-header.tish-alert-header{
+ direction:inherit!important;display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:space-between!important;
+ min-height:80px!important;padding:12px 0 8px!important;gap:7px!important;
+}
+html[dir] body.tish-paper .cm-unified-header.tish-alert-header .cm-unified-header-brand{
+ direction:inherit!important;flex:1 1 auto!important;min-width:0!important;gap:7px!important;
+}
+html[dir] body.tish-paper .cm-unified-header.tish-alert-header .cm-unified-header-brand-copy{text-align:start!important}
+html[dir] body.tish-paper .cm-unified-header.tish-alert-header .cm-unified-header-logo{
+ width:clamp(43px,13vw,60px)!important;height:clamp(43px,13vw,60px)!important;flex:0 0 clamp(43px,13vw,60px)!important;
+}
+html[dir] body.tish-paper .cm-unified-header-actions.tish-alert-host{
+ direction:inherit!important;display:flex!important;flex:0 0 auto!important;flex-direction:row!important;align-items:center!important;
+ justify-content:flex-end!important;gap:5px!important;width:auto!important;min-width:0!important;
+}
+html[dir] body.tish-paper .cm-unified-header-actions.tish-alert-host .cm-language-switch{
+ order:0!important;position:relative!important;inset:auto!important;min-width:60px!important;max-width:none!important;
+ height:38px!important;min-height:38px!important;padding:5px 8px!important;font-size:12px!important;
+}
+html[dir] body.tish-paper .cm-unified-header-actions.tish-alert-host .tish-future-alert{order:1!important;flex:0 0 40px!important;width:40px!important;height:40px!important;min-width:40px!important;min-height:40px!important}
+html[dir] body.tish-paper .cm-unified-header-actions.tish-alert-host .cm-unified-header-back{
+ order:2!important;position:relative!important;inset:auto!important;flex:0 0 40px!important;width:40px!important;height:40px!important;min-width:40px!important;min-height:40px!important;
+ padding:0!important;margin:0!important;background:transparent url('/assets/tish-paper/paper/product-disc.webp') center/100% 100% no-repeat!important;
+}
+html[dir="rtl"] body.tish-paper .cm-unified-header-actions.tish-alert-host .cm-unified-header-back i{transform:rotate(180deg)!important}
+html[dir="ltr"] body.tish-paper .cm-unified-header-actions.tish-alert-host .cm-unified-header-back i{transform:none!important}
+@media(max-width:365px){
+ html[dir] body.tish-paper .cm-unified-header.tish-alert-header{gap:4px!important}
+ html[dir] body.tish-paper .cm-unified-header-actions.tish-alert-host{gap:3px!important}
+ html[dir] body.tish-paper .cm-unified-header-actions.tish-alert-host .cm-language-switch{min-width:54px!important;padding-inline:5px!important;font-size:11px!important}
+}
+@media print{html[dir] body.tish-paper .cm-unified-header-actions.tish-alert-host{display:none!important}}
+
 </style>
 <script>
 (function () {
