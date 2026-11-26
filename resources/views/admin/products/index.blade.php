@@ -343,7 +343,16 @@
                         <span style="color:var(--text-muted)">غير مربوط بموقع</span>
                     @endif
                 </td>
-                <td>{{ $currencySymbol }}{{ number_format((float)$product->base_selling_price, 2) }}</td>
+                <td>
+                    {{ $currencySymbol }}{{ number_format((float)$product->base_selling_price, 2) }}
+                    @foreach($product->locationProducts->where('is_available', true) as $priceLink)
+                        @if($priceLink->local_selling_price !== null && (float) $priceLink->local_selling_price !== (float) $product->base_selling_price)
+                            <small style="display:block;color:var(--text-muted)">
+                                {{ $priceLink->location?->name }}: {{ $currencySymbol }}{{ number_format((float) $priceLink->local_selling_price, 2) }} (خاص)
+                            </small>
+                        @endif
+                    @endforeach
+                </td>
                 <td><span class="badge {{ $product->is_active ? 'badge-active' : 'badge-inactive' }}">{{ $product->is_active ? 'نشط' : 'معطل' }}</span></td>
                 <td>
                     <div class="actions">
