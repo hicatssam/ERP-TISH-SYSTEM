@@ -73,6 +73,29 @@ class ProductLocationAccessSafetyTest extends TestCase
         $this->assertSame('22.00', $b->fresh()->local_selling_price);
     }
 
+    public function test_admin_catalog_update_keeps_inherited_price_null_and_preserves_override(): void
+    {
+        [$branchA, $branchB, $product, $a, $b, $user] = $this->setupCatalog();
+        $a->update(['local_selling_price' => null]);
+        $user->givePermissionTo(Permission::findOrCreate('roles.manage', 'web'));
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        $this->actingAs($user)->put(route('products.update', $product), [
+            'category_id' => $product->category_id,
+            'name' => $product->name,
+            'name_ar' => $product->name_ar,
+            'unit_id' => $product->unit_id,
+            'product_type' => 'standard',
+            'base_selling_price' => 35,
+            'location_ids' => [$branchA->id, $branchB->id],
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $this->assertSame('35.00', $product->fresh()->base_selling_price);
+        $this->assertNull($a->fresh()->local_selling_price);
+        $this->assertSame('35.00', $product->fresh()->getEffectivePriceForLocation($branchA->id));
+        $this->assertSame('22.00', $b->fresh()->local_selling_price);
+    }
+
     public function test_branch_cannot_update_or_disable_other_branch_product_link(): void
     {
         [, , , , $b, $user] = $this->setupCatalog();
