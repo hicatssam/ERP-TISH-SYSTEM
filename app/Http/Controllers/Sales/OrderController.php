@@ -395,6 +395,7 @@ class OrderController extends Controller
             'payments.locationPaymentAccount',
             'payments.receivedBy',
             'payments.verifiedBy',
+            'payments.refunds.paymentMethod',
             'restaurantTable.area',
             'restaurantTableSession',
             'waiter.employee',
@@ -402,6 +403,16 @@ class OrderController extends Controller
             'kitchenTickets.station',
             'kitchenTickets.items',
         ]);
+
+        $refundPaymentMethods = PaymentMethod::query()
+            ->active()
+            ->where(function ($query) use ($order): void {
+                $query->whereDoesntHave('locationPaymentMethods')
+                    ->orWhereHas('locationPaymentMethods', fn ($assignment) =>
+                        $assignment->where('location_id', $order->location_id)
+                            ->where('is_active', true));
+            })
+            ->orderBy('sort_order')->orderBy('name')->get();
 
         $bankPaymentMethods = PaymentMethod::query()
             ->active()
@@ -444,7 +455,8 @@ class OrderController extends Controller
         return view('sales.orders.show', compact(
             'order',
             'bankPaymentMethods',
-            'bankPaymentAccounts'
+            'bankPaymentAccounts',
+            'refundPaymentMethods'
         ));
     }
 
