@@ -276,6 +276,18 @@ class CustomerMenuBranchIsolationTest extends TestCase
         $product = $this->product($branch, 12);
         $cash = $this->cash($branch);
         $actor = User::factory()->create(['is_active' => true]);
+        // Confirmation and cancellation post real financial entries, so the
+        // feature fixture needs a base currency and an open current period.
+        \App\Models\Currency::query()->create([
+            'code' => 'ILS', 'name' => 'Shekel', 'is_base' => true, 'is_active' => true,
+        ]);
+        \App\Models\FinancialPeriod::query()->create([
+            'name' => 'Customer Menu QA '.now()->format('Y-m'),
+            'year' => (int) now()->year, 'month' => (int) now()->month,
+            'start_date' => now()->startOfMonth()->toDateString(),
+            'end_date' => now()->endOfMonth()->toDateString(),
+            'status' => 'open', 'opened_by' => $actor->id, 'opened_at' => now(),
+        ]);
         SalesChannel::create(['name' => 'Website', 'slug' => 'website',
             'type' => 'website', 'is_active' => true]);
         \App\Models\Inventory::create(['location_id' => $branch->id,
