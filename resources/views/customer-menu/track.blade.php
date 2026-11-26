@@ -510,7 +510,7 @@
 
 
 <style>
-/* TISH-TRACK-REFERENCE-V4. Seamless reference-derived paper, irregular white edges and warmer contrast.
+/* TISH-TRACK-REFERENCE-V5. Reuse the original menu canvas; preserve tracking layout and card styling.
    All tracking, payment, notification and invoice values remain server driven. */
 body#tishTrack{
  --tp-ink:#211e1a;--tp-red:#b51c11;--tp-cream:#fff0df;--tp-green:#21742b;
@@ -520,7 +520,7 @@ body#tishTrack{
  --tp-ticket:polygon(3% 15%,7% 7%,12% 9%,18% 2%,24% 6%,32% 1%,40% 6%,49% 0,57% 4%,65% 1%,73% 6%,81% 0,88% 5%,95% 3%,98% 18%,100% 36%,97% 51%,100% 69%,96% 85%,90% 96%,81% 92%,74% 100%,65% 94%,56% 98%,47% 92%,39% 100%,31% 95%,23% 98%,15% 93%,8% 100%,3% 87%,0 67%,2% 49%,0 30%);
  --tp-shadow:0 4px 3px #78502d45,0 8px 8px #54341e1c;
  --tp-rays:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath fill='%23b51c11' d='M38 14 17 0 30 17ZM29 23 0 12 19 26ZM26 31 8 35 25 35Z'/%3E%3C/svg%3E");
- background:var(--tp-texture),#fae5ce!important;background-blend-mode:multiply!important;background-size:172px 168px,auto!important;
+ background:var(--tish-paper-ivory,#f3eee6) url('/assets/tish-paper/paper/background.webp') center top / 540px auto repeat!important;background-blend-mode:normal!important;
  color:var(--tp-ink);padding-bottom:calc(83px + env(safe-area-inset-bottom,0px))!important;
 }
 body#tishTrack::before{height:17px!important;background:var(--tp-texture),#bd1c0e!important;background-size:172px 168px,auto!important;background-blend-mode:multiply!important;clip-path:polygon(0 0,100% 0,100% 43%,96% 47%,92% 38%,88% 65%,84% 46%,80% 62%,76% 51%,71% 72%,67% 55%,62% 79%,57% 55%,51% 82%,47% 61%,43% 90%,38% 70%,33% 95%,29% 73%,25% 92%,20% 79%,15% 100%,10% 80%,5% 100%,0 81%);z-index:1}
@@ -536,14 +536,14 @@ body#tishTrack .track-language{flex-shrink:0;display:flex;align-items:center}
 body#tishTrack .track-language .cm-language-switch{border:0!important;border-radius:0!important;min-width:76px;min-height:40px;font-size:clamp(14px,3.4vw,19px)!important;font-weight:900!important;color:var(--tp-ink)!important;background:var(--tp-paper)!important;background-blend-mode:multiply!important;background-size:172px 168px,100%!important;clip-path:var(--tp-ticket);padding:8px 12px!important;text-decoration:underline;text-decoration-color:var(--tp-red);text-underline-offset:5px;text-decoration-thickness:2px}
 body#tishTrack #trackingCard,body#tishTrack .track-summary,body#tishTrack #paymentSummary{position:relative;isolation:isolate;background:none!important;border:0!important;border-radius:0!important;clip-path:none!important;box-shadow:none!important;filter:drop-shadow(0 4px 2px #795a3766) drop-shadow(0 7px 5px #6b452526)}
 body#tishTrack main.wrap{position:relative;isolation:isolate}
-body#tishTrack main.wrap::before{content:"";position:absolute;inset:4px -3px 5px;z-index:-2;background:var(--tp-texture),#f6dfc7;background-size:172px 168px,auto;background-blend-mode:multiply;clip-path:var(--tp-edge);pointer-events:none}
+body#tishTrack main.wrap::before{content:"";position:absolute;inset:4px -3px 5px;z-index:-2;background:var(--tish-paper-ivory,#f3eee6) url('/assets/tish-paper/paper/background.webp') center top / 540px auto repeat; background-blend-mode:normal;clip-path:var(--tp-edge);pointer-events:none}
 body#tishTrack #trackingCard::before,body#tishTrack .track-summary::before,body#tishTrack #paymentSummary::before{
  content:"";position:absolute;inset:-1px;z-index:-2;pointer-events:none;background:#fffaf0;clip-path:var(--tp-edge)
 }
 body#tishTrack #trackingCard::after,body#tishTrack .track-summary::after,body#tishTrack #paymentSummary::after{
  content:"";position:absolute;inset:1px;z-index:-1;pointer-events:none;background:var(--tp-paper);background-blend-mode:multiply;background-size:172px 168px,100%;clip-path:var(--tp-edge)
 }
-body#tishTrack #trackingCard::after{background-color:#fae6ce;background-image:var(--tp-texture),linear-gradient(150deg,#fff1df,#fbe8d1)}
+body#tishTrack #trackingCard::after{background:var(--tish-paper-ivory,#f3eee6) url('/assets/tish-paper/paper/background.webp') center top / 540px auto repeat;background-blend-mode:normal}
 body#tishTrack .track-summary::after{background-image:var(--tp-texture),linear-gradient(160deg,#fff5e8,#fcead5)}
 body#tishTrack #trackingCard{padding:12px 12px 18px!important;margin-bottom:10px}
 body#tishTrack .orderHead{display:block!important;padding:0 7px!important;border:0!important;text-align:start;line-height:1.35!important}
