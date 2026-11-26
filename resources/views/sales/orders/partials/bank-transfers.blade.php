@@ -309,6 +309,7 @@
                                                 <p>المتاح للاسترداد: <strong>₪{{ number_format($refundableAmount, 2) }}</strong></p>
                                                 <p class="order-transfer-note is-warning">سجّل الاسترداد بعد إرجاع المبلغ فعليًا للعميل. النظام لا ينفذ حوالة بنكية خارجية.</p>
                                                 <form method="POST" action="{{ route('payments.refund', $payment) }}"
+                                                    data-confirm-bypass="1"
                                                     onsubmit="return submitOrderRefund(this)">
                                                     @csrf
                                                     <input type="hidden" name="order_refund_payment_id" value="{{ $payment->id }}">
@@ -366,8 +367,12 @@
                                                         </div>
                                                         <small class="order-transfer-muted">سيتم تسجيل الحركة المالية وتحديث صافي المدفوع، دون تنفيذ حوالة خارجية.</small>
                                                         <div class="order-refund-footer">
-                                                            <button type="button" class="btn btn-outline" onclick="showOrderRefundEdit(this.form)">رجوع</button>
+                                                            <button type="button" class="btn btn-outline" data-refund-back onclick="showOrderRefundEdit(this.form)">رجوع</button>
                                                             <button type="submit" class="btn btn-danger" data-refund-confirm>نعم، تأكيد الاسترداد</button>
+                                                        </div>
+                                                        <div data-refund-delay class="order-transfer-note is-warning" hidden role="status" style="margin-top:.8rem">
+                                                            تأخر رد السيرفر. قد تكون العملية قد سُجلت بالفعل؛ لا تعِد إرسالها قبل مراجعة سجل الاستردادات.
+                                                            <a href="{{ route('orders.show', $order) }}" class="btn btn-outline btn-xs" style="margin-top:.5rem">التحقق من حالة الطلب</a>
                                                         </div>
                                                     </div>
                                                 </form>
@@ -674,6 +679,7 @@
     .order-refund-account-field[hidden],
     .order-refund-edit-step[hidden],
     .order-refund-confirm-step[hidden],
+    .order-refund-confirm-step [data-refund-delay][hidden],
     .order-refund-confirm-summary [hidden] { display:none !important; }
     .order-refund-confirm-step { text-align:center; padding:.7rem 0 .15rem; }
     .order-refund-confirm-icon {
@@ -997,7 +1003,15 @@
 
         form.dataset.submitting = '1';
         form.querySelector('[data-refund-confirm]').disabled = true;
+        form.querySelector('[data-refund-back]').disabled = true;
         form.querySelector('[data-refund-confirm]').textContent = 'جاري تسجيل الاسترداد...';
+        // The built-in confirmation above is the only confirmation for this form.
+        // Do not retry a financial POST automatically, even if navigation stalls.
+        window.setTimeout(function () {
+            if (form.dataset.submitting === '1' && form.closest('dialog')?.open) {
+                form.querySelector('[data-refund-delay]').hidden = false;
+            }
+        }, 12000);
         return true;
     }
 
@@ -1008,6 +1022,13 @@
         showOrderRefundEdit(form);
         dialog.showModal();
     }
+
+    window.addEventListener('pageshow', function (event) {
+        // A restored page may contain a stale balance after a completed POST.
+        if (event.persisted && document.querySelector('dialog.order-refund-dialog form[data-submitting="1"]')) {
+            window.location.reload();
+        }
+    });
 
     document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('dialog.order-refund-dialog').forEach(dialog => {
