@@ -59,7 +59,7 @@ class UnifiedInvoiceDocumentTest extends TestCase
             $this->assertStringContainsString('منتج تجريبي', $document);
             $this->assertStringContainsString('22.00', $document);
             $this->assertStringContainsString('د.ع', $document);
-            $this->assertStringContainsString('class="invoice-party-table"', $document);
+            $this->assertStringContainsString('class="ci-blocks"', $document);
         }
 
         $this->assertStringContainsString('<div class="print-screen-toolbar">', $browser);
@@ -117,10 +117,14 @@ class UnifiedInvoiceDocumentTest extends TestCase
 
             foreach ([false, true] as $pdfMode) {
                 $html = view('finance.invoices.print', compact('invoice', 'pdfMode'))->render();
-                $this->assertStringContainsString('invoice-payment-watermark '.$case['class'], $html);
-                $this->assertStringContainsString('>'.$case['label'].'</div>', $html);
-                $this->assertStringContainsString('position: absolute;', $html);
-                $this->assertStringContainsString('class="invoice-party-table"', $html);
+                $status = str_replace('invoice-watermark-', '', $case['class']);
+                $this->assertMatchesRegularExpression(
+                    '/class="ci-payment-(image|fallback) ci-payment-\\1-'.preg_quote($status, '/').'"/',
+                    $html
+                );
+                $this->assertStringContainsString('aria-label="حالة الدفع: '.$case['label'].'"', $html);
+                $this->assertMatchesRegularExpression('/position:\s*absolute\s*;/', $html);
+                $this->assertStringContainsString('class="ci-blocks"', $html);
                 $this->assertStringContainsString('TSH-STAMP-TEST', $html);
                 $this->assertStringContainsString('برجر خضار', $html);
                 if ($pdfMode) {

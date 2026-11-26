@@ -706,6 +706,28 @@ class RestaurantPosCatalogTest extends TestCase
         ]);
         $employee->locations()->attach($branch->id, ['is_primary' => true]);
         $user = User::factory()->create(['employee_id' => $employee->id]);
+
+        \App\Models\Currency::query()->firstOrCreate(
+            ['code' => 'ILS'],
+            [
+                'name' => 'Shekel',
+                'is_base' => true,
+                'is_active' => true,
+            ]
+        );
+
+        \App\Models\FinancialPeriod::query()->firstOrCreate(
+            ['year' => (int) now()->year, 'month' => (int) now()->month],
+            [
+                'name' => 'Restaurant POS QA '.now()->format('Y-m'),
+                'start_date' => now()->startOfMonth()->toDateString(),
+                'end_date' => now()->endOfMonth()->toDateString(),
+                'status' => 'open',
+                'opened_by' => $user->id,
+                'opened_at' => now(),
+            ]
+        );
+
         foreach (['restaurant.view', 'restaurant_pos.use', 'restaurant_menu.view'] as $permission) {
             $user->givePermissionTo(Permission::findOrCreate($permission, 'web'));
         }
