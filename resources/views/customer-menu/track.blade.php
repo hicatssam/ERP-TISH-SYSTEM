@@ -510,7 +510,7 @@
 
 
 <style>
-/* TISH-TRACK-REFERENCE-V6. Preserve the original menu canvas and reuse the menu's actual torn-paper artwork for card edges.
+/* TISH-TRACK-REFERENCE-V7. Nine-slice original paper artwork; fixed-size torn edges, flexible content.
    All tracking, payment, notification and invoice values remain server driven. */
 body#tishTrack{
  --tp-ink:#211e1a;--tp-red:#b51c11;--tp-cream:#fff0df;--tp-green:#21742b;
@@ -536,27 +536,31 @@ body#tishTrack .track-language{flex-shrink:0;display:flex;align-items:center}
 body#tishTrack .track-language .cm-language-switch{border:0!important;border-radius:0!important;min-width:76px;min-height:40px;font-size:clamp(14px,3.4vw,19px)!important;font-weight:900!important;color:var(--tp-ink)!important;background:var(--tp-paper)!important;background-blend-mode:multiply!important;background-size:172px 168px,100%!important;clip-path:var(--tp-ticket);padding:8px 12px!important;text-decoration:underline;text-decoration-color:var(--tp-red);text-underline-offset:5px;text-decoration-thickness:2px}
 body#tishTrack #trackingCard,body#tishTrack .track-summary,body#tishTrack #paymentSummary{position:relative;isolation:isolate;background:none!important;border:0!important;border-radius:0!important;clip-path:none!important;box-shadow:none!important;filter:drop-shadow(0 4px 2px #795a3766) drop-shadow(0 7px 5px #6b452526)}
 body#tishTrack main.wrap{position:relative;isolation:isolate}
-/* Use the exact same transparent torn-paper artwork as the menu cards.
-   Mask only the decorative layers, never text, controls or the live content. */
-body#tishTrack main.wrap::before{
- content:"";position:absolute;inset:4px -3px 5px;z-index:-2;pointer-events:none;
- background:transparent url('/assets/tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat;
- clip-path:none;
-}
-body#tishTrack #trackingCard::before,body#tishTrack .track-summary::before,body#tishTrack #paymentSummary::before{content:none}
-body#tishTrack #trackingCard::after,body#tishTrack .track-summary::after,body#tishTrack #paymentSummary::after{
+/* Nine-slice: source edge slices are independent of the card height.
+   The transparent decoration never clips content; padding-box keeps the texture inside the tear. */
+body#tishTrack main.wrap::before,
+body#tishTrack #trackingCard::after,
+body#tishTrack .track-summary::after,
+body#tishTrack #paymentSummary::after{
  content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
- background:transparent url('/assets/tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat;
- background-blend-mode:normal;clip-path:none;
+ box-sizing:border-box;
+ border-style:solid;border-color:transparent;border-width:10px 9px 12px;
+ border-image-source:url('/assets/tish-paper/paper/category-ivory.webp');
+ border-image-slice:25% 18% 31% 18%;
+ border-image-width:10px 9px 12px;
+ border-image-repeat:stretch round;
+ background:var(--tish-paper-ivory,#f3eee6) url('/assets/tish-paper/paper/background.webp') center top/540px auto repeat;
+ background-clip:padding-box;background-blend-mode:normal;
+ clip-path:none;mask:none;-webkit-mask:none;
 }
-body#tishTrack #trackingCard::after{
- background:var(--tish-paper-ivory,#f3eee6) url('/assets/tish-paper/paper/background.webp') center top / 540px auto repeat;
- -webkit-mask:url('/assets/tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat;
- mask:url('/assets/tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat;
-}
-body#tishTrack #trackingCard,body#tishTrack .track-summary,body#tishTrack #paymentSummary{
- filter:drop-shadow(0 5px 3px #54362235);
-}
+body#tishTrack main.wrap::before{inset:4px -3px 5px;z-index:-2}
+body#tishTrack #trackingCard::before,
+body#tishTrack .track-summary::before,
+body#tishTrack #paymentSummary::before{content:none}
+body#tishTrack #trackingCard,
+body#tishTrack .track-summary,
+body#tishTrack #paymentSummary{filter:drop-shadow(0 4px 3px #54362232)}
+body#tishTrack #paymentSummary::after{border-width:7px 9px 9px;border-image-width:7px 9px 9px}
 body#tishTrack #trackingCard{padding:12px 12px 18px!important;margin-bottom:10px}
 body#tishTrack .orderHead{display:block!important;padding:0 7px!important;border:0!important;text-align:start;line-height:1.35!important}
 body#tishTrack .orderHead .eyebrow{display:block!important;font-size:clamp(17px,4.5vw,28px)!important;font-weight:900!important;color:var(--tp-ink)!important}
@@ -615,7 +619,7 @@ body#tishTrack #pwaInstallBtn.tish-paper-pin-control:not([hidden]){display:none!
 @media(min-width:600px){body#tishTrack #trackingCard{padding:20px!important}body#tishTrack .progress{padding-block:28px!important}body#tishTrack .track-summary{padding:0 20px 16px}}
 @media print{body#tishTrack #trackingCard,body#tishTrack .track-summary{filter:none}}
 
-/* All paper finishes use the same seamless tile size; no grid from stretching/repeat boundaries. */
+/* Preserve the current layout. The existing small decorative treatments below remain page-local. */
 body#tishTrack :is(.statusDot,.progressItem .dot,.paymentSummaryIcon,#paymentBadge,.notice.show,.customer-status-alert.show,.customer-alert-controls button,.total span:last-child,.bottom-nav,.bottom-nav .nav-btn.active){background-size:172px 168px,auto!important}
 body#tishTrack .track-language{filter:drop-shadow(0 3px 2px #65402444)}
 body#tishTrack .customer-alert-controls #enableOrderAlerts{position:relative;justify-self:start;margin-inline-start:4px;filter:drop-shadow(0 2px 2px #795a3726)}
@@ -626,6 +630,45 @@ body#tishTrack .track-summary .sectionTitle{background:var(--tp-texture),#fff1df
 body#tishTrack .bottom-nav{min-height:calc(74px + env(safe-area-inset-bottom,0px))!important}
 body#tishTrack .bottom-nav .nav-btn{height:63px!important}
 @media(max-width:360px){body#tishTrack .customer-alert-controls #enableOrderAlerts::before{display:none}body#tishTrack .track-brand img{width:52px;height:52px}}
+
+/* The compact labels use the actual menu ticket assets at their original compact proportions.
+   Pending/refund/payment-review semantics are unchanged. */
+body#tishTrack .track-language .cm-language-switch{
+ background:transparent url('/assets/tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat!important;
+ clip-path:none!important;background-blend-mode:normal!important;
+}
+body#tishTrack #label{
+ background:transparent url('/assets/tish-paper/paper/price-ticket.webp') center/100% 100% no-repeat!important;
+ background-blend-mode:normal!important;clip-path:none!important;
+}
+body#tishTrack #label:is([data-order-state="ready"],[data-order-state="completed"]),
+body#tishTrack #paymentBadge[data-payment-state="paid"]{
+ background:transparent url('/assets/tish-paper/paper/availability-green.webp') center/100% 100% no-repeat!important;
+ background-blend-mode:normal!important;clip-path:none!important;
+}
+body#tishTrack #label[data-order-state="loading"]{background:#766354!important}
+body#tishTrack .track-summary .total span:last-child{
+ background:transparent url('/assets/tish-paper/paper/price-ticket.webp') center/100% 100% no-repeat!important;
+ background-blend-mode:normal!important;clip-path:none!important;
+}
+body#tishTrack .bottom-nav .nav-btn.active{
+ background:transparent url('/assets/tish-paper/paper/nav-active.webp') center/100% 100% no-repeat!important;
+ background-blend-mode:normal!important;clip-path:none!important;
+}
+body#tishTrack .track-summary .sectionTitle{
+ background:none!important;box-shadow:none!important;border-bottom:1px solid #cab69e;
+}
+body#tishTrack .notice.show,body#tishTrack .customer-status-alert.show{
+ position:relative;isolation:isolate;background:none!important;clip-path:none!important;
+ filter:drop-shadow(0 3px 2px #54362224);
+}
+body#tishTrack .notice.show::before,body#tishTrack .customer-status-alert.show::before{
+ content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+ border:7px solid transparent;border-bottom-width:9px;
+ border-image:url('/assets/tish-paper/paper/category-ivory.webp') 25% 18% 31% 18% fill / 7px 7px 9px / 0 stretch round;
+ filter:sepia(.14) saturate(1.15) hue-rotate(333deg);
+}
+body#tishTrack #eta.show::before{filter:none}
 </style>
 
 </head>
