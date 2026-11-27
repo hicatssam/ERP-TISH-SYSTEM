@@ -682,6 +682,7 @@ body.tish-paper.reference-home #categories .cat .cat-visual .tish-library-icon{
 }
 body.tish-paper.reference-home #categories .cat.active .cat-visual .tish-library-icon{filter:brightness(0) invert(1)}
 </style>
+@include('customer-menu.partials.category-selection-style')
 </head>
 <body class="crisp-customer-menu reference-home tish-paper">
 @php

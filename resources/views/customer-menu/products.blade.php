@@ -176,6 +176,7 @@ body.tish-paper.tish-paper-products #categories .cat.active .catalog-category-ic
 body.tish-paper.tish-paper-products #categories .catalog-category-icon .tish-library-icon{width:100%!important;height:100%!important;object-fit:contain!important;background:none!important;padding:0!important}
 body.tish-paper.tish-paper-products #categories .cat.active .catalog-category-icon .tish-library-icon{filter:brightness(0) invert(1)}
 </style>
+@include('customer-menu.partials.category-selection-style')
 </head>
 <body class="crisp-customer-menu tish-paper tish-paper-products">
 @include('customer-menu.partials.brand-watermark')
