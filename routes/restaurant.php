@@ -108,6 +108,15 @@ Route::middleware([
                 [RestaurantPosController::class, 'index']
             )->name('pos.index');
 
+            Route::get('/pos/customer-screen', [\App\Http\Controllers\Restaurant\PosCustomerScreenController::class, 'show'])
+                ->name('pos.customer-screen');
+            Route::get('/pos/customer-screen/playlist', [\App\Http\Controllers\Restaurant\PosCustomerScreenController::class, 'playlist'])
+                ->name('pos.customer-screen.playlist');
+            Route::get('/pos/customer-screen/settings', [\App\Http\Controllers\Restaurant\PosCustomerScreenController::class, 'settings'])
+                ->name('pos.customer-screen.settings')->middleware('can:settings.manage');
+            Route::post('/pos/customer-screen/settings', [\App\Http\Controllers\Restaurant\PosCustomerScreenController::class, 'update'])
+                ->name('pos.customer-screen.update')->middleware('can:settings.manage');
+
             Route::get(
                 '/pos/catalog',
                 [RestaurantPosController::class, 'catalog']

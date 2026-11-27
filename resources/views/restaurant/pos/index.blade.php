@@ -91,6 +91,10 @@
                 طلب جديد
             </button>
 
+            <button type="button" class="rb-btn rb-btn-light" id="rbCustomerScreenBtn">شاشة الزبون</button>
+            @can('settings.manage')
+                <a class="rb-btn rb-btn-light" target="_blank" rel="noopener" href="{{ route('restaurant.pos.customer-screen.settings', ['location_id' => $location->id]) }}">إعلانات الشاشة</a>
+            @endcan
             <button type="button" class="rb-btn rb-btn-light" id="rbQrOrdersBtn">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                     <rect x="3" y="3" width="7" height="7" rx="1"></rect>
@@ -4940,6 +4944,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('rbMobileCheckoutBtn').disabled = !cart.size;
         renderSplitTender();
         cartCount.textContent = cart.size;
+        publishCustomerScreen();
     }
 
     function renderCart() {
@@ -6087,6 +6092,7 @@ async function submitOrder(action) {
         localStorage.removeItem(draftKey);
         sessionStorage.removeItem(posAttemptKey);
         rbCheckoutSucceeded = true;
+        publishCustomerScreen({phase:'confirmed', orderNumber:String(data.order_number || data.order_id)});
 
         // Printing is a separate action from checkout: a blocked popup or
         // printer problem must NEVER misreport a committed sale as a failure.
@@ -6828,6 +6834,61 @@ async function submitOrder(action) {
     };
     gridViewBtn?.addEventListener('click', () => setCatalogView('grid'));
     listViewBtn?.addEventListener('click', () => setCatalogView('list'));
+
+    // TISH customer screen: paired read-only window, no payment mutation.
+    const customerScreenUrl = @json(route('restaurant.pos.customer-screen', ['location_id' => $location->id]));
+    const customerScreenScope = cashierUserId + ':' + locationId;
+    const customerScreenKey = 'tish.customer-screen.v1.' + customerScreenScope;
+    let customerScreenToken = '';
+    try { customerScreenToken = sessionStorage.getItem(customerScreenKey) || ''; } catch (_) {}
+    let customerScreenWindow = null;
+    let customerScreenConfirmed = null;
+    const customerScreenButton = document.getElementById('rbCustomerScreenBtn');
+
+    function publishCustomerScreen(confirmation = null) {
+        if (confirmation) customerScreenConfirmed = confirmation;
+        if (!customerScreenWindow || customerScreenWindow.closed || !customerScreenToken) return;
+        const totals = getTotals();
+        const snapshot = customerScreenConfirmed || {
+            phase: cart.size ? (checkoutModal.hidden ? 'order' : 'checkout') : 'idle',
+            items: [...cart.values()].slice(0, 100).map(item => ({
+                name: String(item.name || '').slice(0, 180),
+                quantity: Number(item.quantity),
+                price: Number(item.price),
+                modifiers: item.modifiers.map(m => String(m.name || '').slice(0, 80)).slice(0, 12)
+            })),
+            subtotal: Number(totals.subtotal),
+            discount: Number(totals.discount) + Number(totals.channelDiscount),
+            total: Number(totals.total)
+        };
+        try {
+            customerScreenWindow.postMessage({
+                type:'tish.pos.display.snapshot', token:customerScreenToken,
+                scope:customerScreenScope, snapshot
+            }, location.origin);
+        } catch (_) { /* Display is optional; cannot interrupt sales. */ }
+    }
+    customerScreenButton?.addEventListener('click', () => {
+        if (customerScreenWindow && !customerScreenWindow.closed) {
+            customerScreenWindow.focus(); publishCustomerScreen(); return;
+        }
+        if (!window.crypto?.randomUUID) { statusMessage('يتطلب ربط الشاشة اتصال HTTPS آمنًا.', 'error'); return; }
+        customerScreenToken = window.crypto.randomUUID();
+        try { sessionStorage.setItem(customerScreenKey, customerScreenToken); } catch (_) {}
+        const url = new URL(customerScreenUrl, location.origin);
+        url.hash = customerScreenToken;
+        customerScreenWindow = window.open(url.toString(), 'tish-display-' + customerScreenToken, 'popup,width=1200,height=760');
+        if (!customerScreenWindow) statusMessage('اسمح بالنوافذ المنبثقة لفتح شاشة الزبون.', 'error');
+    });
+    window.addEventListener('message', event => {
+        if (event.origin !== location.origin || event.data?.type !== 'tish.pos.display.hello'
+            || !customerScreenToken || event.data.token !== customerScreenToken
+            || event.data.scope !== customerScreenScope || !event.source) return;
+        if (customerScreenWindow && !customerScreenWindow.closed && event.source !== customerScreenWindow) return;
+        customerScreenWindow = event.source;
+        publishCustomerScreen();
+    });
+    window.setInterval(() => publishCustomerScreen(), 1000);
 
     // Initial render
     renderFilters();
