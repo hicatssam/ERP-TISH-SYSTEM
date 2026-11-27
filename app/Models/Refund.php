@@ -8,7 +8,7 @@ class Refund extends Model
 {
     protected $fillable = [
         'payment_id', 'order_type', 'order_id',
-        'payment_method_id', 'source_payment_account_id', 'amount', 'reason',
+        'payment_method_id', 'source_payment_account_id', 'request_token', 'amount', 'reason',
         'processed_by', 'processed_at',
     ];
 

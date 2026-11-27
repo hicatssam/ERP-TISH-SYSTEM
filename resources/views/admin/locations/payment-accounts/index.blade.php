@@ -493,7 +493,7 @@
                     <div class="form-group">
                         <label class="pa-checkbox-label">
                             <input type="checkbox" name="can_disburse" value="1" @checked(old('can_disburse', false))>
-                            السماح بالصرف من هذا الحساب إلى الموردين
+                            السماح بالصرف والاسترداد من هذا الحساب
                         </label>
                         <small class="form-hint">الافتراضي معطّل حفاظًا على الحسابات المستخدمة لاستقبال دفعات العملاء.</small>
                     
@@ -655,7 +655,7 @@
                     <div class="form-group">
                         <label class="pa-checkbox-label">
                             <input type="checkbox" name="can_disburse" id="edit_can_disburse" value="1">
-                            السماح بالصرف إلى الموردين
+                            السماح بالصرف والاسترداد
                         </label>
                     
                     </div>

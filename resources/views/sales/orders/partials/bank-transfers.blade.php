@@ -313,6 +313,7 @@
                                                     onsubmit="return submitOrderRefund(this)">
                                                     @csrf
                                                     <input type="hidden" name="order_refund_payment_id" value="{{ $payment->id }}">
+                                                    <input type="hidden" name="request_token" value="{{ (string) \Illuminate\Support\Str::uuid() }}">
                                                     <div class="order-refund-edit-step">
                                                     <div class="form-group">
                                                         <label class="form-label" for="orderRefundAmount{{ $payment->id }}">المبلغ المسترد</label>

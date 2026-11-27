@@ -530,6 +530,23 @@ class PaymentController extends Controller
                 ->lockForUpdate()
                 ->findOrFail($payment->id);
 
+            // A retry of the same submitted form must not create another outflow.
+            $token = $validated['request_token'] ?? null;
+            if ($token) {
+                $existing = $payment->refunds()->where('request_token', $token)->first();
+                if ($existing) {
+                    if ((int) round((float) $existing->amount * 100) !== (int) round((float) $validated['amount'] * 100)
+                        || (int) $existing->payment_method_id !== (int) $validated['payment_method_id']
+                        || (int) $existing->source_payment_account_id !== (int) ($validated['source_payment_account_id'] ?? 0)
+                        || $existing->reason !== $validated['reason']) {
+                        throw ValidationException::withMessages([
+                            'amount' => 'هذا الطلب سبق تسجيله ببيانات مختلفة. راجع سجل الاستردادات قبل المحاولة.',
+                        ]);
+                    }
+                    return;
+                }
+            }
+
             $paymentStatus =
                 $payment->status?->value
                 ?? (string) $payment->status;
@@ -648,6 +665,7 @@ class PaymentController extends Controller
                 'order_id' => $payment->order_id,
                 'payment_method_id' => $validated['payment_method_id'],
                 'source_payment_account_id' => $sourceAccount?->id,
+                'request_token' => $token,
                 'amount' => $requestedRefund,
                 'reason' => $validated['reason'],
                 'processed_by' => Auth::id(),

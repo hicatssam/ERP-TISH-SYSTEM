@@ -895,6 +895,7 @@
         <form method="POST" id="refundForm">
 
             @csrf
+            <input type="hidden" name="request_token" value="{{ (string) \Illuminate\Support\Str::uuid() }}">
 
             <div class="form-group">
 

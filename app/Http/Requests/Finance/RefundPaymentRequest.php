@@ -15,6 +15,7 @@ class RefundPaymentRequest extends FormRequest
             'amount'            => ['required', 'numeric', 'min:0.01', 'max:' . ($payment?->amount ?? PHP_INT_MAX)],
             'payment_method_id' => ['required', 'exists:payment_methods,id'],
             'source_payment_account_id' => ['nullable', 'integer', 'exists:location_payment_accounts,id'],
+            'request_token' => ['nullable', 'uuid'],
             'reason'            => ['required', 'string', 'min:5', 'max:500'],
         ];
     }
