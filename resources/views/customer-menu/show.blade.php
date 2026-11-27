@@ -811,12 +811,18 @@ body.tish-paper .tools .search:focus-within::before {
     </button>
     @foreach($homeCategories as $category)
      @php
-      $iconClass = $categoryIconClasses[$category['icon_key'] ?? 'sparkles'] ?? 'fa-wand-magic-sparkles';
+      $iconKey = $category['icon_key'] ?? 'sparkles';
+      $iconClass = $categoryIconClasses[$iconKey] ?? 'fa-wand-magic-sparkles';
+      $drawnIcon = in_array($iconKey, ['fries', 'burger-chicken', 'burger-veggie', 'sauce', 'appetizers'], true);
      @endphp
      <button class="cat" type="button" data-cat="{{ $category['id'] }}" data-cat-name="{{ $category['name'] }}">
-      <span class="cat-visual" style="--category-color:var(--tish-paper-red)">
-       @if(($theme['category_visual'] ?? 'icons') === 'images' && !empty($category['image']))
+      <span class="cat-visual" data-category-icon="{{ $iconKey }}" style="--category-color:var(--tish-paper-red)">
+       @if($iconKey === 'custom' && !empty($category['image']))
+        <img src="{{ $category['image'] }}" class="category-custom-icon" style="width:58%;height:58%;object-fit:contain;background:none" alt="" loading="lazy" onerror="this.outerHTML='<i class=&quot;fa-solid fa-utensils&quot;></i>'">
+       @elseif(($theme['category_visual'] ?? 'icons') === 'images' && !empty($category['image']))
         <img src="{{ $category['image'] }}" alt="" loading="lazy" onerror="this.outerHTML='<i class=&quot;fa-solid {{ $iconClass }}&quot;></i>'">
+       @elseif($drawnIcon)
+        <x-menu-icon :name="$iconKey" :size="40" :stroke="1.8" style="width:50%;height:50%;color:inherit" />
        @else
         <i class="fa-solid {{ $iconClass }}"></i>
        @endif

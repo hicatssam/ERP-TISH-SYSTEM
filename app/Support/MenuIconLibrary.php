@@ -11,7 +11,11 @@ final class MenuIconLibrary
     public static function options(): array
     {
         return [
-            'burger' => 'برغر',
+            'burger' => 'برجر لحم',
+            'burger-chicken' => 'برجر دجاج',
+            'burger-veggie' => 'برجر نباتي',
+            'sauce' => 'صوصات',
+            'appetizers' => 'مقبلات',
             'pizza' => 'بيتزا',
             'coffee' => 'قهوة',
             'cake' => 'كيك',
@@ -30,6 +34,7 @@ final class MenuIconLibrary
             'tea' => 'شاي',
             'breakfast' => 'فطور',
             'sparkles' => 'أخرى',
+            'custom' => 'أيقونة مرفوعة',
         ];
     }
 

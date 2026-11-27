@@ -63,6 +63,7 @@ class CategoryController extends Controller
         $this->ensureUserHasBranchWhenRequired($request->user());
 
         $data = $this->validatedData($request);
+        $this->ensureCustomIconImage($request, $data['icon_key'] ?? 'sparkles');
 
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')
@@ -134,6 +135,7 @@ class CategoryController extends Controller
         $this->ensureCategoryAccess($category, $request->user());
 
         $data = $this->validatedData($request);
+        $this->ensureCustomIconImage($request, $data['icon_key'] ?? $category->icon_key, $category);
 
         if ($request->hasFile('image')) {
             $this->deleteCategoryImage($category);
@@ -150,8 +152,8 @@ class CategoryController extends Controller
         $data['slug'] = Str::slug($data['name']);
 
         $iconPayload = [
-            'icon_key' => $data['icon_key'] ?? 'sparkles',
-            'icon_color' => $data['icon_color'] ?? '#111111',
+            'icon_key' => $data['icon_key'] ?? $category->icon_key ?? 'sparkles',
+            'icon_color' => $data['icon_color'] ?? $category->icon_color ?? '#111111',
         ];
 
         unset($data['icon_key'], $data['icon_color']);
@@ -194,6 +196,16 @@ class CategoryController extends Controller
         ]);
 
         return back()->with('success', 'تم تحديث حالة الفئة.');
+    }
+
+    private function ensureCustomIconImage(Request $request, ?string $key, ?Category $category = null): void
+    {
+        if ($key === 'custom' && ! $request->hasFile('image')
+            && (! $category?->image || $request->boolean('remove_image'))) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'image' => 'ارفع صورة للأيقونة المخصصة أو اختر أيقونة من المكتبة.',
+            ]);
+        }
     }
 
     private function validatedData(Request $request): array

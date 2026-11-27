@@ -5,7 +5,7 @@
     <h1 class="page-heading">إضافة فئة جديدة</h1>
     <p class="page-subheading"><a href="{{ route('categories.index') }}">الفئات</a> &laquo; إضافة</p>
 </div>
-<div class="card" style="max-width:540px">
+<div class="card" style="max-width:760px">
     <div class="card-body">
         <form action="{{ route('categories.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
@@ -28,9 +28,12 @@
                     <textarea name="description" class="form-textarea">{{ old('description') }}</textarea>
                 </div>
 
+                @include('admin.categories.partials.icon-picker')
+
                 {{-- Image upload --}}
                 <div class="form-group">
-                    <label class="form-label">صورة الفئة</label>
+                    <label class="form-label">صورة الفئة / الأيقونة المرفوعة</label>
+                    <p style="font-size:.78rem;color:var(--text-muted)">اختر «أيقونة مرفوعة» من المكتبة لعرض هذه الصورة داخل دائرة التصنيف. يفضّل PNG شفاف ومربع.</p>
                     <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
                         <div id="previewWrap" style="width:100px;height:100px;border:2px dashed var(--border);border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--surface);flex-shrink:0">
                             <img id="imgPreview" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:none">

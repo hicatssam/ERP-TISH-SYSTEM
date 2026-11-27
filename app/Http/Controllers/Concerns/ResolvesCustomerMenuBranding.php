@@ -395,7 +395,7 @@ trait ResolvesCustomerMenuBranding
                     'name_en' => $category->name,
                     'slug' => $category->slug ?? null,
                     'image' => $this->assetFromPath($category->image ?? null),
-                    'icon_key' => $category->icon_key ?? $this->guessCategoryIcon($name),
+                    'icon_key' => $category->icon_key ?: $this->guessCategoryIcon($name),
                     'icon_color' => $category->icon_color ?? '#C98516',
                 ];
             })
@@ -623,8 +623,11 @@ trait ResolvesCustomerMenuBranding
         $text = mb_strtolower(trim((string) $text));
 
         return match (true) {
-            str_contains($text, 'ميلك'), str_contains($text, 'milkshake'), str_contains($text, 'صوص'), str_contains($text, 'sauce') => 'drink',
-            str_contains($text, 'مقبلات'), str_contains($text, 'appetizer') => 'salad',
+            str_contains($text, 'صوص'), str_contains($text, 'sauce') => 'sauce',
+            str_contains($text, 'ميلك'), str_contains($text, 'milkshake') => 'drink',
+            str_contains($text, 'مقبلات'), str_contains($text, 'appetizer') => 'appetizers',
+            preg_match('/(?:برجر|برغر|burger)/u', $text) && preg_match('/(?:دجاج|chicken)/u', $text) => 'burger-chicken',
+            preg_match('/(?:برجر|برغر|burger)/u', $text) && preg_match('/(?:نبات|veggie|vegetarian|vegan)/u', $text) => 'burger-veggie',
             str_contains($text, 'برغر'), str_contains($text, 'برجر'), str_contains($text, 'burger') => 'burger',
             str_contains($text, 'بيتزا'), str_contains($text, 'pizza') => 'pizza',
             str_contains($text, 'قهوة'), str_contains($text, 'coffee'), str_contains($text, 'كافيه') => 'coffee',
@@ -634,7 +637,7 @@ trait ResolvesCustomerMenuBranding
             str_contains($text, 'ايس كريم'), str_contains($text, 'آيس كريم'), str_contains($text, 'ice') => 'icecream',
             str_contains($text, 'عصير'), str_contains($text, 'juice') => 'juice',
             str_contains($text, 'مشروب'), str_contains($text, 'drink') => 'drink',
-            str_contains($text, 'بطاط'), str_contains($text, 'fries') => 'fries',
+            str_contains($text, 'بطاط'), str_contains($text, 'فرايز'), str_contains($text, 'fries') => 'fries',
             str_contains($text, 'دجاج'), str_contains($text, 'chicken') => 'chicken',
             str_contains($text, 'سلط'), str_contains($text, 'salad') => 'salad',
             str_contains($text, 'ساند'), str_contains($text, 'sandwich') => 'sandwich',

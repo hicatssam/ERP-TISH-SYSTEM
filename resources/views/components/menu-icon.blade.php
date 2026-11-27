@@ -26,6 +26,29 @@
             <path d="M7.5 10.5 9 12l1.8-1.5L12.5 12l1.7-1.5L16 12l1.4-1.5"/>
             @break
 
+        @case('burger-chicken')
+            <g fill="currentColor" stroke="none">
+                <path d="M2 9c0-4 4.5-7 10-7s10 3 10 7H2Zm0 9h20v1c0 1.7-1.3 3-3 3H5c-1.7 0-3-1.3-3-3v-1Z"/>
+                <path d="m2 12 3-2 4 2 3-2 3 2 4-2 3 2v3l-3 2-4-2-3 2-3-2-4 2-3-2v-3Z"/>
+            </g>
+            @break
+        @case('burger-veggie')
+            <g fill="currentColor" stroke="none">
+                <path d="M2 9c0-4 4.5-7 10-7s10 3 10 7H2Zm0 10h20c0 2-1.3 3-3 3H5c-1.7 0-3-1-3-3Z"/>
+                <path d="M2 11h20v2H2zm1 6c0-3 4-5 7-3l2 1c3-4 8-5 10-3-1 4-4 6-9 6H3z"/>
+            </g>
+            @break
+        @case('sauce')
+            <g fill="currentColor" stroke="none">
+                <path d="M10 1h4l1 5H9l1-5ZM8 7h8l2 4v9c0 1.7-1 3-3 3H9c-2 0-3-1.3-3-3v-9l2-4Z"/>
+            </g>
+            @break
+        @case('appetizers')
+            <g fill="currentColor" stroke="none"><path d="M2 12h20c-.5 5.5-4.5 9-10 9S2.5 17.5 2 12ZM4 10c0-2 2-3 4-3 0-3 4-4 6-1 3-1 6 1 6 4H4Z"/><rect x="7" y="21" width="10" height="1.5" rx=".75"/></g>
+            @break
+        @case('custom')
+            <rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="2"/><path d="m3 18 6-6 4 4 3-3 5 5"/>
+            @break
         @case('pizza')
             <path d="M5 4.8c5.6-1.7 10.4-.8 14 2.2L12 20 5 4.8Z"/>
             <path d="M5 4.8c4.7 1 9.2 1.8 14 2.2"/>
@@ -82,11 +105,10 @@
             @break
 
         @case('fries')
-            <path d="M7 8 6 20h12L17 8H7Z"/>
-            <path d="M8 8 7 3"/>
-            <path d="m11 8 .2-5"/>
-            <path d="m14 8 .8-5"/>
-            <path d="m17 8 1-4"/>
+            <g fill="currentColor" stroke="none">
+                <path d="M3 9h18l-2.4 12a2 2 0 0 1-2 1.6H7.4a2 2 0 0 1-2-1.6L3 9Z"/>
+                <rect x="4" y="3" width="3" height="5" rx=".7" transform="rotate(-10 5 5)"/><rect x="8.5" y="1.5" width="3" height="6.5" rx=".7"/><rect x="13" y="2" width="3" height="6" rx=".7"/><rect x="17.5" y="3" width="3" height="5" rx=".7" transform="rotate(10 19 5)"/>
+            </g>
             @break
 
         @case('chicken')

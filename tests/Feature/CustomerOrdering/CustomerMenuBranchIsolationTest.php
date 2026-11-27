@@ -22,6 +22,22 @@ class CustomerMenuBranchIsolationTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_selected_category_icon_is_rendered_on_customer_home(): void
+    {
+        $branch = $this->branch();
+        $product = $this->product($branch, 12);
+        $category = Category::query()->findOrFail($product->category_id);
+        $category->forceFill(['icon_key' => 'sauce'])->save();
+        SystemSetting::set('customer_menu_show_categories', true);
+        SystemSetting::set('customer_menu_category_visual', 'icons');
+        $response = $this->get(route('customer-menu.show', $branch->code))->assertOk();
+        $this->assertSame('sauce', $response->viewData('categories')->firstWhere('id', $category->id)['icon_key']);
+        $response->assertSee('data-category-icon="sauce"', false);
+        $category->forceFill(['icon_key' => 'burger-veggie'])->save();
+        $this->get(route('customer-menu.show', $branch->code))->assertOk()
+            ->assertSee('data-category-icon="burger-veggie"', false);
+    }
+
     public function test_all_branch_menu_pages_render_and_keep_branch_links(): void
     {
         $branch = $this->branch();

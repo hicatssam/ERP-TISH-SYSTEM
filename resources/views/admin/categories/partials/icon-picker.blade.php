@@ -16,18 +16,10 @@
     <div class="category-icon-head">
         <div>
             <label class="form-label">أيقونة الفئة</label>
-            <p>اختر أيقونة نظيفة تظهر في منيو العميل وعلى بطاقات الأصناف.</p>
+            <p>اختر أيقونة التصنيف في المنيو. الأيقونات الجاهزة تتبع ألوان TISH؛ للأيقونة المرفوعة اختر الخيار المخصص ثم ارفع الصورة أدناه.</p>
         </div>
 
-        <label class="category-icon-color">
-            <span>لون الأيقونة</span>
-            <input
-                type="color"
-                name="icon_color"
-                value="{{ $selectedColor }}"
-                id="categoryIconColor"
-            >
-        </label>
+        <input type="hidden" name="icon_color" value="{{ $selectedColor }}">
     </div>
 
     <input
@@ -143,13 +135,13 @@
     border:1px solid #eeeeee;
     border-radius:50%;
     background:#fafafa;
-    color:var(--category-icon-color,#111);
+    color:var(--category-icon-color,#b32017);
     transition:.18s ease;
 }
 .category-icon-choice.is-selected .category-icon-circle{
     color:#fff;
-    background:var(--category-icon-color,#111);
-    border-color:var(--category-icon-color,#111);
+    background:var(--category-icon-color,#b32017);
+    border-color:var(--category-icon-color,#b32017);
 }
 .category-icon-choice strong{
     font-size:.72rem;
@@ -190,15 +182,8 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!root) return;
 
     const hidden = root.querySelector('#categoryIconKey');
-    const color = root.querySelector('#categoryIconColor');
     const choices = [...root.querySelectorAll('[data-icon-key]')];
 
-    const syncColor = () => {
-        root.style.setProperty(
-            '--category-icon-color',
-            color?.value || '#111111'
-        );
-    };
 
     choices.forEach((button) => {
         button.addEventListener('click', () => {
@@ -212,7 +197,5 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    color?.addEventListener('input', syncColor);
-    syncColor();
 });
 </script>
