@@ -137,6 +137,8 @@
   "فعّل التنبيهات لتسمع صوتًا عند تغيّر حالة الطلب.": "Enable alerts to hear a sound when your order status changes.",
   "ستصلك التنبيهات أثناء فتح صفحة الطلب.": "You will receive alerts while this order page is open.",
   "الوقت التقديري المتبقي: {time}": "Estimated time remaining: {time}",
+  "بعض الأصناف ما زالت بانتظار التحضير": "Some items are still waiting to be prepared",
+  "بانتظار تحديث وقت التحضير من المطعم": "Waiting for a preparation update from the restaurant",
   "انتهى الوقت التقديري، ننتظر تحديث المطبخ": "Estimated time elapsed. Waiting for a kitchen update.",
   "الوقت التقديري: حوالي {minutes} دقيقة (غير مضمون)": "Estimated time: about {minutes} minutes (not guaranteed)",
   "🔔 إشعارات الطلب مفعّلة": "🔔 Order notifications enabled",

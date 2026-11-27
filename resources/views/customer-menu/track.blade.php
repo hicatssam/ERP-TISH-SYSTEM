@@ -508,6 +508,14 @@
 }
 </style>
 
+<style>
+.tish-prep-clock[hidden]{display:none!important}
+.tish-prep-clock{display:grid;justify-items:center;margin:12px auto;color:#b32017}
+.tish-prep-ring{width:clamp(112px,34vw,150px);aspect-ratio:1;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;isolation:isolate;background:conic-gradient(#b32017 var(--prep-progress,0%),#dfc9ae 0);text-align:center}
+.tish-prep-ring::before{content:"";position:absolute;inset:7px;border-radius:50%;background:#f7ead5;z-index:-1}
+.tish-prep-digits{font-size:clamp(25px,7vw,36px);font-weight:900;line-height:1.2;font-variant-numeric:tabular-nums}
+.tish-prep-ring small{font-size:.68rem;color:#5a3a2b;max-width:90px;line-height:1.4}
+</style>
 </head>
 <body class="tish-paper tish-paper-track">
     @if($appDownloadUrl || $websiteUrl)
@@ -575,6 +583,12 @@
                 </div>
             </div>
 
+            <div class="tish-prep-clock" id="tishMainPrepClock" hidden>
+                <div class="tish-prep-ring" role="timer" aria-live="off">
+                    <strong class="tish-prep-digits" dir="ltr">--:--</strong>
+                    <small>الوقت التقديري المتبقي</small>
+                </div>
+            </div>
             <div class="notice" id="eta"></div>
 
             <div class="paymentSummary" id="paymentSummary" aria-live="polite" aria-atomic="true">
@@ -641,6 +655,12 @@
                 @foreach($order->items as $item)
                     <span>{{ $item->quantity }} × {{ $item->product ? \App\Support\CustomerMenuLanguage::name($item->product->name, $item->product->name_ar) : $item->product_name }}</span>
                 @endforeach
+            </div>
+            <div class="tish-prep-clock" id="tishPopupPrepClock" hidden>
+                <div class="tish-prep-ring" role="timer" aria-live="off">
+                    <strong class="tish-prep-digits" dir="ltr">--:--</strong>
+                    <small>الوقت التقديري المتبقي</small>
+                </div>
             </div>
             <p id="tishPopupEta"></p>
             <div class="tish-status-actions">
@@ -745,33 +765,69 @@
         const tishPopupEta = document.getElementById('tishPopupEta');
         let lastPopupState = '';
         let tishDeadlineMs = null;
+        let tishDurationSeconds = 0;
         let tishClockOffsetMs = 0;
-        let tishTimerDone = false;
+        const prepClocks = [document.getElementById('tishMainPrepClock'), document.getElementById('tishPopupPrepClock')];
         const tishTimeFormat = seconds => {
             const minutes = Math.floor(seconds / 60);
             return String(minutes).padStart(2, '0') + ':' + String(seconds % 60).padStart(2, '0');
         };
+        function hideTishCountdown() {
+            prepClocks.forEach(clock => { clock.hidden = true; });
+        }
         function renderTishCountdown() {
-            if (!tishDeadlineMs) return;
-            const state = String(window.tishLatestTracking?.state || '').toLowerCase();
-            if (['ready', 'completed', 'cancelled', 'canceled'].includes(state)) return;
+            const data = window.tishLatestTracking || {};
+            if (!tishDeadlineMs || data.state !== 'preparing') {
+                hideTishCountdown();
+                return;
+            }
             const remaining = Math.max(0, Math.ceil((tishDeadlineMs - (Date.now() - tishClockOffsetMs)) / 1000));
-            const label = remaining ? '⏱️ ' + menuF('الوقت التقديري المتبقي: {time}', {time: tishTimeFormat(remaining)})
-                : '⏱️ ' + menuT('انتهى الوقت التقديري، ننتظر تحديث المطبخ');
-            const mainEta = document.getElementById('eta');
-            mainEta.textContent = label;
-            mainEta.classList.add('show');
-            tishPopupEta.textContent = label;
-            if (!remaining && !tishTimerDone) tishTimerDone = true;
+            const progress = Math.max(0, Math.min(100, remaining / Math.max(1, tishDurationSeconds) * 100));
+            prepClocks.forEach(clock => {
+                clock.hidden = false;
+                clock.querySelector('.tish-prep-ring').style.setProperty('--prep-progress', progress + '%');
+                clock.querySelector('.tish-prep-digits').textContent = tishTimeFormat(remaining);
+            });
+            const notes = [];
+            if (!remaining) notes.push(menuT('انتهى الوقت التقديري، ننتظر تحديث المطبخ'));
+            if (data.preparation_has_queued_tickets) notes.push(menuT('بعض الأصناف ما زالت بانتظار التحضير'));
+            const message = notes.join(' · ');
+            eta.textContent = message;
+            eta.classList.toggle('show', Boolean(message));
+            tishPopupEta.textContent = message;
         }
         setInterval(renderTishCountdown, 1000);
         function setTishDeadline(data) {
             const serverNow = Date.parse(data.server_time || '');
             if (Number.isFinite(serverNow)) tishClockOffsetMs = Date.now() - serverNow;
-            const date = typeof data.estimated_ready_at === 'string'
-                ? Date.parse(data.estimated_ready_at) : NaN;
+            const date = data.state === 'preparing' && typeof data.preparation_deadline_at === 'string'
+                ? Date.parse(data.preparation_deadline_at) : NaN;
             tishDeadlineMs = Number.isFinite(date) ? date : null;
-            if (tishDeadlineMs) renderTishCountdown();
+            tishDurationSeconds = Number(data.preparation_duration_seconds) || 0;
+            if (!tishDeadlineMs) hideTishCountdown();
+        }
+        function showTishEstimate(data) {
+            const state = String(data.state || '').toLowerCase();
+            const minutes = Number(data.estimated_ready_minutes);
+            let message = '';
+            if (state === 'preparing') {
+                if (tishDeadlineMs) { renderTishCountdown(); return; }
+                message = menuT(data.preparation_has_queued_tickets
+                    ? 'بعض الأصناف ما زالت بانتظار التحضير'
+                    : 'بانتظار تحديث وقت التحضير من المطعم');
+            } else if (['pending','received','confirmed','accepted'].includes(state) && Number.isFinite(minutes) && minutes > 0) {
+                const estimateAt = Date.parse(data.estimated_ready_at || '');
+                const estimate = Number.isFinite(estimateAt)
+                    ? Math.max(0, Math.ceil((estimateAt - (Date.now() - tishClockOffsetMs)) / 60000))
+                    : Math.ceil(minutes);
+                message = estimate > 0
+                    ? '⏱️ ' + menuF('الوقت التقديري: حوالي {minutes} دقيقة (غير مضمون)', {minutes:estimate})
+                    : menuT('بانتظار تحديث وقت التحضير من المطعم');
+            }
+            hideTishCountdown();
+            eta.textContent = message;
+            eta.classList.toggle('show', Boolean(message));
+            tishPopupEta.textContent = message;
         }
         function closeTishPopup() {
             tishOverlay.classList.remove('is-open');
@@ -788,12 +844,7 @@
                 completed:'بالعافية عليك!',cancelled:'تم إلغاء الطلب'
             })[state] || data.label || 'تحديث طلبك';
             tishPopupDescription.textContent = data.customer_message || data.description || '';
-            const minutes = Number(data.estimated_ready_minutes);
-            tishPopupEta.textContent = ['ready','completed','cancelled'].includes(state)
-                ? '' : (Number.isFinite(minutes) && minutes > 0
-                    ? '⏱️ ' + menuF('الوقت التقديري: حوالي {minutes} دقيقة (غير مضمون)', {minutes})
-                    : 'بانتظار تحديث وقت التحضير من المطعم');
-            if (tishDeadlineMs) renderTishCountdown();
+            showTishEstimate(data);
             tishOverlay.classList.add('is-open');
             tishOverlay.setAttribute('aria-hidden','false');
             tishMini.classList.remove('is-visible');
@@ -1022,18 +1073,7 @@
             paymentBadge.dataset.paymentState = stateInfo[2];
             paymentDescription.textContent = menuT(payOnPickup ? 'الدفع عند الاستلام — لم يتم تحصيل المبلغ بعد.' : stateInfo[1]);
 
-            const minutes = Number(data.estimated_ready_minutes);
-            const showEta = !cancelled && Number.isFinite(minutes) && minutes > 0;
-            if (!tishDeadlineMs) {
-                eta.textContent = showEta ? '⏱️ ' + menuF('الوقت المتوقع لتجهيز طلبك: حوالي {minutes} دقيقة', {minutes}) : '';
-                eta.classList.toggle('show', showEta);
-            } else if (cancelled || ['ready', 'completed'].includes(state)) {
-                eta.textContent = '';
-                eta.classList.remove('show');
-                tishPopupEta.textContent = '';
-            } else {
-                renderTishCountdown();
-            }
+            showTishEstimate(data);
 
             notifyStatusChange(data);
         }

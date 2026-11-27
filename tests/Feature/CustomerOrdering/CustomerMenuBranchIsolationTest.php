@@ -383,11 +383,24 @@ class CustomerMenuBranchIsolationTest extends TestCase
         $this->assertSame(24.0, (float) $order->fresh()->invoice->total_amount);
         $kitchen = app(\App\Services\Kitchen\KitchenTicketService::class);
         $ticket = $kitchen->dispatchConfirmedOrder($order->fresh(), $actor)->first();
-        $this->getJson($result['status_url'])->assertOk()->assertJsonPath('state', 'accepted');
-        $kitchen->start($ticket, $actor);
-        $this->getJson($result['status_url'])->assertOk()->assertJsonPath('state', 'preparing');
+        $this->getJson($result['status_url'])->assertOk()->assertJsonPath('state', 'accepted')
+            ->assertJsonPath('preparation_deadline_at', null);
+        $this->travel(3)->minutes();
+        $ticket = $kitchen->start($ticket, $actor);
+        $snapshot = $order->fresh()->public_order_meta['preparation_snapshot'];
+        $minutes = $snapshot['product_minutes'][$product->id];
+        $deadline = $ticket->started_at->copy()->addMinutes($minutes)->toIso8601String();
+        $this->getJson($result['status_url'])->assertOk()->assertJsonPath('state', 'preparing')
+            ->assertJsonPath('preparation_started_at', $ticket->started_at->toIso8601String())
+            ->assertJsonPath('preparation_deadline_at', $deadline)
+            ->assertJsonPath('preparation_duration_seconds', $minutes * 60);
+        $product->update(['prep_time_minutes' => $minutes + 5]);
+        $this->travel($minutes + 1)->minutes();
+        $this->getJson($result['status_url'])->assertOk()->assertJsonPath('state', 'preparing')
+            ->assertJsonPath('preparation_deadline_at', $deadline);
         $kitchen->markReady($ticket->fresh(), $actor);
-        $this->getJson($result['status_url'])->assertOk()->assertJsonPath('state', 'ready');
+        $this->getJson($result['status_url'])->assertOk()->assertJsonPath('state', 'ready')
+            ->assertJsonPath('preparation_deadline_at', null);
         try {
             $orders->completeOrder($order->fresh(), $actor);
             $this->fail('An unserved kitchen order must not complete.');

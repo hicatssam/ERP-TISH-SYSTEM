@@ -23,6 +23,7 @@ class CustomerOrderStatusService
         $messageUpdatedAt = $order->customer_status_message_updated_at?->toIso8601String();
 
         $statusKey = $state['state'];
+        $preparation = $this->preparationTiming($order, $statusKey);
 
         $label = trim((string) SystemSetting::get(
             "customer_menu_status_{$statusKey}_title",
@@ -94,6 +95,10 @@ class CustomerOrderStatusService
 
             'server_time' => now()->toIso8601String(),
             'estimated_ready_minutes' => $this->estimatedReadyMinutes($order, $statusKey),
+            'preparation_started_at' => $preparation['started_at'],
+            'preparation_deadline_at' => $preparation['deadline_at'],
+            'preparation_duration_seconds' => $preparation['duration_seconds'],
+            'preparation_has_queued_tickets' => $preparation['has_queued_tickets'],
             // Immutable estimate for new customer orders; legacy orders remain
             // explicitly approximate and will not display a fake countdown.
             'estimated_ready_at' => in_array($statusKey, ['ready', 'completed', 'cancelled'], true)
@@ -309,6 +314,65 @@ class CustomerOrderStatusService
             : 0;
 
         return $basePrepMinutes + ($ordersAhead * $queueMinutesPerOrder);
+    }
+
+    /**
+     * Freeze the configured cooking durations when a public order is placed.
+     * Queue estimates and actual cooking clocks are intentionally independent.
+     */
+    public function preparationSnapshot(Order $order): array
+    {
+        $default = max(1, (int) SystemSetting::get('customer_menu_default_prep_minutes', 12));
+        $minutes = $order->items()->with('product:id,prep_time_minutes')->get()
+            ->filter(fn ($item) => $item->product_id !== null)
+            ->mapWithKeys(fn ($item) => [
+                (string) $item->product_id => max(1, (int) ($item->product?->prep_time_minutes ?: $default)),
+            ])->all();
+
+        return ['default_minutes' => $default, 'product_minutes' => $minutes];
+    }
+
+    private function preparationTiming(Order $order, string $state): array
+    {
+        $empty = ['started_at' => null, 'deadline_at' => null,
+            'duration_seconds' => null, 'has_queued_tickets' => false];
+        if ($state !== 'preparing') {
+            return $empty;
+        }
+
+        $tickets = $order->kitchenTickets()->with('items')->get();
+        $empty['has_queued_tickets'] = $tickets->contains(fn ($ticket) => $ticket->statusValue() === 'queued');
+        $snapshot = data_get($order->public_order_meta, 'preparation_snapshot');
+        // Older orders have no frozen duration; use their actual start time and
+        // current product settings, never the submission timestamp.
+        if (! is_array($snapshot) || ! is_array($snapshot['product_minutes'] ?? null)) {
+            $snapshot = $this->preparationSnapshot($order);
+        }
+        $default = max(1, (int) ($snapshot['default_minutes'] ?? 12));
+        $active = $tickets->filter(fn ($ticket) => $ticket->statusValue() === 'preparing' && $ticket->started_at !== null);
+        $timings = $active->map(function ($ticket) use ($snapshot, $default) {
+            $items = $ticket->items->filter(fn ($item) => $this->scalar($item->status) !== 'cancelled');
+            if ($items->isEmpty()) {
+                return null;
+            }
+            $minutes = $items->map(fn ($item) => max(1, (int) ($snapshot['product_minutes'][$item->product_id] ?? $default)))->max();
+            return [
+                'start' => $ticket->started_at,
+                'deadline' => $ticket->started_at->copy()->addMinutes($minutes),
+                'duration' => $minutes * 60,
+            ];
+        })->filter()->sortByDesc(fn ($timing) => $timing['deadline']->getTimestamp())->first();
+
+        if ($timings === null) {
+            return $empty;
+        }
+
+        return [
+            'started_at' => $timings['start']->toIso8601String(),
+            'deadline_at' => $timings['deadline']->toIso8601String(),
+            'duration_seconds' => $timings['duration'],
+            'has_queued_tickets' => $empty['has_queued_tickets'],
+        ];
     }
 
     private function latestTicketTime(Collection $tickets, string $field): ?string

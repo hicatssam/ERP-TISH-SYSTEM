@@ -233,15 +233,16 @@ class CustomerOrderingService
 
             // Persist the initial kitchen estimate once; reloading/polling must not
             // restart the customer's countdown or rewrite the original deadline.
-            $estimatedMinutes = app(CustomerOrderStatusService::class)
-                ->payload($order)['estimated_ready_minutes'] ?? null;
+            $statusService = app(CustomerOrderStatusService::class);
+            $estimatedMinutes = $statusService->payload($order)['estimated_ready_minutes'] ?? null;
+            $meta = $order->public_order_meta ?? [];
+            $meta['preparation_snapshot'] = $statusService->preparationSnapshot($order);
             if ($estimatedMinutes !== null && $estimatedMinutes > 0) {
-                $meta = $order->public_order_meta ?? [];
                 $meta['estimated_ready_at'] = now()
                     ->addMinutes((int) $estimatedMinutes)->toIso8601String();
-                $order->public_order_meta = $meta;
-                $order->save();
             }
+            $order->public_order_meta = $meta;
+            $order->save();
 
             $this->syncPublicPayment($order, $location, $data, $actor, $paymentContext);
 
