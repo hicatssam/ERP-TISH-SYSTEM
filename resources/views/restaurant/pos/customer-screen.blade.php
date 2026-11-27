@@ -36,8 +36,15 @@
 <div class="controls"><button id="fullscreen" type="button">ملء الشاشة ⛶</button><button id="sound" type="button" aria-pressed="false">الصوت مكتوم</button></div>
 <div id="connection">بانتظار ربط الكاشير</div>
 </main>
+@php
+    $customerScreenConfig = [
+        'scope' => $scope,
+        'settings' => $config,
+        'playlistUrl' => route('restaurant.pos.customer-screen.playlist', ['location_id' => $location->id], false),
+    ];
+@endphp
 <script>
-window.TishCustomerScreenConfig = @json(['scope'=>$scope, 'settings'=>$config, 'playlistUrl'=>route('restaurant.pos.customer-screen.playlist', ['location_id'=>$location->id])]);
+window.TishCustomerScreenConfig = {{ \Illuminate\Support\Js::from($customerScreenConfig) }};
 </script>
 <script src="{{ asset('assets/js/pos-customer-screen.js') }}?v=1"></script>
 </body></html>
