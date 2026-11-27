@@ -510,6 +510,7 @@
 
 <style>
 .tish-prep-clock[hidden]{display:none!important}
+#eta:not(.show),#tishPopupEta:empty{display:none!important}
 .tish-prep-clock{display:grid;justify-items:center;margin:12px auto;color:#b32017}
 .tish-prep-ring{width:clamp(112px,34vw,150px);aspect-ratio:1;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;isolation:isolate;background:conic-gradient(#b32017 var(--prep-progress,0%),#dfc9ae 0);text-align:center}
 .tish-prep-ring::before{content:"";position:absolute;inset:7px;border-radius:50%;background:#f7ead5;z-index:-1}
@@ -807,22 +808,15 @@
             if (!tishDeadlineMs) hideTishCountdown();
         }
         function showTishEstimate(data) {
+            // The preparation clock and its messages are visible only while
+            // the kitchen is preparing the order. No queue countdown.
             const state = String(data.state || '').toLowerCase();
-            const minutes = Number(data.estimated_ready_minutes);
             let message = '';
             if (state === 'preparing') {
                 if (tishDeadlineMs) { renderTishCountdown(); return; }
                 message = menuT(data.preparation_has_queued_tickets
                     ? 'بعض الأصناف ما زالت بانتظار التحضير'
                     : 'بانتظار تحديث وقت التحضير من المطعم');
-            } else if (['pending','received','confirmed','accepted'].includes(state) && Number.isFinite(minutes) && minutes > 0) {
-                const estimateAt = Date.parse(data.estimated_ready_at || '');
-                const estimate = Number.isFinite(estimateAt)
-                    ? Math.max(0, Math.ceil((estimateAt - (Date.now() - tishClockOffsetMs)) / 60000))
-                    : Math.ceil(minutes);
-                message = estimate > 0
-                    ? '⏱️ ' + menuF('الوقت التقديري: حوالي {minutes} دقيقة (غير مضمون)', {minutes:estimate})
-                    : menuT('بانتظار تحديث وقت التحضير من المطعم');
             }
             hideTishCountdown();
             eta.textContent = message;
