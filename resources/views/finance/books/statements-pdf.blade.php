@@ -89,4 +89,5 @@
         </div>
     @endif
 @include('finance.accounting.partials.raw-material-ledger-summary', ['printMode' => true])
+@include('finance.accounting.partials.order-waste-summary', ['printMode' => true])
 @endsection

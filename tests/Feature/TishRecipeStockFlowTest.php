@@ -237,6 +237,85 @@ class TishRecipeStockFlowTest extends TestCase
         ]);
     }
 
+    public function test_cancelled_food_waste_is_recorded_without_a_second_stock_decrease(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $branch = Location::query()->where('code', 'B01')->firstOrFail();
+        $admin = User::query()->where('username', 'admin')->firstOrFail();
+        $burger = Product::query()->where('sku', 'BRG-BEEF-CLASSIC')->firstOrFail();
+        $bun = Product::query()->where('sku', 'BRG-ING-BUN')->firstOrFail();
+        $service = app(OrderService::class);
+        $order = $service->createOrder([
+            'location_id' => $branch->id,
+            'sales_channel_id' => SalesChannel::query()->where('slug', 'tish-direct')->value('id'),
+            'restaurant_service_type' => 'takeaway',
+            'order_source' => 'restaurant_pos',
+            'payment_arrangement' => 'pay_on_pickup',
+            'items' => [['product_id' => $burger->id, 'quantity' => 1]],
+        ], $admin, false);
+        $order = $service->confirmOrder($order, $admin);
+        $ticket = $order->kitchenTickets()->firstOrFail();
+        $ticket->update(['status' => 'preparing', 'started_at' => now()]);
+        $afterSale = Inventory::query()->where('location_id', $branch->id)
+            ->where('product_id', $bun->id)->value('quantity');
+        $hadCost = DB::table('accounting_journals')->where('source_type', 'order_costs')->where('source_id', $order->id)->exists();
+
+        $service->cancelOrder($order->fresh(), 'Test discarded food', $admin, 'waste');
+        $this->assertSame('cancelled', $order->fresh()->statusValue());
+        $this->assertEquals($afterSale, Inventory::query()->where('location_id', $branch->id)
+            ->where('product_id', $bun->id)->value('quantity'));
+        $this->assertTrue(DB::table('order_inventory_consumptions')
+            ->where('order_id', $order->id)->where('stock_product_id', $bun->id)
+            ->whereNotNull('wasted_at')->whereNull('restored_at')->exists());
+        $this->assertDatabaseMissing('accounting_journals', ['source_type' => 'order_cost_cancellations', 'source_id' => $order->id]);
+        if ($hadCost) {
+            $this->assertDatabaseHas('accounting_journals', ['source_type' => 'order_waste', 'source_id' => $order->id]);
+        }
+    }
+
+    public function test_split_cancellation_restores_only_selected_unprepared_item(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $branch = Location::query()->where('code', 'B01')->firstOrFail();
+        $admin = User::query()->where('username', 'admin')->firstOrFail();
+        $burger = Product::query()->where('sku', 'BRG-BEEF-CLASSIC')->firstOrFail();
+        $fries = Product::query()->where('sku', 'BRG-FRIES-MEDIUM')->firstOrFail();
+        $service = app(OrderService::class);
+        $order = $service->createOrder([
+            'location_id' => $branch->id,
+            'sales_channel_id' => SalesChannel::query()->where('slug', 'tish-direct')->value('id'),
+            'restaurant_service_type' => 'takeaway',
+            'order_source' => 'restaurant_pos',
+            'payment_arrangement' => 'pay_on_pickup',
+            'items' => [
+                ['product_id' => $burger->id, 'quantity' => 1],
+                ['product_id' => $fries->id, 'quantity' => 1],
+            ],
+        ], $admin, false);
+        $order = $service->confirmOrder($order, $admin);
+        $burgerLine = $order->items()->where('product_id', $burger->id)->firstOrFail();
+        $friesLine = $order->items()->where('product_id', $fries->id)->firstOrFail();
+        $consumptions = \App\Models\OrderInventoryConsumption::query()
+            ->where('order_id', $order->id)->whereNull('restored_at')->get();
+        $afterSale = $consumptions->pluck('stock_product_id')->unique()->mapWithKeys(fn ($id) => [
+            $id => (float) Inventory::query()->where('location_id', $branch->id)->where('product_id', $id)->value('quantity'),
+        ]);
+
+        // Both are still queued. Staff physically discarded the fries,
+        // while the burger's ingredients were untouched and reusable.
+        $service->cancelOrder($order->fresh(), 'Test selective disposal before preparation', $admin, 'split', [
+            $burgerLine->id => 'restore', $friesLine->id => 'waste',
+        ]);
+        $this->assertSame('cancelled', $order->fresh()->statusValue());
+        foreach ($consumptions->groupBy('stock_product_id') as $id => $rows) {
+            $expected = $afterSale[$id] + (float)$rows->where('order_item_id', $burgerLine->id)->sum('consumed_quantity');
+            $this->assertEqualsWithDelta($expected, (float)Inventory::query()->where('location_id', $branch->id)
+                ->where('product_id', $id)->value('quantity'), 0.001);
+        }
+        $this->assertTrue(\App\Models\OrderInventoryConsumption::query()->where('order_item_id', $burgerLine->id)->whereNotNull('restored_at')->exists());
+        $this->assertTrue(\App\Models\OrderInventoryConsumption::query()->where('order_item_id', $friesLine->id)->whereNotNull('wasted_at')->whereNull('restored_at')->exists());
+    }
+
     public function test_confirm_rejects_insufficient_ingredient_stock_without_partially_consuming_other_ingredients(): void
     {
         $this->seed(DatabaseSeeder::class);

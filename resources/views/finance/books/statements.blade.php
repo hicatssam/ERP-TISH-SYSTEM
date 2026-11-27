@@ -52,4 +52,5 @@
     </tbody></table></div></div></div>
 </div>
 @include('finance.accounting.partials.raw-material-ledger-summary')
+@include('finance.accounting.partials.order-waste-summary')
 @endsection

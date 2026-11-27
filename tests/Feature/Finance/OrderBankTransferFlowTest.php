@@ -257,6 +257,7 @@ class OrderBankTransferFlowTest extends TestCase
             'payment_method_id' => $method->id,
             'reason' => 'Partial refund recorded',
             'source_payment_account_id' => $account->id,
+            'request_token' => (string) Str::uuid(),
         ];
         $this->post(route('payments.refund', $payment), $payload)->assertForbidden();
         $user->givePermissionTo(Permission::findOrCreate('payments.refund', 'web'));
@@ -276,6 +277,9 @@ class OrderBankTransferFlowTest extends TestCase
         $this->assertSame('confirmed', $payment->fresh()->statusValue());
         $this->assertEquals(25, $payment->refunds()->sum('amount'));
         $this->assertEquals($account->id, $payment->refunds()->sole()->source_payment_account_id);
+        $this->post(route('payments.refund', $payment), $payload)->assertSessionHasNoErrors();
+        $this->assertCount(1, $payment->refunds()->get());
+        $this->assertEquals(25, $payment->refunds()->sum('amount'));
         $invoice = \App\Models\Invoice::make([
             'order_type' => 'order', 'order_id' => $order->id,
             'paid_amount' => 75, 'total_amount' => 100, 'remaining_amount' => 25,
@@ -287,7 +291,7 @@ class OrderBankTransferFlowTest extends TestCase
 
         $this->post(route('payments.refund', $payment), array_replace($payload, ['amount' => 76]))
             ->assertSessionHasErrors('amount');
-        $this->post(route('payments.refund', $payment), array_replace($payload, ['amount' => 75]))
+        $this->post(route('payments.refund', $payment), array_replace($payload, ['amount' => 75, 'request_token' => (string) Str::uuid()]))
             ->assertSessionHasNoErrors();
         $this->assertSame('refunded', $payment->fresh()->statusValue());
         $this->assertEquals(100, $payment->refunds()->sum('amount'));

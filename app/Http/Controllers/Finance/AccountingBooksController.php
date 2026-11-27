@@ -287,7 +287,21 @@ class AccountingBooksController extends Controller
         $from = $data['from'] ?? now()->startOfMonth()->toDateString();
         $to = $data['to'] ?? now()->toDateString();
 
+        $wasteRows = \Illuminate\Support\Facades\DB::table('order_inventory_consumptions as consumption')
+            ->join('products as product', 'product.id', '=', 'consumption.stock_product_id')
+            ->join('locations as location', 'location.id', '=', 'consumption.location_id')
+            ->whereIn('consumption.location_id', $this->locationIds($locationId))
+            ->whereNotNull('consumption.wasted_at')->whereNull('consumption.restored_at')
+            ->where('consumption.wasted_at', '>=', $from.' 00:00:00')
+            ->where('consumption.wasted_at', '<', \Illuminate\Support\Carbon::parse($to)->addDay()->toDateTimeString())
+            ->groupBy('consumption.location_id', 'location.name', 'consumption.stock_product_id', 'product.name_ar', 'product.name')
+            ->select('consumption.location_id', 'location.name as branch', 'consumption.stock_product_id', 'product.name_ar', 'product.name')
+            ->selectRaw('SUM(consumption.consumed_quantity) as quantity, SUM(consumption.total_cost_snapshot) as cost, COUNT(DISTINCT consumption.order_id) as order_count')
+            ->selectRaw('SUM(CASE WHEN consumption.total_cost_snapshot IS NULL OR consumption.unit_cost_snapshot IS NULL OR consumption.unit_cost_snapshot <= 0 THEN 1 ELSE 0 END) as missing_costs')
+            ->orderBy('location.name')->orderBy('product.name')->get();
+
         return [
+            'wasteRows' => $wasteRows,
             'report' => $this->reports->report($this->locationIds($locationId), $from, $to),
             'rawStockSummary' => app(BranchRawMaterialReportService::class)->forPeriod($this->locationIds($locationId), $from, $to),
             'locations' => $this->locations($request),
