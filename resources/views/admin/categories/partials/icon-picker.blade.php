@@ -10,6 +10,7 @@
     );
 
     $icons = \App\Support\MenuIconLibrary::options();
+    $selectedIcon = array_key_exists($selectedIcon, $icons) ? $selectedIcon : 'sparkles';
 @endphp
 
 <div class="category-icon-designer" id="categoryIconDesigner">

@@ -5,7 +5,7 @@
         || (!($category['icon_explicit'] ?? true) && ($theme['category_visual'] ?? 'icons') === 'images'));
 @endphp
 @if($useImage)
-    <img src="{{ $category['image'] }}" data-menu-icon="custom" class="category-custom-icon" alt="" loading="lazy" style="width:58%;height:58%;object-fit:contain;background:none" onerror="this.hidden=true;this.nextElementSibling.hidden=false">
+    <img src="{{ $category['image'] }}" data-menu-icon="custom" class="category-custom-icon" alt="" loading="lazy" style="width:58%;height:58%;object-fit:contain;background:none!important" onerror="this.hidden=true;this.nextElementSibling.hidden=false">
     <span hidden style="display:grid;place-items:center;width:100%;height:100%" class="category-icon-image-fallback">
         <x-menu-icon name="sparkles" :size="34" style="width:50%;height:50%;color:inherit" />
     </span>

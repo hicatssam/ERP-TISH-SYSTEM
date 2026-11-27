@@ -27,7 +27,18 @@ class CustomerMenuBranchIsolationTest extends TestCase
         $branch = $this->branch();
         $product = $this->product($branch, 12);
         $category = Category::query()->findOrFail($product->category_id);
-        $category->forceFill(['icon_key' => 'sauce'])->save();
+        $admin = User::factory()->create(['is_active' => true]);
+        $role = \Spatie\Permission\Models\Role::findOrCreate('Admin', 'web');
+        foreach (['products.update', 'products.view', 'products.create'] as $permission) {
+            $role->givePermissionTo(\Spatie\Permission\Models\Permission::findOrCreate($permission, 'web'));
+        }
+        $admin->assignRole($role);
+        $this->actingAs($admin)->get(route('categories.edit', $category))
+            ->assertOk()->assertSee('name="icon_key" value="sauce"', false);
+        $this->put(route('categories.update', $category), [
+            'name' => $category->name, 'icon_key' => 'sauce', 'sort_order' => 0,
+        ])->assertRedirect(route('categories.index'))->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('categories', ['id' => $category->id, 'icon_key' => 'sauce']);
         SystemSetting::set('customer_menu_show_categories', true);
         SystemSetting::set('customer_menu_category_visual', 'icons');
         $response = $this->get(route('customer-menu.show', $branch->code))->assertOk();
@@ -39,9 +50,12 @@ class CustomerMenuBranchIsolationTest extends TestCase
             ->assertSee('data-menu-icon="sauce"', false);
         $this->get(route('customer-menu.products', $branch->code))->assertOk()
             ->assertSee('data-menu-icon="sauce"', false);
-        $category->forceFill(['icon_key' => 'burger-veggie'])->save();
+        $this->put(route('categories.update', $category), [
+            'name' => $category->name, 'icon_key' => 'burger-veggie', 'sort_order' => 0,
+        ])->assertRedirect(route('categories.index'))->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('categories', ['id' => $category->id, 'icon_key' => 'burger-veggie']);
         $this->get(route('customer-menu.show', $branch->code))->assertOk()
-            ->assertSee('data-category-icon="burger-veggie"', false);
+            ->assertSee('data-menu-icon="burger-veggie"', false);
     }
 
     public function test_all_branch_menu_pages_render_and_keep_branch_links(): void
