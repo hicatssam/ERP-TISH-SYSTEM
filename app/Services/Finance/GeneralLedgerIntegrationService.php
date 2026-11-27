@@ -371,15 +371,25 @@ class GeneralLedgerIntegrationService
             $delta > 0 ? '1200' : '5000', "تسوية تكلفة طلب {$order->order_number}", $actor);
     }
 
-    public function cancelOrderCost(Order $order, User $actor): void
+    public function cancelOrderCost(Order $order, User $actor, ?float $restoredCost = null): void
     {
         if (! $this->hasJournal('order_costs', $order->id)) {
             return;
         }
-        $cost = round((float) $order->items()->sum('cost_total_snapshot'), 2);
+        $cost = round($restoredCost ?? (float) $order->items()->sum('cost_total_snapshot'), 2);
         if ($cost > 0) {
             $this->post('order_cost_cancellations', $order->id, (int) $order->location_id,
                 now(), $cost, '1200', '5000', "إلغاء تكلفة طلب {$order->order_number}", $actor);
+        }
+    }
+
+    public function classifyOrderWaste(Order $order, float $cost, User $actor): void
+    {
+        // Materials were deducted already. Reclassify the original expense;
+        // do not credit inventory again or record a duplicate expense.
+        if ($this->hasJournal('order_costs', $order->id) && $cost > 0) {
+            $this->post('order_waste', $order->id, (int) $order->location_id,
+                now(), $cost, '6300', '5000', "هدر طلب ملغى {$order->order_number}", $actor);
         }
     }
 

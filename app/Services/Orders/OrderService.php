@@ -772,9 +772,9 @@ public function confirmOrder(Order $order, User $user): Order
         return $product;
     }
 
-    public function cancelOrder(Order $order, string $reason, User $user, ?string $stockDisposition = null): Order
+    public function cancelOrder(Order $order, string $reason, User $user, ?string $stockDisposition = null, array $lineDispositions = []): Order
     {
-        $order = DB::transaction(function () use ($order, $reason, $user, $stockDisposition) {
+        $order = DB::transaction(function () use ($order, $reason, $user, $stockDisposition, $lineDispositions) {
             $order = Order::query()
                 ->with(['items.product', 'invoice.customerPaymentAllocations'])
                 ->lockForUpdate()
@@ -805,34 +805,105 @@ public function confirmOrder(Order $order, User $user): Order
                 ]);
             }
 
-            // Lock current kitchen tickets before deciding whether stock can return.
-            // A started ticket is proof of consumption even if later cancelled.
             $kitchenStarted = false;
-            if ($oldStatus === 'confirmed' && $order->isRestaurantOrder()) {
-                $tickets = $order->kitchenTickets()->orderBy('id')->lockForUpdate()->get();
+            $restoreStock = false;
+            $restoreCost = null;
+            $wasteCost = 0.0;
+            $dispositions = [];
+            if ($oldStatus === 'confirmed') {
+                $items = $order->items()->where('quantity', '>', 0)->orderBy('id')->lockForUpdate()->get();
+                $tickets = $order->isRestaurantOrder()
+                    ? $order->kitchenTickets()->orderBy('id')->lockForUpdate()->get()
+                    : collect();
+                $kitchenLines = \App\Models\KitchenTicketItem::query()
+                    ->whereIn('kitchen_ticket_id', $tickets->pluck('id'))
+                    ->orderBy('id')->lockForUpdate()->get()->groupBy('order_item_id');
                 $kitchenStarted = $tickets->contains(fn ($ticket) =>
                     $ticket->started_at || $ticket->ready_at || $ticket->served_at
                     || in_array($ticket->statusValue(), ['preparing', 'ready', 'served'], true));
-                if ($kitchenStarted && $stockDisposition !== 'retain') {
-                    throw ValidationException::withMessages([
-                        'stock_disposition' => 'بدأ تحضير الطلب. اختر الإلغاء دون إرجاع المواد المستهلكة؛ لا يمكن إعادتها للمخزون تلقائيًا.',
-                    ]);
-                }
-            }
-            if ($stockDisposition === 'retain' && ! $order->isRestaurantOrder()) {
-                throw ValidationException::withMessages([
-                    'stock_disposition' => 'الإلغاء دون إرجاع المواد متاح لطلبات المطعم فقط.',
-                ]);
-            }
-            $restoreStock = $oldStatus === 'confirmed' && $stockDisposition !== 'retain';
 
-            // Restore exactly the frozen physical stock consumption only if unused.
-            if ($restoreStock) {
-                $this->restaurantOrderInventoryService
-                    ->restoreForCancellation(
-                        $order,
-                        $user
+                if (! $order->isRestaurantOrder() && ! in_array($stockDisposition, [null, 'restore'], true)) {
+                    throw ValidationException::withMessages(['stock_disposition' => 'هذه المعالجة متاحة لطلبات المطعم فقط.']);
+                }
+
+                if (! in_array($stockDisposition, [null, 'restore', 'retain', 'waste', 'split'], true)) {
+                    throw ValidationException::withMessages(['stock_disposition' => 'طريقة معالجة المخزون غير صالحة.']);
+                }
+
+                $mode = $stockDisposition ?? 'restore';
+                if ($mode === 'split' && count($lineDispositions) !== $items->count()) {
+                    throw ValidationException::withMessages(['stock_disposition' => 'حدد معالجة كل صنف في الطلب.']);
+                }
+
+                foreach ($items as $item) {
+                    $id = (int) $item->id;
+                    $choice = $mode === 'split' ? ($lineDispositions[$id] ?? null) : $mode;
+                    if (! in_array($choice, ['restore', 'retain', 'waste'], true)) {
+                        throw ValidationException::withMessages(['stock_disposition' => 'حدد معالجة الصنف: '.$item->product_name]);
+                    }
+                    $lines = $kitchenLines->get($id, collect());
+                    $started = $lines->contains(fn ($line) =>
+                        $line->started_at || $line->ready_at || $line->served_at
+                        || in_array($line->status?->value ?? $line->status, ['preparing', 'ready', 'served'], true));
+                    $served = $lines->contains(fn ($line) =>
+                        $line->served_at || ($line->status?->value ?? $line->status) === 'served');
+                    // Missing routing is not evidence that a prepared order
+                    // still has reusable stock; require a conservative choice.
+                    if ($lines->isEmpty() && $kitchenStarted) {
+                        $started = true;
+                        $served = $tickets->contains(fn ($ticket) => $ticket->served_at || $ticket->statusValue() === 'served');
+                    }
+                    // A parent ticket may have advanced independently of a legacy line.
+                    foreach ($lines as $line) {
+                        $parent = $tickets->firstWhere('id', $line->kitchen_ticket_id);
+                        if ($parent) {
+                            $started = $started || (bool) ($parent->started_at || $parent->ready_at || $parent->served_at
+                                || in_array($parent->statusValue(), ['preparing', 'ready', 'served'], true));
+                            $served = $served || (bool) ($parent->served_at || $parent->statusValue() === 'served');
+                        }
+                    }
+                    if ($choice === 'restore' && $started) {
+                        throw ValidationException::withMessages(['stock_disposition' => 'بدأ تحضير الصنف: '.$item->product_name.'؛ لا يمكن إرجاع مواده تلقائيًا.']);
+                    }
+                    if ($choice === 'waste' && $served) {
+                        throw ValidationException::withMessages(['stock_disposition' => 'تم تسليم الصنف: '.$item->product_name.'؛ استخدم عدم الإرجاع بدل تسجيل هدر غير مؤكد.']);
+                    }
+                    $dispositions[$id] = $choice;
+                }
+
+                $restoreIds = array_keys(array_filter($dispositions, fn ($choice) => $choice === 'restore'));
+                $wasteIds = array_keys(array_filter($dispositions, fn ($choice) => $choice === 'waste'));
+
+                // Selective stock reversals and waste must have frozen records;
+                // never estimate stock from a changed recipe or today's cost.
+                if ($mode === 'split' || $wasteIds !== []) {
+                    $frozen = \App\Models\OrderInventoryConsumption::query()
+                        ->where('order_id', $order->id)->whereNull('restored_at')->whereNull('wasted_at')
+                        ->where('consumed_quantity', '>', 0)->orderBy('id')->lockForUpdate()->get()
+                        ->groupBy('order_item_id');
+                    foreach (array_merge($restoreIds, $wasteIds) as $id) {
+                        if ($frozen->get($id, collect())->isEmpty()) {
+                            throw ValidationException::withMessages(['stock_disposition' => 'لا توجد حركة استهلاك أصلية للصنف #'.$id.'؛ يلزم مراجعة المخزون يدويًا.']);
+                        }
+                    }
+                }
+
+                if ($restoreIds !== []) {
+                    $restoreStock = true;
+                    $allRestored = count($restoreIds) === $items->count();
+                    $restoreCost = $allRestored ? null : round((float) $items->whereIn('id', $restoreIds)->sum('cost_total_snapshot'), 2);
+                    $this->restaurantOrderInventoryService->restoreForCancellation(
+                        $order, $user, $allRestored ? null : $restoreIds
                     );
+                }
+
+                if ($wasteIds !== []) {
+                    $wasteCost = round((float) $items->whereIn('id', $wasteIds)->sum('cost_total_snapshot'), 2);
+                    \App\Models\OrderInventoryConsumption::query()
+                        ->where('order_id', $order->id)->whereIn('order_item_id', $wasteIds)
+                        ->whereNull('restored_at')->whereNull('wasted_at')->where('consumed_quantity', '>', 0)
+                        ->update(['wasted_at' => now()]);
+                }
             }
 
             $order->payments()
@@ -857,7 +928,11 @@ public function confirmOrder(Order $order, User $user): Order
 
             if ($restoreStock) {
                 app(\App\Services\Finance\GeneralLedgerIntegrationService::class)
-                    ->cancelOrderCost($order, $user);
+                    ->cancelOrderCost($order, $user, $restoreCost);
+            }
+            if ($wasteCost > 0) {
+                app(\App\Services\Finance\GeneralLedgerIntegrationService::class)
+                    ->classifyOrderWaste($order, $wasteCost, $user);
             }
 
             $order->update([
@@ -885,7 +960,9 @@ public function confirmOrder(Order $order, User $user): Order
                 metadata:   [
                     'location_id' => $order->location_id,
                     'reason' => $reason,
-                    'stock_disposition' => $oldStatus === 'draft' ? 'not_consumed' : ($restoreStock ? 'restored' : 'retained_consumption'),
+                    'stock_disposition' => $oldStatus === 'draft' ? 'not_consumed' : ($stockDisposition ?? 'restore'),
+                    'line_dispositions' => $dispositions,
+                    'waste_cost' => $wasteCost,
                     'kitchen_started' => $kitchenStarted,
                 ],
             );

@@ -26,6 +26,7 @@ class OrderInventoryConsumption extends Model
         'total_cost_snapshot',
         'revision',
         'restored_at',
+        'wasted_at',
     ];
 
     protected function casts(): array
@@ -40,6 +41,7 @@ class OrderInventoryConsumption extends Model
             'total_cost_snapshot' => 'decimal:4',
             'revision' => 'integer',
             'restored_at' => 'datetime',
+            'wasted_at' => 'datetime',
         ];
     }
 

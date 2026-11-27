@@ -746,6 +746,36 @@
 
 @include('sales.orders.partials.bank-transfers')
 
+@if($orderStatus === 'cancelled')
+    @php
+        $stockOutcome = \App\Models\OrderInventoryConsumption::query()
+            ->where('order_id', $order->id)->where('consumed_quantity', '>', 0)
+            ->with(['stockProduct', 'orderItem'])->orderBy('order_item_id')->get();
+    @endphp
+    @if($stockOutcome->isNotEmpty())
+        <div class="card" style="margin-top:1rem">
+            <div class="card-header"><h3>نتيجة معالجة المخزون بعد الإلغاء</h3></div>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead><tr><th>الصنف</th><th>المادة</th><th>الكمية بوحدة المخزون</th><th>التكلفة المسجلة</th><th>المعالجة</th></tr></thead>
+                    <tbody>
+                    @foreach($stockOutcome as $row)
+                        <tr>
+                            <td>{{ $row->orderItem?->product_name }}</td>
+                            <td>{{ $row->stockProduct?->name_ar ?: $row->stockProduct?->name }}</td>
+                            <td>{{ $row->consumed_quantity }}</td>
+                            <td>{{ $row->total_cost_snapshot === null ? 'غير متاحة' : number_format((float)$row->total_cost_snapshot, 2) }}</td>
+                            <td>{{ $row->restored_at ? 'أُعيد للمخزون' : ($row->wasted_at ? 'هدر مؤكد' : 'بقي مستهلكًا') }}</td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-body">تكلفة الهدر حسب سجلات المواد: {{ number_format((float)$stockOutcome->whereNotNull('wasted_at')->sum('total_cost_snapshot'), 2) }} ₪ (لا تشمل تكاليف غير مسجلة).</div>
+        </div>
+    @endif
+@endif
+
 
 
 {{-- =========================================================
@@ -1280,9 +1310,34 @@
                                     @unless($kitchenStarted)
                                     <option value="restore" @selected(old('stock_disposition') === 'restore')>لم تُستهلك المواد — إرجاع المخزون</option>
                                     @endunless
-                                    <option value="retain" @selected(old('stock_disposition') === 'retain')>تم استهلاك المواد — إلغاء دون إرجاع المخزون</option>
+                                    <option value="retain" @selected(old('stock_disposition') === 'retain')>تم استهلاك المواد أو تسليمها — لا إرجاع ولا هدر</option>
+                                    <option value="waste" @selected(old('stock_disposition') === 'waste')>تم إتلاف جميع الأصناف — تسجيل هدر</option>
+                                    <option value="split" @selected(old('stock_disposition') === 'split')>معالجة كل صنف على حدة</option>
                                 </select>
-                                <small class="text-muted">الإلغاء لا يعيد أموال العميل تلقائيًا. يجب استرداد صافي التحصيل أولًا. عند عدم الإرجاع تبقى التكلفة المسجلة للمواد المستهلكة.</small>
+                                <div id="lineStockDispositions" style="margin-top:.6rem" @if(old('stock_disposition') !== 'split') hidden @endif>
+                                    @foreach($order->items->filter(fn($item) => (float)$item->quantity > 0) as $line)
+                                        <div class="form-group" style="margin-top:.5rem">
+                                            <label class="form-label">{{ $line->product_name }} ({{ $line->quantity }})</label>
+                                            <select class="form-select" name="line_dispositions[{{ $line->id }}]" @if(old('stock_disposition') === 'split') required @else disabled @endif>
+                                                <option value="">حدد المعالجة الفعلية</option>
+                                                <option value="restore" @selected(old('line_dispositions.'.$line->id) === 'restore')>لم تُستهلك — إرجاع</option>
+                                                <option value="waste" @selected(old('line_dispositions.'.$line->id) === 'waste')>أُتلفت — هدر</option>
+                                                <option value="retain" @selected(old('line_dispositions.'.$line->id) === 'retain')>مستهلكة / مسلّمة — لا إرجاع</option>
+                                            </select>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                <script>
+                                    document.getElementById('stock_disposition').addEventListener('change', function () {
+                                        const group = document.getElementById('lineStockDispositions');
+                                        group.hidden = this.value !== 'split';
+                                        group.querySelectorAll('select').forEach(select => {
+                                            select.disabled = group.hidden;
+                                            select.required = !group.hidden;
+                                        });
+                                    });
+                                </script>
+                                <small class="text-muted">استرد صافي التحصيل أولًا. سجل الهدر فقط للمواد التي أُتلفت فعليًا. يتحقق النظام من حالة المطبخ قبل إرجاع أي صنف.</small>
                                 @error('stock_disposition')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                         @endif

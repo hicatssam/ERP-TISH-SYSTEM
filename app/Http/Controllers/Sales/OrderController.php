@@ -650,7 +650,8 @@ class OrderController extends Controller
             $order,
             $request->validated('cancellation_reason'),
             $request->user(),
-            $request->validated('stock_disposition')
+            $request->validated('stock_disposition'),
+            $request->validated('line_dispositions', [])
         );
 
         $this->releaseCustomerMenuTableIfIdle(
