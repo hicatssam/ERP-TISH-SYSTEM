@@ -44,7 +44,7 @@ class PosCustomerScreenController extends Controller
         $config = $this->config($locationId);
         $config['media'] = array_map(fn ($media) => [
             'id' => $media['id'], 'type' => $media['type'],
-            'url' => Storage::disk('public')->url($media['path']),
+            'url' => route('restaurant.pos.customer-screen.media', ['location_id' => $locationId, 'mediaId' => $media['id']], false),
         ], $config['media']);
         return $config;
     }
@@ -64,6 +64,17 @@ class PosCustomerScreenController extends Controller
     {
         return response()->json($this->publicConfig((int) $this->location($request)->id))
             ->header('Cache-Control', 'no-store');
+    }
+
+    public function media(Request $request, string $mediaId)
+    {
+        $id = (int) $this->location($request)->id;
+        $media = collect($this->config($id)['media'])->firstWhere('id', $mediaId);
+        abort_unless($media && Storage::disk('public')->exists($media['path']), 404);
+        return response()->file(Storage::disk('public')->path($media['path']), [
+            'Cache-Control' => 'private, max-age=3600',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 
     public function settings(Request $request)

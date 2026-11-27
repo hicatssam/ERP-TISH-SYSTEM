@@ -6848,6 +6848,7 @@ async function submitOrder(action) {
     function publishCustomerScreen(confirmation = null) {
         if (confirmation) customerScreenConfirmed = confirmation;
         if (!customerScreenWindow || customerScreenWindow.closed || !customerScreenToken) return;
+        try {
         const totals = getTotals();
         const snapshot = customerScreenConfirmed || {
             phase: cart.size ? (checkoutModal.hidden ? 'order' : 'checkout') : 'idle',
@@ -6861,7 +6862,6 @@ async function submitOrder(action) {
             discount: Number(totals.discount) + Number(totals.channelDiscount),
             total: Number(totals.total)
         };
-        try {
             customerScreenWindow.postMessage({
                 type:'tish.pos.display.snapshot', token:customerScreenToken,
                 scope:customerScreenScope, snapshot

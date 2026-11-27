@@ -112,6 +112,8 @@ Route::middleware([
                 ->name('pos.customer-screen');
             Route::get('/pos/customer-screen/playlist', [\App\Http\Controllers\Restaurant\PosCustomerScreenController::class, 'playlist'])
                 ->name('pos.customer-screen.playlist');
+            Route::get('/pos/customer-screen/media/{mediaId}', [\App\Http\Controllers\Restaurant\PosCustomerScreenController::class, 'media'])
+                ->whereUuid('mediaId')->name('pos.customer-screen.media');
             Route::get('/pos/customer-screen/settings', [\App\Http\Controllers\Restaurant\PosCustomerScreenController::class, 'settings'])
                 ->name('pos.customer-screen.settings')->middleware('can:settings.manage');
             Route::post('/pos/customer-screen/settings', [\App\Http\Controllers\Restaurant\PosCustomerScreenController::class, 'update'])
