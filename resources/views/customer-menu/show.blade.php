@@ -675,6 +675,13 @@ body.tish-paper .tools .search:focus-within::before {
 }
 </style>
 
+<style>
+body.tish-paper.reference-home #categories .cat .cat-visual .tish-library-icon{
+ width:78%!important;height:78%!important;object-fit:contain!important;
+ background:none!important;border:0!important;box-shadow:none!important;padding:0!important;
+}
+body.tish-paper.reference-home #categories .cat.active .cat-visual .tish-library-icon{filter:brightness(0) invert(1)}
+</style>
 </head>
 <body class="crisp-customer-menu reference-home tish-paper">
 @php
@@ -786,7 +793,7 @@ body.tish-paper .tools .search:focus-within::before {
    </div>
    <div class="categories" id="categories">
     <button class="cat active" type="button" data-cat="all">
-     <span class="cat-visual" style="--category-color:var(--primary)"><i class="fa-solid fa-utensils"></i></span>
+     <span class="cat-visual" style="--category-color:var(--primary)"><x-menu-icon name="tish-all" :size="48" /></span>
      <b>الكل</b>
     </button>
     @foreach($homeCategories as $category)

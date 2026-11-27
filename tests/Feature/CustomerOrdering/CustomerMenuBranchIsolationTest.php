@@ -58,6 +58,25 @@ class CustomerMenuBranchIsolationTest extends TestCase
             ->assertSee('data-menu-icon="burger-veggie"', false);
     }
 
+    public function test_original_tish_artwork_is_available_and_rendered(): void
+    {
+        $branch = $this->branch();
+        $product = $this->product($branch, 12);
+        $category = Category::query()->findOrFail($product->category_id);
+        $category->forceFill(['icon_key' => 'tish-fries'])->save();
+        SystemSetting::set('customer_menu_show_categories', true);
+        foreach (['show', 'products'] as $page) {
+            $this->get(route('customer-menu.'.$page, $branch->code))
+                ->assertOk()->assertSee('data-menu-icon="tish-fries"', false)
+                ->assertSee('assets/tish-category-icons/05-tish-fries.png', false);
+        }
+        foreach (\App\Support\MenuIconLibrary::keys() as $key) {
+            if ($artwork = \App\Support\MenuIconLibrary::artwork($key)) {
+                $this->assertFileExists(public_path($artwork));
+            }
+        }
+    }
+
     public function test_all_branch_menu_pages_render_and_keep_branch_links(): void
     {
         $branch = $this->branch();

@@ -173,6 +173,8 @@ body.tish-paper .tools .search:focus-within::before {
 body.tish-paper.tish-paper-products #categories .cat {flex-direction:row!important;gap:6px!important}
 body.tish-paper.tish-paper-products #categories .catalog-category-icon {display:inline-grid;place-items:center;width:22px;height:22px;flex:0 0 22px;color:var(--tish-paper-red)}
 body.tish-paper.tish-paper-products #categories .cat.active .catalog-category-icon {color:#fff}
+body.tish-paper.tish-paper-products #categories .catalog-category-icon .tish-library-icon{width:100%!important;height:100%!important;object-fit:contain!important;background:none!important;padding:0!important}
+body.tish-paper.tish-paper-products #categories .cat.active .catalog-category-icon .tish-library-icon{filter:brightness(0) invert(1)}
 </style>
 </head>
 <body class="crisp-customer-menu tish-paper tish-paper-products">
@@ -204,7 +206,7 @@ body.tish-paper.tish-paper-products #categories .cat.active .catalog-category-ic
   </div>
 
   <div class="categories" id="categories">
-   <button class="cat {{ $initialCategory === 'all' || $initialCategory === '' ? 'active' : '' }}" type="button" data-cat="all"><b>الكل</b></button>
+   <button class="cat {{ $initialCategory === 'all' || $initialCategory === '' ? 'active' : '' }}" type="button" data-cat="all"><span class="catalog-category-icon"><x-menu-icon name="tish-all" :size="22" /></span><b>الكل</b></button>
    @foreach(($categories ?? []) as $category)
     <button class="cat {{ (string) $initialCategory === (string) $category['id'] ? 'active' : '' }}" type="button" data-cat="{{ $category['id'] }}">
      <span class="catalog-category-icon" data-category-icon="{{ $category['icon_key'] }}">

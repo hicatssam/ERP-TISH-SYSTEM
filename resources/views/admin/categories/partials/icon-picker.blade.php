@@ -17,7 +17,7 @@
     <div class="category-icon-head">
         <div>
             <label class="form-label">أيقونة الفئة</label>
-            <p>اختر أيقونة التصنيف في المنيو. الأيقونات الجاهزة تتبع ألوان TISH؛ للأيقونة المرفوعة اختر الخيار المخصص ثم ارفع الصورة أدناه.</p>
+            <p>اختر من مجموعة TISH الأصلية أو من الأيقونات الأخرى. تُعرض الأيقونة المختارة في المنيو مباشرة بعد الحفظ.</p>
         </div>
 
         <input type="hidden" name="icon_color" value="{{ $selectedColor }}">
@@ -137,6 +137,8 @@
     background:var(--category-icon-color,#b32017);
     border-color:var(--category-icon-color,#b32017);
 }
+.category-icon-circle .tish-library-icon{width:46px!important;height:46px!important;object-fit:contain}
+.category-icon-radio:checked + .category-icon-choice .category-icon-circle:has(.tish-library-icon){background:#f6eadc;border-color:#b32017}
 .category-icon-choice strong{
     font-size:.72rem;
     font-weight:850;

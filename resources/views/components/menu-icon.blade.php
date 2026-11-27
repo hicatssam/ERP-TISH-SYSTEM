@@ -4,6 +4,11 @@
     'stroke' => 1.8,
 ])
 
+@if($artwork = \App\Support\MenuIconLibrary::artwork($name))
+    <img src="{{ asset($artwork) }}" data-menu-icon="{{ $name }}"
+        {{ $attributes->merge(['class' => 'tish-library-icon', 'style' => 'width:'.$size.'px;height:'.$size.'px;object-fit:contain;background:none!important;border:0']) }}
+        alt="" aria-hidden="true" loading="lazy">
+@else
 <svg
     {{ $attributes->merge([
         'viewBox' => '0 0 24 24',
@@ -169,3 +174,4 @@
             <path d="m18.2 14.2.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z"/>
     @endswitch
 </svg>
+@endif
