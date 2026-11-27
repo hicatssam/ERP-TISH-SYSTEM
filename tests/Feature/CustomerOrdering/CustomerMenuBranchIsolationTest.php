@@ -34,28 +34,35 @@ class CustomerMenuBranchIsolationTest extends TestCase
         }
         $admin->assignRole($role);
         $this->actingAs($admin)->get(route('categories.edit', $category))
-            ->assertOk()->assertSee('name="icon_key" value="sauce"', false);
+            ->assertOk()->assertSee('name="icon_key" value="tish-sauces"', false);
         $this->put(route('categories.update', $category), [
-            'name' => $category->name, 'icon_key' => 'sauce', 'sort_order' => 0,
+            'name' => $category->name, 'icon_key' => 'tish-sauces', 'sort_order' => 0,
         ])->assertRedirect(route('categories.index'))->assertSessionHasNoErrors();
-        $this->assertDatabaseHas('categories', ['id' => $category->id, 'icon_key' => 'sauce']);
+        $this->assertDatabaseHas('categories', ['id' => $category->id, 'icon_key' => 'tish-sauces']);
         SystemSetting::set('customer_menu_show_categories', true);
         SystemSetting::set('customer_menu_category_visual', 'icons');
         $response = $this->get(route('customer-menu.show', $branch->code))->assertOk();
-        $this->assertSame('sauce', $response->viewData('categories')->firstWhere('id', $category->id)['icon_key']);
-        $response->assertSee('data-category-icon="sauce"', false)
-            ->assertSee('data-menu-icon="sauce"', false);
+        $this->assertSame('tish-sauces', $response->viewData('categories')->firstWhere('id', $category->id)['icon_key']);
+        $response->assertSee('data-category-icon="tish-sauces"', false)
+            ->assertSee('data-menu-icon="tish-sauces"', false);
         SystemSetting::set('customer_menu_category_visual', 'images');
         $this->get(route('customer-menu.show', $branch->code))->assertOk()
-            ->assertSee('data-menu-icon="sauce"', false);
+            ->assertSee('data-menu-icon="tish-sauces"', false);
         $this->get(route('customer-menu.products', $branch->code))->assertOk()
-            ->assertSee('data-menu-icon="sauce"', false);
+            ->assertSee('data-menu-icon="tish-sauces"', false);
         $this->put(route('categories.update', $category), [
-            'name' => $category->name, 'icon_key' => 'burger-veggie', 'sort_order' => 0,
+            'name' => $category->name, 'icon_key' => 'tish-veggie-burger', 'sort_order' => 0,
         ])->assertRedirect(route('categories.index'))->assertSessionHasNoErrors();
-        $this->assertDatabaseHas('categories', ['id' => $category->id, 'icon_key' => 'burger-veggie']);
+        $this->assertDatabaseHas('categories', ['id' => $category->id, 'icon_key' => 'tish-veggie-burger']);
         $this->get(route('customer-menu.show', $branch->code))->assertOk()
-            ->assertSee('data-menu-icon="burger-veggie"', false);
+            ->assertSee('data-menu-icon="tish-veggie-burger"', false)
+            ->assertDontSee('data-menu-icon="tish-sauces"', false);
+        $this->put(route('categories.update', $category), [
+            'name' => $category->name, 'icon_key' => 'none', 'sort_order' => 0,
+        ])->assertRedirect(route('categories.index'))->assertSessionHasNoErrors();
+        $this->get(route('customer-menu.show', $branch->code))->assertOk()
+            ->assertDontSee('data-menu-icon="tish-veggie-burger"', false)
+            ->assertDontSee('data-menu-icon="sparkles"', false);
     }
 
     public function test_original_tish_artwork_is_available_and_rendered(): void

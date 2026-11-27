@@ -63,7 +63,10 @@ class CategoryController extends Controller
         $this->ensureUserHasBranchWhenRequired($request->user());
 
         $data = $this->validatedData($request);
-        $this->ensureCustomIconImage($request, $data['icon_key'] ?? 'sparkles');
+        if ($request->hasFile('image') && ! MenuIconLibrary::artwork($data['icon_key'] ?? null)) {
+            $data['icon_key'] = 'custom';
+        }
+        $this->ensureCustomIconImage($request, $data['icon_key'] ?? 'none');
 
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')
@@ -77,7 +80,7 @@ class CategoryController extends Controller
          * UI-only icon fields. Keep the existing business model safe.
          */
         $iconPayload = [
-            'icon_key' => $data['icon_key'] ?? 'sparkles',
+            'icon_key' => $data['icon_key'] ?? 'none',
             'icon_color' => $data['icon_color'] ?? '#111111',
         ];
 
@@ -135,6 +138,11 @@ class CategoryController extends Controller
         $this->ensureCategoryAccess($category, $request->user());
 
         $data = $this->validatedData($request);
+        if ($request->hasFile('image') && ! MenuIconLibrary::artwork($data['icon_key'] ?? null)) {
+            $data['icon_key'] = 'custom';
+        } elseif ($request->boolean('remove_image') && ($data['icon_key'] ?? $category->icon_key) === 'custom') {
+            $data['icon_key'] = 'none';
+        }
         $this->ensureCustomIconImage($request, $data['icon_key'] ?? $category->icon_key, $category);
 
         if ($request->hasFile('image')) {
@@ -203,7 +211,7 @@ class CategoryController extends Controller
         if ($key === 'custom' && ! $request->hasFile('image')
             && (! $category?->image || $request->boolean('remove_image'))) {
             throw \Illuminate\Validation\ValidationException::withMessages([
-                'image' => 'ارفع صورة للأيقونة المخصصة أو اختر أيقونة من المكتبة.',
+                'image' => 'ارفع صورة للفئة أو اختر صورة من مكتبة TISH.',
             ]);
         }
     }

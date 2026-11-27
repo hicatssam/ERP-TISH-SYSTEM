@@ -1,7 +1,7 @@
 @php
     $selectedIcon = old(
         'icon_key',
-        isset($category) ? ($category->icon_key ?: 'sparkles') : 'sparkles'
+        isset($category) ? ($category->icon_key ?: 'none') : 'none'
     );
 
     $selectedColor = old(
@@ -9,15 +9,19 @@
         isset($category) ? ($category->icon_color ?: '#111111') : '#111111'
     );
 
-    $icons = \App\Support\MenuIconLibrary::options();
-    $selectedIcon = array_key_exists($selectedIcon, $icons) ? $selectedIcon : 'sparkles';
+    $icons = \App\Support\MenuIconLibrary::imageOptions();
+    $selectedIcon = array_key_exists($selectedIcon, $icons)
+        ? $selectedIcon : (!empty($category?->image) ? 'custom' : 'none');
+    if (!old('icon_key') && $selectedIcon === 'none' && !empty($category?->image) && ($category->icon_key ?? null) !== 'none') {
+        $selectedIcon = 'custom';
+    }
 @endphp
 
 <div class="category-icon-designer" id="categoryIconDesigner">
     <div class="category-icon-head">
         <div>
-            <label class="form-label">أيقونة الفئة</label>
-            <p>اختر من مجموعة TISH الأصلية أو من الأيقونات الأخرى. تُعرض الأيقونة المختارة في المنيو مباشرة بعد الحفظ.</p>
+            <label class="form-label">صورة الفئة في المنيو</label>
+            <p>اختر صورة واحدة من مجموعة TISH أو ارفع صورتك الخاصة. تظهر الصورة وحدها بألوانها الأصلية، دون أيقونة إضافية.</p>
         </div>
 
         <input type="hidden" name="icon_color" value="{{ $selectedColor }}">
@@ -30,7 +34,13 @@
                 <input type="radio" class="category-icon-radio" name="icon_key" value="{{ $key }}" @checked($selectedIcon === $key) required>
                 <span class="category-icon-choice">
                     <span class="category-icon-circle">
-                        <x-menu-icon :name="$key" :size="34" :stroke="1.65" />
+                        @if($artwork = \App\Support\MenuIconLibrary::artwork($key))
+                            <img src="{{ asset($artwork) }}" alt="" class="category-picker-image">
+                        @elseif($key === 'custom' && !empty($category?->image))
+                            <img src="{{ \App\Support\PublicImageUrl::url($category->image) }}" alt="" class="category-picker-image">
+                        @else
+                            <span class="category-picker-text">{{ $key === 'custom' ? 'رفع صورة' : 'بدون صورة' }}</span>
+                        @endif
                     </span>
                     <strong>{{ $label }}</strong>
                     <span class="category-icon-check" aria-hidden="true">✓</span>
@@ -137,7 +147,9 @@
     background:var(--category-icon-color,#b32017);
     border-color:var(--category-icon-color,#b32017);
 }
-.category-icon-circle .tish-library-icon{width:46px!important;height:46px!important;object-fit:contain}
+.category-icon-circle .category-picker-image{width:100%;height:100%;object-fit:contain;background:none;filter:none}
+.category-icon-circle .category-picker-text{font-size:.68rem;text-align:center;padding:3px}
+.category-icon-circle:has(.category-picker-image){border:0;background:none!important}
 .category-icon-radio:checked + .category-icon-choice .category-icon-circle:has(.tish-library-icon){background:#f6eadc;border-color:#b32017}
 .category-icon-choice strong{
     font-size:.72rem;
@@ -181,6 +193,12 @@
     form.addEventListener('change', function (event) {
         if (event.target.name === 'image' && event.target.files?.length && custom) {
             custom.checked = true;
+            const remove = form.querySelector('input[name="remove_image"]');
+            if (remove) remove.checked = false;
+        }
+        if (event.target.name === 'remove_image' && event.target.checked && custom?.checked) {
+            const none = form.querySelector('input[name="icon_key"][value="none"]');
+            if (none) none.checked = true;
         }
     });
 })();

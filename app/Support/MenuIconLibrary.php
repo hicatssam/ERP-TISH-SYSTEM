@@ -42,7 +42,8 @@ final class MenuIconLibrary
             'tea' => 'شاي',
             'breakfast' => 'فطور',
             'sparkles' => 'أخرى',
-            'custom' => 'أيقونة مرفوعة',
+            'custom' => 'صورة مرفوعة',
+            'none' => 'بدون صورة',
         ];
     }
 
@@ -60,6 +61,14 @@ final class MenuIconLibrary
             'tish-cold-drinks' => 'assets/tish-category-icons/08-tish-cold-drinks.png',
             default => null,
         };
+    }
+
+    /** Only original image assets, uploaded image and no-image options for category editing. */
+    public static function imageOptions(): array
+    {
+        return array_filter(self::options(), fn ($label, $key) =>
+            self::artwork($key) !== null || in_array($key, ['custom', 'none'], true),
+            ARRAY_FILTER_USE_BOTH);
     }
 
     public static function keys(): array
