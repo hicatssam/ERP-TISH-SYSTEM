@@ -32,7 +32,13 @@ class CustomerMenuBranchIsolationTest extends TestCase
         SystemSetting::set('customer_menu_category_visual', 'icons');
         $response = $this->get(route('customer-menu.show', $branch->code))->assertOk();
         $this->assertSame('sauce', $response->viewData('categories')->firstWhere('id', $category->id)['icon_key']);
-        $response->assertSee('data-category-icon="sauce"', false);
+        $response->assertSee('data-category-icon="sauce"', false)
+            ->assertSee('data-menu-icon="sauce"', false);
+        SystemSetting::set('customer_menu_category_visual', 'images');
+        $this->get(route('customer-menu.show', $branch->code))->assertOk()
+            ->assertSee('data-menu-icon="sauce"', false);
+        $this->get(route('customer-menu.products', $branch->code))->assertOk()
+            ->assertSee('data-menu-icon="sauce"', false);
         $category->forceFill(['icon_key' => 'burger-veggie'])->save();
         $this->get(route('customer-menu.show', $branch->code))->assertOk()
             ->assertSee('data-category-icon="burger-veggie"', false);

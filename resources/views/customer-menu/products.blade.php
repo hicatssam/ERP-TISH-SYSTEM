@@ -169,6 +169,11 @@ body.tish-paper .tools .search:focus-within::before {
 }
 </style>
 
+<style>
+body.tish-paper.tish-paper-products #categories .cat {flex-direction:row!important;gap:6px!important}
+body.tish-paper.tish-paper-products #categories .catalog-category-icon {display:inline-grid;place-items:center;width:22px;height:22px;flex:0 0 22px;color:var(--tish-paper-red)}
+body.tish-paper.tish-paper-products #categories .cat.active .catalog-category-icon {color:#fff}
+</style>
 </head>
 <body class="crisp-customer-menu tish-paper tish-paper-products">
 @include('customer-menu.partials.brand-watermark')
@@ -202,7 +207,9 @@ body.tish-paper .tools .search:focus-within::before {
    <button class="cat {{ $initialCategory === 'all' || $initialCategory === '' ? 'active' : '' }}" type="button" data-cat="all"><b>الكل</b></button>
    @foreach(($categories ?? []) as $category)
     <button class="cat {{ (string) $initialCategory === (string) $category['id'] ? 'active' : '' }}" type="button" data-cat="{{ $category['id'] }}">
-     @if(!empty($category['image']))<img src="{{ $category['image'] }}" alt="" onerror="this.remove()">@endif
+     <span class="catalog-category-icon" data-category-icon="{{ $category['icon_key'] }}">
+      @include('customer-menu.partials.category-icon', ['category' => $category, 'theme' => $theme])
+     </span>
      <b>{{ $category['name'] }}</b>
     </button>
    @endforeach

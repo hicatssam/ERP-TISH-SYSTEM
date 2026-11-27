@@ -14,6 +14,7 @@
         'stroke-linejoin' => 'round',
         'aria-hidden' => 'true',
     ]) }}
+    data-menu-icon="{{ $name }}"
     width="{{ $size }}"
     height="{{ $size }}"
 >

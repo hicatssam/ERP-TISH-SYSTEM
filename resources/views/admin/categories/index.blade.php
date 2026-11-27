@@ -16,19 +16,19 @@
 <div class="table-wrap">
     <table class="data-table">
         <thead>
-            <tr><th style="width:64px">الصورة</th><th>الاسم</th><th>الاسم بالعربي</th><th>الرابط</th><th>المنتجات</th><th>الترتيب</th><th>الحالة</th><th>الإجراءات</th></tr>
+            <tr><th style="width:64px">أيقونة المنيو</th><th>الاسم</th><th>الاسم بالعربي</th><th>الرابط</th><th>المنتجات</th><th>الترتيب</th><th>الحالة</th><th>الإجراءات</th></tr>
         </thead>
         <tbody>
         @forelse($categories as $cat)
             <tr>
                 <td>
-                    @if($categoryImageUrl = \App\Support\PublicImageUrl::url($cat->image))
-                        <img src="{{ $categoryImageUrl }}" alt="{{ $cat->name }}" style="width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid var(--border)">
-                    @else
-                        <div style="width:44px;height:44px;border-radius:8px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5" style="width:20px;height:20px"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-                        </div>
-                    @endif
+                    <span style="width:44px;height:44px;display:grid;place-items:center;border-radius:50%;background:#f6eadc;color:#b32017">
+                        @include('customer-menu.partials.category-icon', ['category' => [
+                            'icon_key' => $cat->icon_key ?: 'sparkles',
+                            'image' => \App\Support\PublicImageUrl::url($cat->image),
+                            'icon_explicit' => filled($cat->icon_key),
+                        ], 'theme' => ['category_visual' => \App\Models\SystemSetting::get('customer_menu_category_visual', 'icons')]])
+                    </span>
                 </td>
                 <td>{{ $cat->name }}</td>
                 <td>{{ $cat->name_ar ?? '—' }}</td>
@@ -104,6 +104,8 @@
                         <small class="category-help">JPEG / PNG / WebP — حتى 2MB</small>
                     </div>
                 </div>
+
+                @include('admin.categories.partials.icon-picker')
 
                 <div class="form-group">
                     <label class="form-label">الوصف</label>

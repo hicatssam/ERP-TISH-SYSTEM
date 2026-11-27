@@ -56,27 +56,7 @@
         'deep' => '0 18px 44px rgba(27, 19, 22, .16)',
         default => '0 10px 28px rgba(27, 19, 22, .08)',
     };
-    $categoryIconClasses = [
-        'burger' => 'fa-burger',
-        'pizza' => 'fa-pizza-slice',
-        'coffee' => 'fa-mug-hot',
-        'cake' => 'fa-cake-candles',
-        'croissant' => 'fa-bread-slice',
-        'donut' => 'fa-cookie-bite',
-        'icecream' => 'fa-ice-cream',
-        'juice' => 'fa-glass-water',
-        'drink' => 'fa-bottle-water',
-        'fries' => 'fa-box',
-        'chicken' => 'fa-drumstick-bite',
-        'salad' => 'fa-bowl-food',
-        'sandwich' => 'fa-burger',
-        'chocolate' => 'fa-cookie',
-        'tea' => 'fa-mug-saucer',
-        'breakfast' => 'fa-egg',
-        'gift' => 'fa-gift',
-        'dessert' => 'fa-cookie-bite',
-        'sparkles' => 'fa-wand-magic-sparkles',
-    ];
+
 @endphp
 <style>
 .reference-home{
@@ -810,22 +790,9 @@ body.tish-paper .tools .search:focus-within::before {
      <b>الكل</b>
     </button>
     @foreach($homeCategories as $category)
-     @php
-      $iconKey = $category['icon_key'] ?? 'sparkles';
-      $iconClass = $categoryIconClasses[$iconKey] ?? 'fa-wand-magic-sparkles';
-      $drawnIcon = in_array($iconKey, ['fries', 'burger-chicken', 'burger-veggie', 'sauce', 'appetizers'], true);
-     @endphp
      <button class="cat" type="button" data-cat="{{ $category['id'] }}" data-cat-name="{{ $category['name'] }}">
-      <span class="cat-visual" data-category-icon="{{ $iconKey }}" style="--category-color:var(--tish-paper-red)">
-       @if($iconKey === 'custom' && !empty($category['image']))
-        <img src="{{ $category['image'] }}" class="category-custom-icon" style="width:58%;height:58%;object-fit:contain;background:none" alt="" loading="lazy" onerror="this.outerHTML='<i class=&quot;fa-solid fa-utensils&quot;></i>'">
-       @elseif(($theme['category_visual'] ?? 'icons') === 'images' && !empty($category['image']))
-        <img src="{{ $category['image'] }}" alt="" loading="lazy" onerror="this.outerHTML='<i class=&quot;fa-solid {{ $iconClass }}&quot;></i>'">
-       @elseif($drawnIcon)
-        <x-menu-icon :name="$iconKey" :size="40" :stroke="1.8" style="width:50%;height:50%;color:inherit" />
-       @else
-        <i class="fa-solid {{ $iconClass }}"></i>
-       @endif
+      <span class="cat-visual" data-category-icon="{{ $category['icon_key'] }}" style="--category-color:var(--tish-paper-red)">
+       @include('customer-menu.partials.category-icon', ['category' => $category, 'theme' => $theme])
       </span>
       <b>{{ $category['name'] }}</b>
      </button>

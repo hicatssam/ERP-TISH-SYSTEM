@@ -396,6 +396,7 @@ trait ResolvesCustomerMenuBranding
                     'slug' => $category->slug ?? null,
                     'image' => $this->assetFromPath($category->image ?? null),
                     'icon_key' => $category->icon_key ?: $this->guessCategoryIcon($name),
+                    'icon_explicit' => filled($category->icon_key),
                     'icon_color' => $category->icon_color ?? '#C98516',
                 ];
             })
