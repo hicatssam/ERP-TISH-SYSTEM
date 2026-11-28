@@ -108,10 +108,7 @@
                 </svg>
                 المسودات
             </button>
-            <button type="button" class="rb-btn rb-btn-light" id="rbReceiptsBtn">فواتير سابقة</button>
-            @can('restaurant_menu.manage')
-                <button type="button" class="rb-btn rb-btn-light" id="rbManageAvailabilityBtn">توفر الأصناف</button>
-            @endcan
+
 
             
 
@@ -126,7 +123,16 @@
                 </svg>
                 طلب طاولة
             </button>
-            <button type="button" class="rb-btn rb-btn-light" id="rbFullscreenBtn" aria-pressed="false" hidden>ملء الشاشة</button>
+            <details class="rb-pos-more-tools" id="rbPosMoreTools">
+                <summary class="rb-btn rb-btn-light">المزيد من الأدوات <span aria-hidden="true">⌄</span></summary>
+                <div class="rb-pos-more-tools-items">
+                    <button type="button" class="rb-btn rb-btn-light" id="rbReceiptsBtn">فواتير سابقة</button>
+                    @can('restaurant_menu.manage')
+                        <button type="button" class="rb-btn rb-btn-light" id="rbManageAvailabilityBtn">توفر الأصناف</button>
+                    @endcan
+                    <button type="button" class="rb-btn rb-btn-light" id="rbFullscreenBtn" aria-pressed="false" hidden>ملء الشاشة</button>
+                </div>
+            </details>
         </div>
     </nav>
 
@@ -412,11 +418,17 @@
                         <button type="button" id="rbQuickCashBtn" class="rb-quick-cash-btn">دفع نقدي سريع</button>
                         <button type="button" id="rbQuickCashExpand" class="rb-quick-cash-expand" hidden>عرض بقية التفاصيل</button>
                     </div>
-                    <button type="button" class="rb-modal-close" data-close-checkout>×</button>
+                    <button type="button" class="rb-modal-close" data-close-checkout aria-label="إغلاق الدفع">×</button>
                 </div>
 
+                <div class="rb-checkout-overview" aria-label="ملخص الطلب">
+                    <span>عدد القطع <strong id="rbCheckoutItemCount">0</strong></span>
+                    <span>الخصومات <strong id="rbCheckoutDiscountTotal">₪0.00</strong></span>
+                    <span>المستحق <strong id="rbCheckoutOverviewTotal">₪0.00</strong></span>
+                </div>
                 <div class="rb-modal-body">
                     <div class="rb-modal-grid">
+                        <div class="rb-checkout-section rb-field-wide">بيانات الطلب</div>
                         <div class="rb-field">
                             <div class="rb-customer-field-head">
                                 <label for="rbCustomerSelect">العميل</label>
@@ -464,8 +476,9 @@
                             </select>
                         </div>
 
+                        <div class="rb-checkout-section rb-field-wide">التحصيل وطريقة الدفع</div>
                         <div class="rb-field">
-                            <label>ترتيب الدفع *</label>
+                            <label for="rbPaymentArrangement">ترتيب الدفع *</label>
                             <select
                                 name="payment_arrangement"
                                 id="rbPaymentArrangement"
@@ -484,7 +497,7 @@
                         </div>
 
                         <div class="rb-field" id="rbPaymentMethodGroup">
-                            <label>نوع طريقة الدفع</label>
+                            <label for="rbPaymentMethod">نوع طريقة الدفع</label>
                             <select
                                 name="payment_method_id"
                                 id="rbPaymentMethod"
@@ -593,8 +606,9 @@
                             >
                         </div>
 
+                        <div class="rb-checkout-section rb-field-wide" data-quick-cash-optional>الخصومات</div>
                         <div class="rb-field" data-quick-cash-optional>
-                            <label>نوع الخصم</label>
+                            <label for="rbDiscountType">نوع الخصم</label>
                             <select name="discount_type" id="rbDiscountType" class="rb-control">
                                 <option value="none">بدون خصم</option>
                                 <option value="percentage" @selected(old('discount_type') === 'percentage')>نسبة %</option>
@@ -603,7 +617,7 @@
                         </div>
 
                         <div class="rb-field" data-quick-cash-optional>
-                            <label>قيمة الخصم</label>
+                            <label for="rbDiscountValue">قيمة الخصم</label>
                             <input
                                 type="number"
                                 name="discount_value"
@@ -3843,6 +3857,45 @@ body.rb-pos-mode {
  .rb-pos .rb-product-card{transition:none}
  .rb-pos .rb-product-card:active{transform:none}
 }
+
+/* POS UX V5 — grouping, live checkout summary, and clear option states. */
+.rb-pos .rb-pos-more-tools{flex:0 0 auto}
+.rb-pos .rb-pos-more-tools summary{list-style:none;cursor:pointer}
+.rb-pos .rb-pos-more-tools summary::-webkit-details-marker{display:none}
+.rb-pos .rb-pos-more-tools[open] summary{border-color:var(--rb-orange);color:var(--rb-orange)}
+.rb-pos .rb-pos-more-tools[open]{display:flex}
+.rb-pos .rb-pos-more-tools-items{display:inline-flex;vertical-align:middle;align-items:center;gap:6px;margin-inline-start:6px;flex-wrap:wrap}
+.rb-pos .rb-checkout-overview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:10px 20px;border-bottom:1px solid var(--rb-border);background:var(--rb-soft-2);flex:0 0 auto}
+.rb-pos .rb-checkout-overview>span{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--rb-muted);min-width:0}
+.rb-pos .rb-checkout-overview strong{font-size:17px;color:var(--rb-text);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.rb-pos .rb-checkout-overview>span:last-child strong{color:var(--rb-orange);font-size:21px}
+.rb-pos #rbCheckoutModal .rb-modal-head{padding:12px 20px;min-height:64px;background:var(--rb-white)}
+.rb-pos #rbCheckoutModal .rb-modal-body{padding:14px 20px}
+.rb-pos #rbCheckoutModal .rb-modal-grid{gap:10px}
+.rb-pos .rb-checkout-section{font-weight:850;font-size:13px;color:var(--rb-text);padding:8px 0 3px;border-bottom:1px solid var(--rb-border)}
+.rb-pos #rbCheckoutModal .rb-modal-foot{min-height:64px;padding:10px 20px}
+.rb-pos #rbCheckoutModal .rb-modal-foot #rbCheckoutContinueBtn{min-height:46px;flex:1}
+.rb-pos #rbProductOptionsModal .rb-modal-dialog{width:min(650px,calc(100vw - 20px))}
+.rb-pos #rbProductOptionsModal .rb-option-group{padding:12px;border:1px solid var(--rb-border);border-radius:10px;margin:0 0 12px}
+.rb-pos #rbProductOptionsModal .rb-option-group h3{font-size:15px}
+.rb-pos #rbProductOptionsModal .rb-option-group p{font-size:12px;margin-bottom:9px}
+.rb-pos #rbProductOptionsModal .rb-option-choice{min-height:46px;gap:10px;padding:8px;border-radius:8px;font-size:13px}
+.rb-pos #rbProductOptionsModal .rb-option-choice input{width:20px;height:20px;accent-color:var(--rb-orange);flex-shrink:0}
+.rb-pos #rbProductOptionsModal .rb-option-choice small{font-size:12px;white-space:nowrap}
+.rb-pos #rbProductOptionsModal .rb-option-choice:has(input:checked){outline:1px solid var(--rb-orange);background:var(--rb-orange-soft)}
+.rb-pos #rbProductOptionsModal .rb-option-choice:focus-within{outline:2px solid var(--rb-orange)}
+.rb-pos .rb-availability-entry{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px}
+.rb-pos .rb-availability-name{overflow-wrap:anywhere;font-weight:750}
+.rb-pos .rb-availability-status{font-size:12px;font-weight:800;padding:4px 7px;border-radius:6px;background:#fee2e2;color:#991b1b}
+.rb-pos .rb-availability-status[data-available=yes]{background:#dcfce7;color:#166534}
+@media(max-width:820px){
+ .rb-pos .rb-pos-more-tools[open]{display:block}
+ .rb-pos .rb-pos-more-tools-items{flex-wrap:nowrap}
+ .rb-pos .rb-checkout-overview{padding:8px 12px}
+ .rb-pos .rb-checkout-overview strong{font-size:14px}
+ .rb-pos .rb-checkout-overview>span:last-child strong{font-size:17px}
+ .rb-pos #rbCheckoutModal .rb-modal-head,.rb-pos #rbCheckoutModal .rb-modal-body,.rb-pos #rbCheckoutModal .rb-modal-foot{padding:10px 12px}
+}
 </style>
 
 <script>
@@ -4414,7 +4467,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function filterLoadedCatalog() {
-        if (!completeCatalog) return false;
+        if (!completeCatalog || activeCategory === '__popular__') return false;
+        ++catalogRequest;
+        catalogAbort?.abort();
+        clearTimeout(searchTimer);
+        searchTimer = null;
         const search = normalizeSearch(productSearch.value);
         products = allProducts.filter(product => {
             if (activeCategory !== '__all__' && Number(product.category_id) !== Number(activeCategory)) return false;
@@ -4841,6 +4898,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderFilters() {
         categorySelect.innerHTML = `
             <option value="__all__">كل الفئات</option>
+            <option value="__popular__">الأكثر مبيعًا — 30 يومًا</option>
             ${categories.map(category => `
                 <option value="${category.id}">${escapeHtml(category.name)}</option>
             `).join('')}
@@ -4860,6 +4918,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <button type="button" class="rb-category-tab ${activeCategory === '__all__' ? 'active' : ''}" data-category="__all__" aria-pressed="${activeCategory === '__all__'}">
                 عرض الكل (${categories.reduce((total, category) => total + category.count, 0)})
             </button>
+            <button type="button" class="rb-category-tab ${activeCategory === '__popular__' ? 'active' : ''}" data-category="__popular__" aria-pressed="${activeCategory === '__popular__'}" title="أعلى 12 صنفًا متاحًا حسب كميات الطلبات المكتملة خلال 30 يومًا">الأكثر مبيعًا</button>
             ${tabCategories.map(category => `
                 <button
                     type="button"
@@ -4889,6 +4948,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             ? 'تعذر تحميل المنتجات.<button type="button" data-retry-products>إعادة المحاولة</button>'
                             : matchingTotal
                                 ? 'لا توجد منتجات في هذه الصفحة.'
+                                : activeCategory === '__popular__'
+                                    ? 'لا توجد أصناف مطابقة ضمن الأعلى مبيعًا من الطلبات المكتملة خلال آخر 30 يومًا.<button type="button" data-reset-products>عرض كل المنتجات</button>'
                                 : categories.length
                                     ? 'لا توجد منتجات مطابقة. جرّب اسمًا أو رمزًا آخر.<button type="button" data-reset-products>مسح البحث والفلاتر</button>'
                                     : 'لا توجد منتجات متاحة للبيع في منيو هذا الفرع.'}
@@ -4965,7 +5026,8 @@ document.addEventListener('DOMContentLoaded', () => {
         url.searchParams.set('location_id', locationId);
         url.searchParams.set('page', page);
         if (productSearch.value.trim()) url.searchParams.set('q', productSearch.value.trim());
-        if (activeCategory !== '__all__') url.searchParams.set('category_id', activeCategory);
+        if (activeCategory === '__popular__') url.searchParams.set('popular', '1');
+        else if (activeCategory !== '__all__') url.searchParams.set('category_id', activeCategory);
         if (activeBrand !== '__all__') url.searchParams.set('brand_id', activeBrand);
 
         try {
@@ -5029,6 +5091,9 @@ document.addEventListener('DOMContentLoaded', () => {
         channelDiscountEl.textContent = money(totals.channelDiscount);
         grandTotalEl.textContent = money(totals.total);
         checkoutTotalEl.textContent = money(totals.total);
+        document.getElementById('rbCheckoutOverviewTotal').textContent = money(totals.total);
+        document.getElementById('rbCheckoutDiscountTotal').textContent = money(totals.discount + totals.channelDiscount);
+        document.getElementById('rbCheckoutItemCount').textContent = [...cart.values()].reduce((sum, item) => sum + Number(item.quantity), 0);
         document.getElementById('rbMobileCartTotal').textContent = money(totals.total);
         document.getElementById('rbMobileCartCount').textContent = [...cart.values()]
             .reduce((sum, item) => sum + Number(item.quantity), 0);
@@ -6586,7 +6651,12 @@ async function submitOrder(action) {
                 const row = document.createElement('div');
                 row.className = 'rb-availability-entry';
                 const label = document.createElement('span');
-                label.textContent = item.name + (item.available ? ' — متاح' : ' — متوقف');
+                label.className = 'rb-availability-name';
+                label.textContent = item.name;
+                const status = document.createElement('span');
+                status.className = 'rb-availability-status';
+                status.dataset.available = item.available ? 'yes' : 'no';
+                status.textContent = item.available ? 'متاح' : 'متوقف';
                 const button = document.createElement('button');
                 button.type = 'button';
                 button.textContent = item.available ? 'إيقاف' : 'إعادة إتاحة';
@@ -6628,7 +6698,7 @@ async function submitOrder(action) {
                         button.disabled = false;
                     }
                 });
-                row.append(label, button);
+                row.append(label, status, button);
                 menuAvailabilityResults.appendChild(row);
             });
             if (!menuAvailabilityResults.children.length)
@@ -6921,12 +6991,16 @@ async function submitOrder(action) {
         });
     });
 
+    document.getElementById('rbPosMoreTools')?.addEventListener('click', event => {
+        if (event.target.closest('button')) event.currentTarget.open = false;
+    });
+
     // Catalog view switch: visual only, reuses the original product rendering.
     const gridViewBtn = document.getElementById('rbGridViewBtn');
     const compactViewBtn = document.getElementById('rbCompactViewBtn');
     const listViewBtn = document.getElementById('rbListViewBtn');
     const viewButtons = {grid: gridViewBtn, compact: compactViewBtn, list: listViewBtn};
-    const viewPreferenceKey = 'tish.pos.catalogView.v1';
+    const viewPreferenceKey = `tish.pos.catalogView.v1.${cashierUserId}.${locationId}`;
     const setCatalogView = (mode) => {
         if (!Object.prototype.hasOwnProperty.call(viewButtons, mode)) mode = 'grid';
         productGrid.classList.toggle('rb-list-view', mode === 'list');
