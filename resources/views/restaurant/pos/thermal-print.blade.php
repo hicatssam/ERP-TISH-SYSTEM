@@ -254,7 +254,7 @@
 @if((float)$invoice->discount_amount>0 || (float)$invoice->tax_amount>0 || $money($invoice->subtotal) !== $money($invoice->total_amount))
 <div class="line"><span class="bi-label">المجموع الفرعي / <span class="en" lang="en">Subtotal</span></span><bdi>{{ $money($invoice->subtotal) }}</bdi></div>
 @endif
-@if((float)$invoice->discount_amount>0)<div class="line discount-line"><span class="bi-label">الخصم / <span class="en" lang="en">Discount</span></span><bdi>-{{ $money($invoice->discount_amount) }} {{ $currency }}</bdi></div>@endif
+<div class="line discount-line"><span class="bi-label">الخصم / <span class="en" lang="en">Discount</span></span><bdi>{{ $money($invoice->discount_amount) }} {{ $currency }}</bdi></div>
 @if((float)$invoice->tax_amount>0)<div class="line"><span class="bi-label">الضريبة / <span class="en" lang="en">Tax</span></span><bdi>{{ $money($invoice->tax_amount) }}</bdi></div>@endif
 <div class="line total"><span class="bi-label">الإجمالي / <span class="en" lang="en">Grand total</span></span><bdi>{{ $money($invoice->total_amount) }} {{ $currency }}</bdi></div>
 @if(($refund['refunded'] ?? 0)>0)<div class="line"><span class="bi-label">المسترد / <span class="en" lang="en">Refunded</span></span><bdi>{{ $money($refund['refunded']) }}</bdi></div>@endif
