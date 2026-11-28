@@ -3,7 +3,6 @@
 namespace App\Services\Procurement;
 
 use App\Models\DocumentSequence;
-use Illuminate\Database\QueryException;
 
 class DocumentNumberService
 {
@@ -15,32 +14,28 @@ class DocumentNumberService
     {
         $year = (int) now()->format('Y');
 
+        // Create the row atomically before taking the explicit row lock.
+        // A locking read of a missing row first can acquire competing gap
+        // locks in MySQL. Never swallow deadlocks or other query failures:
+        // the surrounding document transaction must be allowed to retry.
+        $timestamp = now();
+        DocumentSequence::query()->toBase()->upsert([
+            [
+                'document_type' => $documentType,
+                'year' => $year,
+                'last_number' => 0,
+                'created_at' => $timestamp,
+                'updated_at' => $timestamp,
+            ],
+        ], ['document_type', 'year'], ['document_type']);
+
         $sequence = DocumentSequence::query()
             ->where('document_type', $documentType)
             ->where('year', $year)
             ->lockForUpdate()
-            ->first();
-
-        if (! $sequence) {
-            try {
-                DocumentSequence::query()->create([
-                    'document_type' => $documentType,
-                    'year' => $year,
-                    'last_number' => 0,
-                ]);
-            } catch (QueryException) {
-                // Another transaction created the unique row between the read and insert.
-            }
-
-            $sequence = DocumentSequence::query()
-                ->where('document_type', $documentType)
-                ->where('year', $year)
-                ->lockForUpdate()
-                ->firstOrFail();
-        }
+            ->firstOrFail();
 
         $sequence->increment('last_number');
-        $sequence->refresh();
 
         return sprintf('%s-%d-%05d', $prefix, $year, $sequence->last_number);
     }
