@@ -8,6 +8,16 @@ const now=()=>Number(status.server_ms)+performance.now()-start;
 const cards=[...root.querySelectorAll('[data-meal]')];
 const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)');
 const text=(el,value)=>{if(el && el.textContent!==value)el.textContent=value;};
+// Presentation only. All availability comparisons still use server milliseconds.
+function time12(value){
+    const parts=/^([01]\d|2[0-3]):([0-5]\d)$/.exec(String(value));
+    if(!parts)return String(value);
+    const hour=Number(parts[1]), minute=Number(parts[2]);
+    return String(hour%12||12)+(minute?':'+parts[2]:'')+' '+(hour>=12?label('م','PM'):label('ص','AM'));
+}
+function range12(start,end){
+    return en?time12(start)+' – '+time12(end):'من '+time12(start)+' إلى '+time12(end);
+}
 function stateOf(w,t){
     if(!w.enabled||!w.count)return 'disabled';
     return t<w.starts_ms?'upcoming':t<w.ends_ms?'open':'ended';
@@ -45,7 +55,7 @@ function render(){
         any=true;
         if(card.dataset.state!==state)card.dataset.state=state;
         setClickable(card,state==='open');
-        text(card.querySelector('.meal-hours'),w.start+' – '+w.end);
+        text(card.querySelector('.meal-hours'),range12(w.start,w.end));
         const message=card.querySelector('.meal-message'),clock=card.querySelector('.meal-clock'),cta=card.querySelector('.meal-cta');
         const next=card.querySelector('.meal-next'),progress=card.querySelector('.meal-progress');
         clock.hidden=state==='ended';
@@ -53,18 +63,18 @@ function render(){
         progress.hidden=state!=='open';
         if(state==='open'){
             const remaining=w.ends_ms-t;
-            text(message,remaining<=30*60000?label('آخر فرصة قبل انتهاء الموعد','Last chance before closing'):label('متاح الآن • ينتهي خلال','Available now • ends in'));
+            text(message,remaining<=30*60000?label('آخر فرصة للطلب · ينتهي بعد','Last chance · ends in'):label('متاح الآن · ينتهي بعد','Available now · ends in'));
             updateDigits(card,remaining);
             const pct=Math.max(0,Math.min(100,100*remaining/Math.max(1,w.ends_ms-w.starts_ms)));
             progress.firstElementChild.style.width=pct+'%';
-            text(cta,label('اطلب قبل انتهاء الوقت','Order before closing'));
+            text(cta,label('اطلب الآن','Order now'));
         }else if(state==='upcoming'){
             text(message,label('يبدأ بعد','Starts in'));updateDigits(card,w.starts_ms-t);
             text(cta,label('قريبًا','Coming soon'));
         }else{
             text(message,label('انتهى موعد اليوم','Closed for today'));
-            text(card.querySelector('.meal-next-time'),w.start);
-            text(cta,label('نشوفك بكرة!','See you tomorrow!'));
+            text(card.querySelector('.meal-next-time'),time12(w.start));
+            text(cta,label('نلقاك غدًا','See you tomorrow'));
         }
         if(state!==w.state || (state==='ended' && t>=w.next_start_ms))boundary=true;
     }
