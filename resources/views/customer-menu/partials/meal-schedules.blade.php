@@ -33,10 +33,10 @@
 </a>
 @endforeach
 </div>
+</section>
 @if(request()->query('meal') === 'breakfast' || request()->query('meal') === 'lunch')
 <a href="{{ route('customer-menu.products',$location->code) }}" style="display:inline-block;margin-top:9px;color:#a91f17;font-weight:800">{{ $mealEn ? 'View all meals' : 'عرض كل الأصناف' }}</a>
 @endif
-</section>
 <script>
 window.TishMealSchedule = {{ \Illuminate\Support\Js::from($mealClient) }};
 </script>
