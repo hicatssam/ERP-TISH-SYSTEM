@@ -152,8 +152,8 @@ class NativeReportController extends Controller
 
             case 'expiry':
                 $d = app(InventoryExpiryController::class)->print($request)->getData();
-                return [$this->section('دفعات المخزون', ['الدفعة', 'المنتج', 'الموقع', 'الصلاحية', 'الكمية المتاحة', 'الأيام المتبقية'], $d['rows']->map(fn ($r) => [
-                    $r->batch_number, $r->product_name, $r->location_name, $r->expiry_date, (float) $r->available_quantity, $r->days_left,
+                return [$this->section('دفعات المخزون', ['الدفعة', 'المنتج', 'الموقع', 'الصلاحية', 'الكمية المتاحة (الوحدة الأساسية)', 'الوحدة الأساسية', 'الأيام المتبقية'], $d['rows']->map(fn ($r) => [
+                    $r->batch_number, $r->product_name_ar ?: $r->product_name, $r->location_name, $r->expiry_date, (float) $r->available_quantity, \App\Support\InventoryQuantityDisplay::forBatch($r)['base_unit'], $r->days_left,
                 ]))];
 
             case 'showroom-sweets':

@@ -22,6 +22,7 @@ class InventoryExpiryController extends Controller
 
         $base = DB::table('inventory_batches as b')
             ->leftJoin('products as p', 'p.id', '=', 'b.product_id')
+            ->leftJoin('units as u', 'u.id', '=', 'p.unit_id')
             ->leftJoin('locations as l', 'l.id', '=', 'b.location_id')
             ->whereNotNull('b.expiry_date')
             ->where('b.available_quantity', '>', 0);
@@ -94,6 +95,8 @@ class InventoryExpiryController extends Controller
             'b.received_quantity',
             'b.available_quantity',
             'p.name as product_name',
+            'p.name_ar as product_name_ar',
+            'p.unit as legacy_unit', 'u.code as unit_code', 'u.name_ar as unit_name_ar', 'u.name as unit_name', 'u.symbol as unit_symbol',
             'l.name as location_name',
         ]);
 
@@ -153,7 +156,7 @@ class InventoryExpiryController extends Controller
             function ($batch) use ($today) {
                 $expiry = Carbon::parse($batch->expiry_date)->startOfDay();
 
-                $daysLeft = $today->diffInDays($expiry, false);
+                $daysLeft = (int) $today->diffInDays($expiry, false);
 
                 $batch->days_left = $daysLeft;
 
@@ -209,6 +212,7 @@ class InventoryExpiryController extends Controller
 
         $base = DB::table('inventory_batches as b')
             ->leftJoin('products as p', 'p.id', '=', 'b.product_id')
+            ->leftJoin('units as u', 'u.id', '=', 'p.unit_id')
             ->leftJoin('locations as l', 'l.id', '=', 'b.location_id')
             ->whereNotNull('b.expiry_date')
             ->where('b.available_quantity', '>', 0);
@@ -231,12 +235,13 @@ class InventoryExpiryController extends Controller
 
         $query = (clone $base)->select([
             'b.id', 'b.batch_number', 'b.manufacturing_date', 'b.expiry_date',
-            'b.available_quantity', 'p.name as product_name', 'l.name as location_name',
+            'b.available_quantity', 'p.name as product_name', 'p.name_ar as product_name_ar', 'l.name as location_name',
+            'p.unit as legacy_unit', 'u.code as unit_code', 'u.name_ar as unit_name_ar', 'u.name as unit_name', 'u.symbol as unit_symbol',
         ]);
         $this->applyStatus($query, $status, $today);
 
         $rows = $query->orderBy('b.expiry_date')->get()->each(function ($row) use ($today): void {
-            $row->days_left = $today->diffInDays(Carbon::parse($row->expiry_date)->startOfDay(), false);
+            $row->days_left = (int) $today->diffInDays(Carbon::parse($row->expiry_date)->startOfDay(), false);
         });
 
         return view('inventory.expiry.print', compact('rows', 'summary'));
