@@ -205,6 +205,7 @@ body.tish-paper.tish-checkout-page #checkoutForm #vehicleField input:invalid {
   </div>
    </section>
    <div class="checkout-confirm">
+   <div class="error" id="checkoutMealNotice" role="status" hidden></div>
    <div class="error" id="checkoutError" role="alert" tabindex="-1"></div>
    <button class="submit-order" id="checkoutSubmit" type="submit" disabled>تأكيد وإرسال الطلب</button>
    </div>
@@ -600,14 +601,16 @@ function refreshMealExpiryNotice() {
     const expired = CM.expiredMealRows().map(row => row.key).join('|');
     if (expired === mealExpirySignature) return;
     mealExpirySignature = expired;
-    if (expired) {
-        renderSummary();
-        const error = document.getElementById('checkoutError');
-        if (error) error.textContent = 'انتهى وقت إحدى الوجبات. لا تحوّل المبلغ الآن. راجع السلة قبل المتابعة.';
+    renderSummary();
+    const notice = document.getElementById('checkoutMealNotice');
+    if (notice) {
+        notice.hidden = !expired;
+        notice.textContent = expired ? 'إحدى الوجبات غير متاحة الآن. لا تحوّل مبلغًا جديدًا. راجع السلة؛ إن كنت أرسلت الطلب بالفعل، أعد محاولة تأكيده بنفس البيانات.' : '';
     }
 }
 refreshMealExpiryNotice();
 setInterval(refreshMealExpiryNotice, 1000);
+document.addEventListener('tish:meal-status-changed', refreshMealExpiryNotice);
 
 (async function loadEta() {
     try {
