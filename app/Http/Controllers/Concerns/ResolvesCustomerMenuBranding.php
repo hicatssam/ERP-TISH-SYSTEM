@@ -175,6 +175,7 @@ trait ResolvesCustomerMenuBranding
     protected function menuItemsFor(Location $location): Collection
     {
         $cutouts = app(\App\Services\Restaurant\MenuCutoutService::class);
+        $mealSchedule = app(\App\Services\Restaurant\MealScheduleService::class)->snapshot((int) $location->id);
         $showUnavailable = (bool) SystemSetting::get('customer_menu_show_unavailable', false);
 
         $categoryColumns = ['id', 'name', 'name_ar'];
@@ -217,8 +218,11 @@ trait ResolvesCustomerMenuBranding
 
         return $menuQuery
             ->get()
-            ->map(function (RestaurantMenuItem $menuItem) use ($location, $cutouts): array {
+            ->map(function (RestaurantMenuItem $menuItem) use ($location, $cutouts, $mealSchedule): array {
                 $product = $menuItem->product;
+                $meal = $mealSchedule['assignments'][(int) $menuItem->product_id] ?? null;
+                $mealWindow = $meal ? $mealSchedule['windows'][$meal] : null;
+                $mealClosed = $mealWindow !== null && $mealWindow['state'] !== 'open';
                 $locationProduct = $product?->locationProducts->first();
 
                 $variants = $product->isVariantProduct()
@@ -336,7 +340,11 @@ trait ResolvesCustomerMenuBranding
                     'sku' => $product->sku,
                     'price' => (float) $product->getEffectivePriceForLocation((int) $location->id),
                     'prep_time_minutes' => $product->prep_time_minutes !== null ? (int) $product->prep_time_minutes : null,
-                    'available' => (bool) ($locationProduct?->is_available ?? false),
+                    'available' => ! $mealClosed && (bool) ($locationProduct?->is_available ?? false),
+                    'meal_period' => $meal,
+                    'meal_closed' => $mealClosed,
+                    'meal_ends_ms' => $mealWindow && ! $mealClosed ? $mealWindow['ends_ms'] : null,
+                    'meal_server_ms' => $mealSchedule['server_ms'],
                     'delivery_available' => (bool) $menuItem->show_in_delivery,
                     'is_variant_product' => (bool) $product->isVariantProduct(),
                     'variants' => $variants,

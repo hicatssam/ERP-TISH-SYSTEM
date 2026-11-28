@@ -270,6 +270,7 @@ function renderCart() {
             <div class="row-copy">
               <strong>${CM.esc(x.name.split(' - ')[0])}</strong>
               ${subtitle ? `<span style="display:block;font-size:.74rem;color:var(--muted)">${CM.esc(subtitle)}</span>` : ''}
+              ${CM.mealUnavailable(CM.product(x.product_id)) ? '<span style="display:block;color:#a91f17;font-weight:800">انتهى وقت الوجبة — احذف الصنف للمتابعة</span>' : ''}
               <small class="tish-cart-line-price">${CM.money(x.price * x.quantity)}</small>
             </div>
             <div class="row-actions">
@@ -292,7 +293,7 @@ function renderCart() {
     document.getElementById('cartItemsHeading').hidden = !rows.length;
     document.getElementById('itemCount').textContent = rows.reduce((s, r) => s + Number(r.quantity), 0);
     document.getElementById('cartTotal').textContent = CM.money(CM.cartTotal());
-    document.getElementById('checkoutStart').disabled = !rows.length;
+    document.getElementById('checkoutStart').disabled = !rows.length || CM.expiredMealRows().length > 0;
 }
 
 document.addEventListener('click', e => {
@@ -302,11 +303,18 @@ document.addEventListener('click', e => {
 });
 
 document.getElementById('checkoutStart').addEventListener('click', () => {
-    if (!CM.cartRows().length) return;
+    if (!CM.cartRows().length || CM.expiredMealRows().length) return;
     window.location.href = @json(route('customer-menu.checkout', $location->code));
 });
 
 renderCart();
+setInterval(() => {
+    const expired = CM.expiredMealRows().map(row => row.key).join('|');
+    if (expired !== window.tishCartMealExpiry) {
+        window.tishCartMealExpiry = expired;
+        renderCart();
+    }
+}, 1000);
 </script>
 
 

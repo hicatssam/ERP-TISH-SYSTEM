@@ -35,6 +35,7 @@
             @endif
 
             @can('restaurant_menu.manage')
+                <a class="rm-btn rm-btn-light" href="{{ route('restaurant.menu.meal-schedules.index', ['location_id' => $location->id]) }}">مواعيد الفطور والغداء</a>
                 <button type="button" class="rm-btn rm-btn-primary" id="rmOpenAdd">
                     + إضافة صنف للمنيو
                 </button>

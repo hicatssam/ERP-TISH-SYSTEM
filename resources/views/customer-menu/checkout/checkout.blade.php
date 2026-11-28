@@ -247,6 +247,7 @@ function renderSummary() {
         <div class="row-copy">
           <strong>${CM.esc(String(x.name || 'صنف').split(' - ')[0])}</strong>
           ${subtitle ? `<span style="display:block;font-size:.74rem;color:var(--muted)">${CM.esc(subtitle)}</span>` : ''}
+          ${CM.mealUnavailable(CM.product(x.product_id)) ? '<span style="display:block;color:#a91f17;font-weight:800">انتهى وقت الوجبة</span>' : ''}
           <small class="cart-line-meta">${x.quantity} × ${CM.money(x.price)}</small>
         </div>
         <strong class="cart-line-total">${CM.money(x.price * x.quantity)}</strong>
@@ -478,6 +479,19 @@ document.getElementById('checkoutForm').addEventListener('submit', async e => {
     const address = e.currentTarget.elements.address?.value?.trim() || '';
     const error = document.getElementById('checkoutError');
 
+    // A previously submitted request may already have been accepted. The server
+    // handles idempotent recovery before enforcing a new meal window.
+    if (CM.expiredMealRows().length) {
+        let pending = null;
+        try { pending = JSON.parse(sessionStorage.getItem('dahab_checkout_request_' + CM.LOCATION_CODE) || 'null'); } catch (_) {}
+        const signature = JSON.stringify(rows.map(row => [row.key, row.quantity]).sort());
+        if (!pending?.token || pending.signature !== signature) {
+            error.textContent = 'انتهى وقت إحدى الوجبات. لا تحوّل المبلغ الآن. عد إلى السلة واحذف الصنف غير المتاح.';
+            error.focus();
+            return;
+        }
+    }
+
     if (serviceType === 'dine_in' && !tableId) {
         error.textContent = 'اختر طاولة متاحة لطلب داخل المطعم.';
         document.getElementById('tableField').scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -581,6 +595,19 @@ showLockedTable();
 serviceFields();
 loadPayments();
 renderSummary();
+let mealExpirySignature = '';
+function refreshMealExpiryNotice() {
+    const expired = CM.expiredMealRows().map(row => row.key).join('|');
+    if (expired === mealExpirySignature) return;
+    mealExpirySignature = expired;
+    if (expired) {
+        renderSummary();
+        const error = document.getElementById('checkoutError');
+        if (error) error.textContent = 'انتهى وقت إحدى الوجبات. لا تحوّل المبلغ الآن. راجع السلة قبل المتابعة.';
+    }
+}
+refreshMealExpiryNotice();
+setInterval(refreshMealExpiryNotice, 1000);
 
 (async function loadEta() {
     try {

@@ -203,7 +203,7 @@ class CustomerMenuController extends Controller
             'addOnGroups' => $addOnGroups,
             'relatedItems' => $menuItems
                 ->where('category_id', $item['category_id'])
-                ->reject(fn (array $row) => $row['product_id'] === $item['product_id'])
+                ->reject(fn (array $row) => $row['product_id'] === $item['product_id'] || ($row['meal_closed'] ?? false))
                 ->take(6)
                 ->values(),
             'branding' => $this->branding($location),

@@ -42,6 +42,11 @@ Route::middleware([
                     [RestaurantMenuController::class, 'index']
                 )->name('index');
 
+                Route::get('/meal-schedules', [\App\Http\Controllers\Restaurant\MealScheduleController::class, 'index'])
+                    ->name('meal-schedules.index')->middleware('can:restaurant_menu.manage');
+                Route::post('/meal-schedules', [\App\Http\Controllers\Restaurant\MealScheduleController::class, 'update'])
+                    ->name('meal-schedules.update')->middleware('can:restaurant_menu.manage');
+
                 Route::post(
                     '/',
                     [RestaurantMenuController::class, 'store']

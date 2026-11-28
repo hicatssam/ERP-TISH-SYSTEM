@@ -15,6 +15,7 @@
 <script>
 window.CustomerMenu = (function () {
     const RAW_PRODUCTS = @json($menuItems ?? []);
+    const mealClockStart = performance.now();
     const PRODUCTS = (Array.isArray(RAW_PRODUCTS) ? RAW_PRODUCTS : Object.values(RAW_PRODUCTS || {})).map(x => ({
         id: x.product_id ?? x.id ?? null,
         menu_item_id: x.menu_item_id ?? null,
@@ -27,6 +28,10 @@ window.CustomerMenu = (function () {
         price: Number(x.price ?? 0),
         prepTimeMinutes: x.prep_time_minutes ?? null,
         available: x.available !== false && x.available !== 0 && x.available !== '0',
+        mealPeriod: x.meal_period || null,
+        mealClosed: !!x.meal_closed,
+        mealEndsMs: Number(x.meal_ends_ms || 0),
+        mealServerMs: Number(x.meal_server_ms || 0),
         isVariantProduct: !!x.is_variant_product,
         variants: Array.isArray(x.variants) ? x.variants : [],
         modifierGroups: Array.isArray(x.modifier_groups) ? x.modifier_groups : [],
@@ -68,6 +73,10 @@ window.CustomerMenu = (function () {
      * branch catalog so missing names/prices can never crash checkout or show
      * a misleading 0.00 total. Unknown/deactivated products are discarded.
      */
+    function mealUnavailable(p) {
+        return !!(p && p.mealPeriod && (p.mealClosed ||
+            (p.mealEndsMs > 0 && p.mealServerMs + performance.now() - mealClockStart >= p.mealEndsMs)));
+    }
     function normalizeCart(savedCart) {
         const normalized = {};
 
@@ -78,7 +87,7 @@ window.CustomerMenu = (function () {
 
             const productId = raw.product_id ?? raw.id ?? String(savedKey).split(':')[0];
             const p = PRODUCTS.find(item => String(item.id) === String(productId));
-            if (!p || !p.available) return;
+            if (!p || (!p.available && !mealUnavailable(p))) return;
 
             const quantity = Math.max(1, Math.min(50, Number(raw.quantity ?? raw.qty ?? 1) || 1));
             const variantId = raw.variant_id ?? raw.product_variant_id ?? null;
@@ -221,7 +230,10 @@ window.CustomerMenu = (function () {
      */
     function addToCart(id, qty = 1, options = {}) {
         const p = product(id);
-        if (!p || !p.available) return false;
+        if (!p || !p.available || mealUnavailable(p)) {
+            if (mealUnavailable(p)) toast('انتهى وقت هذه الوجبة. اختر وجبة أخرى.');
+            return false;
+        }
 
         const variantId = options.variantId ?? null;
         let variantName = null;
@@ -276,6 +288,10 @@ window.CustomerMenu = (function () {
 
     function changeCart(key, delta) {
         if (!cart[key]) return;
+        if (delta > 0 && mealUnavailable(product(cart[key].product_id))) {
+            toast('انتهى وقت هذه الوجبة. اختر وجبة أخرى.');
+            return;
+        }
         cart[key].quantity = Math.min(50, cart[key].quantity + delta);
         if (cart[key].quantity <= 0) delete cart[key];
         saveCart();
@@ -402,7 +418,8 @@ window.CustomerMenu = (function () {
     document.addEventListener('DOMContentLoaded', syncBadges);
 
     return {
-        PRODUCTS, LOCATION_CODE,
+        PRODUCTS, LOCATION_CODE, mealUnavailable,
+        expiredMealRows: () => cartRows().filter(row => mealUnavailable(product(row.product_id))),
         esc, money, product, image, toast,
         cartRows, cartCount, cartTotal, addToCart, changeCart, removeFromCart, clearCart,
         isFavorite, toggleFavorite, favorites: () => favorites.slice(),

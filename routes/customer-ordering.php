@@ -42,6 +42,9 @@ Route::prefix('menu')->name('customer-menu.')->group(function (): void {
     Route::get('{location:code}/queue-status', [CustomerMenuController::class, 'queueStatus'])->name('queue-status');
     Route::get('{location:code}/payment-options', [CustomerMenuController::class, 'paymentOptions'])->name('payment-options');
 
+    Route::get('{location:code}/meal-schedules', [\App\Http\Controllers\CustomerOrdering\MealScheduleStatusController::class, 'show'])
+        ->middleware('throttle:60,1')->name('meal-schedules');
+
     Route::get('{location:code}/products', [CustomerMenuController::class, 'products'])->name('products');
     Route::get('{location:code}/product/{product}', [CustomerMenuController::class, 'productShow'])
         ->whereNumber('product')->name('product.show');

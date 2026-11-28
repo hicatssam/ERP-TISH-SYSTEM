@@ -777,6 +777,8 @@ body.tish-paper.reference-home #categories .cat.active .cat-visual .tish-library
   @endif
 
 
+  @include('customer-menu.partials.meal-schedules')
+
   @if($showCategories)
   @php
     $categoryPriority = ['برجر لحم', 'برجر دجاج', 'برجر نباتي', 'الفرايز'];
@@ -936,7 +938,7 @@ body.tish-paper.reference-home #categories .cat.active .cat-visual .tish-library
         return CM.PRODUCTS.filter(function (product) {
             const inCategory = activeCat === 'all' || product.category === String(activeCat);
             const haystack = (product.name + ' ' + product.description + ' ' + product.category_name).toLowerCase();
-            return inCategory && (!query || haystack.includes(query));
+            return !CM.mealUnavailable(product) && inCategory && (!query || haystack.includes(query));
         });
     }
 
@@ -955,9 +957,9 @@ body.tish-paper.reference-home #categories .cat.active .cat-visual .tish-library
         const rows = filteredProducts();
         const ranked = popularProductIds
             .map(function (id) { return CM.product(id); })
-            .filter(function (product) { return product && product.available; });
+            .filter(function (product) { return product && product.available && !CM.mealUnavailable(product); });
         const fallback = CM.PRODUCTS.filter(function (product) {
-            return product.available && !ranked.some(function (rankedProduct) {
+            return product.available && !CM.mealUnavailable(product) && !ranked.some(function (rankedProduct) {
                 return String(rankedProduct.id) === String(product.id);
             });
         });

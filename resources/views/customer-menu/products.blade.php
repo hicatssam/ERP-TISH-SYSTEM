@@ -206,6 +206,7 @@ body.tish-paper.tish-paper-products #categories .cat.active .catalog-category-ic
    <button class="filter-square" type="button" id="openFilters" aria-label="تصفية الأصناف"><i class="fa-solid fa-sliders"></i></button>
   </div>
 
+  @include('customer-menu.partials.meal-schedules')
   <div class="categories" id="categories">
    <button class="cat {{ $initialCategory === 'all' || $initialCategory === '' ? 'active' : '' }}" type="button" data-cat="all"><span class="catalog-category-icon"><x-menu-icon name="tish-all" :size="22" /></span><b>الكل</b></button>
    @foreach(($categories ?? []) as $category)
@@ -268,6 +269,7 @@ const PRODUCT_URL_BASE = @json(route('customer-menu.product.show', [$location->c
 const popularSet = new Set(Array.from(@json($popularProductIds ?? [])).map(String));
 function productUrl(id) { return PRODUCT_URL_BASE.replace('__ID__', encodeURIComponent(id)); }
 
+const activeMeal = @json(request()->query('meal') === 'breakfast' ? 'breakfast' : (request()->query('meal') === 'lunch' ? 'lunch' : ''));
 let activeCat = @json($initialCategory ?: 'all');
 let priceRange = 'all';
 let sortMode = 'default';
@@ -292,6 +294,7 @@ function revealMenuCards() {
 function renderProducts() {
     const q = document.getElementById('searchInput').value.trim().toLowerCase();
     let rows = CM.PRODUCTS.filter(p =>
+        !CM.mealUnavailable(p) && (!activeMeal || p.mealPeriod === activeMeal) &&
         (activeCat === 'all' || p.category === String(activeCat)) &&
         priceMatches(Number(p.price)) &&
         (!q || (p.name + ' ' + p.description + ' ' + p.category_name).toLowerCase().includes(q))

@@ -119,6 +119,8 @@ class CustomerOrderingService
             &$openedSession,
             &$newlyOpened
         ): Order {
+            // Recheck the real schedule at acceptance, before any new order side effects.
+            app(\App\Services\Restaurant\MealScheduleService::class)->assertOrderable((int) $location->id, array_column($items, 'product_id'));
             $customer = $this->upsertCustomer(
                 $location,
                 (string) $data['name'],
@@ -566,6 +568,8 @@ class CustomerOrderingService
         }
 
         $ids = $requested->pluck('product_id');
+
+        app(\App\Services\Restaurant\MealScheduleService::class)->assertOrderable((int) $location->id, $ids->all());
 
         $allowed = Product::query()
             ->active()
