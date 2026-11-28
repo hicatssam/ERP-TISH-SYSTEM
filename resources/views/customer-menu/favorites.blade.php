@@ -47,7 +47,7 @@ function renderFavorites() {
             const name = CM.esc(product.name);
             const url = CM.esc(PRODUCT_URL_BASE.replace('__ID__', encodeURIComponent(product.id)));
             const needsOptions = product.requiresChoices || product.isVariantProduct;
-            const action = !product.available
+            const action = !product.available || CM.mealUnavailable(product)
                 ? `<span class="favorite-unavailable">${copy.unavailable}</span>`
                 : needsOptions
                     ? `<a class="favorite-action" href="${url}">${copy.options}</a>`
