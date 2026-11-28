@@ -38,6 +38,7 @@ const copy = english
     ? {add:'Add to cart', options:'Choose options', remove:'Remove from favorites', unavailable:'Unavailable', empty:'No favorites yet', browse:'Browse the menu', added:'Added to cart', removed:'Removed from favorites'}
     : {add:'إضافة للسلة', options:'اختر التفاصيل', remove:'إزالة من المفضلة', unavailable:'غير متوفر حاليًا', empty:'ما عندك أصناف بالمفضلة بعد', browse:'تصفّح المنيو', added:'تمت الإضافة للسلة', removed:'تمت الإزالة من المفضلة'};
 
+document.addEventListener('tish:meal-status-changed', renderFavorites);
 function renderFavorites() {
     const rows = CM.favorites().map(id => CM.product(id)).filter(Boolean);
     items.innerHTML = rows.length
