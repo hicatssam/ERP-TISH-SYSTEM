@@ -142,9 +142,10 @@ html body.tish-paper #categories#categories button.cat[data-cat].active > :is(.c
     content:""!important;
     display:block!important;
     position:absolute!important;
-    inset:0!important;
-    width:100%!important;
-    height:100%!important;
+    /* Keep a thin ivory torn-paper rim around the red selected disc. */
+    inset:2.5%!important;
+    width:auto!important;
+    height:auto!important;
     z-index:0!important;
     pointer-events:none!important;
     background:#c5251b url('/assets/tish-paper/paper/product-disc.webp') center/100% 100% no-repeat!important;
