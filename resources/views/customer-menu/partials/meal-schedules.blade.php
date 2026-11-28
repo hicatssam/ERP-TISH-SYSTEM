@@ -40,4 +40,3 @@
 <script>
 window.TishMealSchedule = {{ \Illuminate\Support\Js::from($mealClient) }};
 </script>
-<script src="{{ asset('assets/js/customer-menu/meal-schedules.js') }}?v=1" defer></script>
