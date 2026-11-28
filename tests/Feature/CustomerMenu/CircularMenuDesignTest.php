@@ -36,7 +36,11 @@ class CircularMenuDesignTest extends TestCase
         $shared = file_get_contents(resource_path('views/customer-menu/partials/styles.blade.php'));
         $css = file_get_contents(public_path('assets/css/customer-menu/tish-circular-ui.css'));
 
-        $this->assertMatchesRegularExpression('/<button\b(?=[^>]*\bid="pwaInstallBtn")(?=[^>]*\baria-label="ثبّت المنيو")[^>]*>/u', $install);
+        $this->assertStringContainsString('id="pwaInstallBtn"', $install);
+        $this->assertStringContainsString('aria-label="{{ $pinLabel }}"', $install);
+        $this->assertStringContainsString('Install menu', $install);
+        $this->assertStringContainsString('ثبّت المنيو', $install);
+        $this->assertStringContainsString('<span>{{ $pinLabel }}</span>', $install);
         $this->assertStringContainsString('beforeinstallprompt', $install);
         $this->assertStringContainsString('pwaIosSheet', $install);
         $this->assertStringContainsString('tish-circular-ui.css', $shared);
@@ -64,7 +68,7 @@ class CircularMenuDesignTest extends TestCase
         $this->assertStringContainsString('data-addon-expand', $product);
         $this->assertStringContainsString('data-addon-extra', $product);
         $this->assertStringContainsString('aria-expanded', $product);
-        $this->assertStringContainsString('tish-install-inline', $product);
+        $this->assertStringContainsString("@include('customer-menu.partials.pwa-install')", $product);
         $this->assertStringContainsString('tish-addon-group-title', $css);
         $this->assertStringContainsString('data-addon-id', $product);
         $this->assertStringContainsString('CM.addToCart(item.id, 1)', $product);

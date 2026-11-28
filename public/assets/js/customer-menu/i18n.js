@@ -449,113 +449,38 @@
    const trimmed = input.trim();
    if (!trimmed) return input;
    let translated = lookup(trimmed);
-    if (!translated && /[:：]$/.test(trimmed)) {
-      const base = trimmed.slice(0, -1).trim();
-      if (lookup(base)) translated = lookup(base) + ':';
-    }
-   if (!translated) {
-     const count = trimmed.match(/^(\d+)\s+(?:أصناف|صنف متاح|صنف)$/);
-     if (count) translated = count[1] + ' items';
+   const key = normalizeKey(trimmed);
+   if (!translated && /[:：]$/.test(trimmed)) {
+     const base = trimmed.slice(0,-1).trim();
+     if (lookup(base)) translated = lookup(base) + ':';
    }
    if (!translated) {
-     const price = trimmed.match(/^أقل من (\d+)(.*)$/);
-     if (price) translated = 'Under ' + price[1] + price[2];
+     const count = key.match(/^(?:عدد )?(\d+)\s+(?:أصناف|صنف متاح|صنف|قطع)$/);
+     if (count) translated = count[1] + (count[1] === '1' ? ' item' : ' items');
    }
    if (!translated) {
-     const key = normalizeKey(trimmed);
+     const price = key.match(/^(أقل|أكثر) من (\d+)(.*)$/);
+     if (price) translated = (price[1] === 'أقل' ? 'Under ' : 'Over ') + price[2] + price[3];
+   }
+   if (!translated) {
      const meal = key.match(/^وجبات (الفطور|الغداء) متاحة فقط من (\d{2}:\d{2}) إلى (\d{2}:\d{2}) بتوقيت غزة\. راجع السلة قبل الدفع\.$/);
      if (meal) translated = (meal[1] === 'الفطور' ? 'Breakfast' : 'Lunch') + ' is available only from ' + meal[2] + ' to ' + meal[3] + ' Gaza time. Review your cart before paying.';
      const closed = key.match(/^وجبات (الفطور|الغداء) غير متاحة حاليا\.$/);
      if (closed) translated = (closed[1] === 'الفطور' ? 'Breakfast' : 'Lunch') + ' is currently unavailable.';
-     const prefixes = ['إضافة للمفضلة','أضف للمفضلة','إزالة من المفضلة','عرض الصنف','عرض','إضافة للسلة','اختر الخيارات','غير متوفر','تقليل كمية','زيادة كمية','طاولتك','الطاولة محددة تلقائيا','إعلان من'];
-     if (!translated) for (const prefix of prefixes) {
-       const k = normalizeKey(prefix);
-       if (key.startsWith(k + ' ') || key.startsWith(k + ':')) {
-         const match = trimmed.match(new RegExp('^' + prefix.replace(/[\u064b-\u065f\u0670]/g,'') + '([: ]+)(.*)
-   return input.replace(trimmed, translated);
+   }
+   return translated ? input.replace(trimmed, () => translated) : input;
  };
- const format = (key, values = {}) => {
-   const template = translate(key);
-   return template.replace(/\{([a-zA-Z_]+)\}/g, (match, name) =>
-     Object.prototype.hasOwnProperty.call(values, name) ? String(values[name]) : match);
- };
- window.CustomerMenuI18n = {lang:language, isEnglish, t:translate, format, dictionary};
- function updateText(root) {
-   if (language !== 'en' || !root || !document.createTreeWalker) return;
-   const visitor = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-   let item;
-   while ((item = visitor.nextNode())) {
-     const parent = item.parentElement;
-     if (!parent || ['SCRIPT','STYLE','NOSCRIPT','TEXTAREA'].includes(parent.tagName) || parent.closest('[data-no-menu-translate],[contenteditable=true]')) continue;
-     const next = translate(item.nodeValue);
-     if (next !== item.nodeValue) item.nodeValue = next;
+ const translateAttribute = (value) => {
+   const original = String(value ?? '');
+   const translated = translate(original);
+   if (language !== 'en' || translated !== original) return translated;
+   const prefixes = ['إضافة للمفضلة','أضف للمفضلة','إزالة من المفضلة','عرض الصنف','عرض','إضافة للسلة','اختر الخيارات','غير متوفر','تقليل كمية','زيادة كمية','طاولتك','الطاولة محددة تلقائيا'];
+   for (const prefix of prefixes) {
+     const normalized = normalizeKey(prefix);
+     const match = original.trim().match(new RegExp('^' + normalized.split('').map(c => c + '[\\u064b-\\u065f\\u0670\\u0640]*').join('') + '([: ]+)(.*)$','u'));
+     if (match) return lookup(prefix) + (match[1].includes(':') ? ': ' : ' ') + match[2];
    }
-   if (root.querySelectorAll) {
-     const elements = [root, ...root.querySelectorAll('[placeholder],[aria-label],[title]')];
-     for (const el of elements) {
-       if (!el.getAttribute) continue;
-       for (const name of ['placeholder','aria-label','title']) {
-         if (el.hasAttribute(name)) {
-           const original = el.getAttribute(name);
-           const value = translate(original);
-           if (value !== original) el.setAttribute(name,value);
-         }
-       }
-     }
-   }
- }
- function applyLocale() {
-   document.documentElement.lang = language;
-   document.documentElement.dir = language === 'en' ? 'ltr' : 'rtl';
-   document.cookie = cookieName + '=' + language + '; Path=/; Max-Age=31536000; SameSite=Lax';
-   if (language === 'en') {
-     document.title = document.title.replace(/^(المنيو|المفضلة|اختر فرعك|سلة الطلب|إتمام الطلب|طلباتي)\s*([-—])/, (_,key,sep) => translate(key) + ' ' + sep);
-     document.title = document.title.replace(/^تتبع\s+/, 'Track ');
-     updateText(document.body);
-   }
-   const host = document.querySelector('[data-cm-language-host]')
-     || document.querySelector('body.reference-home .tish-drive-hero-actions')
-     || document.querySelector('.reference-actions,.page-head,.branch-brand') || document.body;
-   const button = document.createElement('button');
-   button.type = 'button';
-   button.className = 'cm-language-switch';
-   button.dataset.menuLanguageToggle = 'true';
-   button.setAttribute('aria-label', language === 'en' ? 'Switch to Arabic' : 'Switch to English');
-   button.setAttribute('title', language === 'en' ? 'Switch to Arabic' : 'Switch to English');
-   button.textContent = language === 'en' ? 'العربية' : 'English';
-   if (host === document.body) button.classList.add('cm-language-floating');
-   host.appendChild(button);
-   button.addEventListener('click', () => {
-     const next = language === 'en' ? 'ar' : 'en';
-     document.cookie = cookieName + '=' + next + '; Path=/; Max-Age=31536000; SameSite=Lax';
-     const url = new URL(window.location.href);
-     url.searchParams.set('lang',next);
-     window.location.assign(url.toString());
-   });
-   if (language === 'en' && typeof MutationObserver !== 'undefined') {
-     let pending = false;
-     const observer = new MutationObserver(() => {
-       if (pending) return;
-       pending = true;
-       requestAnimationFrame(() => {
-         pending = false;
-         updateText(document.body);
-       });
-     });
-     observer.observe(document.body, {subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['placeholder','aria-label','title']});
-   }
- }
- if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded',applyLocale,{once:true});
- else applyLocale();
-})();,'u'));
-         const tail = match ? match[2] : key.slice(k.length).replace(/^[: ]+/,'');
-         translated = (lookup(prefix) || (prefix === 'إعلان من' ? 'Promotion from' : prefix)) + (key.startsWith(k + ':') ? ': ' : ' ') + tail;
-         break;
-       }
-     }
-   }
-   if (!translated) return input;
-   return input.replace(trimmed, translated);
+   return original;
  };
  const format = (key, values = {}) => {
    const template = translate(key);
@@ -580,7 +505,7 @@
        for (const name of ['placeholder','aria-label','title']) {
          if (el.hasAttribute(name)) {
            const original = el.getAttribute(name);
-           const value = translate(original);
+           const value = translateAttribute(original);
            if (value !== original) el.setAttribute(name,value);
          }
        }
