@@ -224,6 +224,9 @@ trait ResolvesCustomerMenuBranding
                 $mealWindow = $meal ? $mealSchedule['windows'][$meal] : null;
                 $mealClosed = $mealWindow !== null && $mealWindow['state'] !== 'open';
                 $locationProduct = $product?->locationProducts->first();
+                // The relation is already eager-loaded and scoped to this branch.
+                // Reuse its price rather than executing a query per product/variant.
+                $effectivePrice = (float) ($locationProduct?->local_selling_price ?? $product->base_selling_price);
 
                 $variants = $product->isVariantProduct()
                     ? $product->activeVariants
@@ -234,7 +237,7 @@ trait ResolvesCustomerMenuBranding
                                 : $variant->displayName(),
                             'price' => $variant->selling_price !== null
                                 ? (float) $variant->selling_price
-                                : (float) $product->getEffectivePriceForLocation((int) $location->id),
+                                : $effectivePrice,
                             'is_default' => (bool) $variant->is_default,
                             'image' => $this->assetFromPath($variant->image),
                             'cutout_image' => $cutouts->cutoutUrl($variant->image),
@@ -338,7 +341,7 @@ trait ResolvesCustomerMenuBranding
                         ),
                     'category_icon_color' => $product->category?->icon_color ?: '#111111',
                     'sku' => $product->sku,
-                    'price' => (float) $product->getEffectivePriceForLocation((int) $location->id),
+                    'price' => $effectivePrice,
                     'prep_time_minutes' => $product->prep_time_minutes !== null ? (int) $product->prep_time_minutes : null,
                     'available' => ! $mealClosed && (bool) ($locationProduct?->is_available ?? false),
                     'meal_period' => $meal,
