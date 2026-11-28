@@ -1456,22 +1456,6 @@ a.app-page-btn:hover {
 
                     @endcanany
 
-                    @canany([
-                        'branch_shipments.view', 'branch_shipments.manage', 'branch_shipments.close_short',
-                        'inventory.view', 'showroom_cake_requests.view', 'showroom_cake_requests.create',
-                        'showroom_sweets_requests.view', 'showroom_sweets_requests.receive',
-                        'showroom_sweets_requests.dispatch', 'showroom_cake_requests.update_status',
-                        'cake_orders.receive'
-                    ])
-                        <a href="{{ route('branch-shipments.index') }}" class="nav-item {{ request()->routeIs('branch-shipments.*') ? 'active' : '' }}">
-                            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="2" y="7" width="20" height="14" rx="2"/>
-                                <path d="M2 11h20M7 7V3h10v4M7 15h4M15 15h3"/>
-                            </svg>
-                            <span>نقلات الفروع</span>
-                        </a>
-                    @endcanany
-
                     @canany(['stock_transfers.view', 'stock_transfers.dispatch', 'stock_transfers.receive'])
 
                         <a href="{{ route('stock-transfers.index') }}" class="nav-item {{ request()->routeIs('stock-transfers.*') ? 'active' : '' }}">
