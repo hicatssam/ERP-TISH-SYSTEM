@@ -295,6 +295,7 @@ function revealMenuCards() {
     window.TishPaperMotion?.observe(document.getElementById('productGrid'));
 }
 
+document.addEventListener('tish:meal-status-changed', renderProducts);
 function renderProducts() {
     const q = document.getElementById('searchInput').value.trim().toLowerCase();
     let rows = CM.PRODUCTS.filter(p =>
