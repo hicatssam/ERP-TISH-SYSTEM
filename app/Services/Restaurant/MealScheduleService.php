@@ -3,6 +3,7 @@
 namespace App\Services\Restaurant;
 
 use App\Models\SystemSetting;
+use App\Models\RestaurantMenuItem;
 use Carbon\CarbonImmutable;
 use Illuminate\Validation\ValidationException;
 
@@ -70,6 +71,28 @@ final class MealScheduleService
     public function publicStatus(int $locationId): array
     {
         $snapshot = $this->snapshot($locationId);
+        // Only products actually published and available to this branch's
+        // online menu count towards the public meal cards. Keep all saved
+        // assignments in the private snapshot for server-side order validation.
+        $eligibleIds = RestaurantMenuItem::query()->forQr($locationId)
+            ->whereHas('product', fn ($query) => $query->active()
+                ->whereHas('locationProducts', fn ($stock) => $stock
+                    ->where('location_id', $locationId)->where('is_available', true)))
+            ->distinct()->pluck('product_id')->map(fn ($id) => (int) $id)->sort()->values();
+
+        $products = [];
+        foreach ($snapshot['windows'] as &$window) $window['count'] = 0;
+        unset($window);
+        foreach ($eligibleIds as $id) {
+            $period = $snapshot['assignments'][$id] ?? null;
+            $products[$id] = $period;
+            if ($period !== null) $snapshot['windows'][$period]['count']++;
+        }
+        // IDs and period labels refer only to already-public menu products.
+        $snapshot['products'] = (object) $products;
+        $snapshot['revision'] = hash('sha256', json_encode([
+            $snapshot['revision'], $products,
+        ], JSON_THROW_ON_ERROR));
         unset($snapshot['assignments']);
         return $snapshot;
     }
