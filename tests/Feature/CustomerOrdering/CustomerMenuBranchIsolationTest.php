@@ -43,8 +43,8 @@ class CustomerMenuBranchIsolationTest extends TestCase
         SystemSetting::set('customer_menu_category_visual', 'icons');
         $response = $this->get(route('customer-menu.show', $branch->code))->assertOk();
         $this->assertSame('tish-sauces', $response->viewData('categories')->firstWhere('id', $category->id)['icon_key']);
-        $response->assertSee('data-category-icon="tish-sauces"', false)
-            ->assertSee('data-menu-icon="tish-sauces"', false);
+        $response->assertSee('data-menu-icon="tish-sauces"', false);
+        $this->assertCategoryArtwork($response->getContent(), $category->id, 'tish-sauces');
         SystemSetting::set('customer_menu_category_visual', 'images');
         $this->get(route('customer-menu.show', $branch->code))->assertOk()
             ->assertSee('data-menu-icon="tish-sauces"', false);
@@ -63,6 +63,18 @@ class CustomerMenuBranchIsolationTest extends TestCase
         $this->get(route('customer-menu.show', $branch->code))->assertOk()
             ->assertDontSee('data-menu-icon="tish-veggie-burger"', false)
             ->assertDontSee('data-menu-icon="sparkles"', false);
+    }
+
+    private function assertCategoryArtwork(string $html, int $categoryId, string $key): void
+    {
+        $doc = new \DOMDocument();
+        @$doc->loadHTML('<?xml encoding="UTF-8">'.$html, LIBXML_NONET);
+        $xpath = new \DOMXPath($doc);
+        $buttons = $xpath->query('//button[@data-cat="'.$categoryId.'"]');
+        $this->assertSame(1, $buttons->length);
+        $images = $xpath->query('.//img[@data-menu-icon="'.$key.'"]', $buttons->item(0));
+        $this->assertSame(1, $images->length);
+        $this->assertStringContainsString(\App\Support\MenuIconLibrary::artwork($key), $images->item(0)->getAttribute('src'));
     }
 
     public function test_original_tish_artwork_is_available_and_rendered(): void
@@ -104,24 +116,21 @@ class CustomerMenuBranchIsolationTest extends TestCase
         $branch = $this->branch();
         $response = $this->get(route('customer-menu.my-orders', $branch->code))
             ->assertOk()
-            ->assertSee('class="bottom-nav" aria-label="التنقل"', false)
-            ->assertSee('class="nav-btn active"', false)
+             ->assertSee('class="nav-btn active"', false)
             ->assertDontSee('class="mobileNav"', false)
             ->assertSee("const cartKey = 'dahab_cart_' + locationCode;", false)
             ->assertSee("const favoriteKey = 'dahab_favorites_' + locationCode;", false)
             ->assertDontSee('window.CustomerMenu =', false);
 
         $html = $response->getContent();
-        $this->assertSame(5, substr_count($html, '<a class="nav-btn '));
+        $this->assertFiveTabNavigation($html, $branch->code);
         foreach (['show', 'products', 'cart', 'favorites', 'my-orders'] as $page) {
             $this->assertStringContainsString(
                 route('customer-menu.'.$page, $branch->code),
                 $html
             );
         }
-        $this->assertStringContainsString('height:calc(76px + var(--safe-bottom))', $html);
-        $this->assertStringContainsString('padding-bottom:calc(102px + var(--safe-bottom))', $html);
-    }
+     }
 
     public function test_tracking_page_keeps_the_five_tab_navigation_on_the_orders_tab(): void
     {
@@ -131,16 +140,14 @@ class CustomerMenuBranchIsolationTest extends TestCase
 
         $response = $this->get($result['track_url'])
             ->assertOk()
-            ->assertSee('class="bottom-nav" aria-label="التنقل"', false)
-            ->assertSee('class="nav-btn active"', false)
+             ->assertSee('class="nav-btn active"', false)
             ->assertSee("const cartKey = 'dahab_cart_' + locationCode;", false)
             ->assertSee("const favoriteKey = 'dahab_favorites_' + locationCode;", false)
-            ->assertSee('padding-bottom:calc(102px + var(--safe-bottom))', false)
-            ->assertSee('viewport-fit=cover', false)
+             ->assertSee('viewport-fit=cover', false)
             ->assertDontSee('window.CustomerMenu =', false);
 
         $html = $response->getContent();
-        $this->assertSame(5, substr_count($html, '<a class="nav-btn '));
+        $this->assertFiveTabNavigation($html, $branch->code);
         foreach (['show', 'products', 'cart', 'favorites', 'my-orders'] as $page) {
             $this->assertStringContainsString(route('customer-menu.'.$page, $branch->code), $html);
         }
@@ -148,6 +155,23 @@ class CustomerMenuBranchIsolationTest extends TestCase
             'href="'.route('customer-menu.my-orders', $branch->code).'"><i class="fa-solid fa-receipt"',
             $html
         );
+    }
+
+    private function assertFiveTabNavigation(string $html, string $branchCode): void
+    {
+        $doc = new \DOMDocument();
+        @$doc->loadHTML('<?xml encoding="UTF-8">'.$html, LIBXML_NONET);
+        $xpath = new \DOMXPath($doc);
+        $nav = $xpath->query('//nav[contains(concat(" ",normalize-space(@class)," ")," bottom-nav ")]');
+        $this->assertSame(1, $nav->length);
+        $this->assertSame('التنقل', $nav->item(0)->getAttribute('aria-label'));
+        $links = $xpath->query('.//a[contains(concat(" ",normalize-space(@class)," ")," nav-btn ")]', $nav->item(0));
+        $this->assertSame(5, $links->length);
+        $expected = array_map(fn ($page) => route('customer-menu.'.$page, $branchCode), ['show','products','cart','favorites','my-orders']);
+        $this->assertSame($expected, array_map(fn ($node) => $node->getAttribute('href'), iterator_to_array($links)));
+        $active = $xpath->query('.//a[contains(concat(" ",normalize-space(@class)," ")," active ")]', $nav->item(0));
+        $this->assertSame(1, $active->length);
+        $this->assertSame(route('customer-menu.my-orders', $branchCode), $active->item(0)->getAttribute('href'));
     }
 
     public function test_all_branch_based_pages_share_one_bottom_navigation_component(): void

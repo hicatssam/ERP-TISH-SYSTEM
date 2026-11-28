@@ -36,7 +36,9 @@ class CircularMenuDesignTest extends TestCase
         $shared = file_get_contents(resource_path('views/customer-menu/partials/styles.blade.php'));
         $css = file_get_contents(public_path('assets/css/customer-menu/tish-circular-ui.css'));
 
-        $this->assertStringContainsString('id="pwaInstallBtn" aria-label="ثبّت المنيو"', $install);
+        $this->assertMatchesRegularExpression('/<button\b(?=[^>]*\bid="pwaInstallBtn")(?=[^>]*\baria-label="ثبّت المنيو")[^>]*>/u', $install);
+        $this->assertStringContainsString('beforeinstallprompt', $install);
+        $this->assertStringContainsString('pwaIosSheet', $install);
         $this->assertStringContainsString('tish-circular-ui.css', $shared);
         $this->assertMatchesRegularExpression('/tish-circular-ui\\.css.*\\?v=\\d+/', $shared);
         $this->assertStringContainsString('body.crisp-customer-menu #pwaInstallBtn', $css);

@@ -1162,6 +1162,14 @@ class PosCashierShiftSimulationTest extends TestCase
     public function pos_34_partial_refund_preserves_original_payment_and_updates_invoice(): void
     {
         $f = $this->fixture();
+        $source = \App\Models\LocationPaymentAccount::create([
+            'location_id' => $f['branch']->id,
+            'payment_method_id' => $f['method']->id,
+            'name' => 'QA refund wallet',
+            'is_active' => true,
+            'can_disburse' => true,
+            'is_customer_visible' => false,
+        ]);
         $f['cashier']->givePermissionTo(Permission::findOrCreate('payments.refund', 'web'));
         $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.store'),
             $this->orderPayload($f, [['product_id' => $f['products'][0]->id, 'quantity' => 1]])
@@ -1172,9 +1180,19 @@ class PosCashierShiftSimulationTest extends TestCase
         $this->actingAs($f['cashier'])->post(route('payments.refund', $payment), [
             'amount' => 4,
             'payment_method_id' => $f['method']->id,
-            'reason' => 'Partial refund for test',
-        ])->assertRedirect();
+            'reason' => 'Missing disbursement account',
+        ])->assertSessionHasErrors('source_payment_account_id');
+        $this->assertDatabaseCount('refunds', 0);
+        $this->assertEquals(10, $order->fresh()->invoice?->paid_amount);
 
+        $this->actingAs($f['cashier'])->post(route('payments.refund', $payment), [
+            'amount' => 4,
+            'payment_method_id' => $f['method']->id,
+            'source_payment_account_id' => $source->id,
+            'reason' => 'Partial refund for test',
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('refunds', ['payment_id' => $payment->id, 'source_payment_account_id' => $source->id]);
         $this->assertEquals(10, $payment->fresh()->amount);
         $this->assertEquals(4, $payment->refunds()->sum('amount'));
         $this->assertSame('confirmed', $payment->fresh()->statusValue());
@@ -1185,6 +1203,14 @@ class PosCashierShiftSimulationTest extends TestCase
     public function pos_35_second_refund_above_remaining_balance_is_rejected(): void
     {
         $f = $this->fixture();
+        $source = \App\Models\LocationPaymentAccount::create([
+            'location_id' => $f['branch']->id,
+            'payment_method_id' => $f['method']->id,
+            'name' => 'QA refund wallet',
+            'is_active' => true,
+            'can_disburse' => true,
+            'is_customer_visible' => false,
+        ]);
         $f['cashier']->givePermissionTo(Permission::findOrCreate('payments.refund', 'web'));
         $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.store'),
             $this->orderPayload($f, [['product_id' => $f['products'][0]->id, 'quantity' => 1]])
@@ -1194,11 +1220,13 @@ class PosCashierShiftSimulationTest extends TestCase
         $this->actingAs($f['cashier'])->post(route('payments.refund', $payment), [
             'amount' => 6,
             'payment_method_id' => $f['method']->id,
+            'source_payment_account_id' => $source->id,
             'reason' => 'First partial refund',
-        ])->assertRedirect();
+        ])->assertRedirect()->assertSessionHasNoErrors();
         $this->actingAs($f['cashier'])->post(route('payments.refund', $payment), [
             'amount' => 5,
             'payment_method_id' => $f['method']->id,
+            'source_payment_account_id' => $source->id,
             'reason' => 'Invalid overrefund attempt',
         ])->assertSessionHasErrors('amount');
 
@@ -1210,6 +1238,14 @@ class PosCashierShiftSimulationTest extends TestCase
     public function pos_36_full_refund_allows_order_cancellation_and_restores_stock(): void
     {
         $f = $this->fixture(5);
+        $source = \App\Models\LocationPaymentAccount::create([
+            'location_id' => $f['branch']->id,
+            'payment_method_id' => $f['method']->id,
+            'name' => 'QA refund wallet',
+            'is_active' => true,
+            'can_disburse' => true,
+            'is_customer_visible' => false,
+        ]);
         $f['cashier']->givePermissionTo(Permission::findOrCreate('payments.refund', 'web'));
         $p = $f['products'][0];
         $this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.store'),
@@ -1221,8 +1257,9 @@ class PosCashierShiftSimulationTest extends TestCase
         $this->actingAs($f['cashier'])->post(route('payments.refund', $payment), [
             'amount' => 10,
             'payment_method_id' => $f['method']->id,
+            'source_payment_account_id' => $source->id,
             'reason' => 'Full refund before cancellation',
-        ])->assertRedirect();
+        ])->assertRedirect()->assertSessionHasNoErrors();
         $this->assertSame('refunded', $payment->fresh()->statusValue());
 
         app(\App\Services\Orders\OrderService::class)
