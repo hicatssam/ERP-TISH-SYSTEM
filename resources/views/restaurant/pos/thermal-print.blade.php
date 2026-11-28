@@ -48,7 +48,7 @@
 <title>طباعة / Print {{ $order->order_number }}</title>
 @include('layouts.print.fonts')
 <style>
-*{box-sizing:border-box}body{margin:0;background:#eee;color:#111;font:12px Cairo,Arial,sans-serif}.toolbar{padding:10px;display:flex;flex-wrap:wrap;justify-content:center;gap:8px;background:white}.toolbar button,.toolbar a{font:inherit;padding:8px;border:1px solid #888;background:white;color:#111;border-radius:4px;text-decoration:none;cursor:pointer}.receipt{width:{{ $paperWidth-8 }}mm;max-width:100%;margin:12px auto;padding:2mm;background:white;line-height:1.55;overflow-wrap:anywhere}h1,h2,p{margin:0}h1{text-align:center;font-size:17px}h2{font-size:14px;margin-top:9px}.center{text-align:center}.logo{display:block;max-width:30mm;max-height:18mm;margin:0 auto 5px;filter:grayscale(1)}.meta{border-block:1px dashed;padding:5px 0;margin:7px 0}.number{text-align:center;font-size:22px;font-weight:bold}table{width:100%;border-collapse:collapse;font-size:11px}td,th{padding:5px 1px;border-bottom:1px dotted #888;text-align:right;vertical-align:top}.amount{text-align:left;direction:ltr;white-space:nowrap}.line{display:flex;justify-content:space-between;gap:5px}.total{border-top:2px solid;font-size:15px;font-weight:bold;padding-top:5px}.status{border:1px solid;text-align:center;font-weight:bold;margin:8px 0;padding:4px}.kitchen-item{border-bottom:1px dashed;padding:6px 0;break-inside:avoid}.kitchen-item .line{font-size:15px;font-weight:bold}.note{font-weight:bold}.cancelled{text-decoration:line-through}
+*{box-sizing:border-box}body{margin:0;background:#eee;color:#111;font:12px Cairo,Arial,sans-serif}.toolbar{padding:10px;display:flex;flex-wrap:wrap;justify-content:center;gap:8px;background:white}.toolbar button,.toolbar a{font:inherit;padding:8px;border:1px solid #888;background:white;color:#111;border-radius:4px;text-decoration:none;cursor:pointer}.receipt{width:{{ $paperWidth === 58 ? 46 : 64 }}mm;max-width:100%;margin:12px auto;padding:1.5mm;background:white;line-height:1.55;overflow-wrap:anywhere}h1,h2,p{margin:0}h1{text-align:center;font-size:17px}h2{font-size:14px;margin-top:9px}.center{text-align:center}.logo{display:block;max-width:30mm;max-height:18mm;margin:0 auto 5px;filter:grayscale(1)}.meta{border-block:1px dashed;padding:5px 0;margin:7px 0}.number{text-align:center;font-size:22px;font-weight:bold}table{width:100%;border-collapse:collapse;font-size:11px}td,th{padding:5px 1px;border-bottom:1px dotted #888;text-align:right;vertical-align:top}.amount{text-align:left;direction:ltr;white-space:nowrap}.line{display:flex;justify-content:space-between;gap:5px}.total{border-top:2px solid;font-size:15px;font-weight:bold;padding-top:5px}.status{border:1px solid;text-align:center;font-weight:bold;margin:8px 0;padding:4px}.kitchen-item{border-bottom:1px dashed;padding:6px 0;break-inside:avoid}.kitchen-item .line{font-size:15px;font-weight:bold}.note{font-weight:bold}.cancelled{text-decoration:line-through}
 
 /* Kitchen copy uses the same paper width, logo, font and dotted rules as the customer invoice. */
 .kitchen-copy .kitchen-title{font-size:14px;font-weight:700}
@@ -100,8 +100,27 @@
 .receipt .item-alt{font-size:9px}
 .receipt .amount{font-size:10px}
 @endif
+/* Fit within the printable area of narrow thermal drivers.
+   Keep the page length automatic and wrap content rather than clipping it. */
+.receipt .line>*{min-width:0;overflow-wrap:anywhere}
+.receipt .line>bdi{flex-shrink:0;max-width:62%;white-space:normal;text-align:left}
+.receipt .meta .line>bdi{flex-shrink:1}
+.receipt .customer-copy,.customer-copy{font-variant-numeric:tabular-nums}
+.customer-copy table{table-layout:fixed;width:100%}
+.customer-copy th:nth-child(1){width:42%}
+.customer-copy th:nth-child(2){width:12%}
+.customer-copy th:nth-child(3),.customer-copy th:nth-child(4){width:23%}
+.customer-copy td,.customer-copy th{overflow-wrap:anywhere;white-space:normal}
+.customer-copy td.amount{font-size:10px;font-variant-numeric:tabular-nums}
+.receipt img{max-width:100%;object-fit:contain}
+.receipt .logo{max-width:26mm}
+.receipt .kitchen-station-meta{flex-wrap:wrap}
+@if($paperWidth === 58)
+.customer-copy table{font-size:10px}
+.customer-copy td.amount{font-size:9px}
+@endif
 @page{size:auto;margin:0}
-@media print{body{background:white}.toolbar{display:none!important}.receipt{margin:0 auto;max-width:none}.receipt+.receipt{break-before:page;page-break-before:always}body[data-mode="customer"] .kitchen-copy,body[data-mode="kitchen"] .customer-copy{display:none}body[data-mode="kitchen"] .kitchen-copy{break-before:auto;page-break-before:auto}}
+@media print{body{background:white}.toolbar{display:none!important}.receipt{margin:0 auto;max-width:100%}.receipt+.receipt{break-before:page;page-break-before:always}body[data-mode="customer"] .kitchen-copy,body[data-mode="kitchen"] .customer-copy{display:none}body[data-mode="kitchen"] .kitchen-copy{break-before:auto;page-break-before:auto}}
 </style></head><body data-mode="all">
 <div class="toolbar"><button data-print="all">طباعة المستندات / Print documents</button>
 @if($invoice && $tickets->isNotEmpty())<button data-print="customer">فاتورة العميل فقط / Invoice only</button><button data-print="kitchen">المطبخ فقط / Kitchen only</button>@endif
