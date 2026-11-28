@@ -3823,12 +3823,12 @@ body.rb-pos-mode {
 @media(min-width:821px){
  .rb-pos .rb-pos-workspace{display:flex;flex-direction:column;overflow:auto}
  .rb-pos .rb-pos-header,.rb-pos .rb-pos-quickbar,.rb-pos .rb-pos-alert{flex:0 0 auto}
- .rb-pos #restaurantPosForm{display:flex;flex-direction:column;flex:1 0 auto;min-height:520px}
- .rb-pos .rb-pos-shell{flex:1;min-height:520px;grid-template-columns:minmax(0,1fr) clamp(340px,31%,480px);gap:10px;align-items:stretch}
+ .rb-pos #restaurantPosForm{display:flex;flex-direction:column;flex:1 0 520px;min-height:520px}
+ .rb-pos .rb-pos-shell{flex:1 1 0;min-height:520px;grid-template-columns:minmax(0,1fr) clamp(340px,31%,480px);gap:10px;align-items:stretch}
  .rb-pos .rb-products-panel{display:flex;flex-direction:column;min-height:0;min-width:0}
  .rb-pos .rb-products-panel>*:not(.rb-catalog-scroll){flex:0 0 auto}
  .rb-pos .rb-catalog-scroll{flex:1 1 0;overflow:auto;overscroll-behavior:contain}
- .rb-pos .rb-order-panel{position:relative;top:auto;height:auto;max-height:none;min-height:0;overflow:visible}
+ .rb-pos .rb-order-panel{position:relative;top:auto;height:auto;max-height:none;min-height:0;overflow:auto;scrollbar-width:thin}
  .rb-pos .rb-order-card{overflow:visible}
  .rb-pos .rb-cart-scroll{flex:1 1 0;max-height:none;overflow:auto}
  .rb-pos .rb-product-grid:not(.rb-list-view):not(.rb-compact-view){grid-template-columns:repeat(auto-fill,minmax(min(100%,145px),1fr))}
@@ -6941,18 +6941,18 @@ async function submitOrder(action) {
     try { setCatalogView(localStorage.getItem(viewPreferenceKey) || 'grid'); } catch (_) { setCatalogView('grid'); }
 
     const fullscreenBtn = document.getElementById('rbFullscreenBtn');
-    const posRoot = document.getElementById('rbPosRoot');
-    if (fullscreenBtn && document.fullscreenEnabled && posRoot?.requestFullscreen) {
+    const fullscreenRoot = document.documentElement;
+    if (fullscreenBtn && document.fullscreenEnabled && fullscreenRoot.requestFullscreen) {
         fullscreenBtn.hidden = false;
         const syncFullscreen = () => {
-            const active = document.fullscreenElement === posRoot;
+            const active = document.fullscreenElement === fullscreenRoot;
             fullscreenBtn.textContent = active ? 'خروج من ملء الشاشة' : 'ملء الشاشة';
             fullscreenBtn.setAttribute('aria-pressed', String(active));
         };
         fullscreenBtn.addEventListener('click', async () => {
             try {
-                if (document.fullscreenElement === posRoot) await document.exitFullscreen();
-                else await posRoot.requestFullscreen();
+                if (document.fullscreenElement === fullscreenRoot) await document.exitFullscreen();
+                else await fullscreenRoot.requestFullscreen();
             } catch (_) { statusMessage('تعذر تفعيل ملء الشاشة على هذا الجهاز.', 'error'); }
         });
         document.addEventListener('fullscreenchange', syncFullscreen);
