@@ -5221,12 +5221,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         if (printingInvoice) paymentArrangement.value = 'pay_now';
         document.getElementById('rbCheckoutTitle').textContent = printingInvoice
-            ? 'دفع كامل وطباعة فاتورة العميل' : 'تفاصيل الطلب والدفع';
+            ? 'دفع كامل وطباعة الفاتورة والمطبخ' : 'تفاصيل الطلب والدفع';
         document.getElementById('rbCheckoutHint').textContent = printingInvoice
             ? 'سيُحفظ الطلب ويُحصّل المبلغ كاملًا قبل طباعة الفاتورة. إذا أردت الدفع لاحقًا استخدم الفاتورة والدفع.'
             : 'يمكنك الدفع الآن أو اختيار الدفع عند الاستلام وفق إعدادات الفرع.';
         document.getElementById('rbCheckoutContinueBtn').textContent = printingInvoice
-            ? 'تأكيد الدفع وطباعة الفاتورة' : 'تأكيد الطلب والمتابعة';
+            ? 'تأكيد الدفع والطباعة' : 'تأكيد الطلب والمتابعة';
         syncPayment();
         renderSummary();
         checkoutModal.hidden = false;
@@ -5736,7 +5736,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 card.className = 'rb-server-order-card';
                 card.innerHTML = `<div class="rb-server-order-top"><strong>${escapeHtml(order.number)}</strong><span>فاتورة</span></div>
                     <div class="rb-server-order-meta"><span>${escapeHtml(order.invoice_number || '')}</span><span>إعادة الطباعة</span></div>`;
-                serverOrdersList.appendChild(card);
+                const wrapper = document.createElement('div');
+                wrapper.appendChild(card);
+                for (const [url,label] of [[order.kitchen_print_url,'إعادة طباعة المطبخ'],[order.combined_print_url,'إعادة طباعة الورقتين']]) {
+                    if (!url) continue;
+                    const link = document.createElement('a');
+                    link.href=url; link.target='_blank'; link.rel='noopener';
+                    link.className='rb-reprint-link'; link.textContent=label;
+                    wrapper.appendChild(link);
+                }
+                serverOrdersList.appendChild(wrapper);
             });
             if (!serverOrdersList.children.length)
                 serverOrdersList.innerHTML = '<div class="rb-drawer-empty">لا توجد فواتير مطابقة ضمن صلاحياتك في هذا الفرع.</div>';
@@ -6098,8 +6107,8 @@ async function submitOrder(action) {
         // printer problem must NEVER misreport a committed sale as a failure.
         const printRequested = action === 'bill_print' || action === 'kot_print';
         const printUrl = action === 'bill_print'
-            ? data?.invoice_print_url
-            : (data?.kitchen_dispatched ? data?.kitchen_print_url : null);
+            ? (data?.combined_print_url || data?.invoice_print_url)
+            : (data?.kitchen_dispatched ? (data?.thermal_kitchen_print_url || data?.kitchen_print_url) : null);
         const previewOpened = printRequested
             ? safePosPrintNavigation(printWindow, printUrl)
             : false;

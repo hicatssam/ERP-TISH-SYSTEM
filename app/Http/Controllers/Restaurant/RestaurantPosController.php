@@ -102,7 +102,14 @@ class RestaurantPosController extends Controller
     {
         $this->authorizePosPrint($request, $order);
 
-        return $invoices->printForAuthorizedPos($order->invoice()->firstOrFail());
+        $original = $invoices->printForAuthorizedPos($order->invoice()->firstOrFail());
+        if ($request->query('format') !== 'thermal') return $original;
+        $order->load(['location','restaurantTable','payments.paymentMethod','kitchenTickets.station','kitchenTickets.items']);
+        return view('restaurant.pos.thermal-print', [
+            'order'=>$order, 'invoice'=>$original->getData()['invoice'],
+            'includeKitchen'=>$request->boolean('kitchen'),
+            'paperWidth'=>$request->query('width') === '58' ? 58 : 80,
+        ]);
     }
 
     public function printKitchen(Request $request, Order $order)
@@ -111,6 +118,12 @@ class RestaurantPosController extends Controller
         $order->load(['location', 'restaurantTable', 'kitchenTickets.station', 'kitchenTickets.items']);
         abort_unless($order->kitchenTickets->isNotEmpty(), 404);
 
+        if ($request->query('format') === 'thermal') {
+            return view('restaurant.pos.thermal-print', [
+                'order'=>$order,'invoice'=>null,'includeKitchen'=>true,
+                'paperWidth'=>$request->query('width') === '58' ? 58 : 80,
+            ]);
+        }
         return view('restaurant.pos.kitchen-print', compact('order'));
     }
 
@@ -705,7 +718,7 @@ class RestaurantPosController extends Controller
                         ->where('invoice_number', 'like', "%{$term}%"));
             });
         }
-        $orders = $query->with('invoice:id,order_id,invoice_number')
+        $orders = $query->with('invoice:id,order_id,invoice_number')->withExists('kitchenTickets')
             ->latest('id')->limit(20)->get();
 
         return response()->json([
@@ -713,7 +726,9 @@ class RestaurantPosController extends Controller
                 'id' => $order->id,
                 'number' => $order->order_number,
                 'invoice_number' => $order->invoice?->invoice_number,
-                'print_url' => route('restaurant.pos.orders.invoice-print', $order),
+                'print_url' => route('restaurant.pos.orders.invoice-print', ['order'=>$order,'format'=>'thermal']),
+                'combined_print_url' => $order->kitchen_tickets_exists ? route('restaurant.pos.orders.invoice-print', ['order'=>$order,'format'=>'thermal','kitchen'=>1]) : null,
+                'kitchen_print_url' => $order->kitchen_tickets_exists ? route('restaurant.pos.orders.kitchen-print', ['order'=>$order,'format'=>'thermal']) : null,
             ])->all(),
         ]);
     }
@@ -1115,6 +1130,8 @@ class RestaurantPosController extends Controller
                         ? route('orders.show', $order)
                         : route('restaurant.pos.index', ['order_created' => $order->order_number]),
 
+                'combined_print_url' => $order->invoice ? route('restaurant.pos.orders.invoice-print', ['order'=>$order,'format'=>'thermal','kitchen'=>1]) : null,
+                'thermal_kitchen_print_url' => $order->kitchenTickets->isNotEmpty() ? route('restaurant.pos.orders.kitchen-print', ['order'=>$order,'format'=>'thermal']) : null,
                 'invoice_print_url' =>
                     $order->invoice
                         ? route('restaurant.pos.orders.invoice-print', $order)

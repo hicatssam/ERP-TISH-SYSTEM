@@ -133,6 +133,27 @@ class PosCashierShiftSimulationTest extends TestCase
         ];
     }
 
+    #[Test]
+    public function thermal_print_combines_saved_invoice_and_kitchen_without_replaying_sale(): void
+    {
+        $f = $this->fixture();
+        $payload = $this->orderPayload($f, [['product_id'=>$f['products'][0]->id,'quantity'=>1,'kitchen_notes'=>'No onion']]);
+        $payload['pos_action']='bill_print';
+        $result=$this->actingAs($f['cashier'])->postJson(route('restaurant.pos.orders.store'),$payload)->assertCreated()->assertJsonPath('kitchen_dispatched',true);
+        $order=Order::query()->sole();
+        $stock=Inventory::query()->where('product_id',$f['products'][0]->id)->sole()->quantity;
+        $tickets=$order->kitchenTickets()->count();
+        $url=$result->json('combined_print_url');
+        $this->get($url)->assertOk()->assertSee('data-document="invoice"',false)->assertSee('data-document="kitchen"',false)->assertSee('No onion');
+        $this->get($result->json('thermal_kitchen_print_url'))->assertOk()->assertDontSee('data-document="invoice"',false);
+        $this->get($url)->assertOk();
+        $this->assertDatabaseCount('orders',1);
+        $this->assertDatabaseCount('invoices',1);
+        $this->assertDatabaseCount('payments',1);
+        $this->assertDatabaseCount('kitchen_tickets',$tickets);
+        $this->assertEquals($stock,Inventory::query()->where('product_id',$f['products'][0]->id)->sole()->quantity);
+    }
+
     private function mixedPayload(array $f, float $firstAmount = 4, float $secondAmount = 6): array
     {
         $cashMethod = PaymentMethod::query()->create([
