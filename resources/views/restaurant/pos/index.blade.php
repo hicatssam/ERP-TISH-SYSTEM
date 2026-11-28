@@ -6029,6 +6029,19 @@ async function submitOrder(action) {
         const saved = JSON.parse(sessionStorage.getItem(posAttemptKey) || 'null');
         hadMatchingCheckoutAttempt = saved?.fingerprint === checkoutFingerprint();
     } catch (_) {}
+    if (!hadMatchingCheckoutAttempt
+        && ['percentage', 'fixed'].includes(discountType.value)
+        && Number(discountValue.value || 0) > 0
+        && Array.from(discountReason.value.trim()).length < 8) {
+        const message = 'يجب توضيح سبب الخصم اليدوي بثمانية أحرف على الأقل.';
+        if (action !== 'kot_print') {
+            openCheckout(action);
+            showCheckoutError(message, 'discount_reason');
+            discountReason.focus();
+        }
+        statusMessage(message, 'error');
+        return;
+    }
     try { checkoutRequestToken(); } catch (error) {
         statusMessage(String(error.message || error), 'error');
         return;
@@ -6172,9 +6185,20 @@ async function submitOrder(action) {
             try {
                 await checkCartAvailability();
             } catch (error) {
-                // No sale was submitted: a future attempt must check again.
-                sessionStorage.removeItem(posAttemptKey);
-                throw error;
+                // No checkout POST was sent. Do not report this as an ambiguous sale.
+                try { sessionStorage.removeItem(posAttemptKey); } catch (_) {}
+                printWindow?.close();
+                const detail = error instanceof Error ? error.message : '';
+                const message = /^(تعذر|هذه الأصناف|مكونات غير متوفرة)/.test(detail)
+                    ? detail : 'تعذر فحص توفر الأصناف. لم يتم إرسال الطلب أو تسجيل دفع.';
+                console.warn('POS preflight failed before checkout:', error);
+                preserveUnfinishedCart();
+                if (action !== 'kot_print') {
+                    openCheckout(action);
+                    showCheckoutError(message);
+                }
+                statusMessage(message, 'error');
+                return;
             }
         }
         const response = await fetch(
@@ -6201,6 +6225,11 @@ async function submitOrder(action) {
             data = null;
         }
 
+        // An upstream/server failure may happen after a sale commits.
+        // Preserve the original attempt and never treat it as a definite rejection.
+        if (response.status >= 500 || response.status === 408) {
+            throw new Error('POS checkout HTTP ' + response.status);
+        }
         validatePosCheckoutConfirmation(response, data);
 
         if (!response.ok) {
@@ -6244,9 +6273,10 @@ async function submitOrder(action) {
             return;
         }
 
-        localStorage.removeItem(draftKey);
-        sessionStorage.removeItem(posAttemptKey);
         rbCheckoutSucceeded = true;
+        // Storage restrictions after a confirmed checkout must not imply sale failure.
+        try { localStorage.removeItem(draftKey); } catch (_) {}
+        try { sessionStorage.removeItem(posAttemptKey); } catch (_) {}
 
         // Printing is a separate action from checkout: a blocked popup or
         // printer problem must NEVER misreport a committed sale as a failure.
