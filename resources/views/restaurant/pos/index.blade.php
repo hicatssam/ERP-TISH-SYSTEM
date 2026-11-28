@@ -86,7 +86,7 @@
                 </svg>
                 العودة إلى النظام
             </a>
-            <button type="button" class="rb-btn rb-btn-primary" id="rbNewOrderBtn">
+            <button type="button" class="rb-btn rb-btn-primary" id="rbNewOrderBtn" title="طلب جديد — F6" aria-keyshortcuts="F6">
                 <span class="rb-btn-icon">+</span>
                 طلب جديد
             </button>
@@ -126,6 +126,7 @@
                 </svg>
                 طلب طاولة
             </button>
+            <button type="button" class="rb-btn rb-btn-light" id="rbFullscreenBtn" aria-pressed="false" hidden>ملء الشاشة</button>
         </div>
     </nav>
 
@@ -163,8 +164,9 @@
             <section class="rb-products-panel">
                 <div class="rb-menu-panel-head">
                     <div class="rb-menu-view-switch" aria-label="طريقة عرض المنتجات" role="group">
-                        <button type="button" id="rbGridViewBtn" class="rb-menu-view-btn is-active" aria-pressed="true" title="عرض شبكة">▦</button>
-                        <button type="button" id="rbListViewBtn" class="rb-menu-view-btn" aria-pressed="false" title="عرض قائمة">☷</button>
+                        <button type="button" id="rbGridViewBtn" class="rb-menu-view-btn is-active" aria-pressed="true" aria-label="عرض شبكة" title="عرض شبكة">▦</button>
+                        <button type="button" id="rbCompactViewBtn" class="rb-menu-view-btn" aria-pressed="false" aria-label="عرض مختصر" title="عرض مختصر">▤</button>
+                        <button type="button" id="rbListViewBtn" class="rb-menu-view-btn" aria-pressed="false" aria-label="عرض قائمة" title="عرض قائمة">☷</button>
                     </div>
                     <div>
                         <span class="rb-menu-kicker">منيو الكاشير</span>
@@ -205,9 +207,10 @@
 
                 <div class="rb-category-tabs" id="rbCategoryTabs"></div>
 
-                <div class="rb-product-grid" id="rbProductGrid" aria-live="polite"></div>
-
-                <button type="button" class="rb-load-more" id="rbLoadMore" hidden>عرض المزيد من المنتجات</button>
+                <div class="rb-catalog-scroll" tabindex="0" role="region" aria-label="قائمة المنتجات">
+                    <div class="rb-product-grid" id="rbProductGrid" aria-live="polite"></div>
+                    <button type="button" class="rb-load-more" id="rbLoadMore" hidden>عرض المزيد من المنتجات</button>
+                </div>
 
                 <div class="rb-products-footer">
                     <span><b id="rbVisibleProductCount">0</b> من <b id="rbMatchingProductCount">0</b> منتج مطابق</span>
@@ -245,6 +248,7 @@
                             class="rb-control"
                             name="service_type"
                             id="rbServiceType"
+                            aria-label="نوع الطلب"
                             required
                         >
                             @foreach($serviceTypes as $type)
@@ -261,6 +265,7 @@
                             class="rb-control"
                             name="restaurant_table_id"
                             id="rbTableSelect"
+                            aria-label="الطاولة"
                         >
                             <option value="">اختر الطاولة</option>
                             @foreach($tables as $table)
@@ -358,21 +363,21 @@
                         </button>
 
                         <button type="button" class="rb-action rb-action-draft" id="rbSaveDraftBtn"
-                            title="حفظ المنتجات مؤقتًا على هذا الجهاز دون إنشاء طلب أو خصم مخزون">
+                            title="حفظ المنتجات مؤقتًا على هذا الجهاز دون إنشاء طلب أو خصم مخزون — F4" aria-keyshortcuts="F4">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h13l3 3v15H4zM8 3v7h8V3M8 21v-8h8v8"/></svg>
                             <span class="rb-action-title">حفظ مسودة</span>
                             <small class="rb-action-subtitle">استكمال لاحقًا</small>
                         </button>
 
                         <button type="button" class="rb-action rb-action-payment" id="rbBillPaymentBtn"
-                            title="فتح شاشة التحصيل نقدًا أو بطاقة أو دفع مختلط؛ مع دعم الدفع اللاحق حسب إعدادات الفرع">
+                            title="فتح شاشة التحصيل نقدًا أو بطاقة أو دفع مختلط؛ مع دعم الدفع اللاحق حسب إعدادات الفرع — F8" aria-keyshortcuts="F8">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="15" rx="2"/><path d="M3 10h18M16 15h3"/></svg>
                             <span class="rb-action-title">تحصيل الدفع</span>
                             <small class="rb-action-subtitle">نقدي / بطاقة / مختلط</small>
                         </button>
 
                         <button type="button" class="rb-action rb-action-print" id="rbBillPrintBtn"
-                            title="تحصيل المبلغ كاملًا ثم إصدار وطباعة فاتورة العميل">
+                            title="تحصيل المبلغ كاملًا ثم إصدار وطباعة فاتورة العميل — F9" aria-keyshortcuts="F9">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8V3h12v5M6 17H4V9h16v8h-2M6 14h12v7H6zM16 11h2"/></svg>
                             <span class="rb-action-title">إتمام وطباعة</span>
                             <small class="rb-action-subtitle">بعد التحقق من الدفع</small>
@@ -3748,6 +3753,96 @@ body.rb-pos-mode {
 .rb-pos .rb-transfer-error{padding:9px 12px;color:#b42318;background:#fff4f3;border-radius:9px;font-size:12px}
 .rb-pos #rbTableTransferModal .rb-field{margin-top:12px}
 
+
+/* TISH POS UX workspace V4 — presentation only; original order handlers retained. */
+.rb-pos .rb-pos-workspace{background:var(--rb-white);padding:0 12px 12px}
+.rb-pos .rb-pos-header{min-height:58px;padding:6px 16px;margin:0 -12px;border-radius:0 0 12px 12px;gap:12px;box-shadow:none}
+.rb-pos .rb-pos-brand{height:44px;flex-basis:90px}
+.rb-pos .rb-pos-brand-logo{max-height:44px;background:var(--rb-white);padding:3px 7px;border-radius:7px;filter:none}
+.rb-pos .rb-pos-heading h1{font-size:19px}
+.rb-pos .rb-pos-breadcrumb{display:none}
+.rb-pos .rb-pos-quickbar{min-height:52px;padding:6px 0;justify-content:flex-start}
+.rb-pos .rb-pos-header-actions{gap:6px;justify-content:flex-start}
+.rb-pos .rb-pos-header-actions .rb-btn{min-height:42px;padding:0 12px;border-radius:8px;font-size:12px;box-shadow:none}
+.rb-pos .rb-pos-header-actions #rbNewOrderBtn{min-width:112px}
+.rb-pos #rbFullscreenBtn[hidden]{display:none!important}
+.rb-pos .rb-products-panel,.rb-pos .rb-order-panel{border-radius:12px;box-shadow:none}
+.rb-pos .rb-products-panel{padding:10px;min-height:0}
+.rb-pos .rb-menu-panel-head{margin-bottom:6px}
+.rb-pos .rb-menu-panel-head h2{font-size:17px}
+.rb-pos .rb-menu-kicker{display:none}
+.rb-pos .rb-menu-view-switch{padding:2px;border-radius:8px}
+.rb-pos .rb-menu-view-btn{width:42px;height:42px;font-size:20px;border-radius:6px}
+.rb-pos .rb-products-toolbar{margin-bottom:5px;gap:6px}
+.rb-pos .rb-category-tabs{padding:4px 0 7px;margin-bottom:5px;gap:5px}
+.rb-pos .rb-category-tab{min-height:42px;padding:0 10px;border-radius:8px}
+.rb-pos .rb-category-tab.active{box-shadow:none}
+.rb-pos .rb-catalog-scroll{min-width:0;min-height:0;padding:3px;scrollbar-width:thin}
+.rb-pos .rb-product-grid{gap:8px}
+.rb-pos .rb-product-card{min-height:0;border-radius:10px;box-shadow:none;touch-action:manipulation}
+.rb-pos .rb-product-card:hover{transform:none;box-shadow:0 2px 8px color-mix(in srgb,var(--rb-text) 10%,transparent)}
+.rb-pos .rb-product-card:active{transform:scale(.985)}
+.rb-pos .rb-product-image{height:clamp(86px,9vw,125px);margin:4px 4px 0;padding:2px;border-radius:7px}
+.rb-pos .rb-product-info{padding:6px 8px}
+.rb-pos .rb-product-meta-line{display:none}
+.rb-pos .rb-product-name{min-height:35px;font-size:13px;line-height:1.35}
+.rb-pos .rb-product-bottom{margin-top:3px;padding-top:4px}
+.rb-pos .rb-product-plus{width:30px;height:30px;flex-basis:30px;border-radius:7px}
+.rb-pos .rb-product-plus svg{display:block;width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.rb-pos .rb-product-price{font-size:15px}
+.rb-pos .rb-product-qty-badge{min-width:25px;height:25px;font-size:12px}
+.rb-pos .rb-product-grid.rb-compact-view{grid-template-columns:repeat(auto-fill,minmax(min(100%,125px),1fr))}
+.rb-pos .rb-product-grid.rb-compact-view .rb-product-image{display:none}
+.rb-pos .rb-product-grid.rb-compact-view .rb-product-card{min-height:78px}
+.rb-pos .rb-product-grid.rb-compact-view .rb-product-info{padding:10px}
+.rb-pos .rb-product-grid.rb-compact-view .rb-product-qty-badge{top:2px;right:auto;left:2px}
+.rb-pos .rb-product-grid.rb-compact-view .rb-product-name{padding-inline-end:22px}
+.rb-pos .rb-product-grid.rb-list-view .rb-product-card{min-height:90px;grid-template-columns:80px minmax(0,1fr)}
+.rb-pos .rb-product-grid.rb-list-view .rb-product-image{width:72px;height:72px;margin:4px;grid-row:1}
+.rb-pos .rb-products-footer{margin-top:5px;padding-top:6px;flex-wrap:wrap;font-size:11px}
+.rb-pos .rb-order-top-controls{padding:8px 10px}
+.rb-pos .rb-order-title-row{padding:8px 10px}
+.rb-pos .rb-order-title-copy small{display:none}
+.rb-pos .rb-cart-scroll{padding:0 10px;min-height:65px}
+.rb-pos .rb-cart-empty{min-height:95px}
+.rb-pos .rb-cart-item-name strong{font-size:13px}
+.rb-pos .rb-cart-item-price-line{font-size:12px;gap:3px}
+.rb-pos .rb-cart-item .rb-qty-btn,.rb-pos .rb-cart-remove{min-width:40px;min-height:40px;width:40px;height:40px}
+.rb-pos .rb-cart-remove{flex-basis:40px}
+.rb-pos .rb-cart-item .rb-add-note{min-height:32px}
+.rb-pos .rb-summary{padding:6px 10px;background:var(--rb-white)}
+.rb-pos .rb-summary-row{font-size:12px}
+.rb-pos .rb-summary-total{padding:7px 10px}
+.rb-pos .rb-summary-total strong{font-size:26px}
+.rb-pos .rb-order-actions{position:static;inset:auto;width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:8px 10px;border:0;border-top:1px solid var(--rb-border);border-radius:0;box-shadow:none}
+.rb-pos .rb-order-actions .rb-action{width:100%;min-height:44px;max-width:none;border-radius:8px;gap:5px;padding:5px;font-size:12px;box-shadow:none}
+.rb-pos .rb-order-actions .rb-action-title{font-size:12px}
+.rb-pos .rb-order-actions .rb-action-payment{order:-3}
+.rb-pos .rb-order-actions .rb-action-print{order:-2}
+.rb-pos .rb-order-actions .rb-action-kot{order:-1}
+@media(min-width:821px){
+ .rb-pos .rb-pos-workspace{display:flex;flex-direction:column;overflow:auto}
+ .rb-pos .rb-pos-header,.rb-pos .rb-pos-quickbar,.rb-pos .rb-pos-alert{flex:0 0 auto}
+ .rb-pos #restaurantPosForm{display:flex;flex-direction:column;flex:1 0 auto;min-height:520px}
+ .rb-pos .rb-pos-shell{flex:1;min-height:520px;grid-template-columns:minmax(0,1fr) clamp(340px,31%,480px);gap:10px;align-items:stretch}
+ .rb-pos .rb-products-panel{display:flex;flex-direction:column;min-height:0;min-width:0}
+ .rb-pos .rb-products-panel>*:not(.rb-catalog-scroll){flex:0 0 auto}
+ .rb-pos .rb-catalog-scroll{flex:1 1 0;overflow:auto;overscroll-behavior:contain}
+ .rb-pos .rb-order-panel{position:relative;top:auto;height:auto;max-height:none;min-height:0;overflow:visible}
+ .rb-pos .rb-order-card{overflow:visible}
+ .rb-pos .rb-cart-scroll{flex:1 1 0;max-height:none;overflow:auto}
+ .rb-pos .rb-product-grid:not(.rb-list-view):not(.rb-compact-view){grid-template-columns:repeat(auto-fill,minmax(min(100%,145px),1fr))}
+}
+@media(max-width:820px){
+ .rb-pos .rb-pos-workspace{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))}
+ .rb-pos .rb-pos-header{margin-inline:-12px;min-height:58px}
+ .rb-pos .rb-order-actions{margin:0}
+ .rb-pos .rb-menu-view-btn{width:38px;height:38px}
+}
+@media(prefers-reduced-motion:reduce){
+ .rb-pos .rb-product-card{transition:none}
+ .rb-pos .rb-product-card:active{transform:none}
+}
 </style>
 
 <script>
@@ -4973,7 +5068,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             class="rb-cart-remove"
                             data-cart-action="remove"
                             data-id="${item.key}"
-                            title="حذف"
+                            title="حذف" aria-label="حذف الصنف"
                         >
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                                 <path d="M4 7h16M9 7V4h6v3M8 10v7M12 10v7M16 10v7M6 7l1 14h10l1-14"></path>
@@ -4983,9 +5078,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     <div class="rb-cart-item-foot">
                         <div class="rb-qty-control">
-                            <button type="button" class="rb-qty-btn" data-cart-action="minus" data-id="${item.key}">−</button>
+                            <button type="button" class="rb-qty-btn" data-cart-action="minus" data-id="${item.key}" aria-label="تقليل الكمية">−</button>
                             <span class="rb-qty-value">${Number(item.quantity)}</span>
-                            <button type="button" class="rb-qty-btn" data-cart-action="plus" data-id="${item.key}">+</button>
+                            <button type="button" class="rb-qty-btn" data-cart-action="plus" data-id="${item.key}" aria-label="زيادة الكمية">+</button>
                         </div>
 
                         <button type="button" class="rb-add-note" data-note-toggle="${item.key}">
@@ -6726,6 +6821,17 @@ async function submitOrder(action) {
             closeDrawer();
         }
 
+        // Never dispatch cashier shortcuts behind an open dialog or drawer.
+        if (event.defaultPrevented || event.repeat || event.ctrlKey || event.altKey || event.metaKey || event.shiftKey || document.querySelector('.rb-modal:not([hidden]), .rb-drawer.is-open')) return;
+
+        if (event.key === 'F6') {
+            event.preventDefault();
+            newOrderBtn.click();
+        }
+        if (event.key === 'F9') {
+            event.preventDefault();
+            billPrintBtn.click();
+        }
         if (event.key === 'F2') {
             event.preventDefault();
             productSearch.focus();
@@ -6734,12 +6840,12 @@ async function submitOrder(action) {
 
         if (event.key === 'F4') {
             event.preventDefault();
-            saveLocalDraft();
+            if (!saveDraftBtn.disabled) saveDraftBtn.click();
         }
 
         if (event.key === 'F8') {
             event.preventDefault();
-            openCheckout('bill_payment');
+            if (!billPaymentBtn.disabled) billPaymentBtn.click();
         }
     });
 
@@ -6817,17 +6923,41 @@ async function submitOrder(action) {
 
     // Catalog view switch: visual only, reuses the original product rendering.
     const gridViewBtn = document.getElementById('rbGridViewBtn');
+    const compactViewBtn = document.getElementById('rbCompactViewBtn');
     const listViewBtn = document.getElementById('rbListViewBtn');
+    const viewButtons = {grid: gridViewBtn, compact: compactViewBtn, list: listViewBtn};
+    const viewPreferenceKey = 'tish.pos.catalogView.v1';
     const setCatalogView = (mode) => {
-        const list = mode === 'list';
-        productGrid.classList.toggle('rb-list-view', list);
-        gridViewBtn?.classList.toggle('is-active', !list);
-        listViewBtn?.classList.toggle('is-active', list);
-        gridViewBtn?.setAttribute('aria-pressed', String(!list));
-        listViewBtn?.setAttribute('aria-pressed', String(list));
+        if (!Object.prototype.hasOwnProperty.call(viewButtons, mode)) mode = 'grid';
+        productGrid.classList.toggle('rb-list-view', mode === 'list');
+        productGrid.classList.toggle('rb-compact-view', mode === 'compact');
+        Object.entries(viewButtons).forEach(([key, button]) => {
+            button?.classList.toggle('is-active', key === mode);
+            button?.setAttribute('aria-pressed', String(key === mode));
+        });
+        try { localStorage.setItem(viewPreferenceKey, mode); } catch (_) { /* storage may be blocked */ }
     };
-    gridViewBtn?.addEventListener('click', () => setCatalogView('grid'));
-    listViewBtn?.addEventListener('click', () => setCatalogView('list'));
+    Object.entries(viewButtons).forEach(([mode, button]) => button?.addEventListener('click', () => setCatalogView(mode)));
+    try { setCatalogView(localStorage.getItem(viewPreferenceKey) || 'grid'); } catch (_) { setCatalogView('grid'); }
+
+    const fullscreenBtn = document.getElementById('rbFullscreenBtn');
+    const posRoot = document.getElementById('rbPosRoot');
+    if (fullscreenBtn && document.fullscreenEnabled && posRoot?.requestFullscreen) {
+        fullscreenBtn.hidden = false;
+        const syncFullscreen = () => {
+            const active = document.fullscreenElement === posRoot;
+            fullscreenBtn.textContent = active ? 'خروج من ملء الشاشة' : 'ملء الشاشة';
+            fullscreenBtn.setAttribute('aria-pressed', String(active));
+        };
+        fullscreenBtn.addEventListener('click', async () => {
+            try {
+                if (document.fullscreenElement === posRoot) await document.exitFullscreen();
+                else await posRoot.requestFullscreen();
+            } catch (_) { statusMessage('تعذر تفعيل ملء الشاشة على هذا الجهاز.', 'error'); }
+        });
+        document.addEventListener('fullscreenchange', syncFullscreen);
+        syncFullscreen();
+    }
 
     // Initial render
     renderFilters();
