@@ -206,6 +206,23 @@
 .receipt[data-density="normal"]{--item-font:9px;--item-alt-font:8px;--kitchen-name-font:11px}
 .receipt[data-density="compact"],.receipt[data-density="dense"]{--item-font:9px;--item-alt-font:8px;--kitchen-name-font:10.5px}
 @endif
+/* Inline bilingual item names and column headings: no forced second line. */
+.receipt table thead th{font-size:9px;line-height:1.2;vertical-align:middle;overflow-wrap:normal;word-break:normal}
+.receipt table thead th .en{display:inline;font-size:8px;margin:0;white-space:nowrap}
+.customer-copy th:nth-child(1){width:40%}
+.customer-copy th:nth-child(2){width:16%}
+.customer-copy th:nth-child(3),.customer-copy th:nth-child(4){width:22%}
+.receipt .item-alt{display:inline;margin:0;line-height:inherit;overflow-wrap:anywhere}
+.receipt .item-alt bdi{white-space:normal;overflow-wrap:anywhere}
+.receipt .item-separator{font-weight:400}
+.kitchen-copy .kitchen-name{display:inline}
+.kitchen-copy .kitchen-item td:first-child{vertical-align:top}
+@if($paperWidth === 58)
+.receipt table thead th{font-size:8px}
+.receipt table thead th .en{font-size:7.5px}
+.customer-copy th:nth-child(1){width:38%}
+.customer-copy th:nth-child(2){width:18%}
+@endif
 @page{size:auto;margin:0}
 @media print{body{background:white}.toolbar{display:none!important}.receipt{margin:0 auto;max-width:100%}.receipt+.receipt{break-before:page;page-break-before:always}body[data-mode="customer"] .kitchen-copy,body[data-mode="kitchen"] .customer-copy{display:none}body[data-mode="kitchen"] .kitchen-copy{break-before:auto;page-break-before:auto}}
 </style></head><body data-mode="all">
@@ -228,10 +245,10 @@
     <div class="date-cell"><span class="date-label">الوقت / Time</span><bdi class="date-value">{{ $invoiceAt?->format('H:i') ?? '—' }}</bdi><span class="en time-zone">Gaza / غزة</span></div>
 </div>
 </div>
-<table><thead><tr><th>الصنف<span class="en" lang="en">Item</span></th><th>كمية<span class="en" lang="en">Qty</span></th><th class="amount">السعر<span class="en" lang="en">Price</span></th><th class="amount">المجموع<span class="en" lang="en">Total</span></th></tr></thead><tbody>
+<table><thead><tr><th>الصنف <span class="en" lang="en">Item</span></th><th>عدد <span class="en" lang="en">Qty</span></th><th class="amount">السعر <span class="en" lang="en">Price</span></th><th class="amount">مجموع <span class="en" lang="en">Total</span></th></tr></thead><tbody>
 @foreach($invoice->items as $item)
 @php($description = $item->description ?: ($item->product?->name_ar ?: $item->product?->name ?: 'صنف'))
-<tr><td>{{ $description }}@if($alternate = $otherName($description, $item->product))<span class="item-alt"><bdi>{{ $alternate }}</bdi></span>@endif</td><td>{{ $qty($item->quantity) }}</td><td class="amount">{{ $money($item->unit_price) }}</td><td class="amount">{{ $money($item->line_total) }}</td></tr>@endforeach
+<tr><td>{{ $description }}@if($alternate = $otherName($description, $item->product))<span class="item-alt"><span class="item-separator" aria-hidden="true"> / </span><bdi>{{ $alternate }}</bdi></span>@endif</td><td>{{ $qty($item->quantity) }}</td><td class="amount">{{ $money($item->unit_price) }}</td><td class="amount">{{ $money($item->line_total) }}</td></tr>@endforeach
 </tbody></table>
 <div class="summary">
 @if((float)$invoice->discount_amount>0 || (float)$invoice->tax_amount>0 || $money($invoice->subtotal) !== $money($invoice->total_amount))
@@ -282,13 +299,13 @@
         </div>
         <table class="kitchen-table">
             <colgroup><col><col class="kitchen-qty-col"></colgroup>
-            <thead><tr><th scope="col">الصنف<span class="en" lang="en">Item</span></th><th scope="col" class="kitchen-qty">العدد<span class="en" lang="en">Qty</span></th></tr></thead>
+            <thead><tr><th scope="col">الصنف <span class="en" lang="en">Item</span></th><th scope="col" class="kitchen-qty">عدد <span class="en" lang="en">Qty</span></th></tr></thead>
             <tbody>
             @foreach($ticket->items as $item)
                 @php($cancelled = $item->status === \App\Enums\KitchenTicketStatus::CANCELLED)
                 <tr class="kitchen-item">
                     <td>
-                        <strong class="kitchen-name {{ $cancelled ? 'cancelled' : '' }}">{{ $item->product_name }}</strong>@if($alternate = $otherName($item->product_name, $item->product))<span class="item-alt"><bdi>{{ $alternate }}</bdi></span>@endif
+                        <strong class="kitchen-name {{ $cancelled ? 'cancelled' : '' }}">{{ $item->product_name }}</strong>@if($alternate = $otherName($item->product_name, $item->product))<span class="item-alt {{ isset($cancelled) && $cancelled ? 'cancelled' : '' }}"><span class="item-separator" aria-hidden="true"> / </span><bdi>{{ $alternate }}</bdi></span>@endif
                         @if($cancelled)<div class="kitchen-cancel">ملغي — لا يُحضّر<span class="en" lang="en">Cancelled — do not prepare</span></div>@endif
                         @if($item->kitchen_notes)<div class="kitchen-notes"><strong>ملاحظات / إضافات <span class="en" lang="en">Notes / Add-ons</span></strong><div>{{ $item->kitchen_notes }}</div></div>@endif
                     </td>
