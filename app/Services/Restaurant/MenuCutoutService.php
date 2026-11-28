@@ -91,6 +91,19 @@ class MenuCutoutService
             return null;
         }
 
+        // Optional offline-generated WebP derivative. The PNG is authoritative
+        // and its timestamp/size version the derivative and its browser URL.
+        // Never encode or resize during a customer request.
+        $version = @filemtime($converted).'-'.@filesize($converted);
+        $webp = substr($path, 0, -4).'.v1-'.$version.'.webp';
+        $webpFile = $disk->path($webp);
+        if (is_file($webpFile) && is_readable($webpFile)
+            && @filesize($webpFile) > 0
+            && @filesize($webpFile) < @filesize($converted)
+            && @filemtime($webpFile) >= @filemtime($converted)) {
+            return PublicImageUrl::url($webp) ?: PublicImageUrl::url($path);
+        }
+
         // Use the already-secured image route; no storage symlink is necessary.
         return PublicImageUrl::url($path);
     }
