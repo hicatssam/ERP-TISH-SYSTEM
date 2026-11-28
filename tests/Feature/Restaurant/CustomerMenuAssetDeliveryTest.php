@@ -44,6 +44,20 @@ class CustomerMenuAssetDeliveryTest extends TestCase
     }
 
     #[Test]
+    public function versioned_webp_cutout_alias_uses_the_same_public_asset_allowlist(): void
+    {
+        Storage::fake('public');
+        $stem = str_repeat('a', 40).'.v1-1234567890-1000';
+        Storage::disk('public')->put('menu-cutouts/'.$stem.'.webp', 'test bytes');
+
+        $url = route('customer-menu.assets.show', ['path' => 'menu-cutouts/'.$stem.'/webp']);
+        $this->assertSame('test bytes', $this->get($url)->assertOk()->streamedContent());
+        $this->get('/menu-assets/menu-cutouts/missing/webp')->assertNotFound();
+        $this->get('/menu-assets/menu-cutouts/'.str_repeat('b',40).'.v1-1234567890-1000/webp')->assertNotFound();
+        $this->get('/menu-assets/products/'.$stem.'/webp')->assertNotFound();
+    }
+
+    #[Test]
     public function asset_route_refuses_files_outside_public_menu_prefix(): void
     {
         Storage::fake('public');
