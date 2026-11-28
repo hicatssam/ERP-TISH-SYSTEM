@@ -12,6 +12,12 @@
 @foreach(['breakfast'=>'وجبات الفطور','lunch'=>'وجبات الغداء'] as $key=>$name)
 <div class="card" style="padding:18px">
 <h2>{{ $name }}</h2>
+@php($window = $status['windows'][$key])
+<p>الحالة الحالية: {{ ['open'=>'متاح الآن','upcoming'=>'لم يبدأ بعد','ended'=>'انتهى اليوم','disabled'=>'معطل'][$window['state']] }}
+ — {{ $window['count'] }} صنف متاح في المنيو الإلكتروني من {{ count($settings[$key]['product_ids']) }} مرتبط.</p>
+@if($settings[$key]['enabled'] && !$window['count'])
+<p class="alert alert-warning">الفترة مفعلة لكن لا توجد أصناف منشورة ومتاحة للزبائن. راجع حالة الأصناف أدناه.</p>
+@endif
 <input type="hidden" name="{{ $key }}[enabled]" value="0">
 <label><input type="checkbox" name="{{ $key }}[enabled]" value="1" @checked(old($key.'.enabled',$settings[$key]['enabled']))> تفعيل الفترة في المنيو الإلكتروني</label>
 <div style="display:flex;gap:16px;flex-wrap:wrap;margin:12px 0">
@@ -28,7 +34,20 @@
 <input id="mealSearch" type="search" class="form-input" placeholder="ابحث عن صنف" style="margin-bottom:12px">
 @foreach($items as $item)
 <div class="meal-admin-row" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(140px,220px);gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)">
-<span>{{ $item->displayName() }} @if(!$item->is_active || !$item->show_in_qr)<small> (غير منشور إلكترونيًا)</small>@endif</span>
+<span>
+{{ $item->displayName() }}
+@php($branchProduct = $item->product->locationProducts->first())
+@php($price = (float) $item->product->getEffectivePriceForLocation((int) $location->id))
+<small style="display:block">
+@if(!$item->product->is_active) المنتج غير فعال • @endif
+@if(!$item->is_active || !$item->show_in_qr) غير منشور إلكترونيًا • @endif
+@if(!$branchProduct?->is_available) غير متاح في الفرع • @endif
+@if($price <= 0) السعر يحتاج مراجعة • @endif
+@if($item->product->is_active && $item->is_active && $item->show_in_qr && $branchProduct?->is_available)
+منشور ومتاح في الفرع
+@endif
+</small>
+</span>
 <select class="form-input" name="assignments[{{ $item->product_id }}]">
 @foreach([''=>'بدون قيد زمني','breakfast'=>'الفطور','lunch'=>'الغداء'] as $value=>$label)
 <option value="{{ $value }}" @selected(old('assignments.'.$item->product_id,$assigned[$item->product_id] ?? '') === $value)>{{ $label }}</option>
@@ -40,6 +59,7 @@
 <input type="hidden" name="form_complete" value="1">
 <button class="btn btn-gold" type="submit" style="margin:16px 0">حفظ مواعيد الوجبات والأصناف</button>
 </form>
+<style>.meal-admin-row[hidden]{display:none!important}</style>
 <script>
 document.getElementById('mealSearch').addEventListener('input', function(){
     const q = this.value.trim().toLowerCase();
