@@ -4,7 +4,7 @@
     $image = $key === 'none' ? null : ($artwork ? asset($artwork) : ($category['image'] ?? null));
 @endphp
 @if($image)
-    <img src="{{ $image }}" data-menu-icon="{{ $artwork ? $key : 'custom' }}" class="category-selected-image" alt="" loading="lazy" onerror="this.hidden=true" style="width:100%!important;height:100%!important;object-fit:contain!important;filter:none!important;background:none!important;border:0!important;padding:0!important;box-shadow:none!important">
+    <img src="{{ $image }}" data-menu-icon="{{ $artwork ? $key : 'custom' }}" class="category-selected-image" alt="" loading="lazy" onerror="this.hidden=true" style="width:100%!important;height:100%!important;object-fit:contain!important;background:none!important;border:0!important;padding:0!important;box-shadow:none!important">
 @endif
 @once
 <style>

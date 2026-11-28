@@ -1,5 +1,5 @@
 <style>
-/* TISH category artwork: a permanent ivory paper disc, never a red selection.
+/* TISH category artwork: ivory paper normally; red paper and contrast-safe artwork on selection.
    Scoped to #categories on both menu pages; overrides legacy paper variants. */
 html body.tish-paper #categories#categories {
     align-items:start!important;
@@ -132,5 +132,38 @@ html body.tish-paper #categories#categories button.cat[data-cat]:focus-visible >
     html body.tish-paper #categories#categories button.cat[data-cat]{
         --tish-category-disc:clamp(64px,17vw,78px);
     }
+}
+/* Selected paper uses the same torn-disc alpha silhouette, not a square overlay. */
+html body.tish-paper #categories#categories button.cat[data-cat].active > :is(.cat-visual,.catalog-category-icon):has(img:not([hidden])) {
+    position:relative!important;
+    isolation:isolate!important;
+}
+html body.tish-paper #categories#categories button.cat[data-cat].active > :is(.cat-visual,.catalog-category-icon):has(img:not([hidden]))::before {
+    content:""!important;
+    display:block!important;
+    position:absolute!important;
+    inset:0!important;
+    width:100%!important;
+    height:100%!important;
+    z-index:0!important;
+    pointer-events:none!important;
+    background:#c5251b url('/assets/tish-paper/paper/product-disc.webp') center/100% 100% no-repeat!important;
+    background-blend-mode:multiply!important;
+    -webkit-mask:url('/assets/tish-paper/paper/product-disc.webp') center/100% 100% no-repeat!important;
+    mask:url('/assets/tish-paper/paper/product-disc.webp') center/100% 100% no-repeat!important;
+    border:0!important;
+    box-shadow:none!important;
+    border-radius:0!important;
+    opacity:1!important;
+    transform:none!important;
+}
+html body.tish-paper #categories#categories button.cat[data-cat].active :is(.cat-visual,.catalog-category-icon) img {
+    position:relative!important;
+    z-index:1!important;
+}
+/* Map the red ink to ivory while retaining the dark ink and the original alpha.
+   Only the original TISH graphic library is recolored; photos are untouched. */
+html body.tish-paper #categories#categories button.cat[data-cat].active :is(.cat-visual,.catalog-category-icon) img[data-menu-icon^="tish-"] {
+    filter:url('/assets/tish-paper/decor/category-selected-ink.svg#selected-ink')!important;
 }
 </style>
