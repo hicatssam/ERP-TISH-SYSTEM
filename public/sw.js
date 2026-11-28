@@ -1,4 +1,38 @@
-const CACHE_NAME = 'dahab-pwa-shell-v5';
+const CACHE_NAME = 'dahab-pwa-shell-v6';
+const CUTOUT_CACHE = 'tish-versioned-cutouts-v1';
+const CUTOUT_LIMIT = 160;
+
+function isVersionedCutout(request, url) {
+    return request.destination === 'image' && !url.search
+        && !request.headers.has('Range')
+        && /^\/menu-assets\/menu-cutouts\/[a-f0-9]{40}\.v1-[0-9]+-[0-9]+\/webp$/.test(url.pathname);
+}
+
+function validCutout(response) {
+    return response && response.status === 200
+        && !response.redirected
+        && /^image\/webp(?:\s*;|$)/i.test(response.headers.get('content-type') || '');
+}
+
+async function versionedCutout(request) {
+    let cache;
+    try {
+        cache = await caches.open(CUTOUT_CACHE);
+        const cached = await cache.match(request);
+        if (validCutout(cached)) return cached;
+    } catch (_) { /* Storage failure must not block an image. */ }
+
+    const response = await fetch(request);
+    if (cache && validCutout(response)) {
+        try {
+            await cache.put(request, response.clone());
+            const keys = await cache.keys();
+            await Promise.all(keys.slice(0, Math.max(0, keys.length - CUTOUT_LIMIT))
+                .map(key => cache.delete(key)));
+        } catch (_) { /* Quota or storage errors are non-fatal. */ }
+    }
+    return response;
+}
 
 self.addEventListener('install', () => {
     self.skipWaiting();
@@ -9,7 +43,7 @@ self.addEventListener('activate', event => {
         caches.keys().then(cacheNames => {
             return Promise.all(
                 cacheNames
-                    .filter(name => name !== CACHE_NAME)
+                    .filter(name => /^dahab-pwa-shell-v\d+$/.test(name) && name !== CACHE_NAME)
                     .map(name => caches.delete(name))
             );
         })
@@ -36,6 +70,13 @@ self.addEventListener('fetch', event => {
         || url.pathname.startsWith('/login')
         || url.pathname.startsWith('/logout')
     ) {
+        return;
+    }
+
+    // Only public, versioned image URLs are cache-first. HTML, stock,
+    // meal availability, orders, payment and other requests keep their policy.
+    if (isVersionedCutout(request, url)) {
+        event.respondWith(versionedCutout(request));
         return;
     }
 
