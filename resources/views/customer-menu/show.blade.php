@@ -1266,6 +1266,7 @@ body.tish-paper.reference-home #categories .cat.active .cat-visual .tish-library
         }
     }
 
+    document.addEventListener('tish:meal-status-changed', render);
     render();
     if (intro?.isConnected) {
         const firstPhoto = document.querySelector('#featuredGrid [data-offset="0"] img.tish-circle-photo, #productGrid .tish-circle-card:first-child img.tish-circle-photo');

@@ -19,10 +19,11 @@ final class MealScheduleController extends Controller
         $location = $this->context->resolveLocation($request->user(), $request->integer('location_id') ?: null);
         $settings = $this->schedule->settings((int) $location->id);
         $items = RestaurantMenuItem::query()->forLocation((int) $location->id)
-            ->with('product')->orderBy('sort_order')->get()->filter(fn ($item) => $item->product !== null);
+            ->with(['product.locationProducts' => fn ($query) => $query->where('location_id', $location->id)])->orderBy('sort_order')->get()->filter(fn ($item) => $item->product !== null);
         $assigned = [];
         foreach ($settings as $period => $row) foreach ($row['product_ids'] as $id) $assigned[$id] = $period;
-        return view('restaurant.menu.meal-schedules', compact('location', 'settings', 'items', 'assigned'));
+        $status = $this->schedule->publicStatus((int) $location->id);
+        return view('restaurant.menu.meal-schedules', compact('location', 'settings', 'items', 'assigned', 'status'));
     }
 
     public function update(Request $request)

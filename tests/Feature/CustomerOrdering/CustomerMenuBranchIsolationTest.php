@@ -337,6 +337,38 @@ class CustomerMenuBranchIsolationTest extends TestCase
             ->assertCreated();
     }
 
+    public function test_meal_status_counts_only_current_public_branch_products_and_tracks_changes(): void
+    {
+        $branch = $this->branch();
+        $other = $this->branch();
+        $available = $this->product($branch, 12);
+        $stopped = $this->product($branch, 12, false);
+        $hidden = $this->product($branch, 12);
+        $foreign = $this->product($other, 12);
+        $regular = $this->product($branch, 12);
+        RestaurantMenuItem::query()->where('product_id', $hidden->id)->update(['show_in_qr'=>false]);
+        $schedule = app(\App\Services\Restaurant\MealScheduleService::class);
+        SystemSetting::set($schedule->key($branch->id), json_encode([
+            'breakfast'=>['enabled'=>true,'start'=>'08:00','end'=>'11:00',
+                'product_ids'=>[$available->id,$stopped->id,$hidden->id,$foreign->id]],
+        ]));
+        $first = $this->getJson(route('customer-menu.meal-schedules',$branch->code))->assertOk()
+            ->assertJsonPath('windows.breakfast.count',1)
+            ->assertJsonPath('products.'.$available->id,'breakfast')
+            ->assertJsonPath('products.'.$regular->id,null)
+            ->assertJsonMissingPath('products.'.$stopped->id)
+            ->assertJsonMissingPath('products.'.$hidden->id)
+            ->assertJsonMissingPath('products.'.$foreign->id)
+            ->assertJsonMissingPath('assignments')->json('revision');
+
+        LocationProduct::query()->where('location_id',$branch->id)
+            ->where('product_id',$stopped->id)->update(['is_available'=>true]);
+        $second = $this->getJson(route('customer-menu.meal-schedules',$branch->code))->assertOk()
+            ->assertJsonPath('windows.breakfast.count',2)
+            ->assertJsonPath('products.'.$stopped->id,'breakfast')->json('revision');
+        $this->assertNotSame($first,$second);
+    }
+
     public function test_meal_window_blocks_new_orders_at_exact_cutoff_but_allows_idempotent_recovery(): void
     {
         [$branch, $product, $cash, $actor, $payload] = $this->orderFixture();

@@ -38,6 +38,7 @@ const copy = english
     ? {add:'Add to cart', options:'Choose options', remove:'Remove from favorites', unavailable:'Unavailable', empty:'No favorites yet', browse:'Browse the menu', added:'Added to cart', removed:'Removed from favorites'}
     : {add:'إضافة للسلة', options:'اختر التفاصيل', remove:'إزالة من المفضلة', unavailable:'غير متوفر حاليًا', empty:'ما عندك أصناف بالمفضلة بعد', browse:'تصفّح المنيو', added:'تمت الإضافة للسلة', removed:'تمت الإزالة من المفضلة'};
 
+document.addEventListener('tish:meal-status-changed', renderFavorites);
 function renderFavorites() {
     const rows = CM.favorites().map(id => CM.product(id)).filter(Boolean);
     items.innerHTML = rows.length
@@ -46,7 +47,7 @@ function renderFavorites() {
             const name = CM.esc(product.name);
             const url = CM.esc(PRODUCT_URL_BASE.replace('__ID__', encodeURIComponent(product.id)));
             const needsOptions = product.requiresChoices || product.isVariantProduct;
-            const action = !product.available
+            const action = !product.available || CM.mealUnavailable(product)
                 ? `<span class="favorite-unavailable">${copy.unavailable}</span>`
                 : needsOptions
                     ? `<a class="favorite-action" href="${url}">${copy.options}</a>`

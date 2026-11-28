@@ -19,7 +19,7 @@ function makeClassList() {
         },
     };
 }
-function cart(blocked = false, saved = {}, table = null, motion = false) {
+function cart(blocked = false, saved = {}, table = null, motion = false, clock = {now: 0}) {
     const values = new Map([['dahab_cart_B01', JSON.stringify(saved)]]);
     const stickyCart = {hidden: true, attributes: {}, classList: makeClassList(), setAttribute(name, value) { this.attributes[name] = value; }};
     const animations = [];
@@ -41,7 +41,7 @@ function cart(blocked = false, saved = {}, table = null, motion = false) {
         .replace('@json($location->code)', '"B01"')
         .replace('@json($selectedTable ?? null)', JSON.stringify(table))
         .replace(/@json\(app\([^\n]+\)/, '"₪"');
-    const context = {window: {}, document: {body: {classList: bodyClassList}, addEventListener() {}, dispatchEvent() {},
+    const context = {performance: {now: () => clock.now}, window: {}, document: {body: {classList: bodyClassList}, addEventListener() {}, dispatchEvent() {},
         querySelectorAll() { return []; }, querySelector(selector) { return selector === 'main.menu-area' ? {classList: menuClassList} : null; },
         getElementById(id) { return nodes[id] || null; }},
         localStorage: {getItem(k) {return values.get(k) || null;}, setItem(k, v) {if(blocked) throw Error('blocked'); values.set(k, v);}},
@@ -162,17 +162,45 @@ test('QR table is carried across menu pages and cleared after checkout', () => {
     assert.equal(cm.selectedTable().id, 7);
     cm.clearCart(); assert.equal(cm.selectedTable(), null);
 });
-test('QR checkout preselects only a currently available table', () => {
+test('QR checkout preselects only the server-resolved table when dine-in is enabled', () => {
     const source = fs.readFileSync(path.join(root, 'resources/views/customer-menu/checkout/checkout.blade.php'), 'utf8');
-    const fn = source.slice(source.indexOf('function preselectQrTable()'), source.indexOf('function serviceFields()'));
-    const selectTable = source.slice(source.indexOf('function selectCheckoutTable('), source.indexOf("document.getElementById('tableGrid').addEventListener"));
-    for (const disabled of [false, true]) {
-        const service = {options: [{value: 'dine_in'}, {value: 'takeaway'}], value: 'takeaway'};
-        const input = {value: ''};
-        const card = {dataset: {tableId: '7'}, disabled, setAttribute() {}, classList: {toggle() {}}};
-        vm.runInNewContext(fn + selectTable + '\npreselectQrTable();', {CM: {selectedTable() {return {id: 7};}},
-            document: {getElementById(id) {return id === 'serviceType' ? service : input;}, querySelectorAll() {return [card];}}});
-        assert.equal(service.value, disabled ? 'takeaway' : 'dine_in');
-        assert.equal(String(input.value), disabled ? '' : '7');
+    const fn = source.slice(source.indexOf('function showLockedTable()'), source.indexOf('function serviceFields()'));
+    assert.match(fn, /qrTable/);
+    for (const [qrTable, dineIn, expected] of [
+        [{id: 7, name: 'T7'}, true, '7'],
+        [null, true, ''],
+        [{id: 7, name: 'T7'}, false, ''],
+    ]) {
+        const service = {options: [{value: 'takeaway'}, ...(dineIn ? [{value: 'dine_in'}] : [])], value: 'takeaway'};
+        const input = {value: '99'};
+        const hint = {hidden: true, textContent: ''};
+        const nodes = {serviceType: service, tableIdInput: input, tableOneTimeHint: hint};
+        vm.runInNewContext(fn + '\npreselectQrTable();', {
+            qrTable,
+            CM: {selectedTable() { return {id: 99}; }},
+            document: {getElementById(id) {return nodes[id];}},
+        });
+        assert.equal(service.value, expected ? 'dine_in' : 'takeaway');
+        assert.equal(input.value, expected);
+        assert.equal(hint.hidden, !expected);
     }
+});
+
+test('meal cutoff blocks existing cart lines without deleting them; rescheduling restores eligibility', () => {
+    const clock = {now: 0};
+    const cm = cart(false, {}, null, false, clock);
+    cm.applyMealStatus({server_ms: 1000, products: {'1':'breakfast'}, windows: {breakfast:{state:'open', ends_ms:2000}}});
+    assert.equal(cm.addToCart(1, 1, {variantId:2}), true);
+    assert.equal(cm.expiredMealRows().length, 0);
+    clock.now = 1000;
+    assert.equal(cm.expiredMealRows().length, 1);
+    assert.equal(cm.cartCount(), 1);
+    cm.applyMealStatus({server_ms: 2000, products: {'1':'breakfast'}, windows: {breakfast:{state:'open', ends_ms:6000}}});
+    assert.equal(cm.expiredMealRows().length, 0);
+    assert.equal(cm.cartCount(), 1);
+    cm.applyMealStatus({server_ms: 2000, products: {}, windows: {breakfast:{state:'open', ends_ms:6000}}});
+    assert.equal(cm.expiredMealRows().length, 1);
+    cm.applyMealStatus({server_ms: 2000, products: {'1':null}, windows: {}});
+    assert.equal(cm.expiredMealRows().length, 0);
+    assert.equal(cm.product(1).available, true);
 });
