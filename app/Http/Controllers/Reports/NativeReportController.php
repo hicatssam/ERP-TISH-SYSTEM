@@ -29,6 +29,28 @@ class NativeReportController extends Controller
         abort_unless(\App\Support\ActivityModules::reportAllowed($report), 404);
         abort_unless($meta && in_array($format, ['xlsx', 'pdf', 'print'], true), 404);
         abort_unless(app(ReportCatalog::class)->allowed($request->user(), $meta), 403);
+        if ($report === 'expiry' && $format !== 'xlsx') {
+            $data = app(InventoryExpiryController::class)->print($request)->getData();
+            $total = $data['rows']->count();
+            $cap = max(1, (int) config('reports.pdf_row_cap', 500));
+            $truncated = $format === 'pdf' && $total > $cap;
+            $data['reportCounts'] = [
+                'total' => $total,
+                'expired' => $data['rows']->filter(fn ($r) => $r->days_left < 0)->count(),
+                'today' => $data['rows']->filter(fn ($r) => $r->days_left === 0)->count(),
+                'soon' => $data['rows']->filter(fn ($r) => $r->days_left > 0 && $r->days_left <= 7)->count(),
+            ];
+            if ($truncated) {
+                $data['rows'] = $data['rows']->take($cap)->values();
+            }
+            $data += compact('total', 'cap', 'truncated');
+            if ($format === 'pdf') {
+                return app(AccountingPdfService::class)->download(
+                    'inventory.expiry.print', $data, 'expiry-'.now()->format('Ymd-His').'.pdf', $meta['title'], 'landscape'
+                );
+            }
+            return view('inventory.expiry.print', $data + ['pdfMode' => false]);
+        }
         $sections = $this->sections($request, $report);
         $title = $meta['title'];
         $total = array_sum(array_map(fn ($section) => $section['rows']->count(), $sections));
