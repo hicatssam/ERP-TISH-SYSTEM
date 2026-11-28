@@ -251,15 +251,14 @@ class InventoryExpiryController extends Controller
     {
         $result = $service->scanAndNotify(force: true);
 
-        return back()->with(
-            'success',
-            sprintf(
-                'اكتمل فحص الصلاحية: %d دفعة، %d مستحقة للتنبيه، %d إشعار ناجح.',
-                (int) ($result['scanned_batches'] ?? 0),
-                (int) ($result['qualifying_batches'] ?? 0),
-                (int) (($result['database_sent'] ?? 0) + ($result['email_sent'] ?? 0) + ($result['whatsapp_sent'] ?? 0))
-            )
-        );
+        return back()->with('expiry_scan_result', [
+            'scanned' => (int) ($result['scanned_batches'] ?? 0),
+            'qualifying' => (int) ($result['qualifying_batches'] ?? 0),
+            'recipients' => (int) ($result['recipient_count'] ?? 0),
+            'sent' => (int) (($result['database_sent'] ?? 0) + ($result['email_sent'] ?? 0) + ($result['whatsapp_sent'] ?? 0)),
+            'skipped' => (int) ($result['skipped_count'] ?? 0),
+            'failed' => (int) ($result['failed_count'] ?? 0),
+        ]);
     }
 
     private function scopeToUserLocation($query, Request $request): void
