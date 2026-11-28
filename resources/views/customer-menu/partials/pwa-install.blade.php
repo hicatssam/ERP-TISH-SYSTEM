@@ -1,7 +1,8 @@
 {{-- Installation is native where the browser exposes a prompt, manual otherwise. --}}
-<button type="button" class="pwa-install-btn tish-paper-pin-control" id="pwaInstallBtn" aria-label="ثبّت المنيو" title="ثبّت المنيو" hidden>
+@php($pinLabel = \App\Support\CustomerMenuLanguage::isEnglish() ? 'Install menu' : 'ثبّت المنيو')
+<button type="button" class="pwa-install-btn tish-paper-pin-control" id="pwaInstallBtn" aria-label="{{ $pinLabel }}" title="{{ $pinLabel }}" hidden>
     <i class="fa-solid fa-thumbtack" aria-hidden="true"></i>
-    <span>ثبّت المنيو</span>
+    <span>{{ $pinLabel }}</span>
 </button>
 
 <div class="pwa-ios-sheet" id="pwaIosSheet" role="dialog" aria-modal="true" aria-labelledby="pwaInstallTitle" hidden>
@@ -69,11 +70,12 @@
             instructions = ['افتح قائمة المتصفح (⋮ أو …) أو خيار التثبيت بجوار شريط العنوان.', 'اختر «تثبيت التطبيق» أو «Create shortcut» بحسب المتصفح.'];
         }
 
-        title.textContent = heading;
+        const t = window.CustomerMenuI18n?.t || (value => value);
+        title.textContent = t(heading);
         steps.replaceChildren();
         instructions.forEach(function (instruction) {
             const item = document.createElement('li');
-            item.textContent = instruction;
+            item.textContent = t(instruction);
             steps.appendChild(item);
         });
         sheet.hidden = false;

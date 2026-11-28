@@ -302,6 +302,143 @@
 
 
 };
+ // Additional shared public UI translations, including current meal windows and PWA help.
+ Object.assign(dictionary, {
+  "الأكثر طلبًا": "Most popular",
+  "الأكثر طلبا": "Most popular",
+  "ثبّت المنيو": "Install menu",
+  "ثبت المنيو": "Install menu",
+  "تثبيت المنيو": "Install menu",
+  "تثبيت تطبيق المنيو": "Install the menu app",
+  "إضافة المنيو للشاشة الرئيسية": "Add the menu to your home screen",
+  "افتح المنيو عبر اتصال HTTPS آمن، ثم استخدم خيار تثبيت التطبيق من المتصفح.": "Open the menu over a secure HTTPS connection, then use your browser’s install option.",
+  "افتح قائمة المشاركة في المتصفح (رمز المشاركة أو قائمة الخيارات).": "Open your browser’s Share menu.",
+  "اختر «إضافة إلى الشاشة الرئيسية» (Add to Home Screen).": "Select Add to Home Screen.",
+  "اضغط «إضافة» لتظهر أيقونة المنيو على جهازك.": "Tap Add to place the menu icon on your device.",
+  "افتح قائمة متصفح Samsung Internet.": "Open the Samsung Internet menu.",
+  "اختر «إضافة الصفحة إلى» ثم «الشاشة الرئيسية» أو «تثبيت التطبيق» إذا كان متاحًا.": "Select Add page to, then Home screen or Install app if available.",
+  "افتح قائمة المتصفح (⋮).": "Open your browser menu (⋮).",
+  "اختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية» حسب المتصفح.": "Choose Install app or Add to Home Screen, depending on your browser.",
+  "من قائمة File في Safari اختر Add to Dock (على الإصدارات التي تدعمها).": "In Safari, choose File > Add to Dock (on supported versions).",
+  "أكّد إضافة التطبيق إلى Dock.": "Confirm adding the app to your Dock.",
+  "قد لا يدعم متصفحك تثبيت الموقع كتطبيق مستقل على الكمبيوتر.": "Your browser may not support installing websites as desktop apps.",
+  "يمكنك حفظ المنيو كاختصار أو فتحه في Chrome أو Edge لتجربة خيار التثبيت.": "Save the menu as a shortcut or open it in Chrome or Edge to install.",
+  "افتح قائمة المتصفح (⋮ أو …) أو خيار التثبيت بجوار شريط العنوان.": "Open the browser menu (⋮ or …), or the install option next to the address bar.",
+  "اختر «تثبيت التطبيق» أو «Create shortcut» بحسب المتصفح.": "Choose Install app or Create shortcut, depending on your browser.",
+  "الأصناف": "Items",
+  "أزرار المنيو": "Menu controls",
+  "إعلانات المنيو": "Menu promotions",
+  "عرض كل الأصناف": "View all items",
+  "وجبات اليوم": "Today’s meals",
+  "وجبات الفطور": "Breakfast",
+  "وجبات الغداء": "Lunch",
+  "لا توجد وجبات متاحة في هذه الفترة حاليًا.": "No meals are available during this period right now.",
+  "انتهى وقت هذه الوجبة. اختر وجبة أخرى.": "This meal period has ended. Choose another meal.",
+  "انتهى وقت الوجبة — احذف الصنف للمتابعة": "Meal period ended — remove this item to continue",
+  "انتهى وقت الوجبة": "Meal period ended",
+  "انتهى وقت إحدى الوجبات. لا تحوّل المبلغ الآن. عد إلى السلة واحذف الصنف غير المتاح.": "A meal period has ended. Do not transfer payment now. Return to your cart and remove the unavailable item.",
+  "انتهى وقت إحدى الوجبات. لا تحوّل المبلغ الآن. راجع السلة قبل المتابعة.": "A meal period has ended. Do not transfer payment now. Review your cart before continuing.",
+  "اختر حساب الدفع أو التحويل قبل تأكيد الطلب.": "Select a payment or transfer account before placing your order.",
+  "المكونات": "Ingredients",
+  "تقليل الكمية": "Decrease quantity",
+  "زيادة الكمية": "Increase quantity",
+  "كمّل وجبتك": "Complete your meal",
+  "خلّي وجبتك كاملة!": "Make it a meal!",
+  "اختار بطاطا أو مشروب أو صوص... حسب ذوقك.": "Choose fries, a drink or a sauce to make it yours.",
+  "بطاطا ومقبلات": "Fries and sides",
+  "مشروبات منعشة": "Refreshing drinks",
+  "صوصات وتغميسات": "Sauces and dips",
+  "اكتشف المزيد": "Discover more",
+  "اختيار تفاصيل": "Choose options",
+  "أضف": "Add",
+  "عرض الصنف": "View item",
+  "إيقاف التبديل التلقائي": "Pause autoplay",
+  "عرض أقل": "Show less",
+  "اختر التفاصيل": "Choose options",
+  "ما عندك أصناف بالمفضلة بعد": "No favorites yet",
+  "تمت الإزالة من المفضلة": "Removed from favorites",
+  "قطع": "items",
+  "طاولة": "Table",
+  "طاولتك": "Your table",
+  "الطاولة محددة تلقائياً": "Table automatically selected",
+  "طلبك": "Your order",
+  "جاري التحديث": "Updating",
+  "تفعيل صوت وإشعارات الطلب": "Enable order sounds and notifications",
+  "حفظ الفاتورة كصورة": "Save invoice as image",
+  "حالة طلبك": "Your order status",
+  "افتح بطاقة متابعة الطلب": "Open order tracking",
+  "هذا الجهاز لا يدعم إشعارات الخلفية على هذه الصفحة.": "This device does not support background notifications on this page.",
+  "تعذر قراءة إعدادات إشعارات الخلفية.": "Could not load background notification settings.",
+  "إشعارات الخلفية تحتاج إعداد مفاتيح VAPID على السيرفر.": "Background notifications require server configuration.",
+  "إشعارات النظام غير مدعومة على هذا الجهاز.": "System notifications are not supported on this device.",
+  "لم يتم منح إذن الإشعارات.": "Notification permission was not granted.",
+  "تعذر حفظ اشتراك الجهاز في السيرفر.": "Could not save this device’s notification subscription.",
+  "اعتمدنا طلبك!": "Your order is confirmed!",
+  "طلبك على السماش": "Your order is on the grill",
+  "طلبك جاهز، بالعافية!": "Your order is ready. Enjoy!",
+  "بالعافية عليك!": "Enjoy your meal!",
+  "تحديث طلبك": "Order update",
+  "إشعارات الطلب مفعّلة": "Order notifications enabled",
+  "تعذر إلغاء اشتراك هذا الطلب.": "Could not disable notifications for this order.",
+  "تم تحديث حالة طلبك.": "Your order status has been updated.",
+  "تم استلام جزء من المبلغ.": "Partial payment received.",
+  "مسترجع جزئيًا": "Partially refunded",
+  "تم استرجاع جزء من المبلغ.": "Part of your payment has been refunded.",
+  "مسترجع": "Refunded",
+  "تم استرجاع المبلغ.": "Your payment has been refunded.",
+  "جارٍ تجهيز صورة الفاتورة...": "Preparing invoice image...",
+  "فاتورة": "Invoice",
+  "تعذر إنشاء صورة الفاتورة. يمكنك استخدام زر عرض الفاتورة.": "Could not create the invoice image. Use View invoice instead.",
+  "بانتظار التحقق من الدفع": "Awaiting payment verification",
+  "مستردة جزئيًا": "Partially refunded",
+  "مستردة بالكامل": "Fully refunded",
+  "فاتورة رقم": "Invoice no.",
+  "إجراءات الفاتورة": "Invoice actions",
+  "تتبع الطلب": "Track order",
+  "طباعة الفاتورة": "Print invoice",
+  "فاتورة طلب TISH": "TISH order invoice",
+  "تاريخ ووقت إصدار الفاتورة": "Invoice issue date and time",
+  "تاريخ الإصدار": "Issue date",
+  "الوقت": "Time",
+  "الدفع عند الاستلام — لم يتم التحصيل بعد": "Pay on pickup — payment not yet collected",
+  "الصنف": "Item",
+  "سعر الوحدة والكمية": "Unit price and quantity",
+  "لا توجد أصناف في الفاتورة.": "No invoice items.",
+  "ملخص الفاتورة": "Invoice summary",
+  "المجموع الفرعي": "Subtotal",
+  "الخصم": "Discount",
+  "الضريبة": "Tax",
+  "التحصيل قبل الاسترداد": "Collected before refunds",
+  "المسترد": "Refunded",
+  "صافي المدفوع": "Net paid",
+  "الفاتورة ملغاة": "Invoice cancelled",
+  "التنقل بين الصفحات": "Page navigation",
+  "الفرع غير متاح للطلب حالياً.": "This branch is currently unavailable for ordering.",
+  "الطلب من المنيو متوقف مؤقتاً.": "Online ordering is temporarily paused.",
+  "رمز الطلب مرتبط بفرع آخر. افتح إتمام الطلب من هذا الفرع وحاول مجدداً.": "This order token belongs to another branch. Open checkout from this branch and try again.",
+  "طريقة الدفع المحددة غير متاحة في هذا الفرع.": "The selected payment method is unavailable at this branch.",
+  "طريقة الدفع هذه معطلة في إعدادات طلب العميل.": "This payment method is disabled for online orders.",
+  "اختر حساب التحويل الصحيح لهذا الفرع.": "Select the correct transfer account for this branch.",
+  "أدخل رقم مرجع عملية الدفع.": "Enter the payment reference number.",
+  "ارفع صورة أو ملف إثبات التحويل قبل تأكيد الطلب.": "Upload a photo or file of your transfer proof before placing the order.",
+  "تعذر حفظ إثبات الدفع. حاول مرة أخرى أو اختر الدفع عند الاستلام.": "Could not save the payment proof. Try again or choose pay on pickup if available.",
+  "الحد الأقصى لكل صنف بنفس الخيارات هو 50. عدّل الكمية وحاول مجدداً.": "The maximum quantity per item with the same options is 50. Adjust the quantity and try again.",
+  "أضف صنفاً واحداً على الأقل إلى السلة.": "Add at least one item to your cart.",
+  "أحد الأصناف لم يعد متاحاً في منيو هذا الفرع. حدّث الصفحة وحاول مرة أخرى.": "An item is no longer available at this branch. Refresh and try again.",
+  "نوع الطلب المحدد غير متاح حالياً.": "The selected order type is currently unavailable.",
+  "برجر لحم": "Beef Burgers",
+  "برجر دجاج": "Chicken Burgers",
+  "برجر نباتي": "Veggie Burgers",
+  "الفرايز": "Fries",
+  "الفطور": "Breakfast",
+  "الغداء": "Lunch",
+  "المقبلات": "Sides",
+  "الصوصات": "Sauces",
+  "المشروبات الباردة": "Cold Drinks"
+});
+ const normalizeKey = value => String(value).normalize('NFKC').replace(/[\u064b-\u065f\u0670\u0640]/g,'').replace(/\s+/g,' ').trim();
+ const normalizedDictionary = new Map(Object.entries(dictionary).map(([key,value])=>[normalizeKey(key),value]));
+ const lookup = value => Object.prototype.hasOwnProperty.call(dictionary,value) ? dictionary[value] : normalizedDictionary.get(normalizeKey(value));
  const allowed = ['ar','en'];
  const cookieName = 'dahab_menu_lang';
  const isEnglish = document.documentElement.lang === 'en';
@@ -311,10 +448,10 @@
    if (language !== 'en') return input;
    const trimmed = input.trim();
    if (!trimmed) return input;
-   let translated = dictionary[trimmed];
+   let translated = lookup(trimmed);
     if (!translated && /[:：]$/.test(trimmed)) {
       const base = trimmed.slice(0, -1).trim();
-      if (dictionary[base]) translated = dictionary[base] + ':';
+      if (lookup(base)) translated = lookup(base) + ':';
     }
    if (!translated) {
      const count = trimmed.match(/^(\d+)\s+(?:أصناف|صنف متاح|صنف)$/);
@@ -323,6 +460,99 @@
    if (!translated) {
      const price = trimmed.match(/^أقل من (\d+)(.*)$/);
      if (price) translated = 'Under ' + price[1] + price[2];
+   }
+   if (!translated) {
+     const key = normalizeKey(trimmed);
+     const meal = key.match(/^وجبات (الفطور|الغداء) متاحة فقط من (\d{2}:\d{2}) إلى (\d{2}:\d{2}) بتوقيت غزة\. راجع السلة قبل الدفع\.$/);
+     if (meal) translated = (meal[1] === 'الفطور' ? 'Breakfast' : 'Lunch') + ' is available only from ' + meal[2] + ' to ' + meal[3] + ' Gaza time. Review your cart before paying.';
+     const closed = key.match(/^وجبات (الفطور|الغداء) غير متاحة حاليا\.$/);
+     if (closed) translated = (closed[1] === 'الفطور' ? 'Breakfast' : 'Lunch') + ' is currently unavailable.';
+     const prefixes = ['إضافة للمفضلة','أضف للمفضلة','إزالة من المفضلة','عرض الصنف','عرض','إضافة للسلة','اختر الخيارات','غير متوفر','تقليل كمية','زيادة كمية','طاولتك','الطاولة محددة تلقائيا','إعلان من'];
+     if (!translated) for (const prefix of prefixes) {
+       const k = normalizeKey(prefix);
+       if (key.startsWith(k + ' ') || key.startsWith(k + ':')) {
+         const match = trimmed.match(new RegExp('^' + prefix.replace(/[\u064b-\u065f\u0670]/g,'') + '([: ]+)(.*)
+   return input.replace(trimmed, translated);
+ };
+ const format = (key, values = {}) => {
+   const template = translate(key);
+   return template.replace(/\{([a-zA-Z_]+)\}/g, (match, name) =>
+     Object.prototype.hasOwnProperty.call(values, name) ? String(values[name]) : match);
+ };
+ window.CustomerMenuI18n = {lang:language, isEnglish, t:translate, format, dictionary};
+ function updateText(root) {
+   if (language !== 'en' || !root || !document.createTreeWalker) return;
+   const visitor = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+   let item;
+   while ((item = visitor.nextNode())) {
+     const parent = item.parentElement;
+     if (!parent || ['SCRIPT','STYLE','NOSCRIPT','TEXTAREA'].includes(parent.tagName) || parent.closest('[data-no-menu-translate],[contenteditable=true]')) continue;
+     const next = translate(item.nodeValue);
+     if (next !== item.nodeValue) item.nodeValue = next;
+   }
+   if (root.querySelectorAll) {
+     const elements = [root, ...root.querySelectorAll('[placeholder],[aria-label],[title]')];
+     for (const el of elements) {
+       if (!el.getAttribute) continue;
+       for (const name of ['placeholder','aria-label','title']) {
+         if (el.hasAttribute(name)) {
+           const original = el.getAttribute(name);
+           const value = translate(original);
+           if (value !== original) el.setAttribute(name,value);
+         }
+       }
+     }
+   }
+ }
+ function applyLocale() {
+   document.documentElement.lang = language;
+   document.documentElement.dir = language === 'en' ? 'ltr' : 'rtl';
+   document.cookie = cookieName + '=' + language + '; Path=/; Max-Age=31536000; SameSite=Lax';
+   if (language === 'en') {
+     document.title = document.title.replace(/^(المنيو|المفضلة|اختر فرعك|سلة الطلب|إتمام الطلب|طلباتي)\s*([-—])/, (_,key,sep) => translate(key) + ' ' + sep);
+     document.title = document.title.replace(/^تتبع\s+/, 'Track ');
+     updateText(document.body);
+   }
+   const host = document.querySelector('[data-cm-language-host]')
+     || document.querySelector('body.reference-home .tish-drive-hero-actions')
+     || document.querySelector('.reference-actions,.page-head,.branch-brand') || document.body;
+   const button = document.createElement('button');
+   button.type = 'button';
+   button.className = 'cm-language-switch';
+   button.dataset.menuLanguageToggle = 'true';
+   button.setAttribute('aria-label', language === 'en' ? 'Switch to Arabic' : 'Switch to English');
+   button.setAttribute('title', language === 'en' ? 'Switch to Arabic' : 'Switch to English');
+   button.textContent = language === 'en' ? 'العربية' : 'English';
+   if (host === document.body) button.classList.add('cm-language-floating');
+   host.appendChild(button);
+   button.addEventListener('click', () => {
+     const next = language === 'en' ? 'ar' : 'en';
+     document.cookie = cookieName + '=' + next + '; Path=/; Max-Age=31536000; SameSite=Lax';
+     const url = new URL(window.location.href);
+     url.searchParams.set('lang',next);
+     window.location.assign(url.toString());
+   });
+   if (language === 'en' && typeof MutationObserver !== 'undefined') {
+     let pending = false;
+     const observer = new MutationObserver(() => {
+       if (pending) return;
+       pending = true;
+       requestAnimationFrame(() => {
+         pending = false;
+         updateText(document.body);
+       });
+     });
+     observer.observe(document.body, {subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['placeholder','aria-label','title']});
+   }
+ }
+ if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded',applyLocale,{once:true});
+ else applyLocale();
+})();,'u'));
+         const tail = match ? match[2] : key.slice(k.length).replace(/^[: ]+/,'');
+         translated = (lookup(prefix) || (prefix === 'إعلان من' ? 'Promotion from' : prefix)) + (key.startsWith(k + ':') ? ': ' : ' ') + tail;
+         break;
+       }
+     }
    }
    if (!translated) return input;
    return input.replace(trimmed, translated);

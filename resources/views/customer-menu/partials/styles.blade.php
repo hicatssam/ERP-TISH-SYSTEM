@@ -391,7 +391,7 @@ body.tish-paper .page-head .tish-paper-sublogo img{
 [dir="ltr"] .crisp-customer-menu .page-back i { transform:scaleX(-1); }
 @media (max-width:420px){.cm-language-switch {padding:6px 9px;font-size:11px}}
 </style>
-<script src="{{ asset('assets/js/customer-menu/i18n.js') }}?v=15"></script>
+<script src="{{ asset('assets/js/customer-menu/i18n.js') }}?v=20261128"></script>
 
 <link rel="stylesheet" href="{{ asset('assets/css/customer-menu/client-identity.css') }}?v=3">
 
