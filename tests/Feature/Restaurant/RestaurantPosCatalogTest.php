@@ -35,6 +35,69 @@ class RestaurantPosCatalogTest extends TestCase
     use RefreshDatabase;
 
     #[Test]
+    public function popular_catalog_ranks_recent_completed_branch_units_and_excludes_unavailable_and_other_orders(): void
+    {
+        $branch = $this->branch('POPULAR-A');
+        $other = $this->branch('POPULAR-B');
+        $cashier = $this->cashier($branch);
+        $category = $this->category();
+        $first = $this->product($category, 'POPULAR-FIRST');
+        $second = $this->product($category, 'POPULAR-SECOND');
+        $stopped = $this->product($category, 'POPULAR-STOPPED');
+        $unsold = $this->product($category, 'POPULAR-UNSOLD');
+
+        foreach ([$second, $first, $stopped, $unsold] as $i => $product) {
+            $this->onMenu($branch, $product, $i + 1);
+            $this->atBranch($branch, $product, $product->id !== $stopped->id);
+        }
+
+        $makeOrder = function (string $number, Location $location, string $status, int $days, array $lines) use ($cashier): Order {
+            $order = Order::query()->create([
+                'order_number' => $number,
+                'location_id' => $location->id,
+                'order_source' => 'restaurant_pos',
+                'restaurant_service_type' => 'takeaway',
+                'status' => $status,
+                'payment_arrangement' => 'pay_on_pickup',
+                'created_by' => $cashier->id,
+                'completed_at' => now()->subDays($days),
+            ]);
+            foreach ($lines as [$product, $quantity]) {
+                $order->items()->create([
+                    'product_id' => $product->id,
+                    'product_name' => $product->name,
+                    'quantity' => $quantity,
+                    'unit_price' => 10,
+                    'line_total' => $quantity * 10,
+                ]);
+            }
+            return $order;
+        };
+
+        $makeOrder('POPULAR-LOCAL', $branch, 'completed', 1, [[$first, 8], [$second, 2], [$stopped, 50]]);
+        $makeOrder('POPULAR-LOCAL-2', $branch, 'completed', 3, [[$second, 3]]);
+        $makeOrder('POPULAR-CANCEL', $branch, 'cancelled', 1, [[$second, 100]]);
+        $makeOrder('POPULAR-DRAFT', $branch, 'draft', 1, [[$second, 100]]);
+        $makeOrder('POPULAR-OLD', $branch, 'completed', 31, [[$second, 100]]);
+        $makeOrder('POPULAR-OTHER', $other, 'completed', 1, [[$second, 100]]);
+        $makeOrder('POPULAR-DELETED', $branch, 'completed', 1, [[$second, 100]])->delete();
+
+        $url = route('restaurant.pos.catalog', ['location_id' => $branch->id, 'popular' => 1]);
+        $this->actingAs($cashier)->getJson($url)->assertOk()
+            ->assertJsonPath('total', 2)
+            ->assertJsonPath('products.0.id', $first->id)
+            ->assertJsonPath('products.1.id', $second->id);
+
+        $this->getJson(route('restaurant.pos.catalog', [
+            'location_id' => $branch->id, 'popular' => 1, 'q' => 'POPULAR-SECOND',
+        ]))->assertOk()->assertJsonPath('total', 1)->assertJsonPath('products.0.id', $second->id);
+
+        $this->getJson(route('restaurant.pos.catalog', [
+            'location_id' => $branch->id,
+        ]))->assertOk()->assertJsonPath('total', 3)->assertJsonPath('products.0.id', $second->id);
+    }
+
+    #[Test]
     public function manager_can_stop_and_restore_branch_menu_with_reason_and_mandatory_audit(): void
     {
         $branch = $this->branch('MANAGER-AV');
