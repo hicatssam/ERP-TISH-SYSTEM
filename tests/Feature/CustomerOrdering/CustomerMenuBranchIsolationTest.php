@@ -22,6 +22,45 @@ class CustomerMenuBranchIsolationTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_menu_catalog_reuses_branch_prices_without_per_product_price_queries(): void
+    {
+        $branch = $this->branch();
+        $other = $this->branch();
+        $first = $this->product($branch, 12);
+        $second = $this->product($branch, 17);
+        LocationProduct::query()->where('location_id', $branch->id)
+            ->where('product_id', $second->id)->update(['local_selling_price' => null]);
+        LocationProduct::query()->create([
+            'location_id' => $other->id, 'product_id' => $first->id,
+            'is_available' => true, 'local_selling_price' => 99,
+        ]);
+        $this->product($branch, 0);
+        $catalog = new class {
+            use \App\Http\Controllers\Concerns\ResolvesCustomerMenuBranding;
+            public function read(Location $branch): \Illuminate\Support\Collection
+            {
+                return $this->menuItemsFor($branch);
+            }
+        };
+        \Illuminate\Support\Facades\DB::enableQueryLog();
+        try {
+            \Illuminate\Support\Facades\DB::flushQueryLog();
+            $rows = $catalog->read($branch);
+            $queries = \Illuminate\Support\Facades\DB::getQueryLog();
+        } finally {
+            \Illuminate\Support\Facades\DB::disableQueryLog();
+        }
+        $this->assertEquals(12, $rows->firstWhere('product_id', $first->id)['price']);
+        $this->assertEquals($second->base_selling_price, $rows->firstWhere('product_id', $second->id)['price']);
+        $perProduct = collect($queries)->filter(function (array $query): bool {
+            $sql = strtolower(str_replace(['`','"'], '', $query['query']));
+            return str_contains($sql, 'from location_products')
+                && preg_match('/location_products\.product_id\s*=\s*\?/', $sql)
+                && str_contains($sql, 'limit 1');
+        });
+        $this->assertCount(0, $perProduct);
+    }
+
     public function test_selected_category_icon_is_rendered_on_customer_home(): void
     {
         $branch = $this->branch();
