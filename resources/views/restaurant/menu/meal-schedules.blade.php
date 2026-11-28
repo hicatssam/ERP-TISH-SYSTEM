@@ -6,6 +6,9 @@
     $periodLabels = ['breakfast'=>'الفطور','lunch'=>'الغداء'];
     $periodOptions = [''=>'بدون قيد زمني','breakfast'=>'الفطور','lunch'=>'الغداء'];
     $clockNow = \Carbon\CarbonImmutable::now('Asia/Gaza')->format('H:i');
+    $mealCategories = $items->map(fn ($item) => $item->product?->category)->filter()->unique('id')
+        ->sortBy(fn ($category) => $category->name_ar ?: $category->name);
+    $filterStorageKey = 'tish.meal-admin.filters.v1.'.auth()->id().'.'.$location->id;
 @endphp
 <style>
 .meal-admin{width:100%;min-width:0;max-width:1400px;margin:0 auto;container-type:inline-size}
@@ -43,7 +46,13 @@
 .ma-section-head{margin-bottom:12px}
 .ma-toolbar{justify-content:flex-start;margin-bottom:12px}
 .ma-search{flex:1 1 230px;min-width:0}
-.ma-filter{flex:0 1 180px;min-width:130px}
+.ma-filter{flex:1 1 150px;min-width:115px;max-width:230px}
+.ma-filter-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px}
+.ma-filter-actions .ma-btn{min-height:34px;padding:6px 11px;font-size:.75rem}
+.ma-filter-note{font-size:.72rem;color:var(--text-muted)}
+.ma-stat[data-filter-active="true"]{border-color:#a31240}
+.ma-stat button{border:0;background:none;color:inherit;text-align:inherit;font:inherit;padding:0;cursor:pointer}
+.ma-stat button:focus-visible{outline:2px solid #a31240;outline-offset:3px}
 .ma-count{font-size:.78rem;color:var(--text-muted);font-variant-numeric:tabular-nums}
 .ma-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:14px}
 .ma-stat{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:5px;padding:9px 12px;border:1px solid var(--border);border-radius:9px;font-size:.77rem;color:var(--text-muted)}
@@ -75,7 +84,7 @@
     @if($errors->any())
         <div class="alert alert-danger ma-error" role="alert"><strong>يرجى مراجعة البيانات:</strong><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
     @endif
-    <form method="POST" id="mealAdminForm" action="{{ route('restaurant.menu.meal-schedules.update',['location_id'=>$location->id]) }}">
+    <form method="POST" id="mealAdminForm" data-filter-key="{{ $filterStorageKey }}" action="{{ route('restaurant.menu.meal-schedules.update',['location_id'=>$location->id]) }}">
         @csrf
         <div class="ma-grid">
             @foreach($periodLabels as $key=>$name)
@@ -119,21 +128,33 @@
             <div class="ma-section-head"><div><h2>توزيع الأصناف</h2><p class="ma-sub">اختر الفترة لكل صنف؛ تظهر التغييرات بعد الحفظ.</p></div><span class="ma-count">{{ $items->count() }} صنف</span></div>
             <div class="ma-summary">
                 @foreach([''=>'بدون قيد زمني','breakfast'=>'الفطور','lunch'=>'الغداء'] as $value=>$label)
-                    <div class="ma-stat"><span>{{ $label }}</span><b data-meal-count="{{ $value }}">0</b></div>
+                    <div class="ma-stat"><button type="button" data-period-filter="{{ $value === '' ? 'none' : $value }}" aria-pressed="false">{{ $label }}</button><b data-meal-count="{{ $value }}">0</b></div>
                 @endforeach
             </div>
             <div class="ma-toolbar">
                 <label class="ma-field ma-search">بحث عن صنف<input id="mealSearch" type="search" class="form-input" placeholder="اسم الصنف أو الرمز"></label>
                 <label class="ma-field ma-filter">الفترة<select id="mealFilter" class="form-input"><option value="all">كل الفترات</option><option value="none">بدون قيد زمني</option><option value="breakfast">الفطور</option><option value="lunch">الغداء</option></select></label>
+                <label class="ma-field ma-filter">الفئة<select id="mealCategory" class="form-input">
+                    <option value="all">كل الفئات</option>
+                    @foreach($mealCategories as $category)
+                        <option value="{{ $category->id }}">{{ $category->name_ar ?: $category->name }}</option>
+                    @endforeach
+                    <option value="none">بدون فئة</option>
+                </select></label>
+                <label class="ma-field ma-filter">النشر الإلكتروني<select id="mealPublication" class="form-input"><option value="all">كل الحالات</option><option value="published">منشور</option><option value="unpublished">غير منشور</option></select></label>
+            </div>
+            <div class="ma-filter-actions">
+                <button type="button" class="ma-btn" id="mealClearFilters">مسح الفلاتر</button>
                 <span class="ma-count" id="mealVisibleCount" aria-live="polite"></span>
+                <span class="ma-filter-note" id="mealFilterNote">تُحفظ الفلاتر لهذا الفرع على هذا المتصفح.</span>
             </div>
             <div class="ma-list">
                 <div class="ma-list-head" aria-hidden="true"><span>الصنف</span><span>فترة الإتاحة</span></div>
                 @foreach($items as $item)
-                    <div class="meal-admin-row" data-search="{{ $item->displayName() }} {{ $item->product?->name }} {{ $item->product?->name_ar }} {{ $item->product?->sku }}">
+                    <div class="meal-admin-row" data-category="{{ $item->product?->category?->id ?? 'none' }}" data-publication="{{ $item->is_active && $item->show_in_qr ? 'published' : 'unpublished' }}" data-search="{{ $item->displayName() }} {{ $item->product?->name }} {{ $item->product?->name_ar }} {{ $item->product?->sku }} {{ $item->product?->category?->name_ar }} {{ $item->product?->category?->name }}">
                         <div>
                             <label class="ma-product-name" for="mealAssignment-{{ $item->product_id }}">{{ $item->displayName() }}</label>
-                            <small class="ma-product-meta">{{ $item->product?->sku }} @if(!$item->is_active || !$item->show_in_qr)<span class="ma-unpublished"> · غير منشور إلكترونيًا</span>@endif</small>
+                            <small class="ma-product-meta">{{ $item->product?->category?->name_ar ?: ($item->product?->category?->name ?? 'بدون فئة') }} · {{ $item->product?->sku }} @if(!$item->is_active || !$item->show_in_qr)<span class="ma-unpublished"> · غير منشور إلكترونيًا</span>@endif</small>
                         </div>
                         <select class="form-input" id="mealAssignment-{{ $item->product_id }}" name="assignments[{{ $item->product_id }}]">
                             @foreach($periodOptions as $value=>$label)
@@ -152,39 +173,83 @@
 <script>
 (() => {
     const form=document.getElementById('mealAdminForm');
+    if(!form)return;
     const rows=[...form.querySelectorAll('.meal-admin-row')];
-    const search=document.getElementById('mealSearch'),filter=document.getElementById('mealFilter');
-    const normalize=value=>String(value).normalize('NFKC').replace(/[\u064b-\u065f\u0670\u0640]/g,'').toLowerCase().trim();
+    const search=document.getElementById('mealSearch'),period=document.getElementById('mealFilter');
+    const category=document.getElementById('mealCategory'),publication=document.getElementById('mealPublication');
+    const note=document.getElementById('mealFilterNote');
+    const controls=[search,period,category,publication];
+    const key=form.dataset.filterKey;
+    const normalize=value=>String(value).normalize('NFKC').replace(/[\u064b-\u065f\u0670\u0640]/g,'').replace(/[أإآ]/g,'ا').toLowerCase().trim();
+    function selectSaved(select,value){
+        if(typeof value==='string'&&Array.from(select.options).some(option=>option.value===value))select.value=value;
+    }
+    function restore(){
+        try{
+            const saved=JSON.parse(localStorage.getItem(key)||'null');
+            if(!saved||typeof saved!=='object')return;
+            if(typeof saved.search==='string')search.value=saved.search;
+            selectSaved(period,saved.period);
+            selectSaved(category,saved.category);
+            selectSaved(publication,saved.publication);
+        }catch(_){note.textContent='تعذّر استعادة الفلاتر المحفوظة على هذا المتصفح.';}
+    }
+    function persist(){
+        try{
+            localStorage.setItem(key,JSON.stringify({search:search.value,period:period.value,category:category.value,publication:publication.value}));
+            note.textContent='تم حفظ الفلاتر لهذا الفرع على هذا المتصفح.';
+        }catch(_){note.textContent='الفلاتر تعمل، لكن المتصفح لا يسمح بحفظها.';}
+    }
     function refresh(){
         const counts={'':0,breakfast:0,lunch:0};
         let visible=0;
+        const q=normalize(search.value);
         for(const row of rows){
             const value=row.querySelector('select').value;
-            if(Object.hasOwn(counts,value))counts[value]++;
-            const matches=normalize(row.dataset.search).includes(normalize(search.value))&&(filter.value==='all'||(filter.value==='none'?'':filter.value)===value);
+            if(Object.prototype.hasOwnProperty.call(counts,value))counts[value]++;
+            const matches=normalize(row.dataset.search).includes(q)
+                &&(period.value==='all'||(period.value==='none'?'':period.value)===value)
+                &&(category.value==='all'||row.dataset.category===category.value)
+                &&(publication.value==='all'||row.dataset.publication===publication.value);
+            // Hidden rows must still submit their assignment values.
             row.hidden=!matches;
             if(matches)visible++;
         }
         form.querySelectorAll('[data-meal-count]').forEach(el=>el.textContent=counts[el.dataset.mealCount]||0);
-        document.getElementById('mealVisibleCount').textContent=visible+' / '+rows.length;
+        form.querySelectorAll('[data-period-filter]').forEach(button=>{
+            const active=button.dataset.periodFilter===period.value;
+            button.setAttribute('aria-pressed',String(active));
+            button.closest('.ma-stat').dataset.filterActive=String(active);
+        });
+        document.getElementById('mealVisibleCount').textContent='عرض '+visible+' من '+rows.length+' صنف';
         document.getElementById('mealEmpty').hidden=visible!==0;
     }
+    function apply(){refresh();persist();}
     function validateTimes(){
-        for(const key of ['breakfast','lunch']){
-            const from=form.elements[key+'[start]'],to=form.elements[key+'[end]'];
+        for(const name of ['breakfast','lunch']){
+            const from=form.elements[name+'[start]'],to=form.elements[name+'[end]'];
             to.setCustomValidity('');
             if(from.validity.valid&&to.validity.valid&&from.value>=to.value)to.setCustomValidity('يجب أن تكون ساعة النهاية بعد البداية.');
         }
     }
-    search.addEventListener('input',refresh);filter.addEventListener('change',refresh);
+    search.addEventListener('input',apply);
+    for(const select of [period,category,publication])select.addEventListener('change',apply);
+    form.querySelectorAll('[data-period-filter]').forEach(button=>button.addEventListener('click',()=>{
+        period.value=period.value===button.dataset.periodFilter?'all':button.dataset.periodFilter;
+        apply();
+    }));
+    document.getElementById('mealClearFilters').addEventListener('click',()=>{
+        search.value='';period.value='all';category.value='all';publication.value='all';apply();
+    });
     form.addEventListener('input',event=>{
-        if(event.target===search)return;
+        if(controls.includes(event.target))return;
         validateTimes();
         document.getElementById('mealSaveHint').textContent='هناك تغييرات لم تُحفظ بعد.';
     });
-    form.addEventListener('change',event=>{if(event.target!==filter)refresh();});
-    form.addEventListener('submit',event=>{validateTimes();if(!form.reportValidity())event.preventDefault();});
-    validateTimes();refresh();
+    form.addEventListener('change',event=>{if(!controls.includes(event.target))refresh();});
+    form.addEventListener('submit',event=>{validateTimes();if(!form.reportValidity())event.preventDefault();else persist();});
+    window.addEventListener('pageshow',event=>{if(event.persisted){restore();refresh();}});
+    restore();validateTimes();refresh();
 })();
 </script>
 @endsection
