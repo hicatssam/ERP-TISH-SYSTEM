@@ -244,7 +244,6 @@
    <button class="detail-cart-link" id="detailOpenCart" type="button">
     <i class="fa-solid fa-basket-shopping"></i> عرض السلة <span id="detailCartCount">0</span>
    </button>
-   <div class="tish-install-inline">@include('customer-menu.partials.pwa-install')</div>
   </div>
 
   </div>
@@ -351,6 +350,7 @@
 </div>
 
 @include('customer-menu.partials.bottom-nav', ['activeNav' => 'menu', 'showStickyCart' => false])
+@include('customer-menu.partials.pwa-install')
 @include('customer-menu.partials.cart-engine')
 <script src="{{ asset('assets/js/customer-menu/tish-menu-cinematic.js') }}?v=2"></script>
 @if($relatedItems->isNotEmpty())
