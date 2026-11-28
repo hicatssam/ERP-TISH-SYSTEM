@@ -77,6 +77,24 @@ window.CustomerMenu = (function () {
         return !!(p && p.mealPeriod && (p.mealClosed ||
             (p.mealEndsMs > 0 && p.mealServerMs + performance.now() - mealClockStart >= p.mealEndsMs)));
     }
+    // Apply a fresh branch snapshot without refreshing a checkout or losing
+    // a customer's notes, payment fields, or saved cart.
+    function applyMealStatus(status) {
+        if (!status || !status.products || !status.windows || !Number.isFinite(Number(status.server_ms))) return;
+        const elapsed = performance.now() - mealClockStart;
+        PRODUCTS.forEach(p => {
+            const eligible = Object.prototype.hasOwnProperty.call(status.products, String(p.id));
+            const period = eligible ? status.products[String(p.id)] : p.mealPeriod;
+            if (!eligible && !p.mealPeriod) return;
+            if (eligible && !period && !p.mealPeriod) return;
+            const w = period ? status.windows[period] : null;
+            p.mealPeriod = period || null;
+            p.mealClosed = !eligible || !!(w && w.state !== 'open');
+            p.mealEndsMs = w && !p.mealClosed ? Number(w.ends_ms) : 0;
+            p.mealServerMs = Number(status.server_ms) - elapsed;
+            p.available = eligible && !p.mealClosed;
+        });
+    }
     function normalizeCart(savedCart) {
         const normalized = {};
 
@@ -418,7 +436,7 @@ window.CustomerMenu = (function () {
     document.addEventListener('DOMContentLoaded', syncBadges);
 
     return {
-        PRODUCTS, LOCATION_CODE, mealUnavailable,
+        PRODUCTS, LOCATION_CODE, mealUnavailable, applyMealStatus,
         expiredMealRows: () => cartRows().filter(row => mealUnavailable(product(row.product_id))),
         esc, money, product, image, toast,
         cartRows, cartCount, cartTotal, addToCart, changeCart, removeFromCart, clearCart,
@@ -430,3 +448,5 @@ window.CustomerMenu = (function () {
 </script>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+
+<script src="{{ asset('assets/js/customer-menu/meal-schedules.js') }}?v=2" data-status-url="{{ route('customer-menu.meal-schedules',$location->code,false) }}" defer></script>
