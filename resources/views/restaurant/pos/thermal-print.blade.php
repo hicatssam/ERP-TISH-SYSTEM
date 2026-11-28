@@ -23,6 +23,12 @@
         default => 'normal',
     };
     $invoiceDensity = $densityFor($invoice?->items?->count() ?? 0);
+    // Use the original order's customer and creator, never the current viewer.
+    $customerName = $invoice ? (trim((string) $order->customer?->name) ?: trim((string) $order->guest_name) ?: 'عميل نقدي / Walk-in') : null;
+    $cashier = $invoice ? $order->creator : null;
+    $cashierName = $cashier
+        ? (trim((string) $cashier->employee?->full_name) ?: trim((string) $cashier->username) ?: $cashier->displayName())
+        : 'غير مسجل / Unknown';
     $kitchenDensity = $densityFor((int) $tickets->sum(fn ($ticket) => $ticket->items->count()));
     $service = $order->restaurant_service_type?->label() ?? 'طلب مطعم';
     $serviceEn = match($order->restaurant_service_type?->value) {
@@ -236,6 +242,8 @@
 <div class="meta">
 <div class="line"><span class="bi-label">الطلب / <span class="en" lang="en">Order</span></span><bdi>{{ $order->order_number }}</bdi></div>
 <div class="line"><span class="bi-label">الفاتورة / <span class="en" lang="en">Invoice</span></span><bdi>{{ $invoice->invoice_number }}</bdi></div>
+<div class="line"><span class="bi-label">العميل / <span class="en" lang="en">Customer</span></span><span><bdi>{{ $customerName }}</bdi></span></div>
+<div class="line"><span class="bi-label">الكاشير / <span class="en" lang="en">Cashier</span></span><span><bdi>{{ $cashierName }}</bdi></span></div>
 <div class="line"><span class="bi-label">الفرع / <span class="en" lang="en">Branch</span></span><span>{{ $order->location?->name }}</span></div>
 <div class="line"><span class="bi-label">نوع الطلب / <span class="en" lang="en">Service</span></span><span class="service-value">{{ $service }} / <span class="en" lang="en">{{ $serviceEn }}</span></span></div>
 @if($order->restaurantTable)<div class="line"><span class="bi-label">الطاولة / <span class="en" lang="en">Table</span></span><span>{{ $order->restaurantTable->displayName() }}</span></div>@endif
