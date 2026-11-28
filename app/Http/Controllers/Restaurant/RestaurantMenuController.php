@@ -32,8 +32,14 @@ class RestaurantMenuController extends Controller
 
         $locations = $this->context->selectableLocations($request->user());
 
+        $missingProductCount = RestaurantMenuItem::query()
+            ->forLocation($location->id)
+            ->whereDoesntHave('product')
+            ->count();
+
         $query = RestaurantMenuItem::query()
             ->forLocation($location->id)
+            ->whereHas('product')
             ->with([
                 'product.category:id,name,name_ar',
                 'product.locationProducts' => fn ($locationProducts) =>
@@ -130,6 +136,7 @@ class RestaurantMenuController extends Controller
             'location',
             'locations',
             'menuItems',
+            'missingProductCount',
             'categories',
             'availableProducts',
         ));

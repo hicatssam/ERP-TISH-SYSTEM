@@ -690,6 +690,29 @@ class RestaurantPosCatalogTest extends TestCase
             ->assertDontSee('READY');
     }
 
+    #[Test]
+    public function menu_admin_ignores_soft_deleted_products_without_removing_menu_records(): void
+    {
+        $branch = $this->branch('DELETED-MENU');
+        $actor = $this->cashier($branch);
+        $actor->givePermissionTo(Permission::findOrCreate('restaurant_menu.view', 'web'));
+        $actor->givePermissionTo(Permission::findOrCreate('restaurant_menu.manage', 'web'));
+        $category = $this->category();
+        $live = $this->product($category, 'LIVE-MENU');
+        $deleted = $this->product($category, 'DELETED-MENU');
+        $this->onMenu($branch, $live, 1);
+        $this->onMenu($branch, $deleted, 2);
+        $this->atBranch($branch, $live, true);
+        $this->atBranch($branch, $deleted, true);
+        $deleted->delete();
+
+        $this->actingAs($actor)->get(route('restaurant.menu.index', ['location_id' => $branch->id]))
+            ->assertOk()->assertViewHas('missingProductCount', 1)
+            ->assertViewHas('menuItems', fn ($items) => $items->total() === 1 && $items->first()->product_id === $live->id);
+        $this->assertDatabaseHas('restaurant_menu_items', ['location_id' => $branch->id, 'product_id' => $deleted->id]);
+        $this->assertDatabaseCount('orders', 0);
+    }
+
     private function branch(string $code): Location
     {
         return Location::query()->create([

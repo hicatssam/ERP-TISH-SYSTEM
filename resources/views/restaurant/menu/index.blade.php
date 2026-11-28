@@ -74,6 +74,12 @@
         </div>
     @endif
 
+    @if(($missingProductCount ?? 0) > 0)
+        <div class="rm-alert" role="status" style="background:#fffbef;border:1px solid #e8d29a;color:#5f461a">
+            تم استبعاد {{ $missingProductCount }} صنف من العرض لأن المنتج المرتبط به محذوف أو غير موجود. لم يتم حذف سجلات المنيو أو الطلبات السابقة.
+        </div>
+    @endif
+
     <form method="GET" action="{{ route('restaurant.menu.index') }}" class="rm-filters">
         <input type="hidden" name="location_id" value="{{ $location->id }}">
 
@@ -163,6 +169,7 @@
 
     <div class="rm-grid">
         @forelse($menuItems as $menuItem)
+            @continue(!$menuItem->product)
             @php
                 $product = $menuItem->product;
                 $locationProduct = $product->locationProducts->first();
