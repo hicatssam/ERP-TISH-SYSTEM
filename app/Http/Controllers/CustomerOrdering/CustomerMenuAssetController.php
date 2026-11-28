@@ -19,6 +19,12 @@ class CustomerMenuAssetController extends Controller
             '/'
         );
 
+        // Extensionless alias avoids static-file location rules in Nginx.
+        // Only the exact versioned cutout naming scheme may use this alias.
+        if (preg_match('#^menu-cutouts/([a-f0-9]{40}\.v1-[0-9]+-[0-9]+)/webp$#D', $path, $match)) {
+            $path = 'menu-cutouts/'.$match[1].'.webp';
+        }
+
         abort_unless(PublicImageUrl::allowedDiskPath($path), 404);
 
         $disk = Storage::disk('public');
