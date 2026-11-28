@@ -6,38 +6,78 @@
 @endphp
 <section class="tish-meals" id="tishMealSchedule" aria-label="{{ $mealEn ? 'Meal times' : 'مواعيد الوجبات' }}" @if(!collect($mealStatus['windows'])->contains(fn($row)=>$row['enabled'] && $row['count'])) hidden @endif>
 <style>
-.tish-meals[hidden]{display:none!important}
-.tish-meals{margin:12px 0 20px;color:#28221d;font-family:"TISH Noto",Arial,sans-serif}
-.tish-meals h2{font-size:clamp(17px,4vw,24px);margin:0 0 8px;font-weight:900}
-.tish-meals-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
-.tish-meal-card{position:relative;isolation:isolate;display:flex;flex-direction:column;align-items:flex-start;padding:14px 13px 17px;gap:5px;min-width:0;text-decoration:none!important;color:#28221d!important;background:url('/assets/tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat;filter:drop-shadow(0 4px 3px #573b232b)}
-.tish-meal-card[hidden]{display:none!important}
-.tish-meal-card strong{font-size:clamp(13px,3.5vw,20px);font-weight:900;line-height:1.4}
-.tish-meal-card small{font-size:clamp(10px,2.6vw,13px);color:#67594c;font-weight:700}
-.tish-meal-card .meal-hours{direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums}
-.tish-meal-card .meal-clock{font-size:clamp(17px,4vw,27px);font-weight:900;color:#a91f17;direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums;line-height:1.4}
-.tish-meal-card .meal-cta{width:100%;text-align:center;padding:8px 5px;color:#fff4e7;background:url('/assets/tish-paper/paper/price-ticket.webp') center/100% 100% no-repeat;font-weight:900;font-size:clamp(10px,2.8vw,15px)}
+.tish-meals[hidden],.tish-meal-card[hidden],.tish-meal-card [hidden]{display:none!important}
+.tish-meals{margin:20px 0 24px;color:#28221d;min-width:0}
+.tish-meals h2{font-size:clamp(19px,3vw,28px);margin:0 0 14px;font-weight:900}
+.tish-meals-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(10px,2vw,22px)}
+.tish-meal-card{position:relative;isolation:isolate;display:flex;flex-direction:column;align-items:stretch;min-width:0;min-height:232px;padding:clamp(17px,2.5vw,28px);gap:8px;text-decoration:none!important;color:#28221d!important;background:none!important;border:0!important;box-shadow:none!important;transition:transform .22s ease}
+.tish-meal-card::before{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;background:url('/assets/tish-paper/paper/category-ivory.webp') center/100% 100% no-repeat;filter:drop-shadow(0 5px 3px #573b2333)}
+.tish-meal-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
+.tish-meal-heading strong{font-size:clamp(15px,2.5vw,25px);font-weight:900;line-height:1.4;overflow-wrap:anywhere}
+.meal-state-mark{flex:none;width:10px;height:10px;border-radius:50%;background:#a87528;box-shadow:0 0 0 4px #a8752820}
+.tish-meal-card[data-state="open"] .meal-state-mark{background:#25834b;box-shadow:0 0 0 4px #25834b20}
+.tish-meal-card[data-state="ended"] .meal-state-mark{background:#77716a;box-shadow:none}
+.tish-meal-card .meal-hours{display:inline-block;align-self:flex-start;font-size:clamp(12px,1.7vw,16px);font-weight:800;color:#67594c;direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tish-meal-card .meal-message{font-size:clamp(11px,1.6vw,15px);color:#67594c;font-weight:700;line-height:1.45}
+.meal-clock{display:flex;align-items:center;gap:3px;min-height:51px;color:#a91f17;font-weight:900;direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums;line-height:1.15}
+.meal-clock .meal-digit{display:inline-grid;place-items:center;min-width:1.6em;padding:5px 4px;background:#ac21170a;border:1px solid #a91f1725;border-radius:5px;font-size:clamp(22px,3.7vw,39px);letter-spacing:.015em}
+.meal-clock .meal-colon{font-size:clamp(19px,3vw,32px);line-height:1;opacity:.8}
+.meal-next{display:flex;flex-wrap:wrap;gap:5px;align-items:baseline;min-height:51px;color:#6c655c;font-size:clamp(14px,2vw,21px);font-weight:800}
+.meal-next bdi{font-size:clamp(22px,3.3vw,36px);font-variant-numeric:tabular-nums}
+.meal-progress{height:5px;width:100%;border-radius:4px;background:#a91f1719;overflow:hidden}
+.meal-progress span{display:block;width:100%;height:100%;background:#a91f17;border-radius:4px;transition:width .8s linear}
+.meal-cta{display:block;margin-top:auto;width:100%;text-align:center;padding:11px 8px;color:#fff4e7;background:url('/assets/tish-paper/paper/price-ticket.webp') center/100% 100% no-repeat;font-weight:900;font-size:clamp(11px,1.7vw,16px);line-height:1.4}
 .tish-meal-card[data-state="upcoming"] .meal-cta,.tish-meal-card[data-state="ended"] .meal-cta{background:url('/assets/tish-paper/paper/nav-charcoal.webp') center/100% 100% no-repeat}
+.tish-meal-card[data-state="open"]{cursor:pointer}
+.tish-meal-card[data-state="open"]:hover{transform:translateY(-3px)}
+.tish-meal-card[aria-disabled="true"]{cursor:default;transform:none!important}
+.tish-meal-card[data-state="ended"]{color:#655f57!important}
+.tish-meal-card[data-state="ended"]::before{filter:grayscale(1) brightness(.93) drop-shadow(0 3px 2px #573b2325)}
+.tish-meal-card[data-state="ended"] .meal-cta{filter:grayscale(1);opacity:.68}
+.tish-meal-card[data-state="ended"] .meal-hours,.tish-meal-card[data-state="ended"] .meal-message{color:#686158}
 .tish-meal-card:focus-visible{outline:2px solid #a91f17;outline-offset:3px}
+.tish-meals-all{display:inline-block;margin-top:12px;color:#a91f17!important;font-weight:800}
+@media(max-width:600px){
+ .tish-meals-grid{gap:8px}
+ .tish-meal-card{min-height:190px;padding:14px 12px 17px;gap:6px}
+ .meal-clock{min-height:40px;gap:2px}
+ .meal-clock .meal-digit{font-size:clamp(17px,5.1vw,24px);min-width:1.5em;padding:3px 2px}
+ .meal-clock .meal-colon{font-size:18px}
+ .meal-next{min-height:40px}
+ .meal-cta{padding:9px 5px}
+}
+@media(max-width:340px){.tish-meals-grid{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.tish-meal-card,.meal-progress span{transition:none!important}}
 </style>
 <h2>{{ $mealEn ? 'On the menu today' : 'وجبات اليوم' }}</h2>
 <div class="tish-meals-grid">
 @foreach($mealLabels as $key=>$label)
-@php($window = $mealStatus['windows'][$key])
-<a class="tish-meal-card" data-meal="{{ $key }}" data-state="{{ $window['state'] }}" href="{{ route('customer-menu.products',['location'=>$location->code,'meal'=>$key]) }}" @if(!$window['enabled'] || !$window['count']) hidden @endif>
-<strong>{{ $label }}</strong>
-<small class="meal-hours">{{ $window['start'] }} – {{ $window['end'] }}</small>
-<small class="meal-message">{{ $window['state'] === 'open' ? ($mealEn ? 'Available now' : 'متاح الآن') : ($window['state'] === 'ended' ? ($mealEn ? 'Today’s window ended' : 'انتهى موعد اليوم') : ($mealEn ? 'Coming soon' : 'قريبًا')) }}</small>
-<span class="meal-clock"></span>
-<span class="meal-cta">{{ $mealEn ? 'View meals' : 'عرض الوجبات' }}</span>
+@php
+    $window = $mealStatus['windows'][$key];
+    $mealOpen = $window['state'] === 'open';
+    $mealEnded = $window['state'] === 'ended';
+    $mealLink = route('customer-menu.products',['location'=>$location->code,'meal'=>$key]);
+    $remainingSeconds = max(0, (int) ceil((($mealOpen ? $window['ends_ms'] : $window['starts_ms']) - $mealStatus['server_ms']) / 1000));
+    $mealDigits = [sprintf('%02d', intdiv($remainingSeconds,3600)),sprintf('%02d', intdiv($remainingSeconds % 3600,60)),sprintf('%02d',$remainingSeconds % 60)];
+@endphp
+<a class="tish-meal-card" data-meal="{{ $key }}" data-state="{{ $window['state'] }}" data-meal-url="{{ $mealLink }}" @if($mealOpen) href="{{ $mealLink }}" @else role="link" aria-disabled="true" tabindex="-1" @endif @if(!$window['enabled'] || !$window['count']) hidden @endif>
+    <span class="tish-meal-heading"><strong>{{ $label }}</strong><span class="meal-state-mark" aria-hidden="true"></span></span>
+    <small class="meal-hours" dir="ltr">{{ $window['start'] }} – {{ $window['end'] }}</small>
+    <small class="meal-message">{{ $mealOpen ? ($mealEn ? 'Available now • ends in' : 'متاح الآن • ينتهي خلال') : ($mealEnded ? ($mealEn ? 'Closed for today' : 'انتهى موعد اليوم') : ($mealEn ? 'Starts in' : 'يبدأ بعد')) }}</small>
+    <span class="meal-clock" role="timer" aria-live="off" dir="ltr" @if($mealEnded) hidden @endif>
+        <span class="meal-digit" data-part="hours">{{ $mealDigits[0] }}</span><span class="meal-colon" aria-hidden="true">:</span><span class="meal-digit" data-part="minutes">{{ $mealDigits[1] }}</span><span class="meal-colon" aria-hidden="true">:</span><span class="meal-digit" data-part="seconds">{{ $mealDigits[2] }}</span>
+    </span>
+    <span class="meal-next" @unless($mealEnded) hidden @endunless><span>{{ $mealEn ? 'Tomorrow' : 'غدًا' }}</span><bdi class="meal-next-time" dir="ltr">{{ $window['start'] }}</bdi></span>
+    <span class="meal-progress" aria-hidden="true" @unless($mealOpen) hidden @endunless><span></span></span>
+    <span class="meal-cta">{{ $mealOpen ? ($mealEn ? 'View meals' : 'عرض الوجبات') : ($mealEnded ? ($mealEn ? 'See you tomorrow!' : 'نشوفك بكرة!') : ($mealEn ? 'Coming soon' : 'قريبًا')) }}</span>
 </a>
 @endforeach
 </div>
 @if(request()->query('meal') === 'breakfast' || request()->query('meal') === 'lunch')
-<a href="{{ route('customer-menu.products',$location->code) }}" style="display:inline-block;margin-top:9px;color:#a91f17;font-weight:800">{{ $mealEn ? 'View all meals' : 'عرض كل الأصناف' }}</a>
+<a href="{{ route('customer-menu.products',$location->code) }}" class="tish-meals-all">{{ $mealEn ? 'View all meals' : 'عرض كل الأصناف' }}</a>
 @endif
 </section>
 <script>
 window.TishMealSchedule = {{ \Illuminate\Support\Js::from($mealClient) }};
 </script>
-<script src="{{ asset('assets/js/customer-menu/meal-schedules.js') }}?v=1" defer></script>
+<script src="{{ asset('assets/js/customer-menu/meal-schedules.js') }}?v=20261128c" defer></script>
