@@ -373,6 +373,8 @@ body.tish-paper #intro.tish-reel-intro{overflow:hidden;background:#f5e4cd;oversc
  transform-origin:center;
 }
 #intro.tish-reel-intro .intro-enter[hidden]{display:none!important}
+#intro.tish-reel-intro .intro-skip{position:absolute;z-index:20;inset-inline-end:16px;top:max(16px,env(safe-area-inset-top));padding:9px 15px;border:1px solid #fff8e8;border-radius:8px;background:#28221de8;color:#fff8e8;font:inherit;font-weight:800;cursor:pointer}
+#intro.tish-reel-intro .intro-skip:focus-visible{outline:2px solid #fff;outline-offset:3px}
 #intro.tish-reel-intro .intro-enter:hover{
  filter:drop-shadow(0 8px 6px #2b120d66);
 }
@@ -711,7 +713,8 @@ body.tish-paper.reference-home #categories .cat.active .cat-visual .tish-library
 <div id="intro" class="intro tish-reel-intro" role="dialog" aria-modal="true" aria-label="{{ $introTitle }}" data-mode="{{ $introMode }}">
  <div class="tish-booth-panel tish-booth-panel--left" aria-hidden="true"></div>
  <div class="tish-booth-panel tish-booth-panel--right" aria-hidden="true"></div>
- <video id="introReel" class="intro-reel" data-src="{{ asset('assets/tish-paper/intro/menu-reel.mp4') }}" preload="auto" playsinline aria-hidden="true" hidden></video>
+ <video id="introReel" class="intro-reel" data-src="{{ asset('assets/tish-paper/intro/menu-reel.mp4') }}" preload="metadata" playsinline aria-hidden="true" hidden></video>
+ <button class="intro-skip" id="introSkip" type="button">{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Skip to menu' : 'تصفح المنيو مباشرة' }}</button>
  <script>
   if (!document.documentElement.classList.contains('cm-skip-menu-intro')
       && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -824,7 +827,7 @@ body.tish-paper.reference-home #categories .cat.active .cat-visual .tish-library
       @else
        <article class="banner-slide {{ ($banner['artwork_only'] ?? false) ? 'banner-artwork-only' : '' }}" @if($loop->first) data-banner-active @else inert @endif>
       @endif
-        <img src="{{ $banner['image'] }}" alt="{{ $banner['title'] ?: 'إعلان من ' . $branding['name'] }}" loading="eager">
+        <img src="{{ $banner['image'] }}" alt="{{ $banner['title'] ?: 'إعلان من ' . $branding['name'] }}" loading="{{ $loop->first ? 'eager' : 'lazy' }}" decoding="async" fetchpriority="{{ $loop->first ? 'auto' : 'low' }}">
         @if(!($banner['artwork_only'] ?? false) && ($banner['title'] || $banner['subtitle'] || $banner['badge_text'] || $banner['cta_text']))
         <div class="banner-copy">
          @if($banner['badge_text'])<span class="tag">{{ $banner['badge_text'] }}</span>@endif
@@ -1059,6 +1062,7 @@ body.tish-paper.reference-home #categories .cat.active .cat-visual .tish-library
             const active = slideIndex === bannerIndex;
             slide.toggleAttribute('data-banner-active', active);
             slide.inert = !active;
+            if (active) { const image = slide.querySelector('img'); if (image) image.loading = 'eager'; }
         });
         dots.forEach(function (dot, dotIndex) { dot.classList.toggle('active', dotIndex === bannerIndex); });
     }
@@ -1209,11 +1213,16 @@ body.tish-paper.reference-home #categories .cat.active .cat-visual .tish-library
             }
 
             document.documentElement.classList.add('cm-intro-open');
-            enter.addEventListener('click', () => {
+            const dismissIntro = () => {
+                if (dismissed) return;
                 dismissed = true;
+                window.clearTimeout(startupTimeout);
+                window.clearTimeout(revealDeadline);
                 frameObserver?.disconnect();
                 hideIntro();
-            }, {once:true});
+            };
+            enter.addEventListener('click', dismissIntro, {once:true});
+            document.getElementById('introSkip')?.addEventListener('click', dismissIntro, {once:true});
 
             if (reducedMotion.matches) {
                 revealOrderButton();
