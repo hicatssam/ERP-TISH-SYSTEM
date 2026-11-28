@@ -137,7 +137,7 @@
   </div>
 
   <div class="detail-body">
-   @if(!$product['available'])<div class="sold-out">غير متوفر حالياً</div>@endif
+   <div class="sold-out" id="detailMealAvailability" @if($product['available']) hidden @endif>{{ \App\Support\CustomerMenuLanguage::isEnglish() ? 'Currently unavailable' : 'غير متوفر حالياً' }}</div>
    <h1>{{ $product['name'] }}</h1>
    {{-- TISH-DESCRIPTION-EN-MENU-V2 --}}
    <?php
@@ -589,7 +589,7 @@ function syncMealDetailAvailability() {
     button.innerHTML = blocked
         ? '<i class="fa-solid fa-clock"></i> ' + (en ? 'Currently unavailable' : 'غير متوفر حاليًا')
         : '<i class="fa-solid fa-bag-shopping"></i> ' + (en ? 'Add to cart' : 'إضافة للسلة');
-    const badge = document.querySelector('#detailMedia .sold-out');
+    const badge = document.getElementById('detailMealAvailability');
     if (badge) badge.hidden = !blocked;
 }
 document.addEventListener('tish:meal-status-changed', syncMealDetailAvailability);
