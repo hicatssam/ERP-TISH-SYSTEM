@@ -119,6 +119,63 @@
 .customer-copy table{font-size:10px}
 .customer-copy td.amount{font-size:9px}
 @endif
+/* Compact bilingual thermal design. The 64/46 mm safe widths stay intact. */
+.receipt{line-height:1.3}
+.receipt .logo{max-width:23mm;max-height:15mm;margin-bottom:2px}
+.receipt h1{font-size:15px;line-height:1.25}
+.receipt .doc-title,.receipt .kitchen-title{font-size:11px;margin-top:2px}
+.receipt .doc-title .en,.receipt .kitchen-title .en,
+.receipt .line .bi-label .en,.receipt .line .service-value .en,
+.receipt .status .en{display:inline;font-size:.85em;font-weight:inherit}
+.receipt .meta{border-block:1px solid #111;padding:3px 0;margin:5px 0}
+.receipt .meta .line{padding:1px 0;font-size:10px;align-items:baseline;gap:3px}
+.receipt .meta .line>span:first-child{flex:0 1 43%}
+.receipt .meta .line>span:last-child,.receipt .meta .line>bdi{flex:1;text-align:left;font-weight:700;max-width:none}
+.receipt .date-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr) minmax(0,.9fr);border-top:1px solid #111;margin-top:3px;padding-top:3px;text-align:center;break-inside:avoid}
+.receipt .date-cell{padding:1px 2px;min-width:0;overflow-wrap:anywhere}
+.receipt .date-cell+.date-cell{border-inline-start:1px solid #777}
+.receipt .date-label{display:block;font-size:9px;line-height:1.25}
+.receipt .date-value{display:block;font-size:10px;font-weight:800;margin-top:2px;line-height:1.25}
+.receipt .date-cell .en{font-size:9px}
+.receipt .date-grid .time-zone{font-size:8px;line-height:1.2}
+.customer-copy table,.kitchen-copy .kitchen-table{font-size:10px;margin:4px 0 0}
+.receipt table thead th{background:#111;color:#fff;font-weight:800;padding:3px 1px;border-bottom:1px solid #111;line-height:1.2;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+.receipt table thead .en{font-size:8px;color:inherit;margin-top:1px}
+.customer-copy th:nth-child(1){width:44%}
+.customer-copy th:nth-child(2){width:14%;text-align:center}
+.customer-copy th:nth-child(3),.customer-copy th:nth-child(4){width:21%;text-align:center}
+.customer-copy td:nth-child(2){text-align:center}
+.customer-copy td.amount{font-size:10px;text-align:center}
+.customer-copy td:first-child{font-weight:700}
+.customer-copy td,.kitchen-copy .kitchen-table td{padding:3px 1px;vertical-align:middle}
+.receipt tbody tr{break-inside:avoid;page-break-inside:avoid}
+.receipt .item-alt{font-size:9px;margin-top:1px;line-height:1.25;font-weight:500}
+.receipt .summary{margin-top:3px;font-size:10px}
+.receipt .summary .line{padding:1px 0;align-items:baseline;gap:3px}
+.receipt .summary .line .bi-label{flex:1}
+.receipt .summary .total{margin:3px 0;padding:4px 0;border-block:1.5px solid #111;font-size:14px}
+.receipt .summary .total .en{font-size:10px}
+.receipt .status{border:1px solid #111;border-radius:2px;padding:3px 2px;margin:5px 0;font-size:10px;line-height:1.3;break-inside:avoid}
+.receipt .status .en{font-size:9px}
+.receipt .receipt-footer{border-top:1px solid #111;padding-top:3px;font-weight:700;font-size:10px}
+.kitchen-copy .kitchen-service{margin:4px 0;padding:3px 2px}
+.kitchen-copy .kitchen-service strong{font-size:14px}
+.kitchen-copy .kitchen-service strong .en{display:inline;font-size:11px}
+.kitchen-copy .kitchen-station h2{font-size:12px;margin-top:5px}
+.kitchen-copy .kitchen-name{font-size:12px}
+.kitchen-copy .kitchen-table td.kitchen-qty{font-size:15px}
+.kitchen-copy .kitchen-notes{font-size:10px;margin-top:2px;padding:2px 3px}
+.kitchen-copy .kitchen-footer{margin-top:5px;padding-top:3px}
+@if($paperWidth === 58)
+.receipt .meta .line{font-size:9px}
+.receipt .date-label,.receipt .date-value,.receipt .date-cell .en{font-size:8px}
+.receipt .date-cell{padding-inline:1px}
+.customer-copy table,.customer-copy td.amount{font-size:9px}
+.customer-copy th:nth-child(1){width:40%}
+.customer-copy th:nth-child(2){width:16%}
+.customer-copy th:nth-child(3),.customer-copy th:nth-child(4){width:22%}
+.receipt .summary .total{font-size:12px}
+@endif
 @page{size:auto;margin:0}
 @media print{body{background:white}.toolbar{display:none!important}.receipt{margin:0 auto;max-width:100%}.receipt+.receipt{break-before:page;page-break-before:always}body[data-mode="customer"] .kitchen-copy,body[data-mode="kitchen"] .customer-copy{display:none}body[data-mode="kitchen"] .kitchen-copy{break-before:auto;page-break-before:auto}}
 </style></head><body data-mode="all">
@@ -128,51 +185,59 @@
 @if($invoice)
 <section class="receipt customer-copy" data-document="invoice">
 @if($logo)<img class="logo" src="{{ $logo }}" alt="TISH">@endif
-<h1>{{ $theme['business_name'] ?: 'TISH' }}</h1><p class="center doc-title">فاتورة العميل <span class="en" lang="en">Customer Invoice</span></p>
+<h1>{{ $theme['business_name'] ?: 'TISH' }}</h1><p class="center doc-title">فاتورة العميل / <span class="en" lang="en">Customer Invoice</span></p>
 <div class="meta">
-<div class="line"><span class="bi-label">الطلب <span class="en" lang="en">Order</span></span><bdi>{{ $order->order_number }}</bdi></div>
-<div class="line"><span class="bi-label">الفاتورة <span class="en" lang="en">Invoice</span></span><bdi>{{ $invoice->invoice_number }}</bdi></div>
-<div class="line"><span class="bi-label">الفرع <span class="en" lang="en">Branch</span></span><span>{{ $order->location?->name }}</span></div>
-<div class="line"><span class="bi-label">نوع الطلب <span class="en" lang="en">Service</span></span><span>{{ $service }} <span class="en" lang="en">{{ $serviceEn }}</span></span></div>
-@if($order->restaurantTable)<div class="line"><span class="bi-label">الطاولة <span class="en" lang="en">Table</span></span><span>{{ $order->restaurantTable->displayName() }}</span></div>@endif
-<div class="line"><span class="bi-label">اليوم <span class="en" lang="en">Day</span></span><span class="day-value">{{ $dayLabel($invoiceAt) }}</span></div>
-<div class="line"><span class="bi-label">التاريخ <span class="en" lang="en">Date</span></span><bdi>{{ $invoiceAt?->format('d/m/Y') ?? '—' }}</bdi></div>
-<div class="line"><span class="bi-label">الوقت <span class="en" lang="en">Time</span></span><span><bdi>{{ $invoiceAt?->format('H:i') ?? '—' }}</bdi><span class="en time-zone">Gaza time · توقيت غزة</span></span></div>
+<div class="line"><span class="bi-label">الطلب / <span class="en" lang="en">Order</span></span><bdi>{{ $order->order_number }}</bdi></div>
+<div class="line"><span class="bi-label">الفاتورة / <span class="en" lang="en">Invoice</span></span><bdi>{{ $invoice->invoice_number }}</bdi></div>
+<div class="line"><span class="bi-label">الفرع / <span class="en" lang="en">Branch</span></span><span>{{ $order->location?->name }}</span></div>
+<div class="line"><span class="bi-label">نوع الطلب / <span class="en" lang="en">Service</span></span><span class="service-value">{{ $service }} / <span class="en" lang="en">{{ $serviceEn }}</span></span></div>
+@if($order->restaurantTable)<div class="line"><span class="bi-label">الطاولة / <span class="en" lang="en">Table</span></span><span>{{ $order->restaurantTable->displayName() }}</span></div>@endif
+<div class="date-grid">
+    <div class="date-cell"><span class="date-label">اليوم / Day</span><strong class="date-value">{{ $invoiceAt ? ($weekdays[$invoiceAt->format('l')] ?? '—') : '—' }}</strong><span class="en" lang="en">{{ $invoiceAt?->format('l') ?? '—' }}</span></div>
+    <div class="date-cell"><span class="date-label">التاريخ / Date</span><bdi class="date-value">{{ $invoiceAt?->format('d/m/Y') ?? '—' }}</bdi></div>
+    <div class="date-cell"><span class="date-label">الوقت / Time</span><bdi class="date-value">{{ $invoiceAt?->format('H:i') ?? '—' }}</bdi><span class="en time-zone">Gaza / غزة</span></div>
 </div>
-<table><thead><tr><th>الصنف<span class="en" lang="en">Item</span></th><th>العدد<span class="en" lang="en">Qty</span></th><th class="amount">السعر<span class="en" lang="en">Price</span></th><th class="amount">المجموع<span class="en" lang="en">Total</span></th></tr></thead><tbody>
+</div>
+<table><thead><tr><th>الصنف<span class="en" lang="en">Item</span></th><th>كمية<span class="en" lang="en">Qty</span></th><th class="amount">السعر<span class="en" lang="en">Price</span></th><th class="amount">المجموع<span class="en" lang="en">Total</span></th></tr></thead><tbody>
 @foreach($invoice->items as $item)
 @php($description = $item->description ?: ($item->product?->name_ar ?: $item->product?->name ?: 'صنف'))
 <tr><td>{{ $description }}@if($alternate = $otherName($description, $item->product))<span class="item-alt"><bdi>{{ $alternate }}</bdi></span>@endif</td><td>{{ $qty($item->quantity) }}</td><td class="amount">{{ $money($item->unit_price) }}</td><td class="amount">{{ $money($item->line_total) }}</td></tr>@endforeach
 </tbody></table>
-<div class="line"><span class="bi-label">المجموع الفرعي<span class="en" lang="en">Subtotal</span></span><bdi>{{ $money($invoice->subtotal) }}</bdi></div>
-@if((float)$invoice->discount_amount>0)<div class="line"><span class="bi-label">الخصم<span class="en" lang="en">Discount</span></span><bdi>-{{ $money($invoice->discount_amount) }}</bdi></div>@endif
-@if((float)$invoice->tax_amount>0)<div class="line"><span class="bi-label">الضريبة<span class="en" lang="en">Tax</span></span><bdi>{{ $money($invoice->tax_amount) }}</bdi></div>@endif
-<div class="line total"><span class="bi-label">الإجمالي<span class="en" lang="en">Grand total</span></span><bdi>{{ $money($invoice->total_amount) }} {{ $currency }}</bdi></div>
-@if(($refund['refunded'] ?? 0)>0)<div class="line"><span class="bi-label">المسترد<span class="en" lang="en">Refunded</span></span><bdi>{{ $money($refund['refunded']) }}</bdi></div>@endif
-<div class="line"><span class="bi-label">صافي المدفوع<span class="en" lang="en">Net paid</span></span><bdi>{{ $money($invoice->paid_amount) }}</bdi></div>
-@if($invoice->isActive() && (float)$invoice->remaining_amount>0)<div class="line"><span class="bi-label">المتبقي<span class="en" lang="en">Balance due</span></span><bdi>{{ $money($invoice->remaining_amount) }}</bdi></div>@endif
+<div class="summary">
+@if((float)$invoice->discount_amount>0 || (float)$invoice->tax_amount>0 || $money($invoice->subtotal) !== $money($invoice->total_amount))
+<div class="line"><span class="bi-label">المجموع الفرعي / <span class="en" lang="en">Subtotal</span></span><bdi>{{ $money($invoice->subtotal) }}</bdi></div>
+@endif
+@if((float)$invoice->discount_amount>0)<div class="line"><span class="bi-label">الخصم / <span class="en" lang="en">Discount</span></span><bdi>-{{ $money($invoice->discount_amount) }}</bdi></div>@endif
+@if((float)$invoice->tax_amount>0)<div class="line"><span class="bi-label">الضريبة / <span class="en" lang="en">Tax</span></span><bdi>{{ $money($invoice->tax_amount) }}</bdi></div>@endif
+<div class="line total"><span class="bi-label">الإجمالي / <span class="en" lang="en">Grand total</span></span><bdi>{{ $money($invoice->total_amount) }} {{ $currency }}</bdi></div>
+@if(($refund['refunded'] ?? 0)>0)<div class="line"><span class="bi-label">المسترد / <span class="en" lang="en">Refunded</span></span><bdi>{{ $money($refund['refunded']) }}</bdi></div>@endif
+<div class="line"><span class="bi-label">صافي المدفوع / <span class="en" lang="en">Net paid</span></span><bdi>{{ $money($invoice->paid_amount) }}</bdi></div>
+@if($invoice->isActive() && (float)$invoice->remaining_amount>0)<div class="line"><span class="bi-label">المتبقي / <span class="en" lang="en">Balance due</span></span><bdi>{{ $money($invoice->remaining_amount) }}</bdi></div>@endif
 @foreach($order->payments as $payment)
 @if(($payment->status instanceof \BackedEnum ? $payment->status->value : $payment->status)==='confirmed')
 <div class="line"><span>{{ $payment->paymentMethod?->name_ar ?: $payment->paymentMethod?->name }}@if($payment->paymentMethod?->name_ar && $payment->paymentMethod?->name && $payment->paymentMethod->name !== $payment->paymentMethod->name_ar)<span class="en"><bdi>{{ $payment->paymentMethod->name }}</bdi></span>@endif</span><bdi>{{ $money($payment->amount) }}</bdi></div>
 @endif
 @endforeach
-<div class="status">{{ $paymentLabel }}<span class="en" lang="en">{{ $paymentEn }}</span></div><p class="center">{{ $theme['footer_text'] ?: 'شكرًا لاختياركم TISH' }}@if(empty($theme['footer_text']))<span class="en" lang="en">Thank you for choosing TISH</span>@endif</p>
+</div>
+<div class="status">{{ $paymentLabel }} / <span class="en" lang="en">{{ $paymentEn }}</span></div><p class="center receipt-footer">{{ $theme['footer_text'] ?: 'شكرًا لاختياركم TISH' }}@if(empty($theme['footer_text']))<span class="en" lang="en">Thank you for choosing TISH</span>@endif</p>
 </section>
 @endif
 @if($tickets->isNotEmpty())
 <section class="receipt kitchen-copy" data-document="kitchen">
     @if($logo)<img class="logo" src="{{ $logo }}" alt="TISH">@endif
     <h1>{{ $theme['business_name'] ?: 'TISH' }}</h1>
-    <p class="center kitchen-title">تذكرة المطبخ<span class="en" lang="en">Kitchen Ticket</span></p>
+    <p class="center kitchen-title">تذكرة المطبخ / <span class="en" lang="en">Kitchen Ticket</span></p>
     <div class="meta kitchen-meta">
-        <div class="line kitchen-order"><span class="bi-label">الطلب<span class="en" lang="en">Order</span></span><bdi>{{ $order->order_number }}</bdi></div>
-        <div class="line"><span class="bi-label">الفرع<span class="en" lang="en">Branch</span></span><span>{{ $order->location?->name }}</span></div>
-        <div class="line"><span class="bi-label">اليوم<span class="en" lang="en">Day</span></span><span class="day-value">{{ $dayLabel($kitchenAt) }}</span></div>
-        <div class="line"><span class="bi-label">التاريخ<span class="en" lang="en">Date</span></span><bdi>{{ $kitchenAt?->format('d/m/Y') ?? '—' }}</bdi></div>
-        <div class="line"><span class="bi-label">الوقت<span class="en" lang="en">Time</span></span><span><bdi>{{ $kitchenAt?->format('H:i') ?? '—' }}</bdi><span class="en time-zone">Gaza time · توقيت غزة</span></span></div>
+        <div class="line kitchen-order"><span class="bi-label">الطلب / <span class="en" lang="en">Order</span></span><bdi>{{ $order->order_number }}</bdi></div>
+        <div class="line"><span class="bi-label">الفرع / <span class="en" lang="en">Branch</span></span><span>{{ $order->location?->name }}</span></div>
+        <div class="date-grid">
+    <div class="date-cell"><span class="date-label">اليوم / Day</span><strong class="date-value">{{ $kitchenAt ? ($weekdays[$kitchenAt->format('l')] ?? '—') : '—' }}</strong><span class="en" lang="en">{{ $kitchenAt?->format('l') ?? '—' }}</span></div>
+    <div class="date-cell"><span class="date-label">التاريخ / Date</span><bdi class="date-value">{{ $kitchenAt?->format('d/m/Y') ?? '—' }}</bdi></div>
+    <div class="date-cell"><span class="date-label">الوقت / Time</span><bdi class="date-value">{{ $kitchenAt?->format('H:i') ?? '—' }}</bdi><span class="en time-zone">Gaza / غزة</span></div>
+</div>
     </div>
     <div class="kitchen-service center">
-        <strong>{{ $service }}<span class="en" lang="en">{{ $serviceEn }}</span></strong>
+        <strong>{{ $service }} / <span class="en" lang="en">{{ $serviceEn }}</span></strong>
         @if($order->restaurantTable)<span>الطاولة / Table: {{ $order->restaurantTable->displayName() }}</span>@endif
     </div>
     @foreach($tickets as $ticket)
