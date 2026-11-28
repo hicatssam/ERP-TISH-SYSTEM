@@ -16,6 +16,14 @@
         default => 'غير مدفوعة',
     };
     $tickets = $includeKitchen ? $order->kitchenTickets : collect();
+    // Count printed rows, not units: ten burgers on one row do not require ten rows.
+    $densityFor = static fn (int $rows): string => match (true) {
+        $rows >= 10 => 'dense',
+        $rows >= 5 => 'compact',
+        default => 'normal',
+    };
+    $invoiceDensity = $densityFor($invoice?->items?->count() ?? 0);
+    $kitchenDensity = $densityFor((int) $tickets->sum(fn ($ticket) => $ticket->items->count()));
     $service = $order->restaurant_service_type?->label() ?? 'طلب مطعم';
     $serviceEn = match($order->restaurant_service_type?->value) {
         'dine_in' => 'Dine-in', 'takeaway' => 'Takeaway', 'outdoor' => 'Curbside pickup',
@@ -176,6 +184,28 @@
 .customer-copy th:nth-child(3),.customer-copy th:nth-child(4){width:22%}
 .receipt .summary .total{font-size:12px}
 @endif
+/* Adaptive density: compress product rows only, not financial totals or instructions.
+   A finite lower limit protects thermal legibility; long orders may grow in length. */
+.receipt{--item-font:10px;--item-alt-font:9px;--item-pad:2px;--kitchen-name-font:12px;--kitchen-qty-font:15px;--kitchen-note-font:10px}
+.receipt[data-density="compact"]{--item-font:9.5px;--item-alt-font:8.5px;--item-pad:1.5px;--kitchen-name-font:11.5px;--kitchen-qty-font:14px}
+.receipt[data-density="dense"]{--item-font:9px;--item-alt-font:8px;--item-pad:1px;--kitchen-name-font:11px;--kitchen-qty-font:13px}
+.customer-copy table,.customer-copy td.amount{font-size:var(--item-font)}
+.customer-copy tbody td,.kitchen-copy .kitchen-table tbody td{padding:var(--item-pad) 1px;line-height:1.25}
+.receipt .item-alt{font-size:var(--item-alt-font);line-height:1.2;margin-top:0}
+.kitchen-copy .kitchen-name{font-size:var(--kitchen-name-font);line-height:1.25}
+.kitchen-copy .kitchen-table td.kitchen-qty{font-size:var(--kitchen-qty-font);vertical-align:top}
+.kitchen-copy .kitchen-notes{font-size:var(--kitchen-note-font);line-height:1.3;margin-top:1px;padding:1px 3px}
+.kitchen-copy .kitchen-cancel{font-size:11px;line-height:1.3;margin-top:1px}
+.receipt .discount-line{font-weight:800}
+.receipt .discount-line>bdi{font-weight:900}
+.receipt .social-footer{display:flex;align-items:center;justify-content:center;gap:4px;flex-wrap:wrap;margin-top:3px;font-size:9px;line-height:1.25;color:#111}
+.receipt .social-footer svg{width:11px;height:11px;flex:none}
+.receipt .social-footer a{color:inherit;text-decoration:none;font-weight:800}
+.receipt .social-footer bdi{white-space:nowrap}
+@if($paperWidth === 58)
+.receipt[data-density="normal"]{--item-font:9px;--item-alt-font:8px;--kitchen-name-font:11px}
+.receipt[data-density="compact"],.receipt[data-density="dense"]{--item-font:9px;--item-alt-font:8px;--kitchen-name-font:10.5px}
+@endif
 @page{size:auto;margin:0}
 @media print{body{background:white}.toolbar{display:none!important}.receipt{margin:0 auto;max-width:100%}.receipt+.receipt{break-before:page;page-break-before:always}body[data-mode="customer"] .kitchen-copy,body[data-mode="kitchen"] .customer-copy{display:none}body[data-mode="kitchen"] .kitchen-copy{break-before:auto;page-break-before:auto}}
 </style></head><body data-mode="all">
@@ -183,7 +213,7 @@
 @if($invoice && $tickets->isNotEmpty())<button data-print="customer">فاتورة العميل فقط / Invoice only</button><button data-print="kitchen">المطبخ فقط / Kitchen only</button>@endif
 <a href="{{ request()->fullUrlWithQuery(['width'=>$paperWidth === 80 ? 58 : 80,'preview'=>1]) }}">{{ $paperWidth === 80 ? '58 mm' : '80 mm' }}</a><button onclick="window.close()">إغلاق / Close</button></div>
 @if($invoice)
-<section class="receipt customer-copy" data-document="invoice">
+<section class="receipt customer-copy" data-document="invoice" data-density="{{ $invoiceDensity }}">
 @if($logo)<img class="logo" src="{{ $logo }}" alt="TISH">@endif
 <h1>{{ $theme['business_name'] ?: 'TISH' }}</h1><p class="center doc-title">فاتورة العميل / <span class="en" lang="en">Customer Invoice</span></p>
 <div class="meta">
@@ -207,7 +237,7 @@
 @if((float)$invoice->discount_amount>0 || (float)$invoice->tax_amount>0 || $money($invoice->subtotal) !== $money($invoice->total_amount))
 <div class="line"><span class="bi-label">المجموع الفرعي / <span class="en" lang="en">Subtotal</span></span><bdi>{{ $money($invoice->subtotal) }}</bdi></div>
 @endif
-@if((float)$invoice->discount_amount>0)<div class="line"><span class="bi-label">الخصم / <span class="en" lang="en">Discount</span></span><bdi>-{{ $money($invoice->discount_amount) }}</bdi></div>@endif
+@if((float)$invoice->discount_amount>0)<div class="line discount-line"><span class="bi-label">الخصم / <span class="en" lang="en">Discount</span></span><bdi>-{{ $money($invoice->discount_amount) }} {{ $currency }}</bdi></div>@endif
 @if((float)$invoice->tax_amount>0)<div class="line"><span class="bi-label">الضريبة / <span class="en" lang="en">Tax</span></span><bdi>{{ $money($invoice->tax_amount) }}</bdi></div>@endif
 <div class="line total"><span class="bi-label">الإجمالي / <span class="en" lang="en">Grand total</span></span><bdi>{{ $money($invoice->total_amount) }} {{ $currency }}</bdi></div>
 @if(($refund['refunded'] ?? 0)>0)<div class="line"><span class="bi-label">المسترد / <span class="en" lang="en">Refunded</span></span><bdi>{{ $money($refund['refunded']) }}</bdi></div>@endif
@@ -220,10 +250,15 @@
 @endforeach
 </div>
 <div class="status">{{ $paymentLabel }} / <span class="en" lang="en">{{ $paymentEn }}</span></div><p class="center receipt-footer">{{ $theme['footer_text'] ?: 'شكرًا لاختياركم TISH' }}@if(empty($theme['footer_text']))<span class="en" lang="en">Thank you for choosing TISH</span>@endif</p>
+<div class="social-footer">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+    <span lang="en" dir="ltr">Instagram</span>
+    <a href="https://www.instagram.com/letstish/" aria-label="TISH Instagram"><bdi dir="ltr">&#64;letstish</bdi></a>
+</div>
 </section>
 @endif
 @if($tickets->isNotEmpty())
-<section class="receipt kitchen-copy" data-document="kitchen">
+<section class="receipt kitchen-copy" data-document="kitchen" data-density="{{ $kitchenDensity }}">
     @if($logo)<img class="logo" src="{{ $logo }}" alt="TISH">@endif
     <h1>{{ $theme['business_name'] ?: 'TISH' }}</h1>
     <p class="center kitchen-title">تذكرة المطبخ / <span class="en" lang="en">Kitchen Ticket</span></p>
