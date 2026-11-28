@@ -162,17 +162,26 @@ test('QR table is carried across menu pages and cleared after checkout', () => {
     assert.equal(cm.selectedTable().id, 7);
     cm.clearCart(); assert.equal(cm.selectedTable(), null);
 });
-test('QR checkout preselects only a currently available table', () => {
+test('QR checkout preselects only the server-resolved table when dine-in is enabled', () => {
     const source = fs.readFileSync(path.join(root, 'resources/views/customer-menu/checkout/checkout.blade.php'), 'utf8');
-    const fn = source.slice(source.indexOf('function preselectQrTable()'), source.indexOf('function serviceFields()'));
-    const selectTable = source.slice(source.indexOf('function selectCheckoutTable('), source.indexOf("document.getElementById('tableGrid').addEventListener"));
-    for (const disabled of [false, true]) {
-        const service = {options: [{value: 'dine_in'}, {value: 'takeaway'}], value: 'takeaway'};
-        const input = {value: ''};
-        const card = {dataset: {tableId: '7'}, disabled, setAttribute() {}, classList: {toggle() {}}};
-        vm.runInNewContext(fn + selectTable + '\npreselectQrTable();', {CM: {selectedTable() {return {id: 7};}},
-            document: {getElementById(id) {return id === 'serviceType' ? service : input;}, querySelectorAll() {return [card];}}});
-        assert.equal(service.value, disabled ? 'takeaway' : 'dine_in');
-        assert.equal(String(input.value), disabled ? '' : '7');
+    const fn = source.slice(source.indexOf('function showLockedTable()'), source.indexOf('function serviceFields()'));
+    assert.match(fn, /qrTable/);
+    for (const [qrTable, dineIn, expected] of [
+        [{id: 7, name: 'T7'}, true, '7'],
+        [null, true, ''],
+        [{id: 7, name: 'T7'}, false, ''],
+    ]) {
+        const service = {options: [{value: 'takeaway'}, ...(dineIn ? [{value: 'dine_in'}] : [])], value: 'takeaway'};
+        const input = {value: '99'};
+        const hint = {hidden: true, textContent: ''};
+        const nodes = {serviceType: service, tableIdInput: input, tableOneTimeHint: hint};
+        vm.runInNewContext(fn + '\npreselectQrTable();', {
+            qrTable,
+            CM: {selectedTable() { return {id: 99}; }},
+            document: {getElementById(id) {return nodes[id];}},
+        });
+        assert.equal(service.value, expected ? 'dine_in' : 'takeaway');
+        assert.equal(input.value, expected);
+        assert.equal(hint.hidden, !expected);
     }
 });

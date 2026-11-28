@@ -40,7 +40,9 @@ test('selected service, table and payment use same paper artwork, without red re
     assert.match(style, /\.payment-card\.active/);
     assert.match(style, /nav-active\.webp/);
     assert.match(style, /:focus-visible/);
-    assert.match(checkout, /function selectCheckoutTable/);
+    assert.match(checkout, /function preselectQrTable/);
+    assert.match(checkout, /tableInput\.value = String\(qrTable\.id\)/);
+    assert.doesNotMatch(checkout, /function selectCheckoutTable/);
     assert.match(checkout, /function choosePayment/);
     assert.match(checkout, /serviceFields\(\)/);
 });

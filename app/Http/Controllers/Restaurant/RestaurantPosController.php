@@ -823,6 +823,7 @@ class RestaurantPosController extends Controller
             'q' => ['nullable', 'string', 'max:150'],
             'category_id' => ['nullable', 'integer', 'min:1'],
             'brand_id' => ['nullable', 'integer', 'min:1'],
+            'popular' => ['sometimes', 'boolean'],
             'page' => ['nullable', 'integer', 'min:1'],
             'ids' => ['nullable', 'array', 'max:100'],
             'ids.*' => ['integer', 'distinct', 'min:1'],
@@ -847,6 +848,7 @@ class RestaurantPosController extends Controller
             $data['q'] ?? null,
             isset($data['category_id']) ? (int) $data['category_id'] : null,
             isset($data['brand_id']) ? (int) $data['brand_id'] : null,
+            $request->boolean('popular'),
         );
 
         return response()->json([

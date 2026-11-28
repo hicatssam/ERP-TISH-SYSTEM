@@ -5,6 +5,8 @@ namespace App\Services\Restaurant;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\OrderItem;
+use App\Enums\OrderStatus;
 use App\Models\RestaurantMenuItem;
 use App\Support\PublicImageUrl;
 use Illuminate\Database\Eloquent\Builder;
@@ -59,14 +61,47 @@ class RestaurantPosCatalogService
             ->orderBy('products.id');
     }
 
+    /**
+     * Rank the branch's currently enabled menu by units in completed restaurant
+     * orders during the last 30 days; cancelled, deleted and draft orders are excluded.
+     * No revenue, customer or transaction details are exposed to the cashier.
+     */
+    public function popularIds(int $locationId): array
+    {
+        return OrderItem::query()
+            ->whereHas('order', fn (Builder $order) => $order
+                ->where('location_id', $locationId)
+                ->whereNotNull('restaurant_service_type')
+                ->where('status', OrderStatus::Completed->value)
+                ->where('completed_at', '>=', now()->subDays(30)))
+            ->whereIn('product_id', $this->availableAt($locationId)->select('products.id'))
+            ->select('product_id')
+            ->selectRaw('SUM(quantity) as units')
+            ->groupBy('product_id')
+            ->orderByDesc('units')
+            ->orderBy('product_id')
+            ->limit(12)
+            ->pluck('product_id')->map(fn ($id) => (int) $id)->all();
+    }
+
     public function page(
         int $locationId,
         int $page = 1,
         ?string $search = null,
         ?int $categoryId = null,
         ?int $brandId = null,
+        bool $popular = false,
     ): LengthAwarePaginator {
         $query = $this->availableAt($locationId);
+
+        if ($popular) {
+            $ids = $this->popularIds($locationId);
+            $query->whereIn('products.id', $ids);
+            if ($ids !== []) {
+                $cases = implode(' ', array_map(fn ($rank) => 'WHEN ? THEN '.($rank + 1), array_keys($ids)));
+                $query->orderByRaw('CASE products.id '.$cases.' ELSE 999 END', $ids);
+            }
+        }
 
         if ($categoryId) {
             $query->where('category_id', $categoryId);
