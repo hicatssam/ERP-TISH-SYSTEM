@@ -101,7 +101,9 @@ class MenuCutoutService
             && @filesize($webpFile) > 0
             && @filesize($webpFile) < @filesize($converted)
             && @filemtime($webpFile) >= @filemtime($converted)) {
-            return PublicImageUrl::url($webp) ?: PublicImageUrl::url($path);
+            return route('customer-menu.assets.show', [
+                'path' => substr($webp, 0, -5).'/webp',
+            ], false);
         }
 
         // Use the already-secured image route; no storage symlink is necessary.
