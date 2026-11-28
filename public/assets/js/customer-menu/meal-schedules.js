@@ -15,7 +15,7 @@ function format(ms) {
     return [Math.floor(s / 3600), Math.floor(s % 3600 / 60), s % 60].map(x => String(x).padStart(2, '0')).join(':');
 }
 function notify() {
-    const signature = CM.PRODUCTS.map(p => [p.id, p.mealPeriod, p.available, CM.mealUnavailable(p)]).map(JSON.stringify).join('|');
+    const signature = CM.PRODUCTS.map(p => [p.id, p.mealPeriod, p.available, CM.mealUnavailable(p)]).map(row => JSON.stringify(row)).join('|');
     if (signature !== lastSignature) {
         lastSignature = signature;
         document.dispatchEvent(new CustomEvent('tish:meal-status-changed'));
