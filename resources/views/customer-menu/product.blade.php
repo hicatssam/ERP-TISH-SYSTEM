@@ -580,6 +580,19 @@ renderPicker();
 document.getElementById('detailPlus').onclick = () => { qty = Math.min(50, qty + 1); document.getElementById('detailQty').textContent = qty; };
 document.getElementById('detailMinus').onclick = () => { qty = Math.max(1, qty - 1); document.getElementById('detailQty').textContent = qty; };
 
+function syncMealDetailAvailability() {
+    if (!PRODUCT) return;
+    const button = document.getElementById('detailAdd');
+    const blocked = !PRODUCT.available || CM.mealUnavailable(PRODUCT);
+    button.disabled = blocked;
+    const en = document.documentElement.lang === 'en';
+    button.innerHTML = blocked
+        ? '<i class="fa-solid fa-clock"></i> ' + (en ? 'Currently unavailable' : 'غير متوفر حاليًا')
+        : '<i class="fa-solid fa-bag-shopping"></i> ' + (en ? 'Add to cart' : 'إضافة للسلة');
+    const badge = document.querySelector('#detailMedia .sold-out');
+    if (badge) badge.hidden = !blocked;
+}
+document.addEventListener('tish:meal-status-changed', syncMealDetailAvailability);
 document.getElementById('detailAdd').onclick = () => {
     const error = validateSelection();
     const errorBox = document.getElementById('pickerError');
@@ -594,7 +607,7 @@ document.getElementById('detailAdd').onclick = () => {
     window.TishMenuCinematic?.flyToCart(document.querySelector('#detailMedia img'), btn);
     pulseProductControl(btn);
     btn.innerHTML = `<i class="fa-solid fa-check"></i> تمت الإضافة`;
-    setTimeout(() => { btn.innerHTML = '<i class="fa-solid fa-bag-shopping"></i> إضافة المزيد للسلة'; }, 900);
+    setTimeout(syncMealDetailAvailability, 900);
 };
 
 document.getElementById('detailOpenCart').onclick = () => {
