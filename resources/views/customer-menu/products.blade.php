@@ -198,7 +198,11 @@ body.tish-paper.tish-paper-products #categories .cat.active .catalog-category-ic
    </div>
    <div class="tish-paper-products-title">
     <img src="{{ asset('assets/tish-paper/decor/lightning.svg') }}" alt="" aria-hidden="true">
-    <h1>كل الأصناف</h1>
+    <h1>{{ match(request()->query('meal')) {
+        'breakfast' => \App\Support\CustomerMenuLanguage::isEnglish() ? 'Breakfast' : 'وجبات الفطور',
+        'lunch' => \App\Support\CustomerMenuLanguage::isEnglish() ? 'Lunch' : 'وجبات الغداء',
+        default => \App\Support\CustomerMenuLanguage::isEnglish() ? 'All products' : 'كل الأصناف',
+    } }}</h1>
    </div>
   </div>
   <div class="tools">
@@ -306,7 +310,7 @@ function renderProducts() {
     document.getElementById('resultCount').textContent = menuF('عدد {count} أصناف', {count: rows.length});
     document.getElementById('productGrid').innerHTML = rows.length
         ? rows.map(renderCard).join('')
-        : `<div class="empty">لا توجد أصناف مطابقة.</div>`;
+        : `<div class="empty">${activeMeal ? 'لا توجد وجبات متاحة في هذه الفترة حاليًا.' : 'لا توجد أصناف مطابقة.'}</div>`;
 
     document.getElementById('openFilters').classList.toggle('has-filters', priceRange !== 'all' || sortMode !== 'default');
     revealMenuCards();

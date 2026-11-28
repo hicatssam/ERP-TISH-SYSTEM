@@ -37,6 +37,7 @@
 </div>
 @endforeach
 </div>
+<input type="hidden" name="form_complete" value="1">
 <button class="btn btn-gold" type="submit" style="margin:16px 0">حفظ مواعيد الوجبات والأصناف</button>
 </form>
 <script>

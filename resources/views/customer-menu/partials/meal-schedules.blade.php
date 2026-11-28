@@ -27,9 +27,9 @@
 <a class="tish-meal-card" data-meal="{{ $key }}" data-state="{{ $window['state'] }}" href="{{ route('customer-menu.products',['location'=>$location->code,'meal'=>$key]) }}" @if(!$window['enabled'] || !$window['count']) hidden @endif>
 <strong>{{ $label }}</strong>
 <small class="meal-hours">{{ $window['start'] }} – {{ $window['end'] }}</small>
-<small class="meal-message"></small>
+<small class="meal-message">{{ $window['state'] === 'open' ? ($mealEn ? 'Available now' : 'متاح الآن') : ($window['state'] === 'ended' ? ($mealEn ? 'Today’s window ended' : 'انتهى موعد اليوم') : ($mealEn ? 'Coming soon' : 'قريبًا')) }}</small>
 <span class="meal-clock"></span>
-<span class="meal-cta"></span>
+<span class="meal-cta">{{ $mealEn ? 'View meals' : 'عرض الوجبات' }}</span>
 </a>
 @endforeach
 </div>

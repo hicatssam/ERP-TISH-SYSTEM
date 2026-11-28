@@ -28,7 +28,7 @@ final class MealScheduleController extends Controller
     public function update(Request $request)
     {
         $location = $this->context->resolveLocation($request->user(), $request->integer('location_id') ?: null);
-        $rules = ['assignments' => ['nullable','array','max:1000'], 'assignments.*' => ['nullable', Rule::in(MealScheduleService::PERIODS)]];
+        $rules = ['form_complete' => ['required','in:1'], 'assignments' => ['nullable','array','max:1000'], 'assignments.*' => ['nullable', Rule::in(MealScheduleService::PERIODS)]];
         foreach (MealScheduleService::PERIODS as $period) {
             $rules[$period.'.enabled'] = ['required','boolean'];
             $rules[$period.'.start'] = ['required','date_format:H:i'];

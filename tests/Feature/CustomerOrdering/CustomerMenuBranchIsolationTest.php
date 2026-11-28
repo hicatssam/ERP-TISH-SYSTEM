@@ -337,6 +337,59 @@ class CustomerMenuBranchIsolationTest extends TestCase
             ->assertCreated();
     }
 
+    public function test_meal_window_blocks_new_orders_at_exact_cutoff_but_allows_idempotent_recovery(): void
+    {
+        [$branch, $product, $cash, $actor, $payload] = $this->orderFixture();
+        $other = $this->branch();
+        $schedule = app(\App\Services\Restaurant\MealScheduleService::class);
+        SystemSetting::set('customer_menu_enabled', '1');
+        SystemSetting::set('checkout_customer_cash_enabled', '1');
+        SystemSetting::set($schedule->key($branch->id), json_encode([
+            'breakfast'=>['enabled'=>true,'start'=>'08:00','end'=>'11:00','product_ids'=>[$product->id]],
+        ]));
+        try {
+            \Carbon\CarbonImmutable::setTestNow(\Carbon\CarbonImmutable::parse('2026-11-28 07:59:59','Asia/Gaza'));
+            $this->getJson(route('customer-menu.meal-schedules',$branch->code))->assertOk()
+                ->assertJsonPath('windows.breakfast.state','upcoming')->assertJsonMissingPath('assignments');
+            $this->postJson(route('customer-menu.orders.store',$branch->code),$payload)
+                ->assertUnprocessable()->assertJsonValidationErrors('items');
+            $this->assertDatabaseCount('orders',0);
+            $this->assertDatabaseCount('payments',0);
+            $this->assertDatabaseCount('invoices',0);
+
+            \Carbon\CarbonImmutable::setTestNow(\Carbon\CarbonImmutable::parse('2026-11-28 08:00:00','Asia/Gaza'));
+            $this->getJson(route('customer-menu.meal-schedules',$branch->code))->assertOk()
+                ->assertJsonPath('windows.breakfast.state','open');
+            $page = $this->get(route('customer-menu.show',$branch->code))->assertOk();
+            $row = collect($page->viewData('menuItems'))->firstWhere('product_id',$product->id);
+            $this->assertTrue($row['available']);
+            $this->assertSame('breakfast',$row['meal_period']);
+
+            \Carbon\CarbonImmutable::setTestNow(\Carbon\CarbonImmutable::parse('2026-11-28 10:59:59','Asia/Gaza'));
+            $accepted = $this->postJson(route('customer-menu.orders.store',$branch->code),$payload)
+                ->assertCreated()->json('order_id');
+
+            \Carbon\CarbonImmutable::setTestNow(\Carbon\CarbonImmutable::parse('2026-11-28 11:00:00','Asia/Gaza'));
+            $this->getJson(route('customer-menu.meal-schedules',$branch->code))->assertOk()
+                ->assertJsonPath('windows.breakfast.state','ended');
+            $this->getJson(route('customer-menu.meal-schedules',$other->code))->assertOk()
+                ->assertJsonPath('windows.breakfast.state','disabled');
+            $page = $this->get(route('customer-menu.products',$branch->code))->assertOk();
+            $row = collect($page->viewData('menuItems'))->firstWhere('product_id',$product->id);
+            $this->assertTrue($row['meal_closed']);
+            $this->assertFalse($row['available']);
+            $this->postJson(route('customer-menu.orders.store',$branch->code),$payload)
+                ->assertCreated()->assertJsonPath('order_id',$accepted);
+            $payload['request_token'] = (string) Str::uuid();
+            $this->postJson(route('customer-menu.orders.store',$branch->code),$payload)
+                ->assertUnprocessable()->assertJsonValidationErrors('items');
+            $this->assertDatabaseCount('orders',1);
+            $this->assertEquals(20,\App\Models\Inventory::where('product_id',$product->id)->sole()->quantity);
+        } finally {
+            \Carbon\CarbonImmutable::setTestNow();
+        }
+    }
+
     private function orderFixture(): array
     {
         $branch = $this->branch();
